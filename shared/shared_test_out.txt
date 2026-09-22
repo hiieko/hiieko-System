@@ -1,0 +1,13 @@
+--- RUNNING DOMAIN & INTEGRITY CHECKS ---
+✓ PASS: Worker nearby (14m) is within 350m geofence
+✓ PASS: Worker far away (3286m) is correctly marked outside geofence
+✓ PASS: 09:00-18:00 yields exactly 8 normal hours worked (got 8)
+✓ PASS: 09:00-18:00 yields 0 overtime minutes
+✓ PASS: 09:00-19:00 has 8 normal hours
+✓ PASS: 09:00-19:00 yields exactly 60 minutes (1h) overtime
+✓ PASS: 09:00-19:00 displays as 1h overtime
+✓ PASS: 09:00-20:00 yields exactly 120 minutes (2h) overtime
+✓ PASS: Delivery +50 items increases stock from 0 to 50
+✓ PASS: Usage of 3 panels reduces stock to 47
+✓ PASS: Disallow consuming 5 items when only 2 are available (prevents negative stock invariant)
+--- ALL CALCULATION & INTEGRITY TESTS PASSED ---

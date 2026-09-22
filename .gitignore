@@ -1,0 +1,57 @@
+# ====================================================================
+# Solar Site Management System — root .gitignore
+# ====================================================================
+
+# ---- Dependencies -------------------------------------------------
+node_modules/
+
+# ---- Build outputs ------------------------------------------------
+.next/
+out/
+dist/
+build/
+web-build/
+.expo/
+*.tsbuildinfo
+
+# ---- Environment / secrets ----------------------------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+web/.env
+web/.env.local
+mobile/.env
+mobile/.env.local
+
+# ---- Supabase local tooling ---------------------------------------
+supabase/.temp/
+supabase/seed/.gitkeep
+
+# ---- Logs / OS / editor -------------------------------------------
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.env
+.env.*
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.env
+.env.*
+
+.env
+.env.*
+!.env.example

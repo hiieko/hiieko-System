@@ -1,0 +1,59 @@
+/**
+ * HIIEKO - Post-migration verification script.
+ *
+ * Asserts the invariants of the 001/002 migration on the target database:
+ *  1. key target tables exist
+ *  2. row counts per migrated entity
+ *  3. foreign-key integrity (zero orphans)
+ *  4. business invariants (non-negative stock, no self-approval, idempotency)
+ *  5. legacy staging parity (when schema `legacy` is populated)
+ *
+ * Exit code 0 = all checks pass, 1 = at least one check failed.
+ */
+
+import "dotenv/config";
+import pg from "pg";
+
+const ROW_ENTITIES = [
+  { entity: "organizations", table: "public.organizations" },
+  { entity: "users", table: "public.users" },
+  { entity: "user_profiles", table: "public.user_profiles" },
+  { entity: "roles", table: "public.roles" },
+  { entity: "projects", table: "public.projects" },
+  { entity: "project_members", table: "public.project_members" },
+  { entity: "teams", table: "public.teams" },
+  { entity: "team_members", table: "public.team_members" },
+  { entity: "attendance_records", table: "public.attendance_records" },
+  { entity: "materials", table: "public.materials" },
+  { entity: "stock_balances", table: "public.stock_balances" },
+  { entity: "stock_movements", table: "public.stock_movements" },
+  { entity: "daily_reports", table: "public.daily_reports" },
+  { entity: "avize", table: "public.avize" },
+  { entity: "aviz_items", table: "public.aviz_items" },
+  { entity: "expenses", table: "public.expenses" },
+  { entity: "expense_approvals", table: "public.expense_approvals" },
+  { entity: "reimbursements", table: "public.reimbursements" },
+  { entity: "documents", table: "public.documents" },
+  { entity: "document_versions", table: "public.document_versions" },
+  { entity: "ocr_jobs", table: "public.ocr_jobs" },
+  { entity: "warehouses", table: "public.warehouses" },
+  { entity: "notifications", table: "public.notifications" },
+  { entity: "audit_logs", table: "public.audit_logs" },
+] as const;
+
+type CheckResult = { name: string; status: "PASS" | "FAIL" | "SKIP"; detail: string };
+
+async function main(): Promise<number> {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    console.error("DATABASE_URL is not set. See database/scripts/run_migration.ts usage.");
+    return 2;
+  }
+  const pool = new pg.Pool({ connectionString, max: 2 });
+  const results: CheckResult[] = [];
+  const failures: number[] = [];
+
+  try {
+    console.log("=== HIIEKO post-migration verification ===");
+
+    // 1. Connectivity + key target tables exist

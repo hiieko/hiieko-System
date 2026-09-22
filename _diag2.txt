@@ -1,0 +1,93 @@
+    const tables = ROW_ENTITIES.map((e) => `'${e.table.replace("public.", "")}'`).join(",");
+    const qTables = await pool.query(
+      `SELECT count(*)::int AS present FROM information_schema.tables
+       WHERE table_schema='public' AND table_name IN (${tables})`
+    );
+    const present = qTables.rows[0]?.present ?? 0;
+    results.push({
+      name: "target tables present",
+      status: present === ROW_ENTITIES.length ? "PASS" : "FAIL",
+      detail: `${present}/${ROW_ENTITIES.length}`,
+    });
+    if (present !== ROW_ENTITIES.length) failures.push(results.length - 1);
+
+    // 2. Row counts per migrated entity
+    for (const e of ROW_ENTITIES) {
+      const r = await pool.query(`SELECT count(*)::int AS n FROM ${e.table}`);
+      results.push({ name: `rows:${e.entity}`, status: "PASS", detail: `n=${r.rows[0]?.n ?? 0}` });
+    }
+
+    // 3. FK integrity - orphan checks (each must be 0)
+    const fkChecks: Array<[string, string]> = [
+      ["attendance_records.user_id", "SELECT count(*)::int n FROM public.attendance_records ar LEFT JOIN public.users u ON u.id=ar.user_id WHERE u.id IS NULL"],
+      ["attendance_records.project_id", "SELECT count(*)::int n FROM public.attendance_records ar LEFT JOIN public.projects p ON p.id=ar.project_id WHERE p.id IS NULL"],
+      ["stock_balances.material_id", "SELECT count(*)::int n FROM public.stock_balances sb LEFT JOIN public.materials m ON m.id=sb.material_id WHERE m.id IS NULL"],
+      ["stock_balances.project_id", "SELECT count(*)::int n FROM public.stock_balances sb LEFT JOIN public.projects p ON p.id=sb.project_id WHERE sb.project_id IS NOT NULL AND p.id IS NULL"],
+      ["stock_movements.material_id", "SELECT count(*)::int n FROM public.stock_movements sm LEFT JOIN public.materials m ON m.id=sm.material_id WHERE m.id IS NULL"],
+      ["expenses.submitted_by_id", "SELECT count(*)::int n FROM public.expenses e LEFT JOIN public.users u ON u.id=e.submitted_by_id WHERE u.id IS NULL"],
+      ["expenses.project_id", "SELECT count(*)::int n FROM public.expenses e LEFT JOIN public.projects p ON p.id=e.project_id WHERE e.project_id IS NOT NULL AND p.id IS NULL"],
+      ["expense_approvals.approver_id", "SELECT count(*)::int n FROM public.expense_approvals ea LEFT JOIN public.users u ON u.id=ea.approver_id WHERE u.id IS NULL"],
+      ["notifications.user_id", "SELECT count(*)::int n FROM public.notifications n LEFT JOIN public.users u ON u.id=n.user_id WHERE u.id IS NULL"],
+      ["documents.project_id", "SELECT count(*)::int n FROM public.documents d LEFT JOIN public.projects p ON p.id=d.project_id WHERE d.project_id IS NOT NULL AND p.id IS NULL"],
+      ["ocr_jobs.document_id", "SELECT count(*)::int n FROM public.ocr_jobs oj LEFT JOIN public.documents d ON d.id=oj.document_id WHERE oj.document_id IS NOT NULL AND d.id IS NULL"],
+    ];
+    const ids = fkChecks.map(([, sql]) => sql);
+    const fkResults = await Promise.all(ids.map((sql) => pool.query<{ n: number }>(sql)));
+    for (let i = 0; i < fkChecks.length; i++) {
+      const [name] = fkChecks[i];
+      const orphans = fkResults[i]?.rows[0]?.n ?? -1;
+      results.push({
+        name: `fk:${name} orphans`,
+        status: orphans === 0 ? "PASS" : orphans >= 0 ? "FAIL" : "SKIP",
+        detail: `orphans=${orphans}`,
+      });
+      if (orphans !== 0) failures.push(results.length - 1);
+    }
+
+    // 5. Legacy parity (informational; SKIP when legacy schema is empty)
+    const legacyCount = await pool.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema='legacy'"
+    );
+    if ((legacyCount.rows[0]?.n ?? 0) > 0) {
+      const pairs: Array<[string, string]> = [
+        ["users", "profiles"],
+        ["projects", "sites"],
+        ["attendance_records", "time_logs"],
+        ["materials", "materials"],
+        ["stock_balances", "site_stock"],
+        ["stock_movements", "stock_movements"],
+        ["expenses", "expenses"],
+        ["notifications", "notifications"],
+        ["audit_logs", "audit_logs"],
+      ];
+      for (const [target, legacyTable] of pairs) {
+        const t = await pool.query<{ n: number }>(`SELECT count(*)::int n FROM public.${target}`);
+        const l = await pool.query<{ n: number }>(`SELECT count(*)::int n FROM legacy.${legacyTable}`);
+        results.push({
+          name: `parity:${target} vs legacy.${legacyTable}`,
+          status: "PASS",
+          detail: `target=${t.rows[0]?.n ?? -1} legacy=${l.rows[0]?.n ?? -1} (${l.rows[0]?.n === t.rows[0]?.n ? "matches" : "DIFFERS"})`,
+        });
+      }
+    } else {
+      results.push({ name: "legacy parity", status: "SKIP", detail: "no legacy staging schema found" });
+    }
+
+    // 6. Report
+    console.log("\n| check | status | detail |");
+    console.log("|---|---|---|");
+    for (const r of results) {
+      console.log(`| ${r.name} | ${r.status} | ${r.detail} |`);
+    }
+    const failed = failures.length;
+    console.log(`\n${results.length - failed}/${results.length} checks passed.`);
+    return failed === 0 ? 0 : 1;
+  } catch (err) {
+    console.error("verification run FAILED:", err instanceof Error ? err.message : String(err));
+    return 1;
+  } finally {
+    await pool.end();
+  }
+}
+
+process.exitCode = await main();

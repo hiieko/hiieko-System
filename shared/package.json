@@ -1,0 +1,15 @@
+{
+  "name": "@solar/shared",
+  "version": "1.0.0",
+  "description": "Shared types, domain models, and calculation utilities for Solar Site Management App",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

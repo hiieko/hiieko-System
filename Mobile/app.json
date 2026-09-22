@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Solar Site Field App",
+    "slug": "solar-site-field-app",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ro.solar.fieldapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Aplicația necesită acces la cameră pentru fotografierea avizelor și scanarea codurilor de bare ale materialelor.",
+        "NSLocationWhenInUseUsageDescription": "Aplicația necesită acces la locație pentru a valida prezența pe șantier la pontaj (AM VENIT / AM PLECAT)."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "ro.solar.fieldapp",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    }
+  }
+}

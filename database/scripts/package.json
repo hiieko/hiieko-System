@@ -1,0 +1,7 @@
+{
+  "name": "@solar/database-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HIIEKO database migration runners (Node 24 native TS execution).",
+  "type": "module"
+}
