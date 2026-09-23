@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { 
   calculateAttendanceWorkTime, 
-  isWithinSiteGeofence, 
-  Site, 
+  isWithinProjectGeofence,
+  Project,
   TimeLog 
 } from '@solar/shared';
 import { 
@@ -25,13 +25,13 @@ import { PageIntro } from '../components/PageIntro';
 
 interface Props {
   user: { id: string; full_name: string; role: string };
-  sites: Site[];
+  projects: Project[];
   isOffline: boolean;
   locale?: 'ro' | 'en';
 }
 
-export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }: Props) {
-  const [selectedSite, setSelectedSite] = useState<Site>(sites[0]);
+export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro' }: Props) {
+  const [selectedProject, setSelectedProject] = useState<Project>(projects[0]);
   const [activeLog, setActiveLogState] = useState<TimeLog | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentGpsDist, setCurrentGpsDist] = useState<number | null>(null);
@@ -44,29 +44,29 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
       await refreshGps();
     }
     loadActiveStateAndLocation();
-  }, [selectedSite]);
+  }, [selectedProject]);
 
   const refreshGps = async () => {
     const loc = await getCurrentDeviceLocation();
     if (loc.error) {
       setGpsError(loc.error);
       // Fallback distance for simulation/demo if physical GPS is blocked in simulator
-      const simulatedCheck = isWithinSiteGeofence(44.2981, 23.8122, selectedSite.latitude, selectedSite.longitude, selectedSite.geofence_radius_meters);
+      const simulatedCheck = isWithinProjectGeofence(44.2981, 23.8122, selectedProject.latitude, selectedProject.longitude, selectedProject.geofence_radius_meters);
       setCurrentGpsDist(simulatedCheck.distanceMeters);
     } else if (loc.latitude && loc.longitude) {
       setGpsError(null);
-      const check = isWithinSiteGeofence(
+      const check = isWithinProjectGeofence(
         loc.latitude,
         loc.longitude,
-        selectedSite.latitude,
-        selectedSite.longitude,
-        selectedSite.geofence_radius_meters
+        selectedProject.latitude,
+        selectedProject.longitude,
+        selectedProject.geofence_radius_meters
       );
       setCurrentGpsDist(check.distanceMeters);
     }
   };
 
-  const isWithinGeofence = currentGpsDist !== null && currentGpsDist <= selectedSite.geofence_radius_meters;
+  const isWithinGeofence = currentGpsDist !== null && currentGpsDist <= selectedProject.geofence_radius_meters;
 
   const handleCheckIn = async () => {
     if (loading) return; // Prevent double tap
@@ -77,18 +77,18 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
       let workerLat = loc.latitude || 44.2981;
       let workerLng = loc.longitude || 23.8122;
 
-      const geofence = isWithinSiteGeofence(
+      const geofence = isWithinProjectGeofence(
         workerLat,
         workerLng,
-        selectedSite.latitude,
-        selectedSite.longitude,
-        selectedSite.geofence_radius_meters
+        selectedProject.latitude,
+        selectedProject.longitude,
+        selectedProject.geofence_radius_meters
       );
 
       if (!geofence.isWithin && !loc.error) {
         Alert.alert(
           'În Afara Șantierului',
-          `Te afli la ${geofence.distanceMeters}m de șantier. Raza permisă este de ${selectedSite.geofence_radius_meters}m.`
+          `Te afli la ${geofence.distanceMeters}m de șantier. Raza permisă este de ${selectedProject.geofence_radius_meters}m.`
         );
         return;
       }
@@ -97,7 +97,7 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
       const newLog: TimeLog = {
         id: `tl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         user_id: user.id,
-        site_id: selectedSite.id,
+        site_id: selectedProject.id,
         date: now.split('T')[0],
         check_in: now,
         check_in_lat: workerLat,
@@ -117,10 +117,10 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
 
       // Prepare payload for API/queue
       const checkInPayload = {
-        projectId: selectedSite.id,
+        projectId: selectedProject.id,
         latitude: workerLat,
         longitude: workerLng,
-        notes: `Check-in la ${selectedSite.name}`,
+        notes: `Check-in la ${selectedProject.name}`,
       };
       const idemKey = generateIdempotencyKey('attendance', 'check_in');
 
@@ -131,7 +131,7 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
       } else {
         // Submit directly to API
         await apiClient.checkIn(checkInPayload);
-        Alert.alert('Succes!', `Ai pontat sosirea (AM VENIT) la ${selectedSite.name}`);
+        Alert.alert('Succes!', `Ai pontat sosirea (AM VENIT) la ${selectedProject.name}`);
       }
     } catch (e: any) {
       Alert.alert('Eroare', e.message || 'Nu s-a putut înregistra sosirea');
@@ -205,20 +205,20 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
         </View>
       </View>
 
-      {/* Site Selector Card */}
+      {/* Project Selector Card */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionLabel}>ȘANTIER SELECTAT (CE ȘANTIER):</Text>
         <View style={styles.siteBox}>
-          <Text style={styles.siteName}>{selectedSite.name}</Text>
-          <Text style={styles.siteCode}>Cod: {selectedSite.code} • {selectedSite.address}</Text>
+          <Text style={styles.siteName}>{selectedProject.name}</Text>
+          <Text style={styles.siteCode}>Cod: {selectedProject.code} • {selectedProject.address}</Text>
         </View>
 
         {/* GPS Geofence Badge */}
         <View style={[styles.gpsBadge, isWithinGeofence ? styles.gpsValid : styles.gpsInvalid]}>
           <Text style={styles.gpsText}>
             {isWithinGeofence 
-              ? `✓ GPS Validat: Ești în perimetrul șantierului (${currentGpsDist}m <= ${selectedSite.geofence_radius_meters}m)`
-              : `⚠ În afara perimetrului (${currentGpsDist ?? '?'}m > ${selectedSite.geofence_radius_meters}m)`}
+              ? `✓ GPS Validat: Ești în perimetrul șantierului (${currentGpsDist}m <= ${selectedProject.geofence_radius_meters}m)`
+              : `⚠ În afara perimetrului (${currentGpsDist ?? '?'}m > ${selectedProject.geofence_radius_meters}m)`}
           </Text>
         </View>
 

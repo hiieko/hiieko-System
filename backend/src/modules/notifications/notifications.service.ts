@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../common/audit/audit.service';
 import { NotificationPriorityEnum, NotificationChannelEnum } from '@prisma/client';
 
 export interface SendNotificationDto {
@@ -12,23 +13,51 @@ export interface SendNotificationDto {
   actionUrl?: string;
   metadata?: Record<string, unknown>;
   category?: string;
+  /** Optional: the ID of the entity that triggered the notification (e.g. report id, expense id) */
+  entityId?: string;
+  /** Optional: the type of entity that triggered the notification (e.g. 'daily_report', 'expense') */
+  entity?: string;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditService: AuditService,
+  ) {}
 
-  async getUserNotifications(userId: string, unreadOnly = false) {
-    return this.prisma.notification.findMany({
-      where: {
-        user_id: userId,
-        is_read: unreadOnly ? false : undefined,
-      },
-      orderBy: { created_at: 'desc' },
-      take: 50,
-    });
+  async getUserNotifications(
+    userId: string,
+    unreadOnly = false,
+    page = 1,
+    pageSize = 50,
+  ): Promise<PaginatedResult<any>> {
+    const skip = (page - 1) * pageSize;
+    const where = {
+      user_id: userId,
+      is_read: unreadOnly ? false : undefined,
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
+
+    return { data, total, page, pageSize };
   }
 
   async send(dto: SendNotificationDto) {
@@ -65,6 +94,20 @@ export class NotificationsService {
     });
 
     this.logger.log(`[NOTIFICATION DISPATCH] User: ${dto.userId} | Title: ${dto.titleRo}`);
+
+    // 3. Audit log the notification send
+    await this.auditService.record({
+      actorId: undefined, // system-generated notification
+      action: 'NOTIFICATION_SENT',
+      entity: dto.entity || 'notification',
+      entityId: dto.entityId || notification.id,
+      metadata: {
+        notificationId: notification.id,
+        userId: dto.userId,
+        titleRo: dto.titleRo,
+        category: dto.category,
+      } as Record<string, unknown>,
+    });
 
     return notification;
   }

@@ -74,7 +74,7 @@ Not yet enforced. R2.1 P5 will add project members, provision guards, and write 
 - R2.1 P3–P6 incomplete (web still uses `Site`, shared still exports `Site`, no auth guards)
 - No root `README.md` — **added in this audit** ✅
 - `HOW_TO_RUN.md` / `CONFIGURATION.md` — **refreshed in this audit** ✅
-- Backend Jest has a pre-existing Babel/ts-jest config issue (unrelated to current changes; the 4 tests that run pass)
+- Backend Jest: all 12 test suites / 69 tests PASS (`npm run test` via `jest --config jest.config.json`, exit 0)
 - Pre-1.0; not ready for production deployment
 - No staging/production CI pipeline configured
 - No monitoring, alerting, or structured logging at production level

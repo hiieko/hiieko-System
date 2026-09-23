@@ -40,7 +40,7 @@ async function initializeTables(database: SQLite.SQLiteDatabase): Promise<void> 
     );
   `);
 
-  // Projects (Sites) table
+  // Projects table
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,

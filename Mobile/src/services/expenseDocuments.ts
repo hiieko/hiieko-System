@@ -2,15 +2,14 @@ import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Expense,
-  ExpenseDocument,
   DocumentType,
-  ExpenseCategory,
-  PaymentMethod,
   OcrResult,
   getLowConfidenceFields,
 } from '@solar/shared';
-import { getSupabase } from './supabase';
-import { enqueueOfflineAction, generateIdempotencyKey } from './storage';
+import { apiClient } from './apiClient';
+import { enqueueOperation } from './syncQueue';
+import { generateIdempotencyKey } from './storage';
+import { toBackendExpenseCategory, toBackendPaymentMethod } from './expenseMapping';
 
 /**
  * Local document persistence for the HIIEKO scanning workflow (spec §7).
@@ -32,7 +31,7 @@ export type OcrDraftStatus = 'none' | 'processing' | 'done' | 'failed' | 'not_co
 export interface ReceiptDraft {
   id: string;
   userId: string;
-  siteId: string;
+  projectId: string;
   localUris: string[];
   documentType: DocumentType;
   ocr?: OcrResult;
@@ -138,42 +137,51 @@ function mapOcrDocumentType(docType: OcrResult['document_type']): DocumentType {
   }
 }
 
+/** Builds the NestJS CreateExpenseDto payload from a draft. */
 function buildExpensePayload(
   draft: ReceiptDraft,
   idempotencyKey: string
 ): Record<string, unknown> {
   const exp = draft.expense || {};
-  const category: ExpenseCategory = exp.category ?? 'other';
-  const paymentMethod: PaymentMethod = exp.payment_method ?? 'personal';
-  const amount = typeof exp.amount === 'number' ? exp.amount : 0;
+  const o = draft.ocr;
+
+  const amount = typeof exp.amount === 'number' ? exp.amount : Number(o?.total ?? 0);
+  const vatAmount = Number(o?.vat ?? NaN);
+
   return {
-    user_id: draft.userId,
-    site_id: draft.siteId,
-    category,
-    status: 'submitted',
-    document_type: draft.documentType,
-    payment_method: paymentMethod,
-    amount,
-    reimbursable_amount: paymentMethod === 'personal' ? amount : 0,
-    currency: exp.currency ?? 'RON',
-    description: exp.description ?? '',
-    ocr_result: draft.ocr,
-    idempotency_key: idempotencyKey,
-    submitted_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
+    projectId: draft.projectId || undefined,
+    category: toBackendExpenseCategory(exp.category),
+    paymentMethod: toBackendPaymentMethod(exp.payment_method),
+    amount: Number.isFinite(amount) ? amount : 0,
+    vatAmount: Number.isFinite(vatAmount) ? vatAmount : undefined,
+    currency: exp.currency ?? o?.currency ?? 'RON',
+    expenseDate: o?.document_date ?? new Date().toISOString().split('T')[0],
+    merchantName: o?.merchant_name ?? undefined,
+    merchantCui: o?.merchant_cui ?? undefined,
+    documentNumber: o?.document_number ?? undefined,
+    description: exp.description || exp.notes || undefined,
+    idempotencyKey,
   };
 }
 
-async function fileToBlob(uri: string): Promise<Blob> {
-  const res = await fetch(uri);
-  return await res.blob();
-}
-
 /**
- * Submit a completed draft. Online + authenticated: uploads the original
- * documents to the private `expense-documents` bucket, inserts the expense and
- * the linked expense_documents, then removes the local copy. Otherwise queues
- * the expense for offline sync (idempotent) and keeps the local copy.
+ * Submit a completed draft (NestJS / PostgreSQL path).
+ *
+ * Online + authenticated:
+ *   1. POST /api/expenses -> creates the expense. The idempotency key is backed
+ *      by a unique column, so a retry can never double-submit.
+ *   1.5. POST /api/upload (ISSUE-013/ISSUE-014) -> uploads the captured receipt
+ *      to an authenticated server-side blob store and materializes the Document /
+ *      DocumentVersion metadata row.
+ *   2. POST /api/ocr/jobs -> links the captured document (via the returned
+ *      documentId) and its already-extracted OCR result to the expense
+ *      (OCRJob.expense_id + OCRJob.document_id + raw_payload).
+ *
+ * Offline (or on failure) the expense is written to the SQLite sync queue and
+ * replayed by syncAllOperations() -> apiClient.createExpense() once connectivity
+ * returns. Captured images always stay in durable app storage as the source of
+ * truth until a server-side document blob synchronously accepts them, so a
+ * receipt can never be lost to a connectivity drop.
  */
 export async function submitReceiptDraft(draft: ReceiptDraft): Promise<SubmitOutcome> {
   const idempotencyKey = generateIdempotencyKey('expense_submit', draft.id);
@@ -184,71 +192,92 @@ export async function submitReceiptDraft(draft: ReceiptDraft): Promise<SubmitOut
     return { submitted: true, queued: false, notConfigured: false, message: 'DUPLICATE' };
   }
 
-  const sb = getSupabase();
+  const payload = buildExpensePayload(draft, idempotencyKey);
+
   const queueOffline = async (msg: string): Promise<SubmitOutcome> => {
-    await enqueueOfflineAction('expense_submit', buildExpensePayload(draft, idempotencyKey));
+    await enqueueOperation('expense', 'create', payload, idempotencyKey);
     await markSubmitted(idempotencyKey);
-    return { submitted: false, queued: true, notConfigured: !sb, message: msg };
+    return { submitted: false, queued: true, notConfigured: false, message: msg };
   };
 
-  if (!sb) return queueOffline('NO_SUPABASE');
+  if (!apiClient.getToken()) return queueOffline('NOT_AUTHENTICATED');
 
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) return queueOffline('NOT_AUTHENTICATED');
-  const user = session.user;
-
-  // 1) Upload original documents (private bucket).
-  const uploaded: { path: string; name: string; size: number }[] = [];
+  // 1) Create the expense.
+  let expenseId: string;
   try {
-    for (let i = 0; i < draft.localUris.length; i++) {
-      const uri = draft.localUris[i];
-      const name = `exp_${draft.id}_${i}.jpg`;
-      const blob = await fileToBlob(uri);
-      const { data, error } = await sb.storage
-        .from('expense-documents')
-        .upload(name, blob, { contentType: 'image/jpeg', upsert: false });
-      if (error) throw error;
-      uploaded.push({ path: `expense-documents/${data.path}`, name, size: blob.size });
+    const res = await apiClient.createExpense(payload, idempotencyKey);
+    if (res.error) return queueOffline(res.error);
+    expenseId = res.data?.id as string;
+    if (!expenseId) return queueOffline('EXPENSE_NO_ID');
+  } catch (err: any) {
+    // Network/API failure -> preserve the scan and replay later.
+    return queueOffline(err?.message || 'SUBMIT_FAILED');
+  }
+
+  // 1.5) Persist the receipt binary server-side (ISSUE-013/ISSUE-014).
+  //    AuthN upload -> blob storage -> PostgreSQL document metadata. The returned
+  //    documentId attaches the OCR job to the materialized Document row. Best
+  //    effort: if the upload fails the expense is already committed and the local
+  //    copy is retained, so a lost receipt can never occur.
+  let documentId: string | undefined;
+  let storageUrl: string | undefined;
+  const firstUri = draft.localUris[0];
+  if (firstUri) {
+    try {
+      const up = await apiClient.uploadFile(
+        {
+          uri: firstUri,
+          type: 'image/jpeg',
+          name: `exp_${draft.id}_0.jpg`,
+        },
+        'expense',
+        expenseId,
+        { documentType: draft.documentType, title: `exp_${draft.id}_0.jpg` },
+      );
+      if (!up.error && up.data?.documentId) {
+        documentId = up.data.documentId;
+        storageUrl = up.data.url;
+      }
+    } catch (err: any) {
+      console.warn('Receipt upload failed for expense', expenseId, err?.message);
     }
-  } catch (uploadErr: any) {
-    // Upload failed (offline or storage/bucket not provisioned) -> queue offline.
-    return queueOffline(uploadErr?.message || 'UPLOAD_FAILED');
   }
 
-  // 2) Insert expense.
-  const payload = buildExpensePayload(draft, idempotencyKey);
-  if (uploaded[0]) payload.receipt_photo_url = uploaded[0].path;
-  const { data: expData, error: expErr } = await sb
-    .from('expenses')
-    .insert(payload)
-    .select('id')
-    .single();
-  if (expErr) return queueOffline(expErr.message);
-  const expenseId = expData?.id as string;
-
-  // 3) Insert linked documents with OCR metadata.
-  for (const up of uploaded) {
-    const doc: Partial<ExpenseDocument> & { low_confidence_fields: string[] } = {
-      expense_id: expenseId,
-      document_type: draft.documentType,
-      original_image_url: up.path,
-      file_name: up.name,
-      mime_type: 'image/jpeg',
-      size_bytes: up.size,
-      ocr_result: draft.ocr,
-      raw_ocr_result: draft.ocr,
-      normalized_fields: draft.ocr,
-      document_state: draft.ocr ? 'needs_review' : 'uploaded',
-      ocr_status: draft.ocr ? 'needs_review' : 'skipped',
-      ocr_provider: draft.ocr?.provider,
-      low_confidence_fields: draft.ocr ? getLowConfidenceFields(draft.ocr) : [],
-      uploaded_by: user.id,
-    };
-    await sb.from('expense_documents').insert(doc);
+  // 2) Link the captured document + OCR result to the expense.
+  //    POST /api/ocr/jobs persists the already-extracted result, so the OCR
+  //    provider is NOT re-invoked at submit time (an OCR outage can therefore
+  //    never block expense submission).
+  if (draft.ocr || draft.localUris.length > 0) {
+    try {
+      await apiClient.createOcrJob({
+        expenseId,
+        documentId,
+        provider: draft.ocr?.provider || 'PADDLE_OCR',
+        correlationId: `mobile_receipt_${draft.id}`,
+        rawPayload: {
+          source: 'MOBILE_RECEIPT_SCAN',
+          document_type: draft.documentType,
+          document_state: draft.ocr ? 'needs_review' : 'uploaded',
+          server_document_id: documentId || null,
+          storage_url: storageUrl || null,
+          ocr_result: draft.ocr || null,
+          low_confidence_fields: draft.ocr ? getLowConfidenceFields(draft.ocr) : [],
+          local_files: draft.localUris.map((uri, i) => ({
+            index: i,
+            file_name: `exp_${draft.id}_${i}.jpg`,
+            mime_type: 'image/jpeg',
+            local_uri: uri,
+          })),
+        },
+      });
+    } catch (err: any) {
+      // The expense is already committed. A failed document link must neither
+      // roll it back nor re-queue it (that would duplicate the expense).
+      console.warn('OCR job link failed for expense', expenseId, err?.message);
+    }
   }
 
-  // 4) Clean up local copies + draft.
-  for (const uri of draft.localUris) await removeLocalImage(uri);
+  // 3) Clear the draft. Local images are retained (see doc comment above).
   await deleteDraft(draft.id);
   await markSubmitted(idempotencyKey);
   return { submitted: true, queued: false, notConfigured: false, expenseId };

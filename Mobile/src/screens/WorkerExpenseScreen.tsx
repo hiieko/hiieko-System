@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { Site, t } from '@solar/shared';
+import { Project, t } from '@solar/shared';
 import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
 import { apiClient } from '../services/apiClient';
+import { toBackendExpenseCategory, toBackendPaymentMethod } from '../services/expenseMapping';
+
 import { PageIntro } from '../components/PageIntro';
 import { ReceiptScanFlow, ReceiptScanFlowProps } from './ReceiptScanFlow';
 
@@ -10,10 +12,10 @@ const CATS = ['fuel','accommodation','food','transport','parking','tolls','mater
 const CAT_LABELS: Record<string,string> = { fuel:'Combustibil', accommodation:'Cazare', food:'Mancare', transport:'Transport', parking:'Parcare', tolls:'Taxe drum', materials:'Materiale', tools:'Scule', equipment:'Echipamente', other:'Altele' };
 const PAYS = [{v:'personal',l:'Platit personal'},{v:'company_card',l:'Card companie'},{v:'company_cash',l:'Cash avans'},{v:'other',l:'Alta'}];
 
-interface Props { user: { id: string; full_name: string }; sites: Site[]; isOffline: boolean; locale?: 'ro' | 'en'; }
+interface Props { user: { id: string; full_name: string }; projects: Project[]; isOffline: boolean; locale?: 'ro' | 'en'; }
 
-export function WorkerExpenseScreen({ user, sites, isOffline, locale = 'ro' }: Props) {
-  const [siteId, setSiteId] = useState(sites[0]?.id || '');
+export function WorkerExpenseScreen({ user, projects, isOffline, locale = 'ro' }: Props) {
+  const [projectId, setProjectId] = useState(projects[0]?.id || '');
   const [category, setCategory] = useState('fuel');
   const [payMethod, setPayMethod] = useState('personal');
   const [amount, setAmount] = useState('');
@@ -29,9 +31,9 @@ export function WorkerExpenseScreen({ user, sites, isOffline, locale = 'ro' }: P
       const now = new Date().toISOString();
       // Map to backend CreateExpenseDto format
       const expensePayload = {
-        projectId: siteId,
-        category: category as any,
-        paymentMethod: payMethod as any,
+        projectId: projectId,
+        category: toBackendExpenseCategory(category),
+        paymentMethod: toBackendPaymentMethod(payMethod),
         amount: Number(amount),
         currency: 'RON',
         expenseDate: now.split('T')[0],
@@ -94,9 +96,9 @@ export function WorkerExpenseScreen({ user, sites, isOffline, locale = 'ro' }: P
       </View>
       <View style={s.card}>
         <Text style={s.ct}>SANTIER</Text>
-        <View style={s.chips}>{sites.map(st => (
-          <TouchableOpacity key={st.id} style={[s.chip, siteId===st.id && s.chipA]} onPress={() => setSiteId(st.id)}>
-            <Text style={[s.chipT, siteId===st.id && s.chipTA]}>{st.name}</Text>
+        <View style={s.chips}>{projects.map(st => (
+          <TouchableOpacity key={st.id} style={[s.chip, projectId===st.id && s.chipA]} onPress={() => setProjectId(st.id)}>
+            <Text style={[s.chipT, projectId===st.id && s.chipTA]}>{st.name}</Text>
           </TouchableOpacity>))}</View>
       </View>
       <View style={s.card}>
@@ -122,8 +124,8 @@ export function WorkerExpenseScreen({ user, sites, isOffline, locale = 'ro' }: P
         onClose={() => setScannerVisible(false)}
         onComplete={handleScanComplete}
         userId={user.id}
-        sites={sites}
-        defaultSiteId={siteId}
+        projects={projects}
+        defaultProjectId={projectId}
         locale={locale}
       />
     </>

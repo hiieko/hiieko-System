@@ -71,7 +71,7 @@ async function prepLegacySchema(client: pg.Client): Promise<void> {
     "  legacy staging schema created (empty)      [note]\n" +
       "    Stage the Supabase dump into this schema, e.g:\n" +
       "      pg_restore --schema=legacy -d <target-db> <supabase-dump>\n" +
-      "    or apply supabase/full_setup.sql with search_path=legacy."
+      "    or apply database/archive/supabase-migrations/full_setup.sql with search_path=legacy."
   );
 }
 

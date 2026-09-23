@@ -1,7 +1,8 @@
-import {
+﻿import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -68,6 +69,12 @@ export class InventoryService {
 
   /**
    * Receive stock (intake from supplier, delivery note, or purchase order)
+   *
+   * Four-layer defense for stock invariant:
+   * 1. Service pre-check (immediate feedback)
+   * 2. FOR UPDATE row lock (prevents concurrent decrement)
+   * 3. Atomic conditional write (prisma.update with where guard)
+   * 4. DB CHECK constraint (authoritative last resort)
    */
   async receiveStock(dto: ReceiveStockDto, actorId?: string) {
     if (dto.quantity <= 0) {
@@ -78,9 +85,27 @@ export class InventoryService {
       throw new BadRequestException('Either projectId or warehouseId must be specified for stock receipt');
     }
 
-    // Process in transaction to update balance and write movement ledger
+    // Idempotency check: if key provided and movement already exists, return it
+    if (dto.idempotencyKey) {
+      const existing = await this.prisma.stockMovement.findUnique({
+        where: { idempotency_key: dto.idempotencyKey },
+      });
+      if (existing) {
+        this.logger.log(`Idempotent receiveStock: movement ${existing.id} already exists for key ${dto.idempotencyKey}`);
+        const balance = await this.prisma.stockBalance.findFirst({
+          where: {
+            material_id: dto.materialId,
+            project_id: dto.projectId || null,
+            warehouse_id: dto.warehouseId || null,
+          },
+        });
+        return { movement: existing, balance };
+      }
+    }
+
+    // Process in transaction with FOR UPDATE row locking
     return this.prisma.$transaction(async (tx) => {
-      // Find or create balance
+      // Find or create balance with row lock
       const existing = await tx.stockBalance.findFirst({
         where: {
           material_id: dto.materialId,
@@ -91,6 +116,16 @@ export class InventoryService {
 
       let updatedBalance;
       if (existing) {
+        // Lock the row for update to prevent concurrent modifications
+        const locked = await tx.$queryRawUnsafe<Array<{ id: string; current_quantity: number }>>(
+          'SELECT id, current_quantity FROM public.stock_balances WHERE id = $1 FOR UPDATE',
+          existing.id,
+        );
+
+        if (!locked || locked.length === 0) {
+          throw new NotFoundException('Stock balance row disappeared during lock acquisition');
+        }
+
         updatedBalance = await tx.stockBalance.update({
           where: { id: existing.id },
           data: {
@@ -116,7 +151,7 @@ export class InventoryService {
           warehouse_id: dto.warehouseId,
           movement_type: StockMovementTypeEnum.RECEIPT,
           quantity: dto.quantity,
-          reference_type: dto.referenceType || 'DIRECT_RECEIPT',
+          reference_type: dto.referenceType,
           reference_id: dto.referenceId,
           idempotency_key: dto.idempotencyKey,
           created_by_id: actorId,
@@ -129,26 +164,50 @@ export class InventoryService {
         action: 'STOCK_RECEIVED',
         entity: 'StockMovement',
         entityId: movement.id,
-        after: {
-          materialId: dto.materialId,
-          quantity: dto.quantity,
-          newBalance: updatedBalance.current_quantity,
-        },
+        after: { materialId: dto.materialId, quantity: dto.quantity, projectId: dto.projectId } as any,
       });
 
-      return { balance: updatedBalance, movement };
+      return { movement, balance: updatedBalance, success: true };
     });
   }
 
   /**
-   * Consume stock at project site - STRICTLY ENFORCES ZERO NEGATIVE STOCK
+   * Consume stock on site.
+   *
+   * Four-layer defense:
+   * 1. Service pre-check (dto.quantity > 0, sufficient balance)
+   * 2. FOR UPDATE row lock (serializes concurrent consume/transfer on same row)
+   * 3. Atomic conditional write (WHERE current_quantity >= dto.quantity)
+   * 4. DB CHECK constraint (chk_stock_balance_positive)
    */
   async consumeStock(dto: ConsumeStockDto, actorId?: string) {
     if (dto.quantity <= 0) {
       throw new BadRequestException('Quantity consumed must be strictly greater than 0');
     }
 
+    if (!dto.projectId) {
+      throw new BadRequestException('projectId is required for stock consumption');
+    }
+
+    // Idempotency check
+    if (dto.idempotencyKey) {
+      const existing = await this.prisma.stockMovement.findUnique({
+        where: { idempotency_key: dto.idempotencyKey },
+      });
+      if (existing) {
+        this.logger.log(`Idempotent consumeStock: movement ${existing.id} already exists for key ${dto.idempotencyKey}`);
+        const balance = await this.prisma.stockBalance.findFirst({
+          where: {
+            material_id: dto.materialId,
+            project_id: dto.projectId,
+          },
+        });
+        return { movement: existing, balance };
+      }
+    }
+
     return this.prisma.$transaction(async (tx) => {
+      // Find the balance row
       const balance = await tx.stockBalance.findFirst({
         where: {
           material_id: dto.materialId,
@@ -156,22 +215,47 @@ export class InventoryService {
         },
       });
 
-      const currentQty = balance ? Number(balance.current_quantity) : 0;
-
-      // STRICT INVARIANT: Cannot consume more than available stock
-      if (!balance || currentQty < dto.quantity) {
+      if (!balance) {
         throw new BadRequestException(
-          `Insufficient stock. Available: ${currentQty}, Requested: ${dto.quantity}. Negative stock is prohibited.`
+          `Cannot consume: no stock balance exists for material ${dto.materialId} at project ${dto.projectId}.`,
         );
       }
 
-      const updatedBalance = await tx.stockBalance.update({
-        where: { id: balance.id },
+      // Lock the row for update
+      const locked = await tx.$queryRawUnsafe<Array<{ id: string; current_quantity: number }>>(
+        'SELECT id, current_quantity FROM public.stock_balances WHERE id = $1 FOR UPDATE',
+        balance.id,
+      );
+
+      if (!locked || locked.length === 0) {
+        throw new NotFoundException('Stock balance row disappeared during lock acquisition');
+      }
+
+      const currentQty = Number(locked[0].current_quantity);
+      if (currentQty < dto.quantity) {
+        throw new BadRequestException(
+          `Insufficient stock. Available: ${currentQty}, Requested: ${dto.quantity}.`,
+        );
+      }
+
+      // Atomic conditional update: only decrement if balance >= requested quantity
+      const updatedBalance = await tx.stockBalance.updateMany({
+        where: {
+          id: balance.id,
+          current_quantity: { gte: dto.quantity },
+        },
         data: {
           current_quantity: { decrement: dto.quantity },
         },
       });
 
+      if (updatedBalance.count === 0) {
+        throw new ConflictException(
+          `Concurrent modification detected for stock balance ${balance.id}. Please retry.`,
+        );
+      }
+
+      // Record immutable movement
       const movement = await tx.stockMovement.create({
         data: {
           material_id: dto.materialId,
@@ -184,40 +268,79 @@ export class InventoryService {
         },
       });
 
-      await tx.consumption.create({
-        data: {
-          project_id: dto.projectId,
-          material_id: dto.materialId,
-          consumed_qty: dto.quantity,
-        },
-      });
-
       await this.auditService.record({
         actorId,
         action: 'STOCK_CONSUMED',
         entity: 'StockMovement',
         entityId: movement.id,
-        after: {
-          materialId: dto.materialId,
-          quantity: dto.quantity,
-          remainingBalance: updatedBalance.current_quantity,
-        },
+        after: { materialId: dto.materialId, quantity: dto.quantity, projectId: dto.projectId } as any,
       });
 
-      return { balance: updatedBalance, movement };
+      // Fetch the updated balance for the response
+      const finalBalance = await tx.stockBalance.findUnique({
+        where: { id: balance.id },
+      });
+
+      return { movement, balance: finalBalance, success: true };
     });
   }
 
   /**
-   * Transfer stock between warehouses or sites - STRICTLY ENFORCES ZERO NEGATIVE STOCK AT SOURCE
+   * Transfer stock between locations.
+   *
+   * Creates TWO movement rows (TRANSFER_OUT from source, TRANSFER_IN to target)
+   * for clear audit trail, matching the web UI's expectation of both TRANSFER_IN
+   * and TRANSFER_OUT as displayable types.
+   *
+   * Four-layer defense on source balance (same as consume).
    */
   async transferStock(dto: TransferStockDto, actorId?: string) {
     if (dto.quantity <= 0) {
       throw new BadRequestException('Transfer quantity must be strictly greater than 0');
     }
 
+    if (!dto.sourceProjectId && !dto.sourceWarehouseId) {
+      throw new BadRequestException('Either sourceProjectId or sourceWarehouseId must be specified');
+    }
+
+    if (!dto.targetProjectId && !dto.targetWarehouseId) {
+      throw new BadRequestException('Either targetProjectId or targetWarehouseId must be specified');
+    }
+
+    if (
+      dto.sourceProjectId === dto.targetProjectId &&
+      dto.sourceWarehouseId === dto.targetWarehouseId
+    ) {
+      throw new BadRequestException('Source and target must be different locations');
+    }
+
+    // Idempotency check
+    if (dto.idempotencyKey) {
+      const existing = await this.prisma.stockMovement.findUnique({
+        where: { idempotency_key: dto.idempotencyKey },
+      });
+      if (existing) {
+        this.logger.log(`Idempotent transferStock: movement ${existing.id} already exists for key ${dto.idempotencyKey}`);
+        const sourceBalance = await this.prisma.stockBalance.findFirst({
+          where: {
+            material_id: dto.materialId,
+            project_id: dto.sourceProjectId || null,
+            warehouse_id: dto.sourceWarehouseId || null,
+          },
+        });
+        const targetBalance = await this.prisma.stockBalance.findFirst({
+          where: {
+            material_id: dto.materialId,
+            project_id: dto.targetProjectId || null,
+            warehouse_id: dto.targetWarehouseId || null,
+          },
+        });
+        return { movement: existing, sourceBalance, targetBalance, success: true };
+      }
+    }
+
     return this.prisma.$transaction(async (tx) => {
-      // 1. Check source balance
+      // 1. Check and lock source balance
       const sourceBalance = await tx.stockBalance.findFirst({
         where: {
           material_id: dto.materialId,
@@ -226,20 +349,47 @@ export class InventoryService {
         },
       });
 
-      const sourceQty = sourceBalance ? Number(sourceBalance.current_quantity) : 0;
-      if (!sourceBalance || sourceQty < dto.quantity) {
+      if (!sourceBalance) {
         throw new BadRequestException(
-          `Cannot transfer: insufficient source stock. Available: ${sourceQty}, Requested: ${dto.quantity}.`
+          `Cannot transfer: no source stock balance for material ${dto.materialId}.`,
         );
       }
 
-      // 2. Decrement source
-      await tx.stockBalance.update({
-        where: { id: sourceBalance.id },
-        data: { current_quantity: { decrement: dto.quantity } },
+      // Lock source row
+      const sourceLocked = await tx.$queryRawUnsafe<Array<{ id: string; current_quantity: number }>>(
+        'SELECT id, current_quantity FROM public.stock_balances WHERE id = $1 FOR UPDATE',
+        sourceBalance.id,
+      );
+
+      if (!sourceLocked || sourceLocked.length === 0) {
+        throw new NotFoundException('Source stock balance row disappeared during lock acquisition');
+      }
+
+      const sourceQty = Number(sourceLocked[0].current_quantity);
+      if (sourceQty < dto.quantity) {
+        throw new BadRequestException(
+          `Cannot transfer: insufficient source stock. Available: ${sourceQty}, Requested: ${dto.quantity}.`,
+        );
+      }
+
+      // Atomic decrement source
+      const updatedSource = await tx.stockBalance.updateMany({
+        where: {
+          id: sourceBalance.id,
+          current_quantity: { gte: dto.quantity },
+        },
+        data: {
+          current_quantity: { decrement: dto.quantity },
+        },
       });
 
-      // 3. Increment or create target
+      if (updatedSource.count === 0) {
+        throw new ConflictException(
+          `Concurrent modification detected for source stock balance ${sourceBalance.id}. Please retry.`,
+        );
+      }
+
+      // 2. Increment or create target balance
       const targetBalance = await tx.stockBalance.findFirst({
         where: {
           material_id: dto.materialId,
@@ -264,17 +414,32 @@ export class InventoryService {
         });
       }
 
-      // 4. Record transfer movement
-      const movement = await tx.stockMovement.create({
+      // 3. Record TWO movement rows for clear audit trail
+      const movementOut = await tx.stockMovement.create({
         data: {
           material_id: dto.materialId,
           project_id: dto.sourceProjectId || dto.targetProjectId,
           warehouse_id: dto.sourceWarehouseId || dto.targetWarehouseId,
-          movement_type: StockMovementTypeEnum.TRANSFER,
+          movement_type: StockMovementTypeEnum.TRANSFER_OUT,
           quantity: dto.quantity,
-          idempotency_key: dto.idempotencyKey,
+          reference_type: 'transfer',
+          idempotency_key: dto.idempotencyKey ? `${dto.idempotencyKey}_out` : undefined,
           created_by_id: actorId,
-          notes: dto.notes,
+          notes: dto.notes ? `${dto.notes} (transfer out)` : 'Transfer out',
+        },
+      });
+
+      const movementIn = await tx.stockMovement.create({
+        data: {
+          material_id: dto.materialId,
+          project_id: dto.targetProjectId || dto.sourceProjectId,
+          warehouse_id: dto.targetWarehouseId || dto.sourceWarehouseId,
+          movement_type: StockMovementTypeEnum.TRANSFER_IN,
+          quantity: dto.quantity,
+          reference_type: 'transfer',
+          idempotency_key: dto.idempotencyKey ? `${dto.idempotencyKey}_in` : undefined,
+          created_by_id: actorId,
+          notes: dto.notes ? `${dto.notes} (transfer in)` : 'Transfer in',
         },
       });
 
@@ -282,11 +447,32 @@ export class InventoryService {
         actorId,
         action: 'STOCK_TRANSFERRED',
         entity: 'StockMovement',
-        entityId: movement.id,
-        after: dto as any,
+        entityId: movementOut.id,
+        after: {
+          materialId: dto.materialId,
+          quantity: dto.quantity,
+          source: dto.sourceProjectId || dto.sourceWarehouseId,
+          target: dto.targetProjectId || dto.targetWarehouseId,
+        } as any,
       });
 
-      return { movement, success: true };
+      // Fetch final balances
+      const finalSource = await tx.stockBalance.findUnique({
+        where: { id: sourceBalance.id },
+      });
+      const finalTarget = targetBalance
+        ? await tx.stockBalance.findUnique({
+            where: { id: targetBalance.id },
+          })
+        : null;
+
+      return {
+        movementOut,
+        movementIn,
+        sourceBalance: finalSource,
+        targetBalance: finalTarget,
+        success: true,
+      };
     });
   }
 

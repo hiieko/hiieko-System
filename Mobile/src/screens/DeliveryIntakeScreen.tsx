@@ -9,14 +9,14 @@ import {
   Alert,
   ActivityIndicator 
 } from 'react-native';
-import { DeliveryNote, Material, Site } from '@solar/shared';
+import { DeliveryNote, Material, Project } from '@solar/shared';
 import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
 import { apiClient } from '../services/apiClient';
 import { PageIntro } from '../components/PageIntro';
 
 interface Props {
   user: { id: string; full_name: string };
-  site: Site;
+  site: Project;
   materialsCatalog: Material[];
   isOffline: boolean;
   locale?: 'ro' | 'en';

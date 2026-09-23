@@ -1,7 +1,7 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IOcrProvider, OcrExtractionResult, OcrProviderConfig } from '../interfaces/ocr-provider.interface';
-import FormData from 'form-data';
+import * as FormData from 'form-data';
 
 interface PaddleOcrResponse {
   correlation_id: string;

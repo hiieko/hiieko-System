@@ -32,11 +32,13 @@ Effort: ~2 weeks · Depends: R0.
 |---|---|---|
 | R2.1 | Sites/teams/assignments → `projects`/`project_members` (DB map §A.2) with dual-write + drift-checker | dual-write verified 48h no drift |
 | R2.2 | Attendance module (clock-in/out, shared calc server-side, geofence verdict) | time_logs written by API; web matrix live |
-| R2.3 | Stock module (balances/movements/avize; DB invariants intact) | mobile delivery + `/stocuri` live through API |
+| R2.3 | Stock module (balances/movements/avize; DB invariants intact) | ✅ **E2E VERIFIED** — 30/30 live tests; four-layer defense; per-project aviz; atomic posting |
 | R2.4 | Daily reports module (header+items+approvals table) | report submit & approve E2E |
 | R2.5 | Notifications module (read/mark; later channels) + audit writes | center feeds from API |
 
 Effort: ~3 weeks · Depends: R1.
+
+> **Architecture Decision (2026-09-23) — dual-write scope:** The "(dual-write)" label on this milestone is a *transition-time coexistence* mechanism, not a permanent requirement. PostgreSQL/NestJS is the authoritative target; there is no live Supabase project/keys and no `legacy.*` schema in dev, so there is no active legacy consumer to mirror to. Accordingly: R2.2/R2.4 legacy helpers (`upsertLegacyTimeLog`, `upsertLegacyDailyReport`) are kept but annotated `⚠️ TEMP — REMOVE AT R7 CUT-OVER`; **R2.3 Stock and R2.5 Notifications are implemented PostgreSQL-authoritative with NO legacy dual-write.** Legacy `legacy.*` mirroring is decommissioned at Milestone R7. See `PROGRESS.md` → Architecture Decision.
 
 ## Milestone R3 — Expenses, approvals, OCR jobs, offline persistence
 | Package | Tasks | Exit criteria |

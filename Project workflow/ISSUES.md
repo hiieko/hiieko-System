@@ -12,22 +12,21 @@ Last Updated: 2026-09-23 (Repository hygiene checkpoint — R2.1 P2 Mobile scree
 # Open Issues
 
 ## ISSUE-016 — Backend Jest has pre-existing Babel/ts-jest configuration issue
-**Status:** `OPEN` (pre-existing, not introduced by R2.x changes)
+**Status:** ✅ `RESOLVED` (2026-09-23 — R2.1 P2 checkpoint)
 
 ### Description
-Running `npm run test --workspace=backend` triggers a Jest configuration error
-related to the Babel/ts-jest transformer chain. Not all test suites can execute.
-The 4 suites that do run pass (stock.service.spec.ts, task-dependency.service.spec.ts,
-calculations.test.ts, tutorials.test.ts).
+Running `npm run test --workspace=backend` previously triggered a Jest configuration
+error. As of the R2.1 P2 checkpoint, the issue has been resolved: `npm run test`
+(which runs `jest --config jest.config.json`) passes all 12 test suites and 69 tests
+with exit 0.
 
-### Impact
-Cannot run the full backend test suite. All other gates (typecheck ×4, db:verify,
-web build, backend build) pass cleanly.
-
-### Next steps
-To be investigated as part of a test-infrastructure improvement pass.
-Not blocking R2.1 P3 (Web) — those changes are type-only and test-exercised via
-typecheck, not Jest.
+### Resolution
+The configuration issue was resolved naturally during the R2.1 P2 implementation
+and Supabase runtime removal. The exact project command (`npm run test`) now
+reports:
+- **Test Suites:** 12 passed, 12 total
+- **Tests:** 69 passed, 69 total
+- **Exit code:** 0
 
 ---
 

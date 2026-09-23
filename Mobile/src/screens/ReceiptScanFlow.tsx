@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, CameraCapturedPicture } from 'expo-camera';
 import * as FileSystem from 'expo-file-system';
 import {
-  Site,
+  Project,
   OcrResult,
   ExpenseCategory,
   PaymentMethod,
@@ -63,7 +63,7 @@ interface ReviewFields {
   vat: string;
   currency: string;
   category: ExpenseCategory;
-  siteId: string;
+  projectId: string;
   purpose: string;
   paymentMethod: PaymentMethod;
 }
@@ -73,8 +73,8 @@ export interface ReceiptScanFlowProps {
   onClose: () => void;
   onComplete: (draft: ReceiptDraft, outcome: SubmitOutcome) => void;
   userId: string;
-  sites: Site[];
-  defaultSiteId?: string;
+  projects: Project[];
+  defaultProjectId?: string;
   locale?: 'ro' | 'en';
 }
 
@@ -83,8 +83,8 @@ export function ReceiptScanFlow({
   onClose,
   onComplete,
   userId,
-  sites,
-  defaultSiteId,
+  projects,
+  defaultProjectId,
   locale = 'ro',
 }: ReceiptScanFlowProps) {
   const cameraRef = useRef<CameraView>(null);
@@ -105,7 +105,7 @@ export function ReceiptScanFlow({
 
   const [fields, setFields] = useState<ReviewFields>({
     supplier: '', cui: '', docNumber: '', docDate: '', total: '', vat: '',
-    currency: 'RON', category: 'fuel', siteId: defaultSiteId ?? sites[0]?.id ?? '',
+    currency: 'RON', category: 'fuel', projectId: defaultProjectId ?? projects[0]?.id ?? '',
     purpose: '', paymentMethod: 'personal',
   });
 
@@ -124,7 +124,7 @@ export function ReceiptScanFlow({
     setDoneMessage('');
     setFields({
       supplier: '', cui: '', docNumber: '', docDate: '', total: '', vat: '',
-      currency: 'RON', category: 'fuel', siteId: defaultSiteId ?? sites[0]?.id ?? '',
+      currency: 'RON', category: 'fuel', projectId: defaultProjectId ?? projects[0]?.id ?? '',
       purpose: '', paymentMethod: 'personal',
     });
   };
@@ -229,7 +229,7 @@ export function ReceiptScanFlow({
     const draft: ReceiptDraft = {
       id: `draft_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       userId,
-      siteId: fields.siteId,
+      projectId: fields.projectId,
       localUris,
       documentType: ocr?.document_type === 'FACTURA' ? 'factura' : 'bon_fiscal',
       ocr: ocr ?? undefined,
@@ -356,12 +356,12 @@ export function ReceiptScanFlow({
         ))}
       </View>
 
-      <Text style={styles.sectionLabel}>{t('expenses.site', locale)}</Text>
+      <Text style={styles.sectionLabel}>{t('expenses.Project', locale)}</Text>
       <View style={styles.chips}>
-        {sites.map((st) => (
-          <TouchableOpacity key={st.id} style={[styles.chip, fields.siteId === st.id && styles.chipActive]}
-            onPress={() => setFields((f) => ({ ...f, siteId: st.id }))} accessibilityRole="button">
-            <Text style={[styles.chipText, fields.siteId === st.id && styles.chipTextActive]}>{st.name}</Text>
+        {projects.map((st) => (
+          <TouchableOpacity key={st.id} style={[styles.chip, fields.projectId === st.id && styles.chipActive]}
+            onPress={() => setFields((f) => ({ ...f, projectId: st.id }))} accessibilityRole="button">
+            <Text style={[styles.chipText, fields.projectId === st.id && styles.chipTextActive]}>{st.name}</Text>
           </TouchableOpacity>
         ))}
       </View>

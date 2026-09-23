@@ -52,6 +52,36 @@ export interface UserProfile {
   updated_at: string;
 }
 
+// ── Project (authoritative entity — R2.1) ────────────────────────────────
+export interface Project {
+  id: string;
+  organization_id: string;
+  name: string;
+  code: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  geofence_radius_meters: number;
+  installed_capacity_mwp?: number;
+  status: string;
+  start_date?: string;
+  target_end_date?: string;
+  budget_total?: number;
+  currency?: string;
+  manager_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectMember {
+  id: string;
+  project_id: string;
+  user_id: string;
+  role: UserRole;
+  assigned_at: string;
+}
+
 export interface Site {
   id: string;
   name: string;
@@ -70,6 +100,7 @@ export interface Team {
   id: string;
   name: string;
   site_id?: string;
+  project_id?: string;
   team_leader_id: string;
   member_ids: string[];
   created_at: string;
@@ -80,6 +111,7 @@ export interface TimeLog {
   id: string;
   user_id: string;
   site_id: string;
+  project_id?: string;
   date: string; // YYYY-MM-DD
   check_in: string; // ISO 8601
   check_out?: string | null; // ISO 8601
@@ -240,6 +272,7 @@ export interface SiteStock {
 export interface StockMovement {
   id: string;
   site_id: string;
+  project_id?: string;
   material_id: string;
   quantity: number; // positive for additions, negative for consumptions
   movement_type: StockMovementType;
@@ -257,6 +290,7 @@ export interface AuditLog {
   entity_type: string;
   entity_id: string;
   site_id?: string;
+  project_id?: string;
   details?: Record<string, unknown>;
   ip_address?: string;
   created_at: string;
@@ -320,6 +354,7 @@ export interface Expense {
   id: string;
   user_id: string;
   site_id: string;
+  project_id?: string;
   category: ExpenseCategory;
   status: ExpenseStatus;
   document_type: DocumentType;
@@ -469,6 +504,7 @@ export interface Warehouse {
   name: string;
   code: string;
   site_id?: string;
+  project_id?: string;
   address?: string;
   manager_id?: string;
   is_active: boolean;
@@ -481,6 +517,7 @@ export interface StockReceipt {
   aviz_number: string;
   supplier: string;
   site_id: string;
+  project_id?: string;
   warehouse_id?: string;
   receiver_user_id: string;
   delivery_date: string;
@@ -512,6 +549,7 @@ export interface StockConsumption {
   daily_report_id: string;
   material_id: string;
   site_id: string;
+  project_id?: string;
   quantity: number;
   consumed_by_user_id: string;
   is_approved: boolean;
@@ -528,6 +566,7 @@ export interface SiteAssignment {
   id: string;
   user_id: string;
   site_id: string;
+  project_id?: string;
   role: UserRole;
   start_date: string;
   end_date?: string;
@@ -544,6 +583,7 @@ export interface DashboardStats {
   active_employees: number;
   pending_applications: number;
   active_sites: number;
+  active_projects: number;
   present_today: number;
   absent_today: number;
   overtime_today_hours: number;
@@ -562,6 +602,8 @@ export interface DashboardStats {
 export interface SiteCostSummary {
   site_id: string;
   site_name: string;
+  project_id?: string;
+  project_name?: string;
   labor_hours: number;
   overtime_hours: number;
   employee_expenses: number;

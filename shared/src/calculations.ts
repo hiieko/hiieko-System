@@ -43,6 +43,9 @@ export function isWithinSiteGeofence(
   };
 }
 
+/** @alias isWithinSiteGeofence — canonical name for Project-based geofence. */
+export const isWithinProjectGeofence = isWithinSiteGeofence;
+
 export interface AttendanceCalculationResult {
   totalMinutesWorked: number;
   normalHoursWorked: number;

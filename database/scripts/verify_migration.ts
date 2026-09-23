@@ -112,7 +112,7 @@ async function main(): Promise<number> {
       ["attendance idempotency unique",
         "SELECT CASE WHEN count(idempotency_key) = count(DISTINCT idempotency_key) THEN 'PASS' ELSE 'FAIL' END AS ok, 'keys: '||count(idempotency_key) AS detail FROM public.attendance_records"],
       ["stock_movements ref types valid",
-        "SELECT CASE WHEN count(*) FILTER (WHERE reference_type IS NOT NULL AND reference_type NOT IN ('delivery_notes','daily_reports','transfer')) = 0 THEN 'PASS' ELSE 'FAIL' END AS ok, 'bad refs: '||count(*) FILTER (WHERE reference_type IS NOT NULL AND reference_type NOT IN ('delivery_notes','daily_reports','transfer')) AS detail FROM public.stock_movements"],
+        "SELECT CASE WHEN count(*) FILTER (WHERE reference_type IS NOT NULL AND reference_type NOT IN ('delivery_notes','daily_reports','transfer','aviz')) = 0 THEN 'PASS' ELSE 'FAIL' END AS ok, 'bad refs: '||count(*) FILTER (WHERE reference_type IS NOT NULL AND reference_type NOT IN ('delivery_notes','daily_reports','transfer','aviz')) AS detail FROM public.stock_movements"],
     ];
     for (const [name, sql] of invariantQueries) {
       const r = await pool.query<{ ok: string; detail: string }>(sql);

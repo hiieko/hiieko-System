@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
@@ -15,11 +15,21 @@ export class NotificationsController {
 
   @Get()
   @ApiOperation({ summary: 'Get current user notification inbox' })
+  @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number })
   async getMyNotifications(
     @CurrentUser() user: AuthenticatedUser,
     @Query('unreadOnly') unreadOnly = 'false',
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('pageSize', new DefaultValuePipe(50), ParseIntPipe) pageSize: number,
   ) {
-    return this.notificationsService.getUserNotifications(user.id, unreadOnly === 'true');
+    return this.notificationsService.getUserNotifications(
+      user.id,
+      unreadOnly === 'true',
+      page,
+      pageSize,
+    );
   }
 
   @Post(':id/read')

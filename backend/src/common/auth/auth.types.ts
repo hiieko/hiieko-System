@@ -19,9 +19,6 @@ export interface JwtPayload {
     full_name?: string;
     role?: string;
   };
-  app_metadata?: {
-    role?: string;
-  };
   iat?: number;
   exp?: number;
 }

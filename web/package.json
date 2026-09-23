@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@solar/shared": "*",
-    "@supabase/supabase-js": "^2.43.4",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.395.0",

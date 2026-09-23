@@ -4,9 +4,37 @@ import { OfflineSyncQueueItem, TimeLog, DailyReport, DeliveryNote } from '@solar
 const STORAGE_KEYS = {
   OFFLINE_QUEUE: '@solar:offline_queue',
   ACTIVE_TIME_LOG: '@solar:active_time_log',
-  LOCAL_SITES: '@solar:local_sites',
+  LOCAL_SITES: '@solar:local_projects',
+  LOCAL_PROJECTS: '@solar:local_projects',
   LOCAL_MATERIALS: '@solar:local_materials',
 };
+
+/** Legacy key for backward compatibility during upgrade. */
+const LEGACY_LOCAL_SITES_KEY = '@solar:local_sites';
+
+/** Read projects from storage, falling back to the legacy key. */
+export async function getLocalProjects<T = unknown>(): Promise<T | null> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.LOCAL_PROJECTS);
+    if (raw) return JSON.parse(raw) as T;
+    // Fallback: read from legacy key
+    const legacyRaw = await AsyncStorage.getItem(LEGACY_LOCAL_SITES_KEY);
+    if (legacyRaw) {
+      // Migrate to new key for next read
+      await AsyncStorage.setItem(STORAGE_KEYS.LOCAL_PROJECTS, legacyRaw);
+      await AsyncStorage.removeItem(LEGACY_LOCAL_SITES_KEY);
+      return JSON.parse(legacyRaw) as T;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Save projects to the new key. */
+export async function saveLocalProjects<T>(data: T): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.LOCAL_PROJECTS, JSON.stringify(data));
+}
 
 /**
  * Generates an idempotent transaction key to prevent duplicate submissions upon network retry

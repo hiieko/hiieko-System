@@ -42,19 +42,6 @@ export class JwtAuthGuard implements CanActivate {
       });
 
       if (!dbUser || !dbUser.is_active) {
-        // Fallback for Supabase token where user may exist only in payload
-        if (payload.email) {
-          const mappedRole = (payload.app_metadata?.role || payload.user_metadata?.role || payload.role || 'WORKER').toUpperCase() as UserRoleEnum;
-          request.user = {
-            id: userId,
-            email: payload.email,
-            role: mappedRole,
-            organizationId: payload.organization_id,
-            fullName: payload.user_metadata?.full_name || payload.email,
-            projectRoles: {},
-          } as AuthenticatedUser;
-          return true;
-        }
         throw new UnauthorizedException('User is inactive or not found');
       }
 

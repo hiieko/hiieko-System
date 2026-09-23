@@ -5,3 +5,4 @@ export * from './i18n';
 export * from './permissions';
 export * from './ocr';
 export * from './tutorials';
+export * from './error-envelope';

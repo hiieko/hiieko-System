@@ -14,7 +14,7 @@
 --   pg_restore --schema=legacy <dump>  |  apply migrations 01-08 with search_path=legacy)
 -- All legacy SOURCE reads below use legacy.* ; all TARGET writes use public.*.
 --
--- SOURCE OF TRUTH for legacy columns: supabase/full_setup.sql (migrations 01-08).
+-- SOURCE OF TRUTH for legacy columns: database/archive/supabase-migrations/full_setup.sql (migrations 01-08).
 -- Column names below MATCH the real legacy schema (verified 2026-09-19), e.g.:
 --   time_logs.check_in/check_out/check_in_lat/check_in_lng/normal_hours_worked
 --   expenses.user_id/submitted_at      notifications.recipient_user_id/body_ro

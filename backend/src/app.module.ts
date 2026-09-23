@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { AuditModule } from './common/audit/audit.module';
+import { StorageModule } from './common/storage/storage.module';
 import { AuditController } from './modules/audit/audit.controller';
 
 import { AuthModule } from './modules/auth/auth.module';
@@ -25,6 +26,7 @@ import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { OcrModule } from './modules/ocr/ocr.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { QaQcModule } from './modules/qa-qc/qa-qc.module';
 import { IssuesModule } from './modules/issues/issues.module';
 import { ChangeOrdersModule } from './modules/change-orders/change-orders.module';
@@ -40,6 +42,7 @@ import { ControlTowerModule } from './modules/control-tower/control-tower.module
     }),
     PrismaModule,
     AuditModule,
+    StorageModule,
     AuthModule,
     UsersModule,
     RolesModule,
@@ -61,6 +64,7 @@ import { ControlTowerModule } from './modules/control-tower/control-tower.module
     DocumentsModule,
     OcrModule,
     ExpensesModule,
+    UploadModule,
     QaQcModule,
     IssuesModule,
     ChangeOrdersModule,

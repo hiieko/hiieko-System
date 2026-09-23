@@ -1,37 +1,47 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
-import { supabase } from '../services/supabase';
+import { apiClient } from '../services/apiClient';
 import { PageIntro } from '../components/PageIntro';
 
-interface NotifItem { 
-  id: string; title_ro: string; title_en: string; body_ro: string; body_en: string; 
-  is_read: boolean; type: string; priority: string; action_url?: string; created_at: string; 
+/**
+ * Notification inbox - PostgreSQL / NestJS path.
+ *
+ * Source of truth: GET /api/notifications. The backend scopes the inbox to the
+ * authenticated user (JWT subject), so no client-side user filtering is needed
+ * and no Supabase client is involved.
+ */
+interface NotifItem {
+  id: string;
+  title_ro: string;
+  title_en?: string | null;
+  message_ro: string;
+  message_en?: string | null;
+  is_read: boolean;
+  priority?: string;
+  action_url?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
 }
 
-interface Props { locale?: 'ro' | 'en'; userId?: string; }
+interface Props { locale?: 'ro' | 'en'; }
 
-export function NotificationCenter({ locale = 'ro', userId }: Props) {
+export function NotificationCenter({ locale = 'ro' }: Props) {
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadNotifs = useCallback(async () => {
-    if (!supabase || !userId) { setLoading(false); return; }
     setLoading(true); setError(null);
     try {
-      const { data, error: e } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('recipient_user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (e) throw e;
-      setNotifs((data as NotifItem[]) || []);
+      const res = await apiClient.getNotifications();
+      if (res.error) throw new Error(res.error);
+      setNotifs((res.data as NotifItem[]) || []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Eroare la incarcare');
+      setNotifs([]);
     } finally { setLoading(false); setRefreshing(false); }
-  }, [userId]);
+  }, []);
 
   useEffect(() => { loadNotifs(); }, [loadNotifs]);
 
@@ -39,13 +49,24 @@ export function NotificationCenter({ locale = 'ro', userId }: Props) {
   const unreadCount = notifs.filter(n => !n.is_read).length;
 
   const markRead = async (id: string) => {
-    if (supabase) await supabase.from('notifications').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', id);
+    // Optimistic update; the backend enforces ownership (notification.user_id).
     setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    try {
+      await apiClient.markNotificationRead(id);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Eroare la marcare');
+      loadNotifs();
+    }
   };
 
   const markAllRead = async () => {
-    if (supabase && userId) await supabase.from('notifications').update({ is_read: true, read_at: new Date().toISOString() }).eq('recipient_user_id', userId).eq('is_read', false);
     setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
+    try {
+      await apiClient.markAllNotificationsRead();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Eroare la marcare');
+      loadNotifs();
+    }
   };
 
   return (
@@ -64,15 +85,15 @@ export function NotificationCenter({ locale = 'ro', userId }: Props) {
       ) : notifs.length === 0 ? (
         <View style={s.empty}><Text style={s.emptyText}>{locale === 'ro' ? 'Fara notificari.' : 'No notifications.'}</Text></View>
       ) : (
-        <FlatList 
-          data={notifs} keyExtractor={n => n.id} 
+        <FlatList
+          data={notifs} keyExtractor={n => n.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => (
             <TouchableOpacity style={[s.item, !item.is_read && s.itemUnread]} onPress={() => markRead(item.id)}>
               <View style={[s.dot, item.is_read && s.dotRead]} />
               <View style={s.itemContent}>
-                <Text style={s.itemTitle}>{locale === 'ro' ? item.title_ro : item.title_en}</Text>
-                <Text style={s.itemBody}>{locale === 'ro' ? item.body_ro : item.body_en}</Text>
+                <Text style={s.itemTitle}>{(locale === 'ro' ? item.title_ro : item.title_en) || item.title_ro}</Text>
+                <Text style={s.itemBody}>{(locale === 'ro' ? item.message_ro : item.message_en) || item.message_ro}</Text>
                 <Text style={s.itemTime}>{new Date(item.created_at).toLocaleString('ro-RO', { hour: '2-digit', minute: '2-digit' })}</Text>
               </View>
             </TouchableOpacity>

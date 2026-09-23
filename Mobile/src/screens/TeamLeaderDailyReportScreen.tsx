@@ -10,7 +10,7 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DailyReport, DailyReportTask, DailyReportMaterialUsage, Material, Site } from '@solar/shared';
+import { DailyReport, DailyReportTask, DailyReportMaterialUsage, Material, Project } from '@solar/shared';
 import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
 import { apiClient } from '../services/apiClient';
 import { PageIntro } from '../components/PageIntro';
@@ -19,7 +19,7 @@ const DRAFT_KEY = '@solar:daily_report_draft';
 
 interface Props {
   leader: { id: string; full_name: string };
-  site: Site;
+  project: Project;
   teamWorkers: { id: string; full_name: string }[];
   materialsCatalog: Material[];
   isOffline: boolean;
@@ -28,7 +28,7 @@ interface Props {
 
 export function TeamLeaderDailyReportScreen({
   leader,
-  site,
+  project,
   teamWorkers,
   materialsCatalog,
   isOffline,
@@ -108,7 +108,7 @@ export function TeamLeaderDailyReportScreen({
       
       // Map to backend CreateDailyReportDto format
       const reportPayload = {
-        projectId: site.id,
+        projectId: project.id,
         reportDate: now.split('T')[0],
         generalNotes: notes,
         // Map present workers (default 8 hours each)
@@ -156,7 +156,7 @@ export function TeamLeaderDailyReportScreen({
       <View style={styles.topHeaderRow}>
         <View>
           <Text style={styles.title}>Raport Zilnic per Echipă</Text>
-          <Text style={styles.subtitle}>Șantier: {site.name} • Șef Echipă: {leader.full_name}</Text>
+          <Text style={styles.subtitle}>Șantier: {project.name} • Șef Echipă: {leader.full_name}</Text>
         </View>
         <TouchableOpacity style={styles.draftBtn} onPress={saveDraft}>
           <Text style={styles.draftBtnText}>Salvează Ciornă</Text>

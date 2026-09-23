@@ -21,11 +21,29 @@ import { LoginScreen } from './src/screens/LoginScreen';
 import { LocaleProvider, useLocale } from './src/components/LocaleProvider';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { getOfflineQueue } from './src/services/storage';
-import { getProjects, getMaterials, Project, Material as LocalMaterial } from './src/services/localData';
+import { getProjects, getMaterials, saveProjects, saveMaterials, Project as LocalProject, Material as LocalMaterial } from './src/services/localData';
 import { syncAllOperations } from './src/services/syncQueue';
-import { Site } from '@solar/shared';
+import { apiClient } from './src/services/apiClient';
+import { Project } from '@solar/shared';
 
 // Convert LocalMaterial (from localData) to match what screens expect
+function mapToScreenProject(localProj: LocalProject): Project {
+  return {
+    id: localProj.id,
+    organization_id: '',
+    name: localProj.name,
+    code: localProj.code,
+    address: localProj.address || '',
+    latitude: localProj.latitude || 0,
+    longitude: localProj.longitude || 0,
+    geofence_radius_meters: localProj.geofence_radius_meters || 100,
+    is_active: localProj.is_active,
+    status: 'active',
+    created_at: localProj.synced_at || new Date().toISOString(),
+    updated_at: localProj.synced_at || new Date().toISOString(),
+  };
+}
+
 function mapToScreenMaterial(localMat: LocalMaterial): any {
   return {
     id: localMat.id,
@@ -39,42 +57,11 @@ function mapToScreenMaterial(localMat: LocalMaterial): any {
   };
 }
 
-// Convert Project (from localData) to Site interface for screens
-function mapToSite(project: Project): Site {
-  return {
-    id: project.id,
-    name: project.name,
-    code: project.code,
-    address: project.address || '',
-    latitude: project.latitude || 0,
-    longitude: project.longitude || 0,
-    geofence_radius_meters: project.geofence_radius_meters || 100,
-    is_active: project.is_active,
-    created_at: project.synced_at || '',
-    updated_at: project.synced_at || '',
-  };
-}
-
 // ============================================================================
 // FALLBACK DATA (for when nothing is loaded yet)
 // ============================================================================
 
-const FALLBACK_SITES: Site[] = [
-  {
-    id: 'fallback-1',
-    name: 'Se încarcă date...',
-    code: 'LOADING',
-    address: '',
-    latitude: 0,
-    longitude: 0,
-    geofence_radius_meters: 100,
-    is_active: true,
-    created_at: '',
-    updated_at: '',
-  },
-];
-
-const FALLBACK_MATERIALS: any[] = [];
+/** No fallback data. Screens gate on projects.length > 0. */
 
 export default function App() {
   return (
@@ -174,8 +161,9 @@ function AppShell() {
   const [pendingQueueCount, setPendingQueueCount] = useState(0);
   
   // Data state (loaded from SQLite cache)
-  const [sites, setSites] = useState<Site[]>(FALLBACK_SITES);
-  const [materials, setMaterials] = useState<any[]>(FALLBACK_MATERIALS);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [materials, setMaterials] = useState<any[]>([]);
 
   // Get team workers from current user
   const teamWorkers = currentUser ? [
@@ -194,11 +182,17 @@ function AppShell() {
       // When coming online, trigger auto-sync
       if (wasOffline && !nowOffline) {
         console.log('📶 Back online - triggering auto-sync...');
+
+        // 1. Sync offline queue first (time-sensitive)
         syncAllOperations().then(result => {
-          console.log(`🔄 Auto-sync: ${result.synced} synced, ${result.failed} failed`);
+          console.log(`🔄 Offline queue sync: ${result.synced} synced, ${result.failed} failed`);
         }).catch(err => {
-          console.error('❌ Auto-sync failed:', err);
+          console.error('❌ Offline queue sync failed:', err);
         });
+
+        // 2. Sync master data (projects, materials) in background
+        // This ensures stale cache is refreshed when connectivity is restored
+        syncMasterDataFromAPI();
       }
     });
 
@@ -226,22 +220,88 @@ function AppShell() {
   }, []);
 
   // ==========================================================================
-  // Load cached data from SQLite
+  // Sync master data from API (projects, materials)
+  // ==========================================================================
+  async function syncMasterDataFromAPI() {
+    if (isOffline) {
+      console.log('📴 Offline - skipping master data sync');
+      return;
+    }
+
+    try {
+      console.log('🔄 Syncing master data from API...');
+
+      // Sync projects
+      const projectsResponse = await apiClient.getProjects();
+      if (projectsResponse.data) {
+        const apiProjects = projectsResponse.data.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          code: p.code,
+          address: p.address,
+          latitude: p.latitude ? Number(p.latitude) : undefined,
+          longitude: p.longitude ? Number(p.longitude) : undefined,
+          geofence_radius_meters: p.geofence_radius_meters || undefined,
+          is_active: p.is_active !== false,
+        }));
+
+        await saveProjects(apiProjects);
+        setProjects(apiProjects.map(mapToScreenProject));
+        console.log(`✅ Synced ${apiProjects.length} projects from API`);
+      }
+
+      // Sync materials
+      try {
+        const materialsResponse = await apiClient.getMaterials();
+        if (materialsResponse.data) {
+          const apiMaterials = materialsResponse.data.map((m: any) => ({
+            id: m.id,
+            code: m.code,
+            name: m.name,
+            unit: m.unit || 'buc',
+            is_active: m.is_active !== false,
+          }));
+
+          await saveMaterials(apiMaterials);
+          setMaterials(apiMaterials.map(mapToScreenMaterial));
+          console.log(`✅ Synced ${apiMaterials.length} materials from API`);
+        }
+      } catch (matErr) {
+        // Materials API may not exist yet - non-critical
+        console.log('⚠️ Materials sync skipped (API may not be available)');
+      }
+    } catch (error) {
+      console.error('❌ Failed to sync master data:', error);
+      // Don't fail - fall back to cached data
+    }
+  }
+
+  // ==========================================================================
+  // Load cached data from SQLite + sync fresh from API when online
   // ==========================================================================
   async function loadCachedData() {
     try {
-      // Load projects from SQLite
+      // First, load from cache for quick UI display
       const cachedProjects = await getProjects();
       if (cachedProjects.length > 0) {
-        setSites(cachedProjects.map(mapToSite));
-        console.log(`✅ Loaded ${cachedProjects.length} sites from cache`);
+        setProjects(cachedProjects.map(mapToScreenProject));
+        console.log(`✅ Loaded ${cachedProjects.length} projects from cache`);
       }
+      setProjectsLoading(false);
 
-      // Load materials from SQLite
       const cachedMaterials = await getMaterials();
       if (cachedMaterials.length > 0) {
         setMaterials(cachedMaterials.map(mapToScreenMaterial));
         console.log(`✅ Loaded ${cachedMaterials.length} materials from cache`);
+      }
+
+      // Then, sync fresh data from API in background (when online)
+      // This ensures:
+      // 1. UI loads fast from cache
+      // 2. Fresh data is fetched and saved for next load
+      // 3. Stale project IDs are refreshed (prevents NotFoundException on check-in)
+      if (!isOffline) {
+        await syncMasterDataFromAPI();
       }
     } catch (error) {
         console.error('❌ Failed to load cached data:', error);
@@ -334,37 +394,37 @@ function AppShell() {
 
       {/* Active Screen */}
       <View style={[styles.contentContainer, isTablet && styles.tabletContainer]}>
-        {activeTab === 'attendance' && (
+        {activeTab === 'attendance' && projects.length > 0 && (
           <WorkerAttendanceScreen
             user={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator', role: 'worker' }}
-            sites={sites}
+            projects={projects}
             isOffline={isOffline}
             locale={locale}
           />
         )}
-        {activeTab === 'report' && (
+        {activeTab === 'report' && projects.length > 0 && (
           <TeamLeaderDailyReportScreen
             leader={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator', role: 'team_leader' }}
-            site={sites[0] || FALLBACK_SITES[0]}
+            project={projects[0]}
             teamWorkers={teamWorkers}
             materialsCatalog={materials}
             isOffline={isOffline}
             locale={locale}
           />
         )}
-        {activeTab === 'delivery' && (
+        {activeTab === 'delivery' && projects.length > 0 && (
           <DeliveryIntakeScreen
             user={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator', role: 'worker' }}
-            site={sites[0] || FALLBACK_SITES[0]}
+            site={projects[0]}
             materialsCatalog={materials}
             isOffline={isOffline}
             locale={locale}
           />
         )}
-        {activeTab === 'expense' && (
+        {activeTab === 'expense' && projects.length > 0 && (
           <WorkerExpenseScreen
             user={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator' }}
-            sites={sites}
+            projects={projects}
             isOffline={isOffline}
             locale={locale}
           />
