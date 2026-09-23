@@ -2,7 +2,7 @@
 
 This service replaces Google Cloud Vision with PaddleOCR 3.x. It is an
 authenticated processing service, not a second database or authorization
-system. Supabase remains responsible for users, Storage, RLS, expenses, and
+system. The NestJS backend handles users, storage, expenses, and
 approval workflow.
 
 ## Run locally

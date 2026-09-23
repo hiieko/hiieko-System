@@ -1,1 +1,0 @@
-const tests = [{ name: 'Test', query: 'SELECT 1' }]; console.log(tests[0].name);

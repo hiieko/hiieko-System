@@ -14,10 +14,10 @@
 | TD-008 | No `.git` / VCS in checkout | repo root | CRIT | S | `git init` + initial commit + CI pipeline |
 | TD-009 | `full_setup.sql` header drift (says 01–06 "1/9"; body has 11 sections incl 07/08) | supabase/full_setup.sql | LOW | S | regenerate header (ISSUE-008) |
 | TD-010 | Mojibake `â€"` in comments | edge `index.ts`, mobile `ocr.ts`, `ocr-service/app/main.py` | LOW | S | re-save UTF-8 (ISSUE-009) |
-| TD-011 | Unused root dep `@supabase/server` (+ root react/react-dom possibly) | package.json | LOW | S | remove after confirming no imports |
+| TD-011 | Unused root dep `@supabase/server` (+ root react/react-dom possibly) | package.json | LOW | S | **REMOVED** (2026-09-23) — confirmed no imports |
 | TD-012 | `.env.example` carries seemingly-real anon key + project ref; `.gitignore` hygiene issues (duplicated rules/partial anchors) | `.env.example`, `.gitignore` | MED | S–M | rotate/placeholder + clean ignore (ISSUE-006/007) |
 | TD-013 | `shared/dist` includes test files (`.test.js/.d.ts`) | shared/tsconfig.json | LOW | S | exclude `**/*.test.ts` from build |
-| TD-014 | Web header site switcher uses `MOCK_SITES` | web/src/components/Header.tsx | MED | S | live sites from API |
+| TD-014 | Web header site switcher uses `MOCK_SITES` | web/src/components/Header.tsx | MED | S | **mock-data.ts DELETED** (2026-09-23); live API is sole source; rename `Site`→`Project` deferred to R2.1 P3 |
 | TD-015 | `/pontaj`, `/rapoarte`, `/stocuri`, `/profil` not live | 4 pages | HIGH | L | wire to API (R2–R3) |
 | TD-016 | `daily_report_approvals` missing; self-approval report trigger disabled | migration 05 | MED | S–M | add table + wire flow |
 | TD-017 | Online `/cheltuieli` submit path demo-only | web/src/app/cheltuieli/page.tsx | HIGH | M | real insert + ocr-status persistence |

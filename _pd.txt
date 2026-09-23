@@ -1,2 +1,0 @@
-L160:C5 'try' expected.
-L168:C1 'catch' or 'finally' expected.

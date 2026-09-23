@@ -46,7 +46,7 @@ Last Updated: 2026-09-22
 ## Configuration
 - [ ] Fix `Mobile/.env.example` to document PaddleOCR (ISSUE-003)
 - [ ] Fix `.gitignore` so `web/.env.example` and `Mobile/.env.example` stay visible (ISSUE-006)
-- [ ] Remove unused root dependency `@supabase/server` (no imports found)
+- [x] Remove unused root dependency `@supabase/server` (no imports found) — 2026-09-23
 ## Documentation
 - [ ] Keep ISSUES.md/TODO.md/HANDOFF.md current while fixing issues (link each fix to its issue)
 - [ ] Resolve documented contradictions listed in the 2026-09-18 status report §13
@@ -81,7 +81,7 @@ Last Updated: 2026-09-22
 - [x] 2026-09-22: Fix all TypeScript errors (toFixed, Expense interface, DNRow interface, useLocale imports, missing sampleProjects)
 - [x] 2026-09-22: Start development server on localhost:3001 successfully
 - [x] 2026-09-22: Update PROGRESS.md, TODO.md, PROJECT.md with current state
-- [x] 2026-09-18: regenerate `Project workflow/*.md` and create `docs/AI_INSTRUCTIONS.md`
+- [x] 2026-09-23: Repository hygiene checkpoint — deleted scratch/temp files, mock runtime data, obsolete Supabase files, historical session notes, broken hiieko-final gitlink; externalised hardcoded DB credential in e2e harness; fixed stale Supabase references in docs; cleaned .gitignore; added root README.md and CURRENT_STATUS.md
 - [x] 2026-09-18/19: `npm install` (1,213 packages) + `shared` build + `web` build (14 routes)
 - [x] 2026-09-18/19: `npm run typecheck` (shared+web+mobile) — 0 errors
 - [x] 2026-09-18/19: unit suites — shared (calculations/i18n/tutorials), Edge `extract.test.ts` (36), OCR `pytest` (6)

@@ -31,10 +31,6 @@ Mobile/.env.local
 !Mobile/.env.example
 !docs/AI_INSTRUCTIONS.md
 
-# ---- Supabase local tooling ---------------------------------------
-supabase/.temp/
-supabase/seed/.gitkeep
-
 # ---- Logs / OS / editor -------------------------------------------
 *.log
 npm-debug.log*
@@ -61,6 +57,21 @@ spec_text.txt
 check-db.js
 setup-db.js
 backend/test-web-api-flow.js
+
+# ---- Uploaded blob storage (ISSUE-013) ------------------------------
+backend/storage/
+
+# ---- Test / coverage caches ----------------------------------------
+coverage/
+coverage.xml
+.pytest_cache/
+**/.pytest_cache/
+htmlcov/
+.coverage
+
+# ---- Local scratch / temp ------------------------------------------
+*.tmp
+_*.txt
 
 # ---- Cline / AI tools ---------------------------------------------
 .clinerules/

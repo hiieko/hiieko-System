@@ -4,7 +4,7 @@
 
 - Node.js 18.17 or newer (Node.js 20 LTS recommended)
 - npm 9 or newer
-- A Supabase project for authentication and application data
+- A running PostgreSQL 18 instance (see [backend/.env.example](backend/.env.example) for connection string)
 
 ## Install
 
@@ -14,87 +14,78 @@ Open PowerShell in the project folder and run:
 npm install
 ```
 
-This installs dependencies for the root project and all workspaces (`shared`, `web`, and `mobile`).
+This installs dependencies for the root project and all workspaces (`shared`, `web`, `mobile`, `backend`).
 
-## Configure the web app
+## Configure the environment
 
-Copy the example environment file:
+Copy the example environment files and edit to match your setup:
 
 ```powershell
+Copy-Item .env.example .env
+Copy-Item backend\.env.example backend\.env
 Copy-Item web\.env.example web\.env.local
+Copy-Item Mobile\.env.example Mobile\.env
 ```
 
-Edit `web\.env.local` and add the public Supabase values:
+The authoritative backend config lives in `backend/.env` — set `DATABASE_URL`, `JWT_SECRET`, etc.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+Never commit or share `.env`, `*.env.local`, or any file containing secrets.
+
+## Set up the database
+
+Create a PostgreSQL 18 database, then run:
+
+```powershell
+npm run db:migrate
 ```
 
-Never commit or share `web\.env.local`.
+This applies all Prisma migrations. Verify with:
 
-## Configure the database
-
-Open the Supabase SQL Editor and run:
-
-```text
-supabase/full_setup.sql
+```powershell
+npm run db:verify
 ```
 
-This creates the tables, policies, storage bucket, and authentication trigger used by the app.
+## Start the backend (NestJS)
 
-## Start the web app
+```powershell
+npm run backend:dev
+```
+
+The API starts at http://localhost:4000.
+
+## Start the web app (Next.js)
 
 ```powershell
 npm run web:dev
 ```
 
-Open:
+Open http://localhost:3000.
 
-```text
-http://localhost:3000
-```
-
-The project does not have a root `npm run dev` command. Use `npm run web:dev`.
-
-## OCR
-
-Receipt OCR uses the authenticated Supabase Edge Function, which proxies to a
-private self-hosted PaddleOCR service:
-
-```text
-supabase/functions/ocr-extract
-```
-
-Deploy it after linking the project:
-
-```powershell
-npx supabase login
-npx supabase link --project-ref YOUR_PROJECT_REF
-npx supabase functions deploy ocr-extract --project-ref YOUR_PROJECT_REF
-```
-
-Configure the PaddleOCR URL and shared service token instead:
-
-```powershell
-npx supabase secrets set PADDLEOCR_URL=https://your-private-ocr-host --project-ref YOUR_PROJECT_REF
-npx supabase secrets set PADDLEOCR_TOKEN=your-long-random-token --project-ref YOUR_PROJECT_REF
-```
-
-Do not put OCR service tokens in `web/.env.local` or any `NEXT_PUBLIC_` variable.
-OCR results are editable and must be checked by a user before saving.
-
-## Validation commands
-
-```powershell
-npm run typecheck
-npm run build
-```
-
-## Other workspace commands
+## Start the mobile app (Expo)
 
 ```powershell
 npm run mobile:start
 ```
 
 The mobile workspace requires its own Expo/React Native environment.
+
+## OCR (PaddleOCR)
+
+Receipt OCR is a server-side service. The NestJS backend calls a self-hosted PaddleOCR
+instance configured via `PADDLEOCR_URL` and `PADDLEOCR_TOKEN` in `backend/.env`.
+OCR results are editable and must be checked by a user before saving.
+
+## Validation commands
+
+```powershell
+npm run typecheck     # TypeScript checks on all 4 workspaces
+npm run test          # Backend Jest test suite
+npm run build         # Build shared, web, and backend
+```
+
+## Other workspace commands
+
+```powershell
+npm run backend:test
+npm run backend:build
+```
