@@ -227,4 +227,40 @@ export class AttendanceService {
       records,
     };
   }
+
+  async findAll(params?: {
+    projectId?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const where: any = {};
+
+    if (params?.projectId) {
+      where.project_id = params.projectId;
+    }
+    if (params?.userId) {
+      where.user_id = params.userId;
+    }
+    if (params?.startDate) {
+      const start = new Date(params.startDate);
+      start.setUTCHours(0, 0, 0, 0);
+      where.date = { ...where.date, gte: start };
+    }
+    if (params?.endDate) {
+      const end = new Date(params.endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      where.date = { ...where.date, lte: end };
+    }
+
+    return this.prisma.attendanceRecord.findMany({
+      where,
+      include: {
+        user: { include: { profile: true } },
+        project: true,
+      },
+      orderBy: { check_in_time: 'desc' },
+      take: 200,
+    });
+  }
 }

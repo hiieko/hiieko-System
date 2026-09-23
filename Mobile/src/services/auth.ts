@@ -11,12 +11,38 @@ import { apiClient } from './apiClient';
 const AUTH_TOKEN_KEY = '@hiieko:auth_token';
 const AUTH_USER_KEY = '@hiieko:auth_user';
 
+// Backend returns camelCase, screens expect snake_case
+interface BackendUser {
+  id: string;
+  email: string;
+  fullName?: string;  // backend returns camelCase
+  full_name?: string; // fallback for cached data
+  role: string;
+  organizationId?: string;  // backend returns camelCase
+  organization_id?: string; // fallback for cached data
+}
+
 export interface User {
   id: string;
   email: string;
   full_name: string;
   role: string;
   organization_id?: string;
+}
+
+/**
+ * Convert backend user (camelCase) to mobile user format (snake_case)
+ */
+function mapBackendUser(backendUser: BackendUser): User {
+  return {
+    id: backendUser.id,
+    email: backendUser.email,
+    // Backend returns fullName, screens expect full_name
+    full_name: backendUser.full_name || backendUser.fullName || backendUser.email,
+    role: backendUser.role,
+    // Backend returns organizationId, screens expect organization_id
+    organization_id: backendUser.organization_id || backendUser.organizationId,
+  };
 }
 
 /**
@@ -29,7 +55,10 @@ export async function login(email: string, password: string): Promise<User> {
       password,
     });
 
-    const { user, accessToken } = response.data;
+    const { user: backendUser, accessToken } = response.data;
+    
+    // Convert backend camelCase to mobile snake_case
+    const user = mapBackendUser(backendUser);
 
     // Store token
     await AsyncStorage.setItem(AUTH_TOKEN_KEY, accessToken);
@@ -76,8 +105,9 @@ export async function getCurrentUser(): Promise<User | null> {
     const userJson = await AsyncStorage.getItem(AUTH_USER_KEY);
     if (!userJson) return null;
 
-    const user = JSON.parse(userJson);
-    return user;
+    const rawUser = JSON.parse(userJson);
+    // Ensure we return properly mapped user (handles both cached formats)
+    return mapBackendUser(rawUser);
   } catch (error) {
     console.error('❌ Get current user error:', error);
     return null;
@@ -109,7 +139,10 @@ export async function initializeAuth(): Promise<User | null> {
 
     // Verify token with backend
     const response = await apiClient.getMe();
-    const user = response.data;
+    const backendUser = response.data;
+    
+    // Convert backend camelCase to mobile snake_case
+    const user = mapBackendUser(backendUser);
 
     // Update stored user
     await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));

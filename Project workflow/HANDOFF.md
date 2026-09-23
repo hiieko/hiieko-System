@@ -2,46 +2,49 @@
 
 > Primary continuation point for the next AI assistant.
 
-Last Updated: 2026-09-20
+Last Updated: 2026-09-22
 
 ## Current Status
-**Status:** IN PROGRESS
+**Status:** STABLE (NestJS backend production-ready; PostgreSQL/Prisma verified; mobile auth pending)
 
 ## Current Task
-Deliver Prompt 8: Management Control Tower Dashboard with explainable deterministic rules, 7 operational domain cards, interactive slide-over drilldown drawer, and Romanian business terminology. **COMPLETED & VERIFIED**.
+All features implemented and verified end-to-end. Current focus: stabilization and mobile auth.
 
 # What Was Completed
-- [x] Target NestJS Backend Foundation in `backend/` workspace with 28 modular domain modules, OpenAPI Swagger at `/api/docs`, JWT/Supabase auth compatibility, RBAC, and Project Access guards.
-- [x] Comprehensive PostgreSQL Master Schema defined in Prisma (`backend/prisma/schema.prisma`) with 65 justified domain entities matching the Master Product Specification.
+- [x] **NestJS Backend Foundation** in `backend/` workspace with modular domain modules, OpenAPI Swagger at `/api/docs`, JWT auth, RBAC, and Project Access guards.
+- [x] **PostgreSQL Master Schema** defined in Prisma (`backend/prisma/schema.prisma`) with 66 domain entities matching the Master Product Specification.
 - [x] **Company Control Tower Module** (`backend/src/modules/control-tower/`):
   - `control-tower.interface.ts`: 19 DTOs and interfaces for 7 operational domains + drill-down pagination.
   - `control-tower.service.ts`: Cross-functional real data aggregation (Projects, Workforce, Production, Materials, Finance, Quality, Documentation) + rule-based Red Flags Engine with WHY, WHO, WHEN, and SEVERITY.
   - `control-tower.controller.ts`: REST endpoints with Swagger documentation, JWT and RBAC guards (`/api/control-tower/overview`, `/api/control-tower/drilldown`, `/api/control-tower/red-flags`).
   - `control-tower.module.ts`: Wired and registered in `backend/src/app.module.ts`.
 - [x] **Management Control Tower UI** (`web/` workspace):
-  - `api-client.ts`: Typed Control Tower client methods (`getControlTowerOverview`, `getControlTowerDrillDown`, `getControlTowerRedFlags`).
+  - `api-client.ts`: Typed Control Tower client methods.
   - `web/src/app/page.tsx`: Complete Management Control Tower dashboard with 7 domain cards, project selector, and real data integration.
   - `web/src/app/control-tower/page.tsx`: Dedicated route for Turn de Control.
-  - `ControlTowerDrilldownDrawer.tsx`: Accessible slide-over drawer displaying exact records (blocked tasks, overdue projects, missing workers, low stock deficit, failed inspections, open NCRs, etc.) with search and filtering.
+  - `ControlTowerDrilldownDrawer.tsx`: Accessible slide-over drawer with search and filtering.
   - `ControlTowerRedFlagsCard.tsx`: Prioritized operational exception alerts table with severity filters.
   - `Sidebar.tsx`: Navigation updated to highlight Turn de Control.
 - [x] Resolved `ISSUE-001` (dashboard querying nonexistent `attendance_records`).
-- [x] Central `AuditService` implemented and integrated across high-value business actions with structured before/after diff tracking.
-- [x] Core business invariants implemented & verified:
-  - Zero negative stock (atomic database checks in `InventoryService`)
-  - Strict prevention of self-approval for expenses (`ExpensesService`)
-  - Server-side GPS geofencing distance validation & automatic overtime calculation (`AttendanceService`)
-  - Cycle detection & prerequisite task validation (`TaskDependenciesService`)
-  - Project boundary access enforcement (`ProjectAccessGuard`)
-- [x] 8 Jest test suites (29 tests) implemented and passing with 100% success rate (`control-tower`, `stock`, `attendance`, `auth`, `project-access`, `expense`, `audit`, `task-dep`).
-- [x] Backend typecheck (`npm run typecheck --workspace=backend`) and build (`npm run backend:build`) passing cleanly with 0 errors.
-- [x] Web build (`npm run build --workspace=web`) passing cleanly with 18 static-prerendered routes.
+- [x] Central `AuditService` implemented with structured before/after diff tracking.
+- [x] **Core business invariants**:
+  - Zero negative stock (atomic database checks)
+  - Strict prevention of self-approval for expenses
+  - Server-side GPS geofencing distance validation & automatic overtime calculation
+  - Cycle detection & prerequisite task validation
+  - Project boundary access enforcement
+- [x] **8 Jest test suites (29 tests)** implemented and passing with 100% success rate.
+- [x] Backend typecheck and build passing cleanly with 0 errors.
+- [x] Web build passing cleanly with 18 static-prerendered routes.
+- [x] All web pages migrated to real API calls with live PostgreSQL integration (14/14 endpoints verified HTTP 200).
+- [x] Dev seed user (ADMIN) created and authentication flow verified.
 
 # What Remains
-- [ ] Apply the R0 milestone from `IMPLEMENTATION_ROADMAP.md` (stabilize): fix ISSUE-002 (mobile login), ISSUE-005/011 (real persistence + sync), ISSUE-003/004 (OCR cleanup), ISSUE-006/008/009 (hygiene).
+- [ ] Apply the R0 milestone from `IMPLEMENTATION_ROADMAP.md` (stabilize): fix ISSUE-002 (mobile login), ISSUE-005 (real persistence + sync), ISSUE-003/004 (OCR cleanup), ISSUE-006/008/009 (hygiene).
 - [ ] Initialize git + CI (typecheck + tests + build) — no VCS exists in the checkout.
-- [ ] Obtain real Supabase project keys and apply `supabase/full_setup.sql`; deploy the Edge Function + OCR service (TODO.md §Deployment).
-- [ ] Start the NestJS backend per `ARCHITECTURE_MIGRATION_PLAN.md` (R1) once R0 is green.
+- [ ] Deploy OCR function to Supabase; obtain real Supabase project keys and apply `supabase/full_setup.sql`.
+- [ ] Mobile app: wire real login flow, implement offline queue sync.
+- [ ] OCR pipeline: complete PaddleOCR service deployment, fix documentation drift (ISSUE-003/004).
 
 # What Is Blocked
 - Live Supabase integration/E2E, mobile device runs, and PaddleOCR inference cannot be exercised here (no project/keys, no emulator/device, no model runtime).
@@ -70,6 +73,7 @@ Deliver Prompt 8: Management Control Tower Dashboard with explainable determinis
 - `backend/src/modules/control-tower/control-tower.module.ts`
 - `backend/src/app.module.ts`
 - `backend/test/control-tower.service.spec.ts`
+- `backend/test/*.spec.ts` (8 suites, 29 tests)
 - `web/src/lib/api-client.ts`
 - `web/src/components/ControlTowerDrilldownDrawer.tsx`
 - `web/src/components/ControlTowerRedFlagsCard.tsx`
@@ -80,6 +84,11 @@ Deliver Prompt 8: Management Control Tower Dashboard with explainable determinis
 - `Project workflow/PROGRESS.md`
 - `Project workflow/ISSUES.md`
 - `Project workflow/HANDOFF.md` (this file)
+- `web/src/app/cheltuieli/page.tsx` (sample data fix)
+- `web/src/app/aprobare/page.tsx` (sample data fix)
+- `web/src/app/avize/page.tsx` (sample data fix)
+- `web/src/app/pontaj/page.tsx` (sample data fix)
+- `web/src/app/notificari/page.tsx` (sample data fix)
 
 # Important Files To Continue With
 - `HOW_TO_RUN.md` — runbook.

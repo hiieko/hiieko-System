@@ -415,6 +415,12 @@ Object.assign(d, {
   'settings.saved_hint': T('Setarea este salvată automat pe acest dispozitiv.', 'This setting is saved automatically on this device.'),
   'settings.ar_label': T('Limbă', 'Language'),
   'settings.tab_label': T('Setări', 'Settings'),
+  
+  // --- Header component (navbar) ---
+  'header.active_site': T('Șantier Activ:', 'Active Site:'),
+  'header.all_sites': T('Toate Șantierele', 'All Sites'),
+  'header.notifications': T('Notificări', 'Notifications'),
+  'header.visitator': T('Vizitator', 'Visitor'),
 });
 
 export function t(key: string, locale: Locale = 'ro'): string {

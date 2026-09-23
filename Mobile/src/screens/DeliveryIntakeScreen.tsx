@@ -10,7 +10,8 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { DeliveryNote, Material, Site } from '@solar/shared';
-import { enqueueOfflineAction } from '../services/storage';
+import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
+import { apiClient } from '../services/apiClient';
 import { PageIntro } from '../components/PageIntro';
 
 interface Props {
@@ -50,32 +51,30 @@ export function DeliveryIntakeScreen({ user, site, materialsCatalog, isOffline, 
     setSubmitting(true);
     try {
       const now = new Date().toISOString();
-      const deliveryNote: DeliveryNote = {
-        id: `dn_${Date.now()}`,
-        invoice_or_aviz_number: avizNumber.trim(),
-        supplier: supplier.trim(),
-        site_id: site.id,
-        receiver_user_id: user.id,
-        delivery_date: now.split('T')[0],
-        photo_url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80',
+      
+      // Map to backend CreateAvizDto format
+      const avizPayload = {
+        projectId: site.id,
+        avizNumber: avizNumber.trim(),
+        deliveryDate: now.split('T')[0],
+        supplierName: supplier.trim(),
+        notes: `Recepționat pe șantier de ${user.full_name}${hasPhoto ? ' | Cu document foto atasat' : ''}`,
         items: [
           {
-            material_id: selectedMaterialId,
-            material_code: selectedMaterial?.code || 'COD',
-            material_name: selectedMaterial?.name || 'Material',
-            unit: selectedMaterial?.unit || 'buc',
+            materialId: selectedMaterialId,
             quantity: Number(quantity),
           }
         ],
-        notes: `Recepționat pe șantier de ${user.full_name}`,
-        created_at: now,
-        updated_at: now,
       };
+      const idemKey = generateIdempotencyKey('aviz', 'create');
 
       if (isOffline) {
-        await enqueueOfflineAction('delivery_note_submit', deliveryNote as any);
+        // Enqueue for later sync (SQLite-based queue)
+        await enqueueOperation('aviz', 'create', avizPayload, idemKey);
         Alert.alert('Salvat Local (Offline)', 'Avizul a fost înregistrat offline. Stocul se va actualiza la sincronizare.');
       } else {
+        // Submit directly to API
+        await apiClient.createAviz(avizPayload, idemKey);
         Alert.alert('Recepție Finalizată!', `S-a adăugat +${quantity} ${selectedMaterial?.unit} la stocul șantierului.`);
       }
 
@@ -83,6 +82,7 @@ export function DeliveryIntakeScreen({ user, site, materialsCatalog, isOffline, 
       setSupplier('');
       setQuantity('');
     } catch (e: any) {
+      console.error('Delivery intake submit error:', e);
       Alert.alert('Eroare', e.message || 'Nu s-a putut salva avizul');
     } finally {
       setSubmitting(false);

@@ -25,6 +25,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
+import { useLocale } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from '../components/ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from '../components/ControlTowerRedFlagsCard';
 import { PageTutorial } from '../components/PageTutorial';
@@ -36,6 +37,79 @@ export default function ControlTowerDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const { locale } = useLocale();
+
+  // Sample projects for empty state display
+  const sampleProjects = [
+    {
+      id: 'p1',
+      name: 'Parc Solar Arad',
+      code: 'AR-001',
+      address: 'Arad, Roșiori',
+      latitude: 46.1539,
+      longitude: 21.3156,
+      geofence_radius_meters: 150,
+      is_active: true,
+      manager_id: 'u1',
+      manager_name: 'Ion Munteanu',
+      status: 'construction',
+      progress: 65,
+      tasks_total: 8,
+      tasks_completed: 5,
+      delayed_tasks: 0,
+      materials_ordered: 3,
+      budget_total: 125000,
+      budget_used: 81250,
+      team_size: 6,
+      team_present: 5,
+    },
+    {
+      id: 'p2',
+      name: 'Parc Solar Timisoara',
+      code: 'TM-002',
+      address: 'Timișoara, Fântânele',
+      latitude: 45.7489,
+      longitude: 21.2087,
+      geofence_radius_meters: 200,
+      is_active: true,
+      manager_id: 'u2',
+      manager_name: 'Maria Popescu',
+      status: 'construction',
+      progress: 42,
+      tasks_total: 12,
+      tasks_completed: 5,
+      delayed_tasks: 2,
+      materials_ordered: 5,
+      budget_total: 180000,
+      budget_used: 75600,
+      team_size: 8,
+      team_present: 6,
+    },
+    {
+      id: 'p3',
+      name: 'Parc Solar Cluj',
+      code: 'CJ-003',
+      address: 'Cluj-Napoca, Bucegi',
+      latitude: 46.7673,
+      longitude: 23.5859,
+      geofence_radius_meters: 180,
+      is_active: true,
+      manager_id: 'u3',
+      manager_name: 'Andrei Popovici',
+      status: 'construction',
+      progress: 78,
+      tasks_total: 6,
+      tasks_completed: 5,
+      delayed_tasks: 0,
+      materials_ordered: 2,
+      budget_total: 95000,
+      budget_used: 74100,
+      team_size: 4,
+      team_present: 4,
+    },
+  ];
+
+  const [selectedProject, setSelectedProject] = useState(sampleProjects[0]);
 
   // Drilldown Drawer State
   const [drilldown, setDrilldown] = useState<DrilldownData>({

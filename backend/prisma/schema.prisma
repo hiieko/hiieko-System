@@ -1,18 +1,1031 @@
-// HIIEKO Solar Site Management - Master PostgreSQL Schema (Prisma)
-// Target Architecture Schema
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model Organization {
+  id         String      @id @default(uuid())
+  name       String
+  cui        String?     @unique
+  address    String?
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+  audit_logs AuditLog[]
+  clients    Client[]
+  projects   Project[]
+  suppliers  Supplier[]
+  users      User[]
+  warehouses Warehouse[]
+
+  @@map("organizations")
 }
 
-// ==========================================
-// ENUMS
-// ==========================================
+model User {
+  id                 String                   @id @default(uuid())
+  organization_id    String?
+  email              String                   @unique
+  password_hash      String?
+  role               UserRoleEnum             @default(WORKER)
+  is_active          Boolean                  @default(true)
+  created_at         DateTime                 @default(now())
+  updated_at         DateTime                 @updatedAt
+  time_logs          AttendanceRecord[]
+  audit_logs         AuditLog[]               @relation("AuditActor")
+  daily_reports      DailyReport[]            @relation("ReportLeader")
+  employee           Employee?
+  approvals          ExpenseApproval[]        @relation("ExpenseApprover")
+  expenses           Expense[]                @relation("ExpenseSubmitter")
+  notification_prefs NotificationPreference[]
+  notifications      Notification[]
+  project_members    ProjectMember[]
+  assigned_tasks     TaskAssignment[]
+  team_members       TeamMember[]
+  created_daily_plans DailyPlan[]        @relation("DailyPlanCreator")
+  profile            UserProfile?
+  organization       Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+  @@index([role])
+  @@map("users")
+}
+
+model UserProfile {
+  id            String   @id @default(uuid())
+  user_id       String   @unique
+  full_name     String
+  phone         String?
+  employee_code String?
+  avatar_url    String?
+  language      String   @default("ro")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  code        UserRoleEnum     @unique
+  description String?
+  created_at  DateTime         @default(now())
+  updated_at  DateTime         @updatedAt
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  module      String
+  action      String
+  description String?
+  created_at  DateTime         @default(now())
+  roles       RolePermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id       String
+  permission_id String
+  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model Employee {
+  id          String   @id @default(uuid())
+  user_id     String?  @unique
+  first_name  String
+  last_name   String
+  cnp         String?  @unique
+  position    String?
+  hourly_rate Decimal? @db.Decimal(10, 2)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  user        User?    @relation(fields: [user_id], references: [id])
+
+  @@map("employees")
+}
+
+model Team {
+  id            String        @id @default(uuid())
+  name          String
+  code          String        @unique
+  leader_id     String?
+  project_id    String?
+  is_active     Boolean       @default(true)
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  daily_plans   DailyPlan[]
+  daily_reports DailyReport[]
+  members       TeamMember[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  team_id   String
+  user_id   String
+  joined_at DateTime @default(now())
+  team      Team     @relation(fields: [team_id], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([team_id, user_id])
+  @@map("team_members")
+}
+
+model Client {
+  id              String       @id @default(uuid())
+  organization_id String
+  name            String
+  cui             String?
+  contact_person  String?
+  contact_email   String?
+  contact_phone   String?
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  projects        Project[]
+
+  @@map("clients")
+}
+
+model Project {
+  id                     String              @id @default(uuid())
+  organization_id        String
+  client_id              String?
+  name                   String
+  code                   String              @unique
+  address                String
+  latitude               Decimal             @db.Decimal(10, 7)
+  longitude              Decimal             @db.Decimal(10, 7)
+  geofence_radius_meters Int                 @default(300)
+  installed_capacity_mwp Decimal?            @db.Decimal(8, 3)
+  status                 ProjectStatusEnum   @default(PLANNING)
+  start_date             DateTime?
+  target_end_date        DateTime?
+  budget_total           Decimal?            @db.Decimal(14, 2)
+  currency               String              @default("RON")
+  is_active              Boolean             @default(true)
+  created_at             DateTime            @default(now())
+  updated_at             DateTime            @updatedAt
+  time_logs              AttendanceRecord[]
+  avize                  Aviz[]
+  budgets                Budget[]
+  change_orders          ChangeOrder[]
+  consumptions           Consumption[]
+  cost_entries           CostEntry[]
+  daily_plans            DailyPlan[]
+  daily_reports          DailyReport[]
+  documents              Document[]
+  expenses               Expense[]
+  inspections            Inspection[]
+  issues                 Issue[]
+  zones                  LocationZone[]
+  project_allocations    ProjectAllocation[]
+  members                ProjectMember[]
+  stages                 ProjectStage[]
+  client                 Client?             @relation(fields: [client_id], references: [id])
+  organization           Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  stock_balances         StockBalance[]
+  stock_movements        StockMovement[]
+  tasks                  Task[]
+
+  @@index([organization_id])
+  @@index([code])
+  @@map("projects")
+}
+
+model ProjectStage {
+  id            String            @id @default(uuid())
+  project_id    String
+  name          String
+  stage_order   Int               @default(1)
+  status        ProjectStatusEnum @default(PLANNING)
+  start_date    DateTime?
+  end_date      DateTime?
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+  project       Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  work_packages WorkPackage[]
+
+  @@unique([project_id, stage_order])
+  @@map("project_stages")
+}
+
+model WorkPackage {
+  id          String       @id @default(uuid())
+  stage_id    String
+  name        String
+  code        String
+  description String?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  tasks       Task[]
+  stage       ProjectStage @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+
+  @@map("work_packages")
+}
+
+model LocationZone {
+  id          String   @id @default(uuid())
+  project_id  String
+  name        String
+  code        String
+  coordinates Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@unique([project_id, code])
+  @@map("location_zones")
+}
+
+model ProjectMember {
+  id          String       @id @default(uuid())
+  project_id  String
+  user_id     String
+  role        UserRoleEnum
+  assigned_at DateTime     @default(now())
+  project     Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, user_id])
+  @@map("project_members")
+}
+
+model Task {
+  id                 String            @id @default(uuid())
+  project_id         String
+  work_package_id    String?
+  zone_id            String?
+  title              String
+  code               String
+  description        String?
+  status             TaskStatusEnum    @default(PLANNED)
+  planned_start      DateTime?
+  planned_end        DateTime?
+  actual_start       DateTime?
+  actual_end         DateTime?
+  planned_quantity   Decimal?          @db.Decimal(12, 3)
+  actual_quantity    Decimal?          @db.Decimal(12, 3)
+  unit_of_measure    String?
+  created_at         DateTime          @default(now())
+  updated_at         DateTime          @updatedAt
+  daily_plan_tasks   DailyPlanTask[]
+  daily_report_tasks DailyReportTask[]
+  assignments        TaskAssignment[]
+  dependents         TaskDependency[]  @relation("PredecessorTask")
+  prerequisites      TaskDependency[]  @relation("DependentOn")
+  project            Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  work_package       WorkPackage?      @relation(fields: [work_package_id], references: [id])
+  zone               LocationZone?     @relation(fields: [zone_id], references: [id])
+
+  @@unique([project_id, code])
+  @@map("tasks")
+}
+
+model TaskDependency {
+  id                  String             @id @default(uuid())
+  predecessor_task_id String
+  successor_task_id   String
+  dependency_type     DependencyTypeEnum @default(FINISH_TO_START)
+  lag_days            Int                @default(0)
+  predecessor         Task               @relation("PredecessorTask", fields: [predecessor_task_id], references: [id], onDelete: Cascade)
+  successor           Task               @relation("DependentOn", fields: [successor_task_id], references: [id], onDelete: Cascade)
+
+  @@unique([predecessor_task_id, successor_task_id])
+  @@map("task_dependencies")
+}
+
+model TaskAssignment {
+  id          String   @id @default(uuid())
+  task_id     String
+  user_id     String
+  assigned_at DateTime @default(now())
+  task        Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([task_id, user_id])
+  @@map("task_assignments")
+}
+
+model AttendanceRecord {
+  id                  String               @id @default(uuid())
+  user_id             String
+  project_id          String
+  date                DateTime             @db.Date
+  check_in_time       DateTime
+  check_out_time      DateTime?
+  status              AttendanceStatusEnum @default(PRESENT)
+  check_in_latitude   Decimal?             @db.Decimal(10, 7)
+  check_in_longitude  Decimal?             @db.Decimal(10, 7)
+  check_in_distance_m Decimal?             @db.Decimal(8, 2)
+  is_within_geofence  Boolean              @default(true)
+  check_out_latitude  Decimal?             @db.Decimal(10, 7)
+  check_out_longitude Decimal?             @db.Decimal(10, 7)
+  regular_hours       Decimal              @default(0) @db.Decimal(5, 2)
+  overtime_minutes    Int                  @default(0)
+  is_offline_sync     Boolean              @default(false)
+  idempotency_key     String?              @unique
+  notes               String?
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt
+  project             Project              @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, date])
+  @@index([project_id, date])
+  @@map("attendance_records")
+}
+
+model DailyPlan {
+  id         String              @id @default(uuid())
+  project_id String
+  team_id    String?
+  plan_date  DateTime            @db.Date
+  status     DailyPlanStatusEnum @default(DRAFT)
+  notes      String?
+  created_by String?
+  created_at DateTime            @default(now())
+  updated_at DateTime            @updatedAt
+  tasks      DailyPlanTask[]
+  project    Project             @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  team       Team?               @relation(fields: [team_id], references: [id])
+  creator    User?               @relation("DailyPlanCreator", fields: [created_by], references: [id], onDelete: SetNull)
+
+  @@unique([project_id, plan_date, team_id])
+  @@map("daily_plans")
+}
+
+model DailyPlanTask {
+  id              String     @id @default(uuid())
+  daily_plan_id   String
+  task_id         String
+  target_quantity Decimal    @db.Decimal(12, 3)
+  actual_quantity Decimal?   @db.Decimal(12, 3)
+  completed       Boolean    @default(false)
+  daily_plan      DailyPlan  @relation(fields: [daily_plan_id], references: [id], onDelete: Cascade)
+  task            Task       @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@unique([daily_plan_id, task_id])
+  @@map("daily_plan_tasks")
+}
+
+model DailyReport {
+  id              String                @id @default(uuid())
+  project_id      String
+  team_id         String?
+  team_leader_id  String
+  report_date     DateTime              @db.Date
+  weather_notes   String?
+  blockages       String?
+  general_notes   String?
+  status          String                @default("SUBMITTED")
+  idempotency_key String?               @unique
+  created_at      DateTime              @default(now())
+  updated_at      DateTime              @updatedAt
+  materials       DailyReportMaterial[]
+  tasks           DailyReportTask[]
+  workers         DailyReportWorker[]
+  project         Project               @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  team            Team?                 @relation(fields: [team_id], references: [id])
+  team_leader     User                  @relation("ReportLeader", fields: [team_leader_id], references: [id], onDelete: Cascade)
+  production      ProductionEntry[]
+
+  @@index([project_id, report_date])
+  @@map("daily_reports")
+}
+
+model DailyReportWorker {
+  id              String      @id @default(uuid())
+  daily_report_id String
+  worker_id       String
+  hours_worked    Decimal     @db.Decimal(5, 2)
+  overtime_hours  Decimal     @default(0) @db.Decimal(5, 2)
+  notes           String?
+  daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
+
+  @@map("daily_report_workers")
+}
+
+model DailyReportTask {
+  id              String      @id @default(uuid())
+  daily_report_id String
+  task_id         String
+  quantity_done   Decimal     @db.Decimal(12, 3)
+  notes           String?
+  daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
+  task            Task        @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@map("daily_report_tasks")
+}
+
+model DailyReportMaterial {
+  id              String      @id @default(uuid())
+  daily_report_id String
+  material_id     String
+  quantity_used   Decimal     @db.Decimal(12, 3)
+  daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
+  material        Material    @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@map("daily_report_materials")
+}
+
+model ProductionEntry {
+  id              String      @id @default(uuid())
+  daily_report_id String
+  metric_name     String
+  quantity        Decimal     @db.Decimal(12, 3)
+  unit            String
+  daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
+
+  @@map("production_entries")
+}
+
+model Material {
+  id                   String                @id @default(uuid())
+  code                 String                @unique
+  name                 String
+  unit                 String
+  category             String?
+  barcode              String?
+  qr_code              String?
+  min_stock_threshold  Decimal               @default(0) @db.Decimal(12, 3)
+  unit_cost_estimate   Decimal?              @db.Decimal(12, 2)
+  is_active            Boolean               @default(true)
+  created_at           DateTime              @default(now())
+  updated_at           DateTime              @updatedAt
+  aviz_items           AvizItem[]
+  consumptions         Consumption[]
+  report_materials     DailyReportMaterial[]
+  lots                 MaterialLot[]
+  project_allocations  ProjectAllocation[]
+  purchase_order_items PurchaseOrderItem[]
+  stock_balances       StockBalance[]
+  stock_movements      StockMovement[]
+
+  @@map("materials")
+}
+
+model MaterialLot {
+  id              String          @id @default(uuid())
+  material_id     String
+  lot_number      String
+  expiry_date     DateTime?
+  created_at      DateTime        @default(now())
+  material        Material        @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  stock_movements StockMovement[]
+
+  @@unique([material_id, lot_number])
+  @@map("material_lots")
+}
+
+model Warehouse {
+  id              String          @id @default(uuid())
+  organization_id String
+  name            String
+  code            String          @unique
+  address         String?
+  is_active       Boolean         @default(true)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  stock_balances  StockBalance[]
+  stock_movements StockMovement[]
+  organization    Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@map("warehouses")
+}
+
+model StockBalance {
+  id                String     @id @default(uuid())
+  material_id       String
+  project_id        String?
+  warehouse_id      String?
+  current_quantity  Decimal    @default(0) @db.Decimal(12, 3)
+  reserved_quantity Decimal    @default(0) @db.Decimal(12, 3)
+  updated_at        DateTime   @updatedAt
+  material          Material   @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  project           Project?   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  warehouse         Warehouse? @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
+
+  @@unique([material_id, project_id, warehouse_id])
+  @@map("stock_balances")
+}
+
+model StockMovement {
+  id              String                @id @default(uuid())
+  material_id     String
+  lot_id          String?
+  project_id      String?
+  warehouse_id    String?
+  movement_type   StockMovementTypeEnum
+  quantity        Decimal               @db.Decimal(12, 3)
+  reference_type  String?
+  reference_id    String?
+  idempotency_key String?               @unique
+  created_by_id   String?
+  notes           String?
+  created_at      DateTime              @default(now())
+  lot             MaterialLot?          @relation(fields: [lot_id], references: [id])
+  material        Material              @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  project         Project?              @relation(fields: [project_id], references: [id])
+  warehouse       Warehouse?            @relation(fields: [warehouse_id], references: [id])
+
+  @@index([material_id, created_at])
+  @@map("stock_movements")
+}
+
+model ProjectAllocation {
+  id            String   @id @default(uuid())
+  project_id    String
+  material_id   String
+  allocated_qty Decimal  @db.Decimal(12, 3)
+  created_at    DateTime @default(now())
+  material      Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  project       Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, material_id])
+  @@map("project_allocations")
+}
+
+model Consumption {
+  id           String   @id @default(uuid())
+  project_id   String
+  material_id  String
+  consumed_qty Decimal  @db.Decimal(12, 3)
+  consumed_at  DateTime @default(now())
+  material     Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  project      Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("consumptions")
+}
+
+model Supplier {
+  id              String          @id @default(uuid())
+  organization_id String
+  name            String
+  cui             String?         @unique
+  address         String?
+  contact_person  String?
+  contact_email   String?
+  contact_phone   String?
+  is_active       Boolean         @default(true)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  avize           Aviz[]
+  invoices        Invoice[]
+  purchase_orders PurchaseOrder[]
+  organization    Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id           String              @id @default(uuid())
+  supplier_id  String
+  order_number String              @unique
+  total_amount Decimal             @db.Decimal(14, 2)
+  currency     String              @default("RON")
+  status       String              @default("DRAFT")
+  order_date   DateTime            @default(now())
+  deliveries   Delivery[]
+  items        PurchaseOrderItem[]
+  supplier     Supplier            @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id                String        @id @default(uuid())
+  purchase_order_id String
+  material_id       String
+  quantity          Decimal       @db.Decimal(12, 3)
+  unit_price        Decimal       @db.Decimal(12, 2)
+  material          Material      @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  purchase_order    PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
+
+  @@map("purchase_order_items")
+}
+
+model Delivery {
+  id                String         @id @default(uuid())
+  purchase_order_id String?
+  delivery_number   String
+  delivery_date     DateTime       @default(now())
+  purchase_order    PurchaseOrder? @relation(fields: [purchase_order_id], references: [id])
+
+  @@map("deliveries")
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  supplier_id String?
+  number      String
+  issue_date  DateTime      @db.Date
+  due_date    DateTime?     @db.Date
+  total_net   Decimal       @db.Decimal(14, 2)
+  vat_amount  Decimal       @db.Decimal(14, 2)
+  total_gross Decimal       @db.Decimal(14, 2)
+  currency    String        @default("RON")
+  lines       InvoiceLine[]
+  supplier    Supplier?     @relation(fields: [supplier_id], references: [id])
+
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id          String  @id @default(uuid())
+  invoice_id  String
+  description String
+  quantity    Decimal @db.Decimal(12, 3)
+  unit_price  Decimal @db.Decimal(12, 2)
+  total       Decimal @db.Decimal(14, 2)
+  invoice     Invoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+
+  @@map("invoice_lines")
+}
+
+model Receipt {
+  id     String   @id @default(uuid())
+  number String
+  date   DateTime @db.Date
+  total  Decimal  @db.Decimal(12, 2)
+
+  @@map("receipts")
+}
+
+model Aviz {
+  id              String     @id @default(uuid())
+  project_id      String
+  supplier_id     String?
+  aviz_number     String
+  delivery_date   DateTime   @db.Date
+  driver_name     String?
+  vehicle_plate   String?
+  notes           String?
+  idempotency_key String?    @unique
+  created_at      DateTime   @default(now())
+  items           AvizItem[]
+  project         Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  supplier        Supplier?  @relation(fields: [supplier_id], references: [id])
+
+  @@map("avize")
+}
+
+model AvizItem {
+  id          String   @id @default(uuid())
+  aviz_id     String
+  material_id String
+  quantity    Decimal  @db.Decimal(12, 3)
+  aviz        Aviz     @relation(fields: [aviz_id], references: [id], onDelete: Cascade)
+  material    Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@map("aviz_items")
+}
+
+model Expense {
+  id              String              @id @default(uuid())
+  project_id      String?
+  submitted_by_id String
+  category        ExpenseCategoryEnum
+  payment_method  PaymentMethodEnum   @default(COMPANY_CARD)
+  amount          Decimal             @db.Decimal(12, 2)
+  vat_amount      Decimal?            @db.Decimal(12, 2)
+  currency        String              @default("RON")
+  expense_date    DateTime            @db.Date
+  merchant_name   String?
+  merchant_cui    String?
+  document_number String?
+  description     String?
+  status          ExpenseStatusEnum   @default(SUBMITTED)
+  idempotency_key String?             @unique
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
+  approvals       ExpenseApproval[]
+  lines           ExpenseLine[]
+  project         Project?            @relation(fields: [project_id], references: [id])
+  submitted_by    User                @relation("ExpenseSubmitter", fields: [submitted_by_id], references: [id], onDelete: Cascade)
+  ocr_jobs        OCRJob[]
+  reimbursements  Reimbursement[]
+
+  @@index([submitted_by_id, status])
+  @@map("expenses")
+}
+
+model ExpenseLine {
+  id          String   @id @default(uuid())
+  expense_id  String
+  description String
+  amount      Decimal  @db.Decimal(12, 2)
+  vat_rate    Decimal? @db.Decimal(5, 2)
+  expense     Expense  @relation(fields: [expense_id], references: [id], onDelete: Cascade)
+
+  @@map("expense_lines")
+}
+
+model ExpenseApproval {
+  id          String   @id @default(uuid())
+  expense_id  String
+  approver_id String
+  status      String
+  notes       String?
+  created_at  DateTime @default(now())
+  approver    User     @relation("ExpenseApprover", fields: [approver_id], references: [id], onDelete: Cascade)
+  expense     Expense  @relation(fields: [expense_id], references: [id], onDelete: Cascade)
+
+  @@map("expense_approvals")
+}
+
+model Reimbursement {
+  id           String   @id @default(uuid())
+  expense_id   String
+  amount       Decimal  @db.Decimal(12, 2)
+  payment_ref  String?
+  processed_at DateTime @default(now())
+  expense      Expense  @relation(fields: [expense_id], references: [id], onDelete: Cascade)
+
+  @@map("reimbursements")
+}
+
+model Document {
+  id              String            @id @default(uuid())
+  project_id      String?
+  document_type   DocumentTypeEnum
+  title           String
+  code            String?
+  storage_path    String
+  current_version Int               @default(1)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  versions        DocumentVersion[]
+  project         Project?          @relation(fields: [project_id], references: [id])
+  ocr_jobs        OCRJob[]
+
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id           String   @id @default(uuid())
+  document_id  String
+  version      Int
+  storage_path String
+  file_size    Int
+  checksum     String?
+  uploaded_by  String?
+  created_at   DateTime @default(now())
+  document     Document @relation(fields: [document_id], references: [id], onDelete: Cascade)
+
+  @@unique([document_id, version])
+  @@map("document_versions")
+}
+
+model OCRJob {
+  id             String          @id @default(uuid())
+  document_id    String?
+  expense_id     String?
+  provider       String          @default("PADDLE_OCR")
+  state          OCRJobStateEnum @default(PENDING)
+  correlation_id String?         @unique
+  raw_payload    Json?
+  error_message  String?
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  extractions    OCRExtraction[]
+  document       Document?       @relation(fields: [document_id], references: [id])
+  expense        Expense?        @relation(fields: [expense_id], references: [id])
+
+  @@map("ocr_jobs")
+}
+
+model OCRExtraction {
+  id             String  @id @default(uuid())
+  ocr_job_id     String
+  field_name     String
+  raw_value      String?
+  normalized_val String?
+  confidence     Decimal @db.Decimal(5, 4)
+  is_reviewed    Boolean @default(false)
+  ocr_job        OCRJob  @relation(fields: [ocr_job_id], references: [id], onDelete: Cascade)
+
+  @@map("ocr_extractions")
+}
+
+model InspectionTemplate {
+  id          String       @id @default(uuid())
+  name        String
+  code        String       @unique
+  checklist   Json
+  created_at  DateTime     @default(now())
+  inspections Inspection[]
+
+  @@map("inspection_templates")
+}
+
+model Inspection {
+  id             String              @id @default(uuid())
+  project_id     String
+  template_id    String?
+  inspector_name String
+  status         String              @default("PENDING")
+  inspected_at   DateTime            @default(now())
+  project        Project             @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  template       InspectionTemplate? @relation(fields: [template_id], references: [id])
+  measurements   Measurement[]
+  ncrs           NCR[]
+
+  @@map("inspections")
+}
+
+model Measurement {
+  id            String     @id @default(uuid())
+  inspection_id String
+  parameter     String
+  value         Decimal    @db.Decimal(12, 4)
+  unit          String
+  passed        Boolean    @default(true)
+  inspection    Inspection @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
+
+  @@map("measurements")
+}
+
+model Issue {
+  id          String            @id @default(uuid())
+  project_id  String
+  title       String
+  description String
+  severity    IssueSeverityEnum @default(MEDIUM)
+  status      IssueStatusEnum   @default(OPEN)
+  reported_by String?
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  project     Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  ncrs        NCR[]
+
+  @@map("issues")
+}
+
+model NCR {
+  id            String        @id @default(uuid())
+  issue_id      String?
+  inspection_id String?
+  ncr_number    String        @unique
+  description   String
+  status        NCRStatusEnum @default(OPEN)
+  created_at    DateTime      @default(now())
+  inspection    Inspection?   @relation(fields: [inspection_id], references: [id])
+  issue         Issue?        @relation(fields: [issue_id], references: [id])
+
+  @@map("ncrs")
+}
+
+model ChangeOrder {
+  id              String                @id @default(uuid())
+  project_id      String
+  order_number    String                @unique
+  title           String
+  description     String
+  cost_impact     Decimal               @default(0) @db.Decimal(14, 2)
+  schedule_impact Int                   @default(0)
+  status          ChangeOrderStatusEnum @default(DRAFT)
+  version         Int                   @default(1)
+  created_at      DateTime              @default(now())
+  updated_at      DateTime              @updatedAt
+  project         Project               @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("change_orders")
+}
+
+model Budget {
+  id          String       @id @default(uuid())
+  project_id  String
+  version     Int          @default(1)
+  total_limit Decimal      @db.Decimal(14, 2)
+  created_at  DateTime     @default(now())
+  lines       BudgetLine[]
+  project     Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, version])
+  @@map("budgets")
+}
+
+model BudgetLine {
+  id        String  @id @default(uuid())
+  budget_id String
+  category  String
+  allocated Decimal @db.Decimal(14, 2)
+  budget    Budget  @relation(fields: [budget_id], references: [id], onDelete: Cascade)
+
+  @@map("budget_lines")
+}
+
+model CostEntry {
+  id         String   @id @default(uuid())
+  project_id String
+  category   String
+  amount     Decimal  @db.Decimal(14, 2)
+  entry_date DateTime @db.Date
+  project    Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("cost_entries")
+}
+
+model Commitment {
+  id          String  @id @default(uuid())
+  description String
+  amount      Decimal @db.Decimal(14, 2)
+  status      String  @default("ACTIVE")
+
+  @@map("commitments")
+}
+
+model Payment {
+  id      String   @id @default(uuid())
+  amount  Decimal  @db.Decimal(14, 2)
+  method  String
+  paid_at DateTime @default(now())
+
+  @@map("payments")
+}
+
+model Notification {
+  id         String                   @id @default(uuid())
+  user_id    String
+  title_ro   String
+  title_en   String?
+  message_ro String
+  message_en String?
+  priority   NotificationPriorityEnum @default(NORMAL)
+  action_url String?
+  metadata   Json?
+  is_read    Boolean                  @default(false)
+  read_at    DateTime?
+  created_at DateTime                 @default(now())
+  user       User                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id         String                  @id @default(uuid())
+  user_id    String
+  category   String
+  channel    NotificationChannelEnum
+  is_enabled Boolean                 @default(true)
+  user       User                    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, category, channel])
+  @@map("notification_preferences")
+}
+
+model Attachment {
+  id          String   @id @default(uuid())
+  target_type String
+  target_id   String
+  file_name   String
+  storage_url String
+  mime_type   String?
+  created_at  DateTime @default(now())
+
+  @@index([target_type, target_id])
+  @@map("attachments")
+}
+
+model AuditLog {
+  id              String        @id @default(uuid())
+  organization_id String?
+  actor_id        String?
+  action          String
+  entity          String
+  entity_id       String
+  before_state    Json?
+  after_state     Json?
+  metadata        Json?
+  ip_address      String?
+  user_agent      String?
+  created_at      DateTime      @default(now())
+  actor           User?         @relation("AuditActor", fields: [actor_id], references: [id])
+  organization    Organization? @relation(fields: [organization_id], references: [id])
+
+  @@index([entity, entity_id])
+  @@index([actor_id])
+  @@index([created_at])
+  @@map("audit_logs")
+}
 
 enum UserRoleEnum {
   ADMIN
@@ -27,6 +1040,10 @@ enum UserRoleEnum {
   FINANCE
   QA_QC
   VIEWER
+  FOREMAN
+  SITE_LOGISTICS
+  MAINTENANCE_DIRECTOR
+  TECHNICAL_DIRECTOR
 }
 
 enum AttendanceStatusEnum {
@@ -57,6 +1074,13 @@ enum TaskStatusEnum {
   BLOCKED
   COMPLETED
   VERIFIED
+  CANCELLED
+}
+
+enum DailyPlanStatusEnum {
+  DRAFT
+  PUBLISHED
+  COMPLETED
   CANCELLED
 }
 
@@ -171,1119 +1195,4 @@ enum OCRJobStateEnum {
   COMPLETED
   FAILED
   REVIEW_REQUIRED
-}
-
-// ==========================================
-// 1. IDENTITY, ACCESS & ORGANIZATION
-// ==========================================
-
-model Organization {
-  id          String   @id @default(uuid())
-  name        String
-  cui         String?  @unique
-  address     String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  users       User[]
-  projects    Project[]
-  warehouses  Warehouse[]
-  clients     Client[]
-  suppliers   Supplier[]
-  audit_logs  AuditLog[]
-
-  @@map("organizations")
-}
-
-model User {
-  id              String         @id @default(uuid())
-  organization_id String?
-  email           String         @unique
-  password_hash   String?
-  role            UserRoleEnum   @default(WORKER)
-  is_active       Boolean        @default(true)
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
-
-  organization    Organization?  @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  profile         UserProfile?
-  employee        Employee?
-  project_members ProjectMember[]
-  team_members    TeamMember[]
-  audit_logs      AuditLog[]     @relation("AuditActor")
-  assigned_tasks  TaskAssignment[]
-  time_logs       AttendanceRecord[]
-  daily_reports   DailyReport[]  @relation("ReportLeader")
-  expenses        Expense[]      @relation("ExpenseSubmitter")
-  approvals       ExpenseApproval[] @relation("ExpenseApprover")
-  notifications   Notification[]
-  notification_prefs NotificationPreference[]
-
-  @@index([organization_id])
-  @@index([role])
-  @@map("users")
-}
-
-model UserProfile {
-  id              String       @id @default(uuid())
-  user_id         String       @unique
-  full_name       String
-  phone           String?
-  employee_code   String?
-  avatar_url      String?
-  language        String       @default("ro")
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @updatedAt
-
-  user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@map("user_profiles")
-}
-
-model Role {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  code        UserRoleEnum @unique
-  description String?
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-
-  permissions RolePermission[]
-
-  @@map("roles")
-}
-
-model Permission {
-  id          String   @id @default(uuid())
-  module      String
-  action      String
-  description String?
-  created_at  DateTime @default(now())
-
-  roles       RolePermission[]
-
-  @@unique([module, action])
-  @@map("permissions")
-}
-
-model RolePermission {
-  role_id       String
-  permission_id String
-
-  role          Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
-  permission    Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
-
-  @@id([role_id, permission_id])
-  @@map("role_permissions")
-}
-
-model Employee {
-  id              String       @id @default(uuid())
-  user_id         String?      @unique
-  first_name      String
-  last_name       String
-  cnp             String?      @unique
-  position        String?
-  hourly_rate     Decimal?     @db.Decimal(10, 2)
-  is_active       Boolean      @default(true)
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @updatedAt
-
-  user            User?        @relation(fields: [user_id], references: [id], onDelete: SetNull)
-
-  @@map("employees")
-}
-
-model Team {
-  id          String       @id @default(uuid())
-  name        String
-  code        String       @unique
-  leader_id   String?
-  project_id  String?
-  is_active   Boolean      @default(true)
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-
-  members     TeamMember[]
-  daily_reports DailyReport[]
-  daily_plans   DailyPlan[]
-
-  @@map("teams")
-}
-
-model TeamMember {
-  id          String   @id @default(uuid())
-  team_id     String
-  user_id     String
-  joined_at   DateTime @default(now())
-
-  team        Team     @relation(fields: [team_id], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([team_id, user_id])
-  @@map("team_members")
-}
-
-// ==========================================
-// 2. CLIENTS, PROJECTS & WORK BREAKDOWN
-// ==========================================
-
-model Client {
-  id              String       @id @default(uuid())
-  organization_id String
-  name            String
-  cui             String?
-  contact_person  String?
-  contact_email   String?
-  contact_phone   String?
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @updatedAt
-
-  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  projects        Project[]
-
-  @@map("clients")
-}
-
-model Project {
-  id                     String            @id @default(uuid())
-  organization_id        String
-  client_id              String?
-  name                   String
-  code                   String            @unique
-  address                String
-  latitude               Decimal           @db.Decimal(10, 7)
-  longitude              Decimal           @db.Decimal(10, 7)
-  geofence_radius_meters Int               @default(300)
-  installed_capacity_mwp Decimal?          @db.Decimal(8, 3)
-  status                 ProjectStatusEnum @default(PLANNING)
-  start_date             DateTime?
-  target_end_date        DateTime?
-  budget_total           Decimal?          @db.Decimal(14, 2)
-  currency               String            @default("RON")
-  is_active              Boolean           @default(true)
-  created_at             DateTime          @default(now())
-  updated_at             DateTime          @updatedAt
-
-  organization           Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  client                 Client?           @relation(fields: [client_id], references: [id], onDelete: SetNull)
-  stages                 ProjectStage[]
-  zones                  LocationZone[]
-  members                ProjectMember[]
-  tasks                  Task[]
-  daily_plans            DailyPlan[]
-  daily_reports          DailyReport[]
-  time_logs              AttendanceRecord[]
-  stock_balances         StockBalance[]
-  stock_movements        StockMovement[]
-  project_allocations    ProjectAllocation[]
-  consumptions           Consumption[]
-  avize                  Aviz[]
-  expenses               Expense[]
-  documents              Document[]
-  inspections            Inspection[]
-  issues                 Issue[]
-  change_orders          ChangeOrder[]
-  budgets                Budget[]
-  cost_entries           CostEntry[]
-
-  @@index([organization_id])
-  @@index([code])
-  @@map("projects")
-}
-
-model ProjectStage {
-  id          String         @id @default(uuid())
-  project_id  String
-  name        String
-  stage_order Int            @default(1)
-  status      ProjectStatusEnum @default(PLANNING)
-  start_date  DateTime?
-  end_date    DateTime?
-  created_at  DateTime       @default(now())
-  updated_at  DateTime       @updatedAt
-
-  project     Project        @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  work_packages WorkPackage[]
-
-  @@unique([project_id, stage_order])
-  @@map("project_stages")
-}
-
-model WorkPackage {
-  id          String   @id @default(uuid())
-  stage_id    String
-  name        String
-  code        String
-  description String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  stage       ProjectStage @relation(fields: [stage_id], references: [id], onDelete: Cascade)
-  tasks       Task[]
-
-  @@map("work_packages")
-}
-
-model LocationZone {
-  id          String   @id @default(uuid())
-  project_id  String
-  name        String
-  code        String
-  coordinates Json?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  tasks       Task[]
-
-  @@unique([project_id, code])
-  @@map("location_zones")
-}
-
-model ProjectMember {
-  id          String       @id @default(uuid())
-  project_id  String
-  user_id     String
-  role        UserRoleEnum
-  assigned_at DateTime     @default(now())
-
-  project     Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([project_id, user_id])
-  @@map("project_members")
-}
-
-// ==========================================
-// 3. TASKS & DEPENDENCIES
-// ==========================================
-
-model Task {
-  id               String         @id @default(uuid())
-  project_id       String
-  work_package_id  String?
-  zone_id          String?
-  title            String
-  code             String
-  description      String?
-  status           TaskStatusEnum @default(PLANNED)
-  planned_start    DateTime?
-  planned_end      DateTime?
-  actual_start     DateTime?
-  actual_end       DateTime?
-  planned_quantity Decimal?       @db.Decimal(12, 3)
-  actual_quantity  Decimal?       @db.Decimal(12, 3)
-  unit_of_measure  String?
-  created_at       DateTime       @default(now())
-  updated_at       DateTime       @updatedAt
-
-  project          Project        @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  work_package     WorkPackage?   @relation(fields: [work_package_id], references: [id], onDelete: SetNull)
-  zone             LocationZone?  @relation(fields: [zone_id], references: [id], onDelete: SetNull)
-  assignments      TaskAssignment[]
-  prerequisites    TaskDependency[] @relation("DependentOn")
-  dependents       TaskDependency[] @relation("PredecessorTask")
-  daily_plan_tasks DailyPlanTask[]
-  daily_report_tasks DailyReportTask[]
-
-  @@unique([project_id, code])
-  @@map("tasks")
-}
-
-model TaskDependency {
-  id                   String             @id @default(uuid())
-  predecessor_task_id  String
-  successor_task_id    String
-  dependency_type      DependencyTypeEnum @default(FINISH_TO_START)
-  lag_days             Int                @default(0)
-
-  predecessor          Task               @relation("PredecessorTask", fields: [predecessor_task_id], references: [id], onDelete: Cascade)
-  successor            Task               @relation("DependentOn", fields: [successor_task_id], references: [id], onDelete: Cascade)
-
-  @@unique([predecessor_task_id, successor_task_id])
-  @@map("task_dependencies")
-}
-
-model TaskAssignment {
-  id          String   @id @default(uuid())
-  task_id     String
-  user_id     String
-  assigned_at DateTime @default(now())
-
-  task        Task     @relation(fields: [task_id], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([task_id, user_id])
-  @@map("task_assignments")
-}
-
-// ==========================================
-// 4. ATTENDANCE & FIELD REPORTING
-// ==========================================
-
-model AttendanceRecord {
-  id                     String               @id @default(uuid())
-  user_id                String
-  project_id             String
-  date                   DateTime             @db.Date
-  check_in_time          DateTime
-  check_out_time         DateTime?
-  status                 AttendanceStatusEnum @default(PRESENT)
-  check_in_latitude      Decimal?             @db.Decimal(10, 7)
-  check_in_longitude     Decimal?             @db.Decimal(10, 7)
-  check_in_distance_m    Decimal?             @db.Decimal(8, 2)
-  is_within_geofence     Boolean              @default(true)
-  check_out_latitude     Decimal?             @db.Decimal(10, 7)
-  check_out_longitude    Decimal?             @db.Decimal(10, 7)
-  regular_hours          Decimal              @default(0) @db.Decimal(5, 2)
-  overtime_minutes       Int                  @default(0)
-  is_offline_sync        Boolean              @default(false)
-  idempotency_key        String?              @unique
-  notes                  String?
-  created_at             DateTime             @default(now())
-  updated_at             DateTime             @updatedAt
-
-  user                   User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  project                Project              @relation(fields: [project_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id, date])
-  @@index([project_id, date])
-  @@map("attendance_records")
-}
-
-model DailyPlan {
-  id          String   @id @default(uuid())
-  project_id  String
-  team_id     String?
-  plan_date   DateTime @db.Date
-  notes       String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  team        Team?    @relation(fields: [team_id], references: [id], onDelete: SetNull)
-  tasks       DailyPlanTask[]
-
-  @@unique([project_id, plan_date, team_id])
-  @@map("daily_plans")
-}
-
-model DailyPlanTask {
-  id               String   @id @default(uuid())
-  daily_plan_id    String
-  task_id          String
-  target_quantity  Decimal  @db.Decimal(12, 3)
-
-  daily_plan       DailyPlan @relation(fields: [daily_plan_id], references: [id], onDelete: Cascade)
-  task             Task      @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@unique([daily_plan_id, task_id])
-  @@map("daily_plan_tasks")
-}
-
-model DailyReport {
-  id               String   @id @default(uuid())
-  project_id       String
-  team_id          String?
-  team_leader_id   String
-  report_date      DateTime @db.Date
-  weather_notes    String?
-  blockages        String?
-  general_notes    String?
-  status           String   @default("SUBMITTED")
-  idempotency_key  String?  @unique
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-
-  project          Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  team             Team?    @relation(fields: [team_id], references: [id], onDelete: SetNull)
-  team_leader      User     @relation("ReportLeader", fields: [team_leader_id], references: [id], onDelete: Cascade)
-  workers          DailyReportWorker[]
-  tasks            DailyReportTask[]
-  materials        DailyReportMaterial[]
-  production       ProductionEntry[]
-
-  @@index([project_id, report_date])
-  @@map("daily_reports")
-}
-
-model DailyReportWorker {
-  id               String      @id @default(uuid())
-  daily_report_id  String
-  worker_id        String
-  hours_worked     Decimal     @db.Decimal(5, 2)
-  overtime_hours   Decimal     @default(0) @db.Decimal(5, 2)
-  notes            String?
-
-  daily_report     DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
-
-  @@map("daily_report_workers")
-}
-
-model DailyReportTask {
-  id               String      @id @default(uuid())
-  daily_report_id  String
-  task_id          String
-  quantity_done    Decimal     @db.Decimal(12, 3)
-  notes            String?
-
-  daily_report     DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
-  task             Task        @relation(fields: [task_id], references: [id], onDelete: Cascade)
-
-  @@map("daily_report_tasks")
-}
-
-model DailyReportMaterial {
-  id               String      @id @default(uuid())
-  daily_report_id  String
-  material_id      String
-  quantity_used    Decimal     @db.Decimal(12, 3)
-
-  daily_report     DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
-  material         Material    @relation(fields: [material_id], references: [id], onDelete: Cascade)
-
-  @@map("daily_report_materials")
-}
-
-model ProductionEntry {
-  id               String      @id @default(uuid())
-  daily_report_id  String
-  metric_name      String
-  quantity         Decimal     @db.Decimal(12, 3)
-  unit             String
-
-  daily_report     DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
-
-  @@map("production_entries")
-}
-
-// ==========================================
-// 5. MATERIALS, WAREHOUSES & INVENTORY
-// ==========================================
-
-model Material {
-  id                   String   @id @default(uuid())
-  code                 String   @unique
-  name                 String
-  unit                 String
-  category             String?
-  barcode              String?
-  qr_code              String?
-  min_stock_threshold  Decimal  @default(0) @db.Decimal(12, 3)
-  unit_cost_estimate   Decimal? @db.Decimal(12, 2)
-  is_active            Boolean  @default(true)
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
-
-  lots                 MaterialLot[]
-  stock_balances       StockBalance[]
-  stock_movements      StockMovement[]
-  project_allocations  ProjectAllocation[]
-  consumptions         Consumption[]
-  purchase_order_items PurchaseOrderItem[]
-  aviz_items           AvizItem[]
-  report_materials     DailyReportMaterial[]
-
-  @@map("materials")
-}
-
-model MaterialLot {
-  id           String   @id @default(uuid())
-  material_id  String
-  lot_number   String
-  expiry_date  DateTime?
-  created_at   DateTime @default(now())
-
-  material     Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
-  stock_movements StockMovement[]
-
-  @@unique([material_id, lot_number])
-  @@map("material_lots")
-}
-
-model Warehouse {
-  id              String         @id @default(uuid())
-  organization_id String
-  name            String
-  code            String         @unique
-  address         String?
-  is_active       Boolean        @default(true)
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
-
-  organization    Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  stock_balances  StockBalance[]
-  stock_movements StockMovement[]
-
-  @@map("warehouses")
-}
-
-model StockBalance {
-  id               String    @id @default(uuid())
-  material_id      String
-  project_id       String?
-  warehouse_id     String?
-  current_quantity Decimal   @default(0) @db.Decimal(12, 3)
-  reserved_quantity Decimal  @default(0) @db.Decimal(12, 3)
-  updated_at       DateTime  @updatedAt
-
-  material         Material  @relation(fields: [material_id], references: [id], onDelete: Cascade)
-  project          Project?  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  warehouse        Warehouse? @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
-
-  @@unique([material_id, project_id, warehouse_id])
-  @@map("stock_balances")
-}
-
-model StockMovement {
-  id               String                @id @default(uuid())
-  material_id      String
-  lot_id           String?
-  project_id       String?
-  warehouse_id     String?
-  movement_type    StockMovementTypeEnum
-  quantity         Decimal               @db.Decimal(12, 3)
-  reference_type   String?
-  reference_id     String?
-  idempotency_key  String?               @unique
-  created_by_id    String?
-  notes            String?
-  created_at       DateTime              @default(now())
-
-  material         Material              @relation(fields: [material_id], references: [id], onDelete: Cascade)
-  lot              MaterialLot?          @relation(fields: [lot_id], references: [id], onDelete: SetNull)
-  project          Project?              @relation(fields: [project_id], references: [id], onDelete: SetNull)
-  warehouse        Warehouse?            @relation(fields: [warehouse_id], references: [id], onDelete: SetNull)
-
-  @@index([material_id, created_at])
-  @@map("stock_movements")
-}
-
-model ProjectAllocation {
-  id               String   @id @default(uuid())
-  project_id       String
-  material_id      String
-  allocated_qty    Decimal  @db.Decimal(12, 3)
-  created_at       DateTime @default(now())
-
-  project          Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  material         Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
-
-  @@unique([project_id, material_id])
-  @@map("project_allocations")
-}
-
-model Consumption {
-  id               String   @id @default(uuid())
-  project_id       String
-  material_id      String
-  consumed_qty     Decimal  @db.Decimal(12, 3)
-  consumed_at      DateTime @default(now())
-
-  project          Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  material         Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
-
-  @@map("consumptions")
-}
-
-// ==========================================
-// 6. PROCUREMENT, SUPPLIERS & DELIVERIES
-// ==========================================
-
-model Supplier {
-  id              String          @id @default(uuid())
-  organization_id String
-  name            String
-  cui             String?         @unique
-  address         String?
-  contact_person  String?
-  contact_email   String?
-  contact_phone   String?
-  is_active       Boolean         @default(true)
-  created_at      DateTime        @default(now())
-  updated_at      DateTime        @updatedAt
-
-  organization    Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  purchase_orders PurchaseOrder[]
-  avize           Aviz[]
-  invoices        Invoice[]
-
-  @@map("suppliers")
-}
-
-model PurchaseOrder {
-  id               String              @id @default(uuid())
-  supplier_id      String
-  order_number     String              @unique
-  total_amount     Decimal             @db.Decimal(14, 2)
-  currency         String              @default("RON")
-  status           String              @default("DRAFT")
-  order_date       DateTime            @default(now())
-
-  supplier         Supplier            @relation(fields: [supplier_id], references: [id], onDelete: Cascade)
-  items            PurchaseOrderItem[]
-  deliveries       Delivery[]
-
-  @@map("purchase_orders")
-}
-
-model PurchaseOrderItem {
-  id                String        @id @default(uuid())
-  purchase_order_id String
-  material_id       String
-  quantity          Decimal       @db.Decimal(12, 3)
-  unit_price        Decimal       @db.Decimal(12, 2)
-
-  purchase_order    PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
-  material          Material      @relation(fields: [material_id], references: [id], onDelete: Cascade)
-
-  @@map("purchase_order_items")
-}
-
-model Delivery {
-  id                String         @id @default(uuid())
-  purchase_order_id String?
-  delivery_number   String
-  delivery_date     DateTime       @default(now())
-
-  purchase_order    PurchaseOrder? @relation(fields: [purchase_order_id], references: [id], onDelete: SetNull)
-
-  @@map("deliveries")
-}
-
-model Invoice {
-  id          String        @id @default(uuid())
-  supplier_id String?
-  number      String
-  issue_date  DateTime      @db.Date
-  due_date    DateTime?     @db.Date
-  total_net   Decimal       @db.Decimal(14, 2)
-  vat_amount  Decimal       @db.Decimal(14, 2)
-  total_gross Decimal       @db.Decimal(14, 2)
-  currency    String        @default("RON")
-
-  supplier    Supplier?     @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
-  lines       InvoiceLine[]
-
-  @@map("invoices")
-}
-
-model InvoiceLine {
-  id          String   @id @default(uuid())
-  invoice_id  String
-  description String
-  quantity    Decimal  @db.Decimal(12, 3)
-  unit_price  Decimal  @db.Decimal(12, 2)
-  total       Decimal  @db.Decimal(14, 2)
-
-  invoice     Invoice  @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
-
-  @@map("invoice_lines")
-}
-
-model Receipt {
-  id          String   @id @default(uuid())
-  number      String
-  date        DateTime @db.Date
-  total       Decimal  @db.Decimal(12, 2)
-
-  @@map("receipts")
-}
-
-model Aviz {
-  id              String     @id @default(uuid())
-  project_id      String
-  supplier_id     String?
-  aviz_number     String
-  delivery_date   DateTime   @db.Date
-  driver_name     String?
-  vehicle_plate   String?
-  notes           String?
-  idempotency_key String?    @unique
-  created_at      DateTime   @default(now())
-
-  project         Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  supplier        Supplier?  @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
-  items           AvizItem[]
-
-  @@map("avize")
-}
-
-model AvizItem {
-  id          String   @id @default(uuid())
-  aviz_id     String
-  material_id String
-  quantity    Decimal  @db.Decimal(12, 3)
-
-  aviz        Aviz     @relation(fields: [aviz_id], references: [id], onDelete: Cascade)
-  material    Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
-
-  @@map("aviz_items")
-}
-
-// ==========================================
-// 7. EXPENSES, DOCUMENTS & OCR
-// ==========================================
-
-model Expense {
-  id              String              @id @default(uuid())
-  project_id      String?
-  submitted_by_id String
-  category        ExpenseCategoryEnum
-  payment_method  PaymentMethodEnum   @default(COMPANY_CARD)
-  amount          Decimal             @db.Decimal(12, 2)
-  vat_amount      Decimal?            @db.Decimal(12, 2)
-  currency        String              @default("RON")
-  expense_date    DateTime            @db.Date
-  merchant_name   String?
-  merchant_cui    String?
-  document_number String?
-  description     String?
-  status          ExpenseStatusEnum   @default(SUBMITTED)
-  idempotency_key String?             @unique
-  created_at      DateTime            @default(now())
-  updated_at      DateTime            @updatedAt
-
-  project         Project?            @relation(fields: [project_id], references: [id], onDelete: SetNull)
-  submitted_by    User                @relation("ExpenseSubmitter", fields: [submitted_by_id], references: [id], onDelete: Cascade)
-  lines           ExpenseLine[]
-  approvals       ExpenseApproval[]
-  reimbursements  Reimbursement[]
-  ocr_jobs        OCRJob[]
-
-  @@index([submitted_by_id, status])
-  @@map("expenses")
-}
-
-model ExpenseLine {
-  id          String   @id @default(uuid())
-  expense_id  String
-  description String
-  amount      Decimal  @db.Decimal(12, 2)
-  vat_rate    Decimal? @db.Decimal(5, 2)
-
-  expense     Expense  @relation(fields: [expense_id], references: [id], onDelete: Cascade)
-
-  @@map("expense_lines")
-}
-
-model ExpenseApproval {
-  id          String   @id @default(uuid())
-  expense_id  String
-  approver_id String
-  status      String
-  notes       String?
-  created_at  DateTime @default(now())
-
-  expense     Expense  @relation(fields: [expense_id], references: [id], onDelete: Cascade)
-  approver    User     @relation("ExpenseApprover", fields: [approver_id], references: [id], onDelete: Cascade)
-
-  @@map("expense_approvals")
-}
-
-model Reimbursement {
-  id           String   @id @default(uuid())
-  expense_id   String
-  amount       Decimal  @db.Decimal(12, 2)
-  payment_ref  String?
-  processed_at DateTime @default(now())
-
-  expense      Expense  @relation(fields: [expense_id], references: [id], onDelete: Cascade)
-
-  @@map("reimbursements")
-}
-
-model Document {
-  id              String            @id @default(uuid())
-  project_id      String?
-  document_type   DocumentTypeEnum
-  title           String
-  code            String?
-  storage_path    String
-  current_version Int               @default(1)
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
-
-  project         Project?          @relation(fields: [project_id], references: [id], onDelete: SetNull)
-  versions        DocumentVersion[]
-  ocr_jobs        OCRJob[]
-
-  @@map("documents")
-}
-
-model DocumentVersion {
-  id           String   @id @default(uuid())
-  document_id  String
-  version      Int
-  storage_path String
-  file_size    Int
-  checksum     String?
-  uploaded_by  String?
-  created_at   DateTime @default(now())
-
-  document     Document @relation(fields: [document_id], references: [id], onDelete: Cascade)
-
-  @@unique([document_id, version])
-  @@map("document_versions")
-}
-
-model OCRJob {
-  id             String          @id @default(uuid())
-  document_id    String?
-  expense_id     String?
-  provider       String          @default("PADDLE_OCR")
-  state          OCRJobStateEnum @default(PENDING)
-  correlation_id String?         @unique
-  raw_payload    Json?
-  error_message  String?
-  created_at     DateTime        @default(now())
-  updated_at     DateTime        @updatedAt
-
-  document       Document?       @relation(fields: [document_id], references: [id], onDelete: SetNull)
-  expense        Expense?        @relation(fields: [expense_id], references: [id], onDelete: SetNull)
-  extractions    OCRExtraction[]
-
-  @@map("ocr_jobs")
-}
-
-model OCRExtraction {
-  id             String   @id @default(uuid())
-  ocr_job_id     String
-  field_name     String
-  raw_value      String?
-  normalized_val String?
-  confidence     Decimal  @db.Decimal(5, 4)
-  is_reviewed    Boolean  @default(false)
-
-  ocr_job        OCRJob   @relation(fields: [ocr_job_id], references: [id], onDelete: Cascade)
-
-  @@map("ocr_extractions")
-}
-
-// ==========================================
-// 8. QUALITY CONTROL, ISSUES & CHANGE ORDERS
-// ==========================================
-
-model InspectionTemplate {
-  id          String   @id @default(uuid())
-  name        String
-  code        String   @unique
-  checklist   Json
-  created_at  DateTime @default(now())
-
-  inspections Inspection[]
-
-  @@map("inspection_templates")
-}
-
-model Inspection {
-  id             String              @id @default(uuid())
-  project_id     String
-  template_id    String?
-  inspector_name String
-  status         String              @default("PENDING")
-  inspected_at   DateTime            @default(now())
-
-  project        Project             @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  template       InspectionTemplate? @relation(fields: [template_id], references: [id], onDelete: SetNull)
-  measurements   Measurement[]
-  ncrs           NCR[]
-
-  @@map("inspections")
-}
-
-model Measurement {
-  id            String     @id @default(uuid())
-  inspection_id String
-  parameter     String
-  value         Decimal    @db.Decimal(12, 4)
-  unit          String
-  passed        Boolean    @default(true)
-
-  inspection    Inspection @relation(fields: [inspection_id], references: [id], onDelete: Cascade)
-
-  @@map("measurements")
-}
-
-model Issue {
-  id          String            @id @default(uuid())
-  project_id  String
-  title       String
-  description String
-  severity    IssueSeverityEnum @default(MEDIUM)
-  status      IssueStatusEnum   @default(OPEN)
-  reported_by String?
-  created_at  DateTime          @default(now())
-  updated_at  DateTime          @updatedAt
-
-  project     Project           @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  ncrs        NCR[]
-
-  @@map("issues")
-}
-
-model NCR {
-  id             String        @id @default(uuid())
-  issue_id       String?
-  inspection_id  String?
-  ncr_number     String        @unique
-  description    String
-  status         NCRStatusEnum @default(OPEN)
-  created_at     DateTime      @default(now())
-
-  issue          Issue?        @relation(fields: [issue_id], references: [id], onDelete: SetNull)
-  inspection     Inspection?   @relation(fields: [inspection_id], references: [id], onDelete: SetNull)
-
-  @@map("ncrs")
-}
-
-model ChangeOrder {
-  id               String               @id @default(uuid())
-  project_id       String
-  order_number     String               @unique
-  title            String
-  description      String
-  cost_impact      Decimal              @default(0) @db.Decimal(14, 2)
-  schedule_impact  Int                  @default(0) // days
-  status           ChangeOrderStatusEnum @default(DRAFT)
-  version          Int                  @default(1)
-  created_at       DateTime             @default(now())
-  updated_at       DateTime             @updatedAt
-
-  project          Project              @relation(fields: [project_id], references: [id], onDelete: Cascade)
-
-  @@map("change_orders")
-}
-
-// ==========================================
-// 9. COSTS, BUDGETS & COMMITMENTS
-// ==========================================
-
-model Budget {
-  id          String       @id @default(uuid())
-  project_id  String
-  version     Int          @default(1)
-  total_limit Decimal      @db.Decimal(14, 2)
-  created_at  DateTime     @default(now())
-
-  project     Project      @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  lines       BudgetLine[]
-
-  @@unique([project_id, version])
-  @@map("budgets")
-}
-
-model BudgetLine {
-  id          String   @id @default(uuid())
-  budget_id   String
-  category    String
-  allocated   Decimal  @db.Decimal(14, 2)
-
-  budget      Budget   @relation(fields: [budget_id], references: [id], onDelete: Cascade)
-
-  @@map("budget_lines")
-}
-
-model CostEntry {
-  id          String   @id @default(uuid())
-  project_id  String
-  category    String
-  amount      Decimal  @db.Decimal(14, 2)
-  entry_date  DateTime @db.Date
-
-  project     Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-
-  @@map("cost_entries")
-}
-
-model Commitment {
-  id          String   @id @default(uuid())
-  description String
-  amount      Decimal  @db.Decimal(14, 2)
-  status      String   @default("ACTIVE")
-
-  @@map("commitments")
-}
-
-model Payment {
-  id          String   @id @default(uuid())
-  amount      Decimal  @db.Decimal(14, 2)
-  method      String
-  paid_at     DateTime @default(now())
-
-  @@map("payments")
-}
-
-// ==========================================
-// 10. NOTIFICATIONS, ATTACHMENTS & AUDIT
-// ==========================================
-
-model Notification {
-  id           String                   @id @default(uuid())
-  user_id      String
-  title_ro     String
-  title_en     String?
-  message_ro   String
-  message_en   String?
-  priority     NotificationPriorityEnum @default(NORMAL)
-  action_url   String?
-  metadata     Json?
-  is_read      Boolean                  @default(false)
-  read_at      DateTime?
-  created_at   DateTime                 @default(now())
-
-  user         User                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id, is_read])
-  @@map("notifications")
-}
-
-model NotificationPreference {
-  id          String                  @id @default(uuid())
-  user_id     String
-  category    String
-  channel     NotificationChannelEnum
-  is_enabled  Boolean                 @default(true)
-
-  user        User                    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, category, channel])
-  @@map("notification_preferences")
-}
-
-model Attachment {
-  id          String   @id @default(uuid())
-  target_type String
-  target_id   String
-  file_name   String
-  storage_url String
-  mime_type   String?
-  created_at  DateTime @default(now())
-
-  @@index([target_type, target_id])
-  @@map("attachments")
-}
-
-model AuditLog {
-  id              String        @id @default(uuid())
-  organization_id String?
-  actor_id        String?
-  action          String
-  entity          String
-  entity_id       String
-  before_state    Json?
-  after_state     Json?
-  metadata        Json?
-  ip_address      String?
-  user_agent      String?
-  created_at      DateTime      @default(now())
-
-  organization    Organization? @relation(fields: [organization_id], references: [id], onDelete: SetNull)
-  actor           User?         @relation("AuditActor", fields: [actor_id], references: [id], onDelete: SetNull)
-
-  @@index([entity, entity_id])
-  @@index([actor_id])
-  @@index([created_at])
-  @@map("audit_logs")
 }

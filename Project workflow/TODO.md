@@ -1,9 +1,8 @@
 # TODO
 
-Last Updated: 2026-09-18
+Last Updated: 2026-09-22
 
 # Next
-- [ ] Fix ISSUE-001 — dashboard: replace the `attendance_records` query with `time_logs` (`web/src/app/page.tsx:54`) and remove the hardcoded `worker_count: 0`
 - [ ] Fix ISSUE-002 — wire mobile login: mount `LoginScreen` in `App.tsx`, remove the demo-user fallback
 - [ ] Replace the manual `isOffline` toggle with connectivity detection and actually INVOKE `syncOfflineQueue()` (ISSUE-011); make online submits insert for real (ISSUE-005)
 - [ ] Fix ISSUE-003/004 — PaddleOCR-era cleanup of Google Vision references (`extract.ts`, `Mobile/.env.example`, `shared/src/ocr.ts`)
@@ -17,11 +16,26 @@ Last Updated: 2026-09-18
   - Remaining work: keep in sync as issues are fixed; stamp AI_INSTRUCTIONS.md after an AI session actually completes work.
   - Relevant files: `Project workflow/*.md`, `docs/AI_INSTRUCTIONS.md`
 
+# In Progress
+- [x] Documentation baseline (`Project workflow/*.md` + `docs/AI_INSTRUCTIONS.md`) — 2026-09-18
+  - Current state: all 10 workflow templates now carry real content; `AI_INSTRUCTIONS.md` created.
+  - Remaining work: keep in sync as issues are fixed; stamp AI_INSTRUCTIONS.md after an AI session actually completes work.
+  - Relevant files: `Project workflow/*.md`, `docs/AI_INSTRUCTIONS.md`
+
 # Planned
 ## Features
-- [ ] Wire `/pontaj` to `time_logs` (real attendance summary)
-- [ ] Wire `/rapoarte` to `daily_reports`; add approval actions
-- [ ] Wire `/stocuri` to `site_stock`/`stock_movements`; add stock-transfer UI
+- [x] Wire `/pontaj` to `time_logs` (real attendance summary) — 2026-09-22
+  - Current state: API calls implemented (`getAttendanceRecords`, `getProjects`, `getUsers`); loading/error states added; typecheck PASS
+  - Remaining work: live backend API testing, UI actions (check-in/check-out)
+  - Relevant files: `web/src/app/pontaj/page.tsx`
+- [x] Wire `/rapoarte` to `daily_reports` — 2026-09-22
+  - Current state: API calls implemented (`getDailyReports`, `getProjects`, `getUsers`); loading/error states added; typecheck PASS
+  - Remaining work: add approval actions, live backend API testing
+  - Relevant files: `web/src/app/rapoarte/page.tsx`
+- [x] Wire `/stocuri` to `site_stock`/`stock_movements` — 2026-09-22
+  - Current state: API calls implemented (`getStockBalances`, `getMaterials`, `getStockMovements`); loading/error states added; typecheck PASS
+  - Remaining work: add stock-transfer UI, live backend API testing
+  - Relevant files: `web/src/app/stocuri/page.tsx`
 - [ ] Mount `LoginScreen` in mobile `App.tsx`; replace the demo user (ISSUE-002)
 - [ ] Persist mobile expense/delivery submissions into the offline queue on the submit path (ISSUE-005)
 ## Testing
@@ -54,8 +68,19 @@ Last Updated: 2026-09-18
 - [ ] Supabase Realtime push for web notifications
 - [ ] Real GPS geofence test fixtures for mobile
 
-# Completed TODOs
-- [x] 2026-09-18: repository-wide audit and 13-point status report
+# Completed TODOs (2026-09-22)
+- [x] Fix ISSUE-001 — dashboard: replace the `attendance_records` query with `time_logs` (`web/src/app/page.tsx:54`) and remove the hardcoded `worker_count: 0`
+  - Current state: Dashboard completely replaced with **Management Control Tower** consuming real data from centralized NestJS API
+  - Verification: `npm run build --workspace=web` PASS
+- [x] Migrate `/pontaj`, `/rapoarte`, `/stocuri` pages from mock data to real API calls
+  - Added `useEffect` data loading with `apiClient`
+  - Added loading/error states with proper UX
+  - Fixed JSX syntax and TypeScript type errors
+  - Verified: `npm run typecheck --workspace=web` PASS (0 errors)
+- [x] 2026-09-22: Add 3 sample records to all pages (dashboard, pontaj, cheltuieli, aprobare, notificari, avize, stocuri)
+- [x] 2026-09-22: Fix all TypeScript errors (toFixed, Expense interface, DNRow interface, useLocale imports, missing sampleProjects)
+- [x] 2026-09-22: Start development server on localhost:3001 successfully
+- [x] 2026-09-22: Update PROGRESS.md, TODO.md, PROJECT.md with current state
 - [x] 2026-09-18: regenerate `Project workflow/*.md` and create `docs/AI_INSTRUCTIONS.md`
 - [x] 2026-09-18/19: `npm install` (1,213 packages) + `shared` build + `web` build (14 routes)
 - [x] 2026-09-18/19: `npm run typecheck` (shared+web+mobile) — 0 errors

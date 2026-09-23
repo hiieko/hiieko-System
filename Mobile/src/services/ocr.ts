@@ -8,7 +8,7 @@ import { getSupabase } from './supabase';
  * `ocr-extract` Supabase Edge Function (supabase/functions/ocr-extract) with the
  * authenticated user's JWT; the provider credential (PaddleOCR service token) lives
  * only on the server. If the provider/function is not configured, the function
- * returns 503 and this client reports `notConfigured` â€” the UI then falls back
+ * returns 503 and this client reports `notConfigured` -- the UI then falls back
  * to manual entry. No OCR result is ever invented.
  */
 const OCR_FN_PATH = '/functions/v1/ocr-extract';

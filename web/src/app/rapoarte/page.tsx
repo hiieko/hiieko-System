@@ -1,12 +1,9 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
-import React from 'react';
-import { 
-  MOCK_DAILY_REPORTS, 
-  MOCK_USERS, 
-  MOCK_SITES 
-} from '../../lib/mock-data';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../lib/api-client';
+import { useLocale } from '@solar/shared';
 import { 
   FileText, 
   CheckCircle2, 
@@ -16,10 +13,59 @@ import {
   Image as ImageIcon, 
   Calendar, 
   Check, 
-  X 
+  X,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
+// Backend DailyReport interface
+interface DailyReport {
+  id: string;
+  project_id: string;
+  team_leader_id: string;
+  report_date: string | Date;
+  status?: string;
+  general_notes?: string;
+  weather_notes?: string;
+  blockages?: string;
+  team_leader?: { profile?: { full_name: string } };
+  project?: { name: string; code: string };
+  workers?: Array<{ worker_id: string; hours_worked: number; notes?: string }>;
+  materials?: Array<{ material_id: string; quantity_used: number; material?: { code: string; name: string; unit: string } }>;
+  tasks?: Array<any>;
+}
+
 export default function RapoartePage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reports, setReports] = useState<DailyReport[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const reportsResponse = await apiClient.getDailyReports();
+        setReports((reportsResponse.data || []) as DailyReport[]);
+
+        const projectsResponse = await apiClient.getProjects();
+        setProjects((projectsResponse.data || []) as any[]);
+
+        const usersResponse = await apiClient.getUsers();
+        setUsers((usersResponse.data || []) as any[]);
+      } catch (err: any) {
+        console.error('Failed to load reports:', err);
+        setError(err.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="reports" />
@@ -32,11 +78,44 @@ export default function RapoartePage() {
         </div>
       </div>
 
-      <div className="space-y-6">
-        {MOCK_DAILY_REPORTS.map((report) => {
-          const site = MOCK_SITES.find(s => s.id === report.site_id);
-          const leader = MOCK_USERS.find(u => u.id === report.team_leader_id);
-          const presentWorkers = MOCK_USERS.filter(u => report.present_worker_ids.includes(u.id));
+      {loading ? (
+        <div className="py-12 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
+          <p className="mt-2 text-sm text-slate-500">Încărcând rapoartele zilnice...</p>
+        </div>
+      ) : error ? (
+        <div className="py-12 text-center">
+          <AlertCircle className="w-8 h-8 mx-auto text-rose-400" />
+          <p className="mt-2 text-sm text-rose-500">Eroare: {error}</p>
+        </div>
+      ) : reports.length === 0 ? (
+        <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
+          <FileText className="w-8 h-8 mx-auto text-slate-300" />
+          <p className="mt-2 text-sm text-slate-500">Nu există rapoarte zilnice</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {reports.map((report) => {
+            const project = projects.find(p => p.id === report.project_id);
+            const siteName = report.project?.name || project?.name || 'Șantier';
+            const siteCode = report.project?.code || project?.code || '—';
+            const leaderName = report.team_leader?.profile?.full_name || 
+                             users.find(u => u.id === report.team_leader_id)?.full_name || 
+                             'Necunoscut';
+            const notes = report.general_notes || report.blockages || 'Nu există observații';
+            
+            // Get present workers from workers array
+            const presentWorkerIds = (report.workers || []).map(w => w.worker_id);
+            const presentWorkers = users.filter(u => presentWorkerIds.includes(u.id));
+            
+            // Map materials used
+            const materialsUsed = (report.materials || []).map(m => ({
+              material_id: m.material_id,
+              material_code: m.material?.code || '—',
+              material_name: m.material?.name || 'Material',
+              quantity: m.quantity_used || 0,
+              unit: m.material?.unit || 'buc',
+            }));
 
           return (
             <div key={report.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -44,19 +123,19 @@ export default function RapoartePage() {
               <div className="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                   <div className="flex items-center space-x-3">
-                    <span className="font-bold text-lg text-slate-900">{site?.name}</span>
+                    <span className="font-bold text-lg text-slate-900">{siteName}</span>
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-200">
-                      {site?.code}
+                      {siteCode}
                     </span>
                   </div>
                   <div className="text-xs text-slate-500 mt-1 flex items-center space-x-4">
                     <span className="flex items-center">
                       <Calendar className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                      Data: <strong className="ml-1 text-slate-700">{report.report_date}</strong>
+                      Data: <strong className="ml-1 text-slate-700">{report.report_date?.toString().split('T')[0] || '—'}</strong>
                     </span>
                     <span>•</span>
                     <span>
-                      Șef Echipă: <strong className="text-slate-700">{leader?.full_name}</strong>
+                      Șef Echipă: <strong className="text-slate-700">{leaderName}</strong>
                     </span>
                   </div>
                 </div>
@@ -84,20 +163,22 @@ export default function RapoartePage() {
                     Lucrări Executate
                   </h3>
                   <div className="space-y-2">
-                    {report.tasks.map((t, idx) => (
+                    {((report.tasks || []) as any[]).length > 0 ? (report.tasks as any[]).map((t: any, idx: number) => (
                       <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
-                        <span className="text-sm font-medium text-slate-800">{t.description}</span>
+                        <span className="text-sm font-medium text-slate-800">{t.task?.name || t.description || 'Sarcină'}</span>
                         <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded">
-                          {t.quantity} {t.unit}
+                          {t.quantity_done || t.quantity || 0} {t.unit || 'buc'}
                         </span>
                       </div>
-                    ))}
+                    )) : (
+                      <p className="text-xs text-slate-400 italic py-3">Nu există sarcini înregistrate</p>
+                    )}
                   </div>
 
                   <div className="mt-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Observații Șantier:</h4>
                     <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
-                      "{report.notes}"
+                      "{notes}"
                     </p>
                   </div>
                 </div>
@@ -109,7 +190,7 @@ export default function RapoartePage() {
                     Materiale Consumate (Scăzute din Stoc)
                   </h3>
                   <div className="space-y-2">
-                    {report.materials_used.map((m, idx) => (
+                    {materialsUsed.length > 0 ? materialsUsed.map((m, idx) => (
                       <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
                         <div>
                           <div className="text-xs font-semibold text-slate-800">{m.material_name}</div>
@@ -119,7 +200,9 @@ export default function RapoartePage() {
                           -{m.quantity} {m.unit}
                         </span>
                       </div>
-                    ))}
+                    )) : (
+                      <p className="text-xs text-slate-400 italic py-3">Nu există materiale consumate</p>
+                    )}
                   </div>
 
                   <div className="mt-4">
@@ -144,18 +227,9 @@ export default function RapoartePage() {
                     Fotografii Execuție Șantier
                   </h3>
                   <div className="grid grid-cols-1 gap-3">
-                    {report.photos.map((photo, idx) => (
-                      <div key={idx} className="relative rounded-lg overflow-hidden border border-slate-200 aspect-video group">
-                        <img 
-                          src={photo} 
-                          alt="Foto lucrare șantier" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold">
-                          Vizualizează Mărit
-                        </div>
-                      </div>
-                    ))}
+                    <p className="text-xs text-slate-400 italic py-3">
+                      Fotografiile nu sunt încă disponibile în această versiune
+                    </p>
                   </div>
                 </div>
               </div>
@@ -163,6 +237,7 @@ export default function RapoartePage() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

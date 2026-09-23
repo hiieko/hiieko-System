@@ -91,7 +91,7 @@ export default function SantierePage() {
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 space-y-2.5 text-xs">
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="flex items-center"><Navigation className="w-3.5 h-3.5 mr-1.5 text-amber-600" />Coordonate GPS Centru:</span>
-                    <span className="font-mono font-semibold text-slate-800">{site.latitude.toFixed(4)}, {site.longitude.toFixed(4)}</span>
+                    <span className="font-mono font-semibold text-slate-800">{Number(site.latitude).toFixed(4)}, {Number(site.longitude).toFixed(4)}</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="flex items-center"><Sliders className="w-3.5 h-3.5 mr-1.5 text-amber-600" />Raza Geofence Validare:</span>

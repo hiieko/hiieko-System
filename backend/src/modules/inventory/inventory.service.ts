@@ -305,4 +305,19 @@ export class InventoryService {
       take: 100,
     });
   }
+
+  async listAllBalances(params?: { projectId?: string; materialId?: string }) {
+    return this.prisma.stockBalance.findMany({
+      where: {
+        project_id: params?.projectId || undefined,
+        material_id: params?.materialId || undefined,
+      },
+      include: {
+        material: true,
+        project: true,
+        warehouse: true,
+      },
+      orderBy: { material: { code: 'asc' } },
+    });
+  }
 }

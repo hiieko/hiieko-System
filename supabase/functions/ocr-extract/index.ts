@@ -1,5 +1,5 @@
 ﻿// ============================================================================
-// ocr-extract â€” Server-side OCR for expense documents (HIIEKO Camera/OCR)
+// ocr-extract -- Server-side OCR for expense documents (HIIEKO Camera/OCR)
 //
 // Real OCR architecture. The Mobile/Web clients never hold an OCR secret key:
 // they call THIS function with an authenticated Supabase user, and the actual

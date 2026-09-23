@@ -34,6 +34,12 @@ export class ProcurementController {
     return this.procurementService.findAllAvize(projectId);
   }
 
+  @Get('delivery-notes')
+  @ApiOperation({ summary: 'List delivery notes (alias for avize - apiClient compatibility)' })
+  async getDeliveryNotes(@Query('projectId') projectId?: string) {
+    return this.procurementService.findAllAvize(projectId);
+  }
+
   @Post('avize')
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.PROCUREMENT, UserRoleEnum.SITE_MANAGER, UserRoleEnum.TEAM_LEADER)
   @ApiOperation({ summary: 'Record received delivery note (aviz)' })

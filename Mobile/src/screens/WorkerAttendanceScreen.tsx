@@ -17,8 +17,9 @@ import {
 import { 
   getActiveTimeLog, 
   setActiveTimeLog, 
-  enqueueOfflineAction 
 } from '../services/storage';
+import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
+import { apiClient } from '../services/apiClient';
 import { getCurrentDeviceLocation } from '../services/location';
 import { PageIntro } from '../components/PageIntro';
 
@@ -114,10 +115,22 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
       await setActiveTimeLog(newLog);
       setActiveLogState(newLog);
 
+      // Prepare payload for API/queue
+      const checkInPayload = {
+        projectId: selectedSite.id,
+        latitude: workerLat,
+        longitude: workerLng,
+        notes: `Check-in la ${selectedSite.name}`,
+      };
+      const idemKey = generateIdempotencyKey('attendance', 'check_in');
+
       if (isOffline) {
-        await enqueueOfflineAction('time_log_checkin', newLog as any);
+        // Enqueue for later sync (SQLite-based queue)
+        await enqueueOperation('attendance', 'check_in', checkInPayload, idemKey);
         Alert.alert('Salvat Local (Offline)', 'Sosirea ta (AM VENIT) a fost înregistrată local și se va sincroniza când revine conexiunea.');
       } else {
+        // Submit directly to API
+        await apiClient.checkIn(checkInPayload);
         Alert.alert('Succes!', `Ai pontat sosirea (AM VENIT) la ${selectedSite.name}`);
       }
     } catch (e: any) {
@@ -135,30 +148,43 @@ export function WorkerAttendanceScreen({ user, sites, isOffline, locale = 'ro' }
       const now = new Date().toISOString();
       const calc = calculateAttendanceWorkTime(activeLog.check_in, now);
 
-      const completedLog: TimeLog = {
-        ...activeLog,
-        check_out: now,
-        normal_hours_worked: calc.normalHoursWorked,
-        overtime_minutes: calc.overtimeMinutes,
-        updated_at: now,
+      // Get current location for check-out
+      const loc = await getCurrentDeviceLocation();
+      const workerLat = loc.latitude || 44.2981;
+      const workerLng = loc.longitude || 23.8122;
+
+      // Prepare payload for API/queue
+      // Note: check-out needs an attendanceId from the server.
+      // For simplicity, we use the activeLog.id (local or server ID depending on check-in method)
+      const checkOutPayload = {
+        attendanceId: activeLog.id,
+        latitude: workerLat,
+        longitude: workerLng,
+        notes: `Check-out dupa ${calc.normalHoursWorked}h lucrate`,
       };
+      const idemKey = generateIdempotencyKey('attendance', 'check_out');
 
       await setActiveTimeLog(null);
       setActiveLogState(null);
 
       if (isOffline) {
-        await enqueueOfflineAction('time_log_checkout', completedLog as any);
+        // Enqueue for later sync (SQLite-based queue)
+        await enqueueOperation('attendance', 'check_out', checkOutPayload, idemKey);
         Alert.alert(
           'Plecare Înregistrată Local', 
           `Ai pontat plecarea (AM PLECAT).\nOre lucrate: ${calc.normalHoursWorked}h\nOre suplimentare: ${calc.overtimeHoursDisplay}`
         );
       } else {
+        // Submit directly to API
+        const { attendanceId, ...data } = checkOutPayload;
+        await apiClient.checkOut(attendanceId, data);
         Alert.alert(
           'Zi de Muncă Încheiată!',
           `Plecare confirmată (AM PLECAT).\nOre normale: ${calc.normalHoursWorked}h\nOre suplimentare: ${calc.overtimeHoursDisplay}`
         );
       }
     } catch (e: any) {
+      console.error('Check-out error:', e);
       Alert.alert('Eroare', e.message || 'Nu s-a putut înregistra plecarea');
     } finally {
       setLoading(false);

@@ -8,7 +8,7 @@ import {
   Search, Eye, MessageSquare, Loader2, RefreshCw,
 } from 'lucide-react';
 import { Expense } from '@solar/shared';
-import { supabase, isSupabaseConfigured, supabaseConfigMessage } from '../../lib/supabase';
+import { apiClient, ApiError } from '../../lib/api-client';
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'Ciorna', color: 'text-slate-600', bg: 'bg-slate-100' },
@@ -39,26 +39,89 @@ export default function AprobarePage() {
   const [acting, setActing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Sample expenses for empty state display
+  const sampleExpenses: Expense[] = [
+    {
+      id: 'exp1',
+      user_id: 'u1',
+      site_id: 's1',
+      category: 'fuel',
+      status: 'submitted',
+      document_type: 'receipt',
+      payment_method: 'personal',
+      amount: 125.50,
+      reimbursable_amount: 125.50,
+      currency: 'RON',
+      description: 'Combustibil pentru generator',
+      created_at: '2026-09-21T09:15:00',
+      updated_at: '2026-09-21T09:15:00',
+    },
+    {
+      id: 'exp2',
+      user_id: 'u2',
+      site_id: 's2',
+      category: 'materials',
+      status: 'submitted',
+      document_type: 'receipt',
+      payment_method: 'personal',
+      amount: 450.00,
+      reimbursable_amount: 450.00,
+      currency: 'RON',
+      description: 'Materiale de_consum - șantier Arad',
+      created_at: '2026-09-21T14:30:00',
+      updated_at: '2026-09-21T14:30:00',
+    },
+    {
+      id: 'exp3',
+      user_id: 'u3',
+      site_id: 's3',
+      category: 'equipment',
+      status: 'submitted',
+      document_type: 'receipt',
+      payment_method: 'company_card',
+      amount: 180.75,
+      reimbursable_amount: 180.75,
+      currency: 'RON',
+      description: 'Reparație echipament',
+      created_at: '2026-09-21T16:45:00',
+      updated_at: '2026-09-21T16:45:00',
+    },
+  ];
+
   const loadExpenses = useCallback(async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      setLoading(false);
-      setError(supabaseConfigMessage ?? 'Supabase nu este configurat.');
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      let query = supabase.from('expenses').select('*');
+      // Use apiClient to get expenses
+      // For pending filter: get all and filter client-side since API doesn't support multi-status filtering
+      const response = await apiClient.getExpenses();
+      let data = (response.data || []) as Expense[];
+      
+      // Filter by status
       if (filter === 'pending') {
-        query = query.in('status', ['submitted', 'under_review']);
+        data = data.filter((e: any) => {
+          const status = (e.status || '').toLowerCase();
+          return status === 'submitted' || status === 'under_review';
+        });
       } else if (filter !== 'all') {
-        query = query.eq('status', filter);
+        data = data.filter((e: any) => {
+          return (e.status || '').toLowerCase() === filter.toLowerCase();
+        });
       }
-      const { data, error: fetchErr } = await query.order('created_at', { ascending: false });
-      if (fetchErr) throw fetchErr;
-      setExpenses((data as Expense[]) || []);
+      
+      // Sort by created_at descending
+      data.sort((a: any, b: any) => 
+        new Date(b.created_at || b.createdAt || 0).getTime() - 
+        new Date(a.created_at || a.createdAt || 0).getTime()
+      );
+      
+      setExpenses(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Eroare la incarcarea cheltuielilor.');
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : 'Eroare la incarcarea cheltuielilor.');
+      }
     } finally {
       setLoading(false);
     }
@@ -80,15 +143,26 @@ export default function AprobarePage() {
 
   const act = async (id: string, action: 'approved' | 'rejected' | 'correction_requested', st: Expense['status']) => {
     setLoading(true);
-    if (isSupabaseConfigured && supabase) {
-      const update: Record<string, unknown> = { status: st, reviewed_at: new Date().toISOString() };
-      if (action === 'rejected') update.rejection_reason = note;
-      if (action === 'correction_requested') update.correction_notes = note;
-      await supabase.from('expenses').update(update).eq('id', id);
-      await supabase.from('expense_approvals').insert({ expense_id: id, action, reason: note || null });
+    try {
+      // Use apiClient.approveExpense for approval/rejection
+      const isApproved = action === 'approved';
+      await apiClient.approveExpense(id, {
+        approved: isApproved,
+        notes: note || undefined,
+      });
+      // Refresh the list
+      await loadExpenses();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : 'Eroare la actualizarea cheltuielii.');
+      }
+    } finally {
+      setSelId(null); 
+      setNote(''); 
+      setLoading(false);
     }
-    setExpenses(p => p.filter(e => e.id !== id));
-    setSelId(null); setNote(''); setLoading(false);
   };
 
   const tabs = [

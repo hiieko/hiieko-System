@@ -2,7 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured, supabaseConfigMessage } from '../../lib/supabase';
+import { apiClient, ApiError } from '../../lib/api-client';
 import { Users, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, Mail, Shield } from 'lucide-react';
 
 interface ProfileRow { id: string; email: string; full_name: string; role: string; phone_number?: string; is_active: boolean; created_at: string; }
@@ -19,20 +19,65 @@ export default function UtilizatoriPage() {
   const [acting, setActing] = useState<string | null>(null);
 
   const load = async () => {
-    if (!isSupabaseConfigured || !supabase) { setLoading(false); setError(supabaseConfigMessage ?? 'Supabase nu este configurat.'); return; }
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const [p, a] = await Promise.all([
-        supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('account_applications').select('*').order('created_at', { ascending: false }),
-      ]);
-      if (p.error) throw p.error; if (a.error) throw a.error;
-      setProfiles((p.data || []) as ProfileRow[]); setApps((a.data || []) as AppRow[]);
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Eroare'); } finally { setLoading(false); }
+      // Use apiClient to get users from NestJS backend
+      const usersResponse = await apiClient.getUsers();
+      const usersData = (usersResponse.data || []) as any[];
+      
+      // Map from NestJS user model to legacy ProfileRow format
+      // NestJS returns: { id, email, role, is_active, created_at, profile: { full_name, phone } }
+      const mappedProfiles = usersData.map((user: any) => ({
+        id: user.id,
+        email: user.email,
+        full_name: user.profile?.full_name || user.fullName || user.email,
+        role: user.role?.toLowerCase() || 'worker',
+        phone_number: user.profile?.phone || user.phone,
+        is_active: user.is_active !== false,
+        created_at: user.created_at || new Date().toISOString(),
+      }));
+      
+      // Sort by created_at descending
+      mappedProfiles.sort((a: any, b: any) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setProfiles(mappedProfiles as ProfileRow[]);
+      // Account applications not yet migrated - empty array for now
+      setApps([]);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : 'Eroare la incarcarea utilizatorilor.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
-  const approve = async (a: AppRow) => { if (!supabase || acting) return; setActing(a.id); try { await supabase.from('account_applications').update({ status: 'approved', reviewed_at: new Date().toISOString() }).eq('id', a.id); await load(); } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Eroare'); } finally { setActing(null); } };
-  const reject = async (a: AppRow) => { if (!supabase || acting) return; setActing(a.id); try { await supabase.from('account_applications').update({ status: 'rejected', reviewed_at: new Date().toISOString() }).eq('id', a.id); await load(); } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Eroare'); } finally { setActing(null); } };
+  // Account applications endpoints not yet migrated to NestJS
+  const approve = async (a: AppRow) => { 
+    setActing(a.id); 
+    try { 
+      setError('Cererea de cont este in curs de migrare. Aceasta actiune nu este disponibila momentan.');
+    } catch (e: unknown) { 
+      setError(e instanceof Error ? e.message : 'Eroare'); 
+    } finally { 
+      setActing(null); 
+    } 
+  };
+  const reject = async (a: AppRow) => { 
+    setActing(a.id); 
+    try { 
+      setError('Cererea de cont este in curs de migrare. Aceasta actiune nu este disponibila momentan.');
+    } catch (e: unknown) { 
+      setError(e instanceof Error ? e.message : 'Eroare'); 
+    } finally { 
+      setActing(null); 
+    } 
+  };
   const pending = apps.filter(a => a.status === 'pending').length;
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DailyReport, DailyReportTask, DailyReportMaterialUsage, Material, Site } from '@solar/shared';
-import { enqueueOfflineAction } from '../services/storage';
+import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
+import { apiClient } from '../services/apiClient';
 import { PageIntro } from '../components/PageIntro';
 
 const DRAFT_KEY = '@solar:daily_report_draft';
@@ -104,31 +105,45 @@ export function TeamLeaderDailyReportScreen({
     setSubmitting(true);
     try {
       const now = new Date().toISOString();
-      const report: DailyReport = {
-        id: `dr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        site_id: site.id,
-        team_leader_id: leader.id,
-        report_date: now.split('T')[0],
-        present_worker_ids: presentWorkerIds,
-        tasks,
-        materials_used: materialsUsed,
-        photos: ['https://images.unsplash.com/photo-1509391365360-2e959784a276?w=600&auto=format&fit=crop&q=80'],
-        notes,
-        status: 'submitted',
-        is_offline_created: isOffline,
-        created_at: now,
-        updated_at: now,
+      
+      // Map to backend CreateDailyReportDto format
+      const reportPayload = {
+        projectId: site.id,
+        reportDate: now.split('T')[0],
+        generalNotes: notes,
+        // Map present workers (default 8 hours each)
+        workers: presentWorkerIds.map(workerId => ({
+          workerId,
+          hoursWorked: 8,
+          overtimeHours: 0,
+        })),
+        // Map tasks (use description as identifier)
+        tasks: tasks.map((task, idx) => ({
+          taskId: task.description.substring(0, 50) || `task_${idx}`,
+          quantityDone: task.quantity,
+          notes: task.description,
+        })),
+        // Map materials used
+        materials: materialsUsed.map(m => ({
+          materialId: m.material_id,
+          quantityUsed: m.quantity,
+        })),
       };
+      const idemKey = generateIdempotencyKey('daily_report', 'create');
+
+      await AsyncStorage.removeItem(DRAFT_KEY);
 
       if (isOffline) {
-        await enqueueOfflineAction('daily_report_submit', report as any);
-        await AsyncStorage.removeItem(DRAFT_KEY);
+        // Enqueue for later sync (SQLite-based queue)
+        await enqueueOperation('daily_report', 'create', reportPayload, idemKey);
         Alert.alert('Salvat Local (Offline)', 'Raportul zilnic al echipei a fost salvat pe telefon și se va transmite automat la reconectare.');
       } else {
-        await AsyncStorage.removeItem(DRAFT_KEY);
+        // Submit directly to API
+        await apiClient.createDailyReport(reportPayload, idemKey);
         Alert.alert('Raport Transmis!', 'Raportul zilnic a fost trimis cu succes către Manager.');
       }
     } catch (e: any) {
+      console.error('Daily report submit error:', e);
       Alert.alert('Eroare', e.message || 'Nu s-a putut transmite raportul');
     } finally {
       setSubmitting(false);

@@ -1,5 +1,5 @@
 -- ====================================================================
--- Solar Site Management App - FULL DATABASE SETUP (consolidated artifact)
+-- HIIEKO System - FULL DATABASE SETUP (consolidated artifact)
 -- File: supabase/full_setup.sql
 -- ====================================================================
 -- AUTO-GENERATED from the AUTHORITATIVE migration files in
@@ -16,6 +16,10 @@
 --   04d_auth_trigger.sql
 --   05_self_approval_prevention.sql
 --   06_event_notifications.sql
+--   07_expense_documents_storage.sql
+--   08_ocr_document_states.sql
+--
+-- Total sections: 11
 --
 -- Idempotency guarantees:
 --   * every CREATE POLICY is preceded by DROP POLICY IF EXISTS
@@ -30,7 +34,7 @@
 
 
 -- ====================================================================
--- SECTION 1/9 - 01_initial_schema.sql
+-- SECTION 1/11 - 01_initial_schema.sql
 -- ====================================================================
 
 -- ====================================================================
@@ -325,7 +329,7 @@ EXECUTE FUNCTION apply_stock_movement_trigger();
 
 
 -- ====================================================================
--- SECTION 2/9 - 02_row_level_security.sql
+-- SECTION 2/11 - 02_row_level_security.sql
 -- ====================================================================
 
 -- ====================================================================
@@ -593,7 +597,7 @@ WITH CHECK (auth.role() = 'authenticated');
 
 
 -- ====================================================================
--- SECTION 3/9 - 03_seed_data.sql
+-- SECTION 3/11 - 03_seed_data.sql
 -- ====================================================================
 
 -- ====================================================================
@@ -622,7 +626,7 @@ ON CONFLICT (code) DO NOTHING;
 
 
 -- ====================================================================
--- SECTION 4/9 - 04a_auth_expenses.sql
+-- SECTION 4/11 - 04a_auth_expenses.sql
 -- ====================================================================
 
 -- Migration 04a: Phase 1 (Auth) + Phase 6 (Expenses) tables
@@ -716,7 +720,7 @@ CREATE INDEX IF NOT EXISTS idx_expense_appr_exp ON public.expense_approvals(expe
 
 
 -- ====================================================================
--- SECTION 5/9 - 04b_notifications_stock.sql
+-- SECTION 5/11 - 04b_notifications_stock.sql
 -- ====================================================================
 
 -- Migration 04b: Phase 7 (Notifications) + Phase 5 (Warehouses) + schema extensions
@@ -786,7 +790,7 @@ CREATE INDEX IF NOT EXISTS idx_assign_site ON public.site_assignments(site_id);
 
 
 -- ====================================================================
--- SECTION 6/9 - 04c_rls_new_tables.sql
+-- SECTION 6/11 - 04c_rls_new_tables.sql
 -- ====================================================================
 
 -- Migration 04c: RLS policies for new tables
@@ -866,7 +870,7 @@ CREATE POLICY "Admin manage assignments" ON public.site_assignments FOR ALL USIN
 
 
 -- ====================================================================
--- SECTION 7/9 - 04d_auth_trigger.sql
+-- SECTION 7/11 - 04d_auth_trigger.sql
 -- ====================================================================
 
 -- Migration 04d: Auth trigger to auto-create profiles + helper functions for RLS
@@ -958,7 +962,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- ====================================================================
--- SECTION 8/9 - 05_self_approval_prevention.sql
+-- SECTION 8/11 - 05_self_approval_prevention.sql
 -- ====================================================================
 
 -- ============================================================================
@@ -1026,7 +1030,7 @@ COMMENT ON FUNCTION prevent_self_approval_report IS 'Prevents team leaders from 
 
 
 -- ====================================================================
--- SECTION 9/9 - 06_event_notifications.sql
+-- SECTION 9/11 - 06_event_notifications.sql
 -- ====================================================================
 
 -- ============================================================================
@@ -1171,7 +1175,7 @@ GRANT EXECUTE ON FUNCTION notify_account_application TO authenticated;
 GRANT EXECUTE ON FUNCTION notify_account_application_result TO authenticated;
 
 -- ====================================================================
--- SECTION 10/10 - 07_expense_documents_storage.sql
+-- SECTION 10/11 - 07_expense_documents_storage.sql
 -- HIIEKO Camera/OCR workflow: private storage bucket + metadata columns.
 -- IDEMPOTENT / NON-DESTRUCTIVE. Safe to run again (no changes 2nd run).
 -- ====================================================================
@@ -1215,7 +1219,11 @@ ALTER TABLE public.expense_documents
 
 CREATE INDEX IF NOT EXISTS idx_expense_docs_uploaded_by ON public.expense_documents(uploaded_by);
 
--- SECTION 11/11 - Self-hosted PaddleOCR document states
+-- ====================================================================
+-- SECTION 11/11 - 08_ocr_document_states.sql
+-- Self-hosted PaddleOCR document states + processing fields.
+-- IDEMPOTENT / NON-DESTRUCTIVE. Safe to run again (no changes 2nd run).
+-- ====================================================================
 ALTER TABLE public.expense_documents
     ADD COLUMN IF NOT EXISTS document_state TEXT NOT NULL DEFAULT 'uploaded'
         CHECK (document_state IN ('uploaded', 'processing', 'ocr_completed', 'needs_review', 'confirmed', 'posted', 'failed')),

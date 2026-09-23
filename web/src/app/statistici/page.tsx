@@ -2,7 +2,7 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect } from 'react';
 import { Users, MapPin, Euro, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { apiClient, ApiError } from '../../lib/api-client';
 import { t } from '@solar/shared';
 
 interface Stats { employees: number; active_sites: number; expenses_month: number; pending_expenses: number; reports: number; }
@@ -11,23 +11,61 @@ const empty: Stats = { employees:0, active_sites:0, expenses_month:0, pending_ex
 export default function StatisticiPage() {
   const [stats, setStats] = useState<Stats>(empty);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      if (!isSupabaseConfigured || !supabase) { setLoading(false); return; }
-      const [p, s, e, r] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('sites').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('expenses').select('id,amount,status').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-        supabase.from('daily_reports').select('id', { count: 'exact', head: true }).eq('status', 'submitted'),
-      ]);
-      setStats({
-        employees: p.count || 0, active_sites: s.count || 0,
-        expenses_month: e.data?.reduce((sum: number, x: any) => sum + (Number(x.amount) || 0), 0) || 0,
-        pending_expenses: e.data?.filter((x: any) => x.status === 'submitted').length || 0,
-        reports: r.count || 0,
-      });
-      setLoading(false);
+      setLoading(true);
+      setError(null);
+      try {
+        // Use control tower overview for statistics
+        const overview = await apiClient.getControlTowerOverview();
+        const data = overview.data;
+        
+        if (data) {
+          setStats({
+            employees: data.workforce?.scheduledToday || 0,
+            active_sites: data.projects?.activeProjects || 0,
+            expenses_month: data.finance?.actual || 0,
+            pending_expenses: data.redFlags?.filter((f: any) => f.category === 'FINANCE').length || 0,
+            reports: data.production?.actualToday || 0,
+          });
+        }
+      } catch (err) {
+        // Fallback: try to get individual data
+        try {
+          const expenses = await apiClient.getExpenses();
+          const now = new Date();
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+          
+          const expensesData = (expenses.data || []) as any[];
+          const monthExpenses = expensesData.filter((e: any) => 
+            (e.created_at || e.createdAt || '') >= monthStart
+          );
+          
+          const totalMonth = monthExpenses.reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
+          const pendingCount = expensesData.filter((e: any) => {
+            const status = (e.status || '').toLowerCase();
+            return status === 'submitted' || status === 'under_review';
+          }).length;
+          
+          setStats({
+            employees: 0, 
+            active_sites: 0,
+            expenses_month: totalMonth,
+            pending_expenses: pendingCount,
+            reports: 0,
+          });
+        } catch (e) {
+          if (e instanceof ApiError) {
+            setError(e.message);
+          } else {
+            setError(e instanceof Error ? e.message : 'Eroare la incarcarea statisticilor.');
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);

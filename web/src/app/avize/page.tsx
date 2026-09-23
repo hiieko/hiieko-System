@@ -2,8 +2,12 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect } from 'react';
-import { supabase, isSupabaseConfigured, supabaseConfigMessage } from '../../lib/supabase';
-import { Truck, FileText, Calendar, MapPin, User, Boxes, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
+import { apiClient, ApiError } from '../../lib/api-client';
+import { useLocale } from '@solar/shared';
+import { 
+  Truck, FileText, Calendar, MapPin, User, Boxes, CheckCircle2, 
+  Loader2, RefreshCw
+} from 'lucide-react';
 
 interface DNRow {
   id: string; invoice_or_aviz_number: string; supplier: string; site_id: string;
@@ -20,50 +24,116 @@ export default function AvizePage() {
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { locale } = useLocale();
+
+  // Sample deliveries for empty state display
+  const sampleDeliveries: (DNRow & { items: DNItem[] })[] = [
+    {
+      id: 'd1',
+      invoice_or_aviz_number: 'AV-2026-001',
+      supplier: 'Construct Materials SRL',
+      site_id: 'p1',
+      receiver_user_id: 'u1',
+      delivery_date: '2026-09-21',
+      photo_url: '',
+      notes: 'Livrare betonarmata',
+      created_at: '2026-09-21T09:30:00',
+      items: [
+        { material_id: 'm1', material_code: 'BR-40', material_name: 'Beton armat 40MPa', unit: 'mc', quantity: 5 },
+        { material_id: 'm2', material_code: 'BR-30', material_name: 'Beton armat 30MPa', unit: 'mc', quantity: 3 },
+      ],
+    },
+    {
+      id: 'd2',
+      invoice_or_aviz_number: 'AV-2026-002',
+      supplier: 'Electro Supply SRL',
+      site_id: 'p2',
+      receiver_user_id: 'u2',
+      delivery_date: '2026-09-21',
+      photo_url: '',
+      notes: 'Instalatie electrica',
+      created_at: '2026-09-21T11:15:00',
+      items: [
+        { material_id: 'm3', material_code: 'EL-001', material_name: 'Cablu electrice 2.5mm', unit: 'buc', quantity: 50 },
+        { material_id: 'm4', material_code: 'EL-002', material_name: 'Boxe electrice', unit: 'buc', quantity: 20 },
+      ],
+    },
+    {
+      id: 'd3',
+      invoice_or_aviz_number: 'AV-2026-003',
+      supplier: 'Furnizor General SRL',
+      site_id: 'p3',
+      receiver_user_id: 'u3',
+      delivery_date: '2026-09-21',
+      photo_url: '',
+      notes: 'Materiale generale',
+      created_at: '2026-09-21T13:45:00',
+      items: [
+        { material_id: 'm5', material_code: 'MG-001', material_name: 'Suruburi metal', unit: 'pungi', quantity: 10 },
+        { material_id: 'm6', material_code: 'MG-002', material_name: 'Glonți șuruburi', unit: 'pungi', quantity: 5 },
+      ],
+    },
+  ];
 
   const load = async () => {
-    if (!isSupabaseConfigured || !supabase) { setLoading(false); setError(supabaseConfigMessage ?? 'Supabase nu este configurat.'); return; }
-    const s = supabase;
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
     try {
-      const { data: drows, error: e1 } = await s.from('delivery_notes')
-        .select('*').order('created_at', { ascending: false });
-      if (e1) throw e1;
-      const dls = (drows || []) as DNRow[];
-      // Fetch items for each delivery (material catalog joined at runtime;
-      // delivery_note_items stores only material_id, quantity, unit)
-      const withItems = await Promise.all(dls.map(async (d) => {
-        const { data: items } = await s.from('delivery_note_items')
-          .select('material_id,unit,quantity').eq('delivery_note_id', d.id);
-        return { ...d, items: (items || []).map(i => ({ ...i, material_code: '', material_name: '' })) as DNItem[] };
+      // Use apiClient to get avize from NestJS backend
+      const response = await apiClient.getAvize();
+      const data = (response.data || []) as any[];
+      
+      // Map from NestJS aviz model to legacy DNRow format
+      // NestJS returns: { id, project_id, supplier_id, aviz_number, delivery_date, driver_name, vehicle_plate, notes, created_at, items, project, supplier }
+      const mapped = data.map((aviz: any) => ({
+        id: aviz.id,
+        invoice_or_aviz_number: aviz.aviz_number || '',
+        supplier: aviz.supplier?.name || 'Necunoscut',
+        site_id: aviz.project_id || '',
+        receiver_user_id: '',
+        delivery_date: aviz.delivery_date || aviz.created_at,
+        photo_url: '',
+        notes: aviz.notes || '',
+        created_at: aviz.created_at,
+        driver_name: aviz.driver_name,
+        vehicle_plate: aviz.vehicle_plate,
+        // Map items
+        items: (aviz.items || []).map((item: any) => ({
+          material_id: item.material_id,
+          material_code: item.material?.code || '',
+          material_name: item.material?.name || '',
+          unit: '',
+          quantity: item.quantity,
+        })) as DNItem[],
       }));
-      const materialIds = [...new Set(withItems.flatMap(d => d.items.map(i => i.material_id)))];
-      const materialMap = new Map<string, { code: string; name: string }>();
-      if (materialIds.length > 0) {
-        const { data: mats } = await s.from('materials').select('id,code,name').in('id', materialIds);
-        (mats || []).forEach((m: any) => materialMap.set(m.id, { code: m.code, name: m.name }));
-      }
-      withItems.forEach(d => {
-        d.items.forEach(i => {
-          const m = materialMap.get(i.material_id);
-          if (m) { i.material_code = m.code; i.material_name = m.name; }
-        });
-      });
-      setDeliveries(withItems);
-      // Resolve names
-      const siteIds = [...new Set(dls.map(d => d.site_id))];
-      const userIds = [...new Set(dls.map(d => d.receiver_user_id))];
-      const [sitesRes, usersRes] = await Promise.all([
-        siteIds.length ? s.from('sites').select('id,name').in('id', siteIds) : null,
-        userIds.length ? s.from('profiles').select('id,full_name').in('id', userIds) : null,
-      ]);
+      
+      // Sort by created_at descending
+      mapped.sort((a: any, b: any) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setDeliveries(mapped);
+      
+      // Build site/project names map
       const smap: Record<string, string> = {};
       const umap: Record<string, string> = {};
-      (sitesRes?.data || []).forEach((s: any) => { smap[s.id] = s.name; });
-      (usersRes?.data || []).forEach((u: any) => { umap[u.id] = u.full_name; });
-      setSiteNames(smap); setUserNames(umap);
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Eroare'); }
-    finally { setLoading(false); }
+      data.forEach((aviz: any) => {
+        if (aviz.project_id && aviz.project?.name) {
+          smap[aviz.project_id] = aviz.project.name;
+        }
+      });
+      
+      setSiteNames(smap);
+      setUserNames(umap);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : 'Eroare la incarcarea avizelor.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
   return (

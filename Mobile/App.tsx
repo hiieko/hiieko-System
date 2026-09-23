@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  useWindowDimensions
+  useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { WorkerAttendanceScreen } from './src/screens/WorkerAttendanceScreen';
 import { TeamLeaderDailyReportScreen } from './src/screens/TeamLeaderDailyReportScreen';
 import { DeliveryIntakeScreen } from './src/screens/DeliveryIntakeScreen';
@@ -15,100 +17,236 @@ import { WorkerExpenseScreen } from './src/screens/WorkerExpenseScreen';
 import { NotificationCenter } from './src/screens/NotificationCenterScreen';
 import { OfflineBanner } from './src/components/OfflineBanner';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
 import { LocaleProvider, useLocale } from './src/components/LocaleProvider';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { getOfflineQueue } from './src/services/storage';
-import { Site, Material, UserProfile } from '@solar/shared';
+import { getProjects, getMaterials, Project, Material as LocalMaterial } from './src/services/localData';
+import { syncAllOperations } from './src/services/syncQueue';
+import { Site } from '@solar/shared';
 
-const DEMO_SITES: Site[] = [
+// Convert LocalMaterial (from localData) to match what screens expect
+function mapToScreenMaterial(localMat: LocalMaterial): any {
+  return {
+    id: localMat.id,
+    code: localMat.code,
+    name: localMat.name,
+    unit: localMat.unit as any,
+    barcode: '',
+    is_active: localMat.is_active,
+    created_at: localMat.synced_at || '',
+    updated_at: localMat.synced_at || '',
+  };
+}
+
+// Convert Project (from localData) to Site interface for screens
+function mapToSite(project: Project): Site {
+  return {
+    id: project.id,
+    name: project.name,
+    code: project.code,
+    address: project.address || '',
+    latitude: project.latitude || 0,
+    longitude: project.longitude || 0,
+    geofence_radius_meters: project.geofence_radius_meters || 100,
+    is_active: project.is_active,
+    created_at: project.synced_at || '',
+    updated_at: project.synced_at || '',
+  };
+}
+
+// ============================================================================
+// FALLBACK DATA (for when nothing is loaded yet)
+// ============================================================================
+
+const FALLBACK_SITES: Site[] = [
   {
-    id: 's1',
-    name: 'Parc Solar Craiova Sud',
-    code: 'PV-CR-01',
-    address: 'DJ552B, Craiova, Dolj',
-    latitude: 44.2981,
-    longitude: 23.8122,
-    geofence_radius_meters: 350,
+    id: 'fallback-1',
+    name: 'Se încarcă date...',
+    code: 'LOADING',
+    address: '',
+    latitude: 0,
+    longitude: 0,
+    geofence_radius_meters: 100,
     is_active: true,
     created_at: '',
     updated_at: '',
   },
-  {
-    id: 's2',
-    name: 'Parc Solar Brașov Est',
-    code: 'PV-BV-02',
-    address: 'DN11, Hărman, Brașov',
-    latitude: 45.7125,
-    longitude: 25.6841,
-    geofence_radius_meters: 400,
-    is_active: true,
-    created_at: '',
-    updated_at: '',
-  }
 ];
 
-const DEMO_MATERIALS: Material[] = [
-  {
-    id: 'm1',
-    code: 'PAN-550W',
-    name: 'Panou Fotovoltaic Monocristalin 550W',
-    unit: 'buc',
-    barcode: '', is_active: true,
-    created_at: '',
-    updated_at: '',
-  },
-  {
-    id: 'm2',
-    code: 'CAB-SOL-6',
-    name: 'Cablu Solar Negru 6mm²',
-    unit: 'm',
-    barcode: '', is_active: true,
-    created_at: '',
-    updated_at: '',
-  },
-  {
-    id: 'm4',
-    code: 'GARD-150M',
-    name: 'Gard Împrejmuire Șantier 150m',
-    unit: 'buc',
-    barcode: '', is_active: true,
-    created_at: '',
-    updated_at: '',
-  }
-];
-
-const DEMO_WORKERS = [
-  { id: 'u2', full_name: 'Vasile Ionescu (Șef Echipă)', role: 'team_leader' },
-  { id: 'u3', full_name: 'Costel Popa', role: 'worker' },
-  { id: 'u4', full_name: 'Gicu Georgescu', role: 'worker' },
-];
+const FALLBACK_MATERIALS: any[] = [];
 
 export default function App() {
   return (
     <LocaleProvider>
-      <AppShell />
+      <AuthProvider>
+        <AppRoot />
+      </AuthProvider>
     </LocaleProvider>
   );
 }
 
+// Loading Screen Component
+function LoadingScreen() {
+  return (
+    <View style={loadingStyles.container}>
+      <View style={loadingStyles.logo}>
+        <Text style={loadingStyles.logoText}>H</Text>
+      </View>
+      <ActivityIndicator size="large" color="#f59e0b" />
+      <Text style={loadingStyles.text}>Se încarcă HIIEKO...</Text>
+    </View>
+  );
+}
+
+const loadingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  logo: {
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    backgroundColor: '#f59e0b',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#0f172a',
+  },
+  text: {
+    color: '#94a3b8',
+    fontSize: 14,
+    marginTop: 8,
+  },
+});
+
+// App Root - handles auth state routing
+function AppRoot() {
+  const { authState } = useAuth();
+
+  if (authState === 'loading') {
+    return <LoadingScreen />;
+  }
+
+  if (authState === 'unauthenticated') {
+    return <LoginScreenWrapper />;
+  }
+
+  return <AppShell />;
+}
+
+// Login Screen Wrapper
+function LoginScreenWrapper() {
+  const { refreshAuth } = useAuth();
+
+  const handleLogin = async (user: { id: string; full_name: string; role: string }) => {
+    // LoginScreen already called auth.login() internally
+    // Just refresh auth state to update the context
+    await refreshAuth();
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+      <LoginScreen onLogin={handleLogin} />
+    </SafeAreaView>
+  );
+}
+
 function AppShell() {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+
+  // Auth context
+  const { currentUser } = useAuth();
+  const { locale } = useLocale();
+
+  // UI state
   const [activeTab, setActiveTab] = useState<'attendance' | 'report' | 'delivery' | 'expense' | 'notifications' | 'settings'>('attendance');
   const [isOffline, setIsOffline] = useState(false);
   const [pendingQueueCount, setPendingQueueCount] = useState(0);
-  const [currentUser, setCurrentUser] = useState(DEMO_WORKERS[0]); // Default: Team Leader
-  const { width } = useWindowDimensions();
-  const { locale } = useLocale();
+  
+  // Data state (loaded from SQLite cache)
+  const [sites, setSites] = useState<Site[]>(FALLBACK_SITES);
+  const [materials, setMaterials] = useState<any[]>(FALLBACK_MATERIALS);
 
+  // Get team workers from current user
+  const teamWorkers = currentUser ? [
+    { id: currentUser.id, full_name: currentUser.full_name, role: currentUser.role },
+  ] : [];
+
+  // ==========================================================================
+  // EFFECT: NetInfo connectivity listener
+  // ==========================================================================
   useEffect(() => {
-    async function checkQueue() {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const wasOffline = isOffline;
+      const nowOffline = state.isConnected === false;
+      setIsOffline(nowOffline);
+      
+      // When coming online, trigger auto-sync
+      if (wasOffline && !nowOffline) {
+        console.log('📶 Back online - triggering auto-sync...');
+        syncAllOperations().then(result => {
+          console.log(`🔄 Auto-sync: ${result.synced} synced, ${result.failed} failed`);
+        }).catch(err => {
+          console.error('❌ Auto-sync failed:', err);
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [isOffline]);
+
+  // ==========================================================================
+  // EFFECT: Load data from SQLite cache
+  // ==========================================================================
+  useEffect(() => {
+    loadCachedData();
+  }, [currentUser]);
+
+  // ==========================================================================
+  // EFFECT: Update pending queue count
+  // ==========================================================================
+  useEffect(() => {
+    const updateQueueCount = async () => {
       const q = await getOfflineQueue();
       setPendingQueueCount(q.length);
-    }
-    checkQueue();
-    const interval = setInterval(checkQueue, 3000);
+    };
+    updateQueueCount();
+    const interval = setInterval(updateQueueCount, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  const isTablet = width >= 768;
+  // ==========================================================================
+  // Load cached data from SQLite
+  // ==========================================================================
+  async function loadCachedData() {
+    try {
+      // Load projects from SQLite
+      const cachedProjects = await getProjects();
+      if (cachedProjects.length > 0) {
+        setSites(cachedProjects.map(mapToSite));
+        console.log(`✅ Loaded ${cachedProjects.length} sites from cache`);
+      }
+
+      // Load materials from SQLite
+      const cachedMaterials = await getMaterials();
+      if (cachedMaterials.length > 0) {
+        setMaterials(cachedMaterials.map(mapToScreenMaterial));
+        console.log(`✅ Loaded ${cachedMaterials.length} materials from cache`);
+      }
+    } catch (error) {
+        console.error('❌ Failed to load cached data:', error);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -119,7 +257,7 @@ function AppShell() {
         <View>
           <Text style={styles.headerTitle}>Solar Site App</Text>
           <Text style={styles.headerSubtitle}>
-            Utilizator: <Text style={styles.highlightText}>{currentUser.full_name}</Text>
+            Utilizator: <Text style={styles.highlightText}>{currentUser?.full_name || 'Necunoscut'}</Text>
           </Text>
         </View>
 
@@ -198,35 +336,35 @@ function AppShell() {
       <View style={[styles.contentContainer, isTablet && styles.tabletContainer]}>
         {activeTab === 'attendance' && (
           <WorkerAttendanceScreen
-            user={currentUser}
-            sites={DEMO_SITES}
+            user={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator', role: 'worker' }}
+            sites={sites}
             isOffline={isOffline}
             locale={locale}
           />
         )}
         {activeTab === 'report' && (
           <TeamLeaderDailyReportScreen
-            leader={currentUser}
-            site={DEMO_SITES[0]}
-            teamWorkers={DEMO_WORKERS}
-            materialsCatalog={DEMO_MATERIALS}
+            leader={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator', role: 'team_leader' }}
+            site={sites[0] || FALLBACK_SITES[0]}
+            teamWorkers={teamWorkers}
+            materialsCatalog={materials}
             isOffline={isOffline}
             locale={locale}
           />
         )}
         {activeTab === 'delivery' && (
           <DeliveryIntakeScreen
-            user={currentUser}
-            site={DEMO_SITES[0]}
-            materialsCatalog={DEMO_MATERIALS}
+            user={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator', role: 'worker' }}
+            site={sites[0] || FALLBACK_SITES[0]}
+            materialsCatalog={materials}
             isOffline={isOffline}
             locale={locale}
           />
         )}
         {activeTab === 'expense' && (
           <WorkerExpenseScreen
-            user={currentUser}
-            sites={DEMO_SITES}
+            user={currentUser || teamWorkers[0] || { id: 'temp', full_name: 'Utilizator' }}
+            sites={sites}
             isOffline={isOffline}
             locale={locale}
           />

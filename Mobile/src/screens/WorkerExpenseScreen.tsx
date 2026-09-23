@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Site, t } from '@solar/shared';
-import { enqueueOfflineAction } from '../services/storage';
+import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
+import { apiClient } from '../services/apiClient';
 import { PageIntro } from '../components/PageIntro';
 import { ReceiptScanFlow, ReceiptScanFlowProps } from './ReceiptScanFlow';
 
@@ -25,14 +26,36 @@ export function WorkerExpenseScreen({ user, sites, isOffline, locale = 'ro' }: P
     if (!amount || Number(amount) <= 0) { Alert.alert('Eroare', 'Introdu o suma valida.'); return; }
     setSubmitting(true);
     try {
-      const exp = { id: `exp_${Date.now()}`, user_id: user.id, site_id: siteId, category, payment_method: payMethod,
-        amount: Number(amount), reimbursable_amount: payMethod === 'personal' ? Number(amount) : 0,
-        currency: 'RON', status: 'submitted', document_type: 'receipt', description, created_at: new Date().toISOString() };
-      if (isOffline) { await enqueueOfflineAction('expense_submit', exp as any); Alert.alert('Salvat Offline', 'Se va sincroniza mai tarziu.'); }
-      else { Alert.alert('Trimis!', `${amount} RON trimis pentru aprobare.`); }
+      const now = new Date().toISOString();
+      // Map to backend CreateExpenseDto format
+      const expensePayload = {
+        projectId: siteId,
+        category: category as any,
+        paymentMethod: payMethod as any,
+        amount: Number(amount),
+        currency: 'RON',
+        expenseDate: now.split('T')[0],
+        description: description || `Cheltuiala ${category}`,
+        merchantName: hasPhoto ? 'Cu bon atasat' : undefined,
+      };
+      const idemKey = generateIdempotencyKey('expense', 'create');
+
+      if (isOffline) {
+        // Enqueue for later sync (SQLite-based queue)
+        await enqueueOperation('expense', 'create', expensePayload, idemKey);
+        Alert.alert('Salvat Offline', 'Cheltuiala a fost salvata local si se va sincroniza cand veti avea internet.');
+      } else {
+        // Submit directly to API
+        await apiClient.createExpense(expensePayload, idemKey);
+        Alert.alert('Trimis!', `${amount} RON trimis pentru aprobare.`);
+      }
       setAmount(''); setDescription(''); setHasPhoto(false);
-    } catch (e: any) { Alert.alert('Eroare', e.message || 'Eroare'); }
-    finally { setSubmitting(false); }
+    } catch (e: any) {
+      console.error('Expense submit error:', e);
+      Alert.alert('Eroare', e.message || 'Nu s-a putut salva cheltuiala.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleScanComplete: ReceiptScanFlowProps['onComplete'] = (_draft, outcome) => {

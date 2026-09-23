@@ -54,4 +54,13 @@ export class InventoryController {
   ) {
     return this.inventoryService.getMovements(projectId, materialId);
   }
+
+  @Get('stock')
+  @ApiOperation({ summary: 'List all stock balances with material information' })
+  async listBalances(
+    @Query('projectId') projectId?: string,
+    @Query('materialId') materialId?: string,
+  ) {
+    return this.inventoryService.listAllBalances({ projectId, materialId });
+  }
 }

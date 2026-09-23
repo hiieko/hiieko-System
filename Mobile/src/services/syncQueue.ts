@@ -121,6 +121,10 @@ async function syncOperation(item: SyncQueueItem): Promise<boolean> {
       case 'issue':
         await syncIssue(item);
         break;
+      case 'aviz':
+      case 'delivery_note':
+        await syncAviz(item);
+        break;
       default:
         throw new Error(`Unknown entity type: ${item.entity}`);
     }
@@ -172,6 +176,10 @@ async function syncMaterialConsumption(item: SyncQueueItem): Promise<void> {
 async function syncIssue(item: SyncQueueItem): Promise<void> {
   // Implement issue sync when backend endpoint is ready
   console.warn('Issue sync not yet implemented');
+}
+
+async function syncAviz(item: SyncQueueItem): Promise<void> {
+  await apiClient.createAviz(item.payload, item.idempotency_key);
 }
 
 /**

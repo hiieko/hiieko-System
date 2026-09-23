@@ -13,6 +13,17 @@ import { AuthenticatedUser } from '../../common/auth/auth.types';
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'List attendance records with filters' })
+  async findAll(
+    @Query('projectId') projectId?: string,
+    @Query('userId') userId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.attendanceService.findAll({ projectId, userId, startDate, endDate });
+  }
+
   @Post('check-in')
   @ApiOperation({ summary: 'Worker check-in with GPS geofence validation' })
   async checkIn(@Body() dto: CheckInDto, @CurrentUser() user: AuthenticatedUser) {

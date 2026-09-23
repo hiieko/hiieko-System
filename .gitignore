@@ -1,5 +1,5 @@
 # ====================================================================
-# Solar Site Management System — root .gitignore
+# HIIEKO System — root .gitignore
 # ====================================================================
 
 # ---- Dependencies -------------------------------------------------
@@ -18,11 +18,18 @@ web-build/
 .env
 .env.local
 .env.*.local
-!.env.example
+
+# Per-project .env files (ignore, but keep .env.example templates)
 web/.env
 web/.env.local
-mobile/.env
-mobile/.env.local
+Mobile/.env
+Mobile/.env.local
+
+# Keep example templates (DO NOT IGNORE THESE)
+!.env.example
+!web/.env.example
+!Mobile/.env.example
+!docs/AI_INSTRUCTIONS.md
 
 # ---- Supabase local tooling ---------------------------------------
 supabase/.temp/
@@ -37,21 +44,23 @@ yarn-error.log*
 Thumbs.db
 .idea/
 .vscode/*
-!.vscode/extensions.json.venv/
-**/.venv/
-__pycache__/
-**/__pycache__/
-*.pyc
-.env
-.env.*
+!.vscode/extensions.json
+
+# ---- Python / venv ------------------------------------------------
 .venv/
 **/.venv/
 __pycache__/
 **/__pycache__/
 *.pyc
-.env
-.env.*
 
-.env
-.env.*
-!.env.example
+# ---- Temporary / extraction files ---------------------------------
+spec.txt
+spec_extract.txt
+spec_full.txt
+spec_text.txt
+check-db.js
+setup-db.js
+backend/test-web-api-flow.js
+
+# ---- Cline / AI tools ---------------------------------------------
+.clinerules/

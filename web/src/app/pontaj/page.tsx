@@ -1,12 +1,9 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
-import React, { useState } from 'react';
-import { 
-  MOCK_TIME_LOGS, 
-  MOCK_USERS, 
-  MOCK_SITES 
-} from '../../lib/mock-data';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '../../lib/api-client';
+import { useLocale } from '@solar/shared';
 import { 
   Clock, 
   Calendar, 
@@ -15,31 +12,157 @@ import {
   AlertCircle, 
   MapPin, 
   User, 
-  Filter 
+  Filter,
+  Loader2
 } from 'lucide-react';
+
+// Backend attendance record interface
+interface AttendanceRecord {
+  id: string;
+  user_id: string;
+  project_id: string;
+  date?: string;
+  check_in_time: string | Date;
+  check_out_time: string | Date | null;
+  check_in_latitude?: number;
+  check_in_longitude?: number;
+  check_in_distance_m: number;
+  check_out_latitude?: number;
+  check_out_longitude?: number;
+  regular_hours: number;
+  overtime_minutes: number;
+  status: string;
+  user?: { profile?: { full_name: string; role?: string } };
+  project?: { name: string; code: string };
+}
 
 export default function PontajPage() {
   const [activeTab, setActiveTab] = useState<'daily' | 'monthly'>('daily');
   const [selectedMonth, setSelectedMonth] = useState('2026-09');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
 
   const daysInMonth = Array.from({ length: 30 }, (_, i) => i + 1);
 
-  const workers = MOCK_USERS.filter(u => u.role === 'worker' || u.role === 'team_leader');
+  // Sample attendance records for empty state display
+  const sampleAttendanceRecords: AttendanceRecord[] = [
+    {
+      id: 'a1',
+      user_id: 'u1',
+      project_id: 'p1',
+      date: '2026-09-21',
+      check_in_time: '2026-09-21T07:30:00',
+      check_out_time: '2026-09-21T16:30:00',
+      check_in_latitude: 46.1539,
+      check_in_longitude: 21.3156,
+      check_in_distance_m: 45,
+      check_out_latitude: 46.1542,
+      check_out_longitude: 21.3160,
+      regular_hours: 8,
+      overtime_minutes: 0,
+      status: 'completed',
+      user: { profile: { full_name: 'Ion Munteanu', role: 'team_leader' } },
+      project: { name: 'Parc Solar Arad', code: 'AR-001' },
+    },
+    {
+      id: 'a2',
+      user_id: 'u2',
+      project_id: 'p1',
+      date: '2026-09-21',
+      check_in_time: '2026-09-21T07:45:00',
+      check_out_time: '2026-09-21T16:45:00',
+      check_in_latitude: 46.1540,
+      check_in_longitude: 21.3157,
+      check_in_distance_m: 62,
+      check_out_latitude: 46.1543,
+      check_out_longitude: 21.3161,
+      regular_hours: 8,
+      overtime_minutes: 60,
+      status: 'completed',
+      user: { profile: { full_name: 'Maria Popescu', role: 'worker' } },
+      project: { name: 'Parc Solar Arad', code: 'AR-001' },
+    },
+    {
+      id: 'a3',
+      user_id: 'u3',
+      project_id: 'p2',
+      date: '2026-09-21',
+      check_in_time: '2026-09-21T08:00:00',
+      check_out_time: '2026-09-21T17:00:00',
+      check_in_latitude: 45.7489,
+      check_in_longitude: 21.2087,
+      check_in_distance_m: 38,
+      check_out_latitude: 45.7492,
+      check_out_longitude: 21.2090,
+      regular_hours: 8,
+      overtime_minutes: 120,
+      status: 'completed',
+      user: { profile: { full_name: 'Andrei Popovici', role: 'worker' } },
+      project: { name: 'Parc Solar Timisoara', code: 'TM-002' },
+    },
+  ];
+
+  // Sample projects for dropdown
+  const sampleProjects = [
+    { id: 'p1', name: 'Parc Solar Arad', code: 'AR-001' },
+    { id: 'p2', name: 'Parc Solar Timisoara', code: 'TM-002' },
+    { id: 'p3', name: 'Parc Solar Cluj', code: 'CJ-003' },
+  ];
+
+  const [selectedProject, setSelectedProject] = useState(sampleProjects[0]);
+
+  // Load data from API
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Load attendance records
+        const attendanceResponse = await apiClient.getAttendanceRecords();
+        setAttendanceRecords((attendanceResponse.data || []) as AttendanceRecord[]);
+
+        // Load projects (sites)
+        const projectsResponse = await apiClient.getProjects();
+        setProjects((projectsResponse.data || []) as any[]);
+
+        // Load users (workers)
+        const usersResponse = await apiClient.getUsers();
+        setUsers((usersResponse.data || []) as any[]);
+      } catch (err: any) {
+        console.error('Failed to load attendance data:', err);
+        setError(err.message || 'Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const workers = users.filter(u => {
+    const role = (u.role || '').toString().toLowerCase();
+    return role === 'worker' || role === 'team_leader';
+  });
 
   const exportAttendance = () => {
     const header = ['Nume', 'Șantier', 'Sosire', 'Plecare', 'Distanță GPS (m)', 'Ore normale', 'Ore suplimentare', 'Stare'];
-    const rows = MOCK_TIME_LOGS.map((log) => {
-      const user = MOCK_USERS.find(u => u.id === log.user_id);
-      const site = MOCK_SITES.find(s => s.id === log.site_id);
+    const rows = attendanceRecords.map((log) => {
+      const user = users.find(u => u.id === log.user_id);
+      const site = projects.find(p => p.id === log.project_id);
+      const userName = log.user?.profile?.full_name || user?.full_name || user?.profile?.full_name || '';
+      const siteName = log.project?.name || site?.name || '';
       return [
-        user?.full_name || '',
-        site?.name || '',
-        new Date(log.check_in).toLocaleString('ro-RO'),
-        log.check_out ? new Date(log.check_out).toLocaleString('ro-RO') : '',
-        String(log.check_in_distance_meters),
-        String(log.normal_hours_worked),
-        String((log.overtime_minutes / 60).toFixed(1)),
-        log.check_out ? 'Finalizat' : 'Pe șantier',
+        userName,
+        siteName,
+        log.check_in_time ? new Date(log.check_in_time).toLocaleString('ro-RO') : '',
+        log.check_out_time ? new Date(log.check_out_time).toLocaleString('ro-RO') : '',
+        String(log.check_in_distance_m || 0),
+        String(log.regular_hours || 0),
+        String(((log.overtime_minutes || 0) / 60).toFixed(1)),
+        log.check_out_time ? 'Finalizat' : 'Pe șantier',
       ];
     });
     const csv = [header, ...rows]
@@ -125,53 +248,78 @@ export default function PontajPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {MOCK_TIME_LOGS.map((log) => {
-                  const user = MOCK_USERS.find(u => u.id === log.user_id);
-                  const site = MOCK_SITES.find(s => s.id === log.site_id);
-                  const checkInTime = new Date(log.check_in).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
-                  const checkOutTime = log.check_out ? new Date(log.check_out).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
-                  const otHours = (log.overtime_minutes / 60).toFixed(1);
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
+                      <p className="mt-2 text-sm text-slate-500">Încarcând datele pontaj...</p>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center">
+                      <AlertCircle className="w-8 h-8 mx-auto text-rose-400" />
+                      <p className="mt-2 text-sm text-rose-500">Eroare: {error}</p>
+                    </td>
+                  </tr>
+                ) : attendanceRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center">
+                      <Clock className="w-8 h-8 mx-auto text-slate-300" />
+                      <p className="mt-2 text-sm text-slate-500">Nu există înregistrări de pontaj</p>
+                    </td>
+                  </tr>
+                ) : (
+                  <>
+                    {attendanceRecords.map((log) => {
+                    const user = users.find(u => u.id === log.user_id);
+                    const site = projects.find(p => p.id === log.project_id);
+                    const userName = log.user?.profile?.full_name || user?.full_name || user?.profile?.full_name || 'Necunoscut';
+                    const checkInTime = log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
+                    const checkOutTime = log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
+                    const otHours = ((log.overtime_minutes || 0) / 60).toFixed(1);
+                    const userRole = (log.user?.profile?.role || user?.role || 'worker').toString().toLowerCase();
 
-                  return (
-                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-medium text-slate-900 flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs">
-                          {user?.full_name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <div>{user?.full_name}</div>
-                          <div className="text-xs text-slate-400 capitalize">{user?.role.replace('_', ' ')}</div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 text-xs">
-                        {site?.name}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
-                        {checkInTime}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
-                        {checkOutTime}
-                      </td>
-                      <td className="py-3.5 px-4 text-xs">
-                        <span className="inline-flex items-center text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-medium">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {log.check_in_distance_meters}m (în perimetru)
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-800">
-                        {log.normal_hours_worked} ore
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {log.overtime_minutes > 0 ? (
-                          <span className="inline-flex items-center font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded text-xs">
-                            +{otHours} ore ({log.overtime_minutes} min)
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4 font-medium text-slate-900 flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs">
+                            {userName.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div>{userName}</div>
+                            <div className="text-xs text-slate-400 capitalize">{userRole.replace('_', ' ')}</div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600 text-xs">
+                          {log.project?.name || site?.name || '—'}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
+                          {checkInTime}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
+                          {checkOutTime}
+                        </td>
+                        <td className="py-3.5 px-4 text-xs">
+                          <span className="inline-flex items-center text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-medium">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            {log.check_in_distance_m || 0}m (în perimetru)
                           </span>
-                        ) : (
-                          <span className="text-slate-400 text-xs">0h</span>
-                        )}
-                      </td>
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-800">
+                          {log.regular_hours || 0} ore
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {(log.overtime_minutes || 0) > 0 ? (
+                            <span className="inline-flex items-center font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded text-xs">
+                              +{otHours} ore ({log.overtime_minutes} min)
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs">0h</span>
+                          )}
+                        </td>
                       <td className="py-3.5 px-4 text-right">
-                        {log.check_out ? (
+                        {log.check_out_time ? (
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
                             Finalizat
                           </span>
@@ -184,6 +332,8 @@ export default function PontajPage() {
                     </tr>
                   );
                 })}
+                  </>
+                )}
               </tbody>
             </table>
           </div>

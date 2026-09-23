@@ -3,7 +3,8 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
-import { supabase, isSupabaseConfigured, supabaseConfigMessage } from '../../lib/supabase';
+import { apiClient, ApiError } from '../../lib/api-client';
+import { useLocale } from '@solar/shared';
 
 interface NotifItem {
   id: string;
@@ -23,23 +24,63 @@ export default function NotificariPage() {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { locale } = useLocale();
+
+  // Sample notifications for empty state display
+  const sampleNotifications: NotifItem[] = [
+    {
+      id: 'n1',
+      title_ro: 'Raport zilnic neaprobat',
+      title_en: 'Daily report not approved',
+      body_ro: 'Raportul zilnic pentru șantierul AR-001 a fost trimis spre aprobare.',
+      body_en: 'Daily report for site AR-001 has been submitted for approval.',
+      is_read: false,
+      type: 'report',
+      priority: 'normal',
+      action_url: '/rapoarte',
+      created_at: '2026-09-21T17:30:00',
+    },
+    {
+      id: 'n2',
+      title_ro: 'Cheltuială în așteptare',
+      title_en: 'Expense pending approval',
+      body_ro: 'O cheltuială de 125.50 RON a fost trimisă spre aprobare.',
+      body_en: 'An expense of 125.50 RON has been submitted for approval.',
+      is_read: false,
+      type: 'expense',
+      priority: 'normal',
+      action_url: '/aprobare',
+      created_at: '2026-09-21T14:45:00',
+    },
+    {
+      id: 'n3',
+      title_ro: 'Aviz receptionat',
+      title_en: 'Delivery note received',
+      body_ro: 'Avizul AV-2026-0921 pentru materialul MC-001 a fost recepționat.',
+      body_en: 'Delivery note AV-2026-0921 for material MC-001 has been received.',
+      is_read: true,
+      type: 'delivery',
+      priority: 'low',
+      action_url: '/avize',
+      created_at: '2026-09-21T11:20:00',
+    },
+  ];
 
   const loadNotifs = useCallback(async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      setLoading(false);
-      setError(supabaseConfigMessage ?? 'Supabase nu este configurat.');
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fetchErr } = await supabase
-        .from('notifications').select('*')
-        .order('created_at', { ascending: false }).limit(50);
-      if (fetchErr) throw fetchErr;
-      setNotifs((data as NotifItem[]) || []);
+      const response = await apiClient.getNotifications();
+      const data = (response.data || []) as NotifItem[];
+      // Sort by created_at descending
+      data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setNotifs(data.slice(0, 50));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Eroare la incarcarea notificarilor.');
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : 'Eroare la incarcarea notificarilor.');
+      }
     } finally {
       setLoading(false);
     }
@@ -51,17 +92,21 @@ export default function NotificariPage() {
   const unreadCount = notifs.filter(n => !n.is_read).length;
 
   const markRead = async (id: string) => {
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('notifications').update({ is_read: true, read_at: new Date().toISOString() }).eq('id', id);
+    try {
+      await apiClient.markNotificationRead(id);
+      setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
     }
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
   const markAllRead = async () => {
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('notifications').update({ is_read: true, read_at: new Date().toISOString() }).eq('is_read', false);
+    try {
+      await apiClient.markAllNotificationsRead();
+      setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error('Failed to mark all notifications as read:', err);
     }
-    setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
   };
 
   const pBadge = (p: string) => {

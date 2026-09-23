@@ -243,6 +243,53 @@ class MobileApiClient {
   }
 
   // ============================================================================
+  // PROCUREMENT / AVIZE (Delivery Notes)
+  // ============================================================================
+
+  async getAvize(params?: {
+    projectId?: string;
+  }): Promise<ApiResponse<any[]>> {
+    const query = new URLSearchParams();
+    if (params?.projectId) query.set('projectId', params.projectId);
+
+    const queryString = query.toString();
+    return this.request<ApiResponse<any[]>>(
+      `/api/procurement/avize${queryString ? `?${queryString}` : ''}`
+    );
+  }
+
+  async createAviz(data: {
+    projectId: string;
+    avizNumber: string;
+    deliveryDate: string;
+    supplierId?: string;
+    supplierName?: string;
+    notes?: string;
+    idempotencyKey?: string;
+    items: Array<{ materialId: string; quantity: number }>;
+  }, idempotencyKey: string): Promise<ApiResponse<any>> {
+    const payload: any = {
+      projectId: data.projectId,
+      avizNumber: data.avizNumber,
+      deliveryDate: data.deliveryDate,
+      items: data.items,
+    };
+    if (data.supplierId) payload.supplierId = data.supplierId;
+    if (data.notes || data.supplierName) {
+      payload.notes = [data.notes, data.supplierName ? `Furnizor: ${data.supplierName}` : null]
+        .filter(Boolean).join(' | ');
+    }
+
+    return this.request<ApiResponse<any>>('/api/procurement/avize', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    });
+  }
+
+  // ============================================================================
   // NOTIFICATIONS
   // ============================================================================
 

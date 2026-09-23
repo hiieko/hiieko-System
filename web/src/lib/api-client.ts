@@ -273,9 +273,45 @@ class ApiClient {
   }
 
   async markAllNotificationsRead(): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>('/api/notifications/mark-all-read', {
+    return this.request<ApiResponse<any>>('/api/notifications/read-all', {
       method: 'POST',
     });
+  }
+
+  // ============================================================================
+  // OCR & DOCUMENT PROCESSING
+  // ============================================================================
+
+  async processOcrDocument(
+    file: File,
+    options?: { documentId?: string; expenseId?: string }
+  ): Promise<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.documentId) formData.append('documentId', options.documentId);
+    if (options?.expenseId) formData.append('expenseId', options.expenseId);
+
+    const url = `${this.baseUrl}/api/ocr/process`;
+    const headers: Record<string, string> = {};
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new ApiError(data.message || data.error || 'OCR processing failed', response.status, data);
+      }
+      return data;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(error instanceof Error ? error.message : 'Network error', 0);
+    }
   }
 
   // ============================================================================

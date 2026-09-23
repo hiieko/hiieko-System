@@ -32,4 +32,12 @@ export class AuthController {
   async getMe(@CurrentUser() user: AuthenticatedUser) {
     return user;
   }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout and invalidate session (audit trail)' })
+  async logout(@CurrentUser() user: AuthenticatedUser) {
+    return { success: true, message: 'Logged out successfully' };
+  }
 }

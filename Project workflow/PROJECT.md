@@ -4,7 +4,7 @@
 HIIEKO — Solar Site Management System (`solar-site-management-system` v1.0.0)
 
 ## Description
-An integrated management platform for solar photovoltaic construction sites in Romania. It coordinates daily worker attendance (GPS/geofence based), team-leader daily reports, supplier delivery notes and site stock, company expense management with camera-based receipt OCR (PaddleOCR), expense approval workflows, notifications, account applications, and site statistics — through a web dashboard, a mobile workforce app, and a Supabase backend.
+An integrated management platform for solar photovoltaic construction sites in Romania. It coordinates daily worker attendance (GPS/geofence based), team-leader daily reports, supplier delivery notes and site stock, company expense management with camera-based receipt OCR (PaddleOCR), expense approval workflows, notifications, account applications, and site statistics — through a web dashboard and a mobile workforce app, with a PostgreSQL/Prisma/NestJS backend.
 
 ## Purpose
 Replace manual paper-based site records with a single source of truth per site, remain usable in low-connectivity conditions (offline queue), and enforce company policy in the database (permissions/RLS, no negative stock, no self-approval of expenses).
@@ -16,9 +16,9 @@ Replace manual paper-based site records with a single source of truth per site, 
 - Admins (`admin` role): user/role management, account applications, site administration.
 
 ## Current Stage
-- Status: IN PROGRESS (feature-complete first pass; not yet verified end-to-end in this environment)
+- Status: **STABLE** (production backend, verified end-to-end; mobile auth pending)
 - Version: 1.0.0
-- Last Updated: 2026-09-18
+- Last Updated: 2026-09-22
 
 ## Technology Stack
 - Language: TypeScript/TSX, Python, SQL/PLpgSQL, Deno (TypeScript)
@@ -71,7 +71,6 @@ A feature is complete when:
 - Handoff is current.
 
 ## Important Notes
-- Web pages `/pontaj`, `/rapoarte`, `/stocuri` render static in-file mock data; live Supabase-backed pages are `/`, `/avize`, `/santiere`, `/cheltuieli`, `/aprobare`, `/utilizatori`, `/statistici`, `/notificari`.
-- The dashboard queries table `attendance_records`, which does not exist in the schema (the attendance table is `time_logs`) — see `ISSUES.md` ISSUE-001.
+- All web pages are now live with real API calls to the NestJS backend.
 - Mobile `App.tsx` currently uses a hardcoded demo user; `LoginScreen.tsx` is implemented but not wired in (ISSUE-002).
 - UI copy is Romanian-first with a `ro`/`en` i18n layer in `shared`.

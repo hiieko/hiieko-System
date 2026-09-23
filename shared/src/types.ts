@@ -3,7 +3,24 @@
 // Conforms to HIIEKO ROMANIA Product Spec
 // ============================================================================
 
-export type UserRole = 'admin' | 'manager' | 'team_leader' | 'worker';
+// HIIEKO Role Model (aligned with database UserRoleEnum)
+export type UserRole = 
+  | 'admin'              // Administrator - Full system access
+  | 'owner'              // Owner - Organization ownership
+  | 'manager'            // Manager - Project oversight, financial approval
+  | 'pm'                 // Project Manager - Schedule, budget, risk, variation
+  | 'site_manager'       // Site Manager - Daily execution, work planning, approval authority
+  | 'team_leader'        // Team Leader - Team supervision (legacy alias for foreman)
+  | 'foreman'            // Foreman - Daily workforce execution, task assignment
+  | 'technician'         // Technician - Technical execution
+  | 'procurement'        // Procurement - Sourcing, quotations, purchase orders
+  | 'finance'            // Finance - Financial approval, reimbursement
+  | 'qa_qc'              // QA/QC - Quality assurance, inspections
+  | 'worker'             // Worker - Task completion
+  | 'viewer'             // Viewer - Read-only access
+  | 'site_logistics'     // Site Logistics - Attendance, receipts, stock, tools
+  | 'maintenance_director'  // Maintenance Director - Portfolio maintenance oversight
+  | 'technical_director';     // Technical Director - Technical governance
 
 export type AttendanceStatus = 
   | 'present'       // Prezent
@@ -163,6 +180,52 @@ export interface DailyReport {
   reviewed_at?: string;
   is_offline_created?: boolean;
   idempotency_key?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
+// Daily Work Planning (GAP-02)
+// ============================================================================
+
+export type DailyPlanStatus = 'DRAFT' | 'PUBLISHED' | 'COMPLETED' | 'CANCELLED';
+
+export interface DailyPlanTask {
+  id: string;
+  daily_plan_id: string;
+  task_id: string;
+  task?: {
+    id: string;
+    title: string;
+    code: string;
+    status: string;
+    unit_of_measure?: string;
+    planned_quantity?: number;
+  };
+  target_quantity: number;
+  actual_quantity?: number;
+  completed: boolean;
+}
+
+export interface DailyPlan {
+  id: string;
+  project_id: string;
+  team_id?: string;
+  team?: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  plan_date: string; // YYYY-MM-DD
+  status: DailyPlanStatus;
+  notes?: string;
+  created_by?: string;
+  creator?: {
+    id: string;
+    email: string;
+    profile?: { full_name?: string; first_name?: string; last_name?: string };
+  };
+  tasks: DailyPlanTask[];
   created_at: string;
   updated_at: string;
 }

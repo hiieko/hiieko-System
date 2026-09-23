@@ -1,13 +1,12 @@
-'use client';
+﻿'use client';
 import { PageTutorial } from '../../components/PageTutorial';
 import { FieldHelp } from '../../components/FieldHelp';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Receipt, Plus, Search, X, Upload } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
-import { MOCK_EXPENSES } from '../../lib/mock-data';
 import { t, Expense, OcrResult, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiClient, ApiError } from '../../lib/api-client';
 
 const CATS: Record<string,string> = { fuel:'Combustibil', accommodation:'Cazare', food:'Mancare', transport:'Transport', parking:'Parcare', tolls:'Taxe drum', materials:'Materiale', tools:'Scule', equipment:'Echipamente', phone_internet:'Telefon', other:'Altele' };
 const SC: Record<string,string> = { draft:'bg-slate-100 text-slate-700', submitted:'bg-blue-100 text-blue-800', under_review:'bg-amber-100 text-amber-800', approved:'bg-emerald-100 text-emerald-800', rejected:'bg-red-100 text-red-800', reimbursement_pending:'bg-purple-100 text-purple-800', reimbursed:'bg-green-100 text-green-800', cancelled:'bg-slate-200 text-slate-600', needs_correction:'bg-orange-100 text-orange-800' };
@@ -22,9 +21,88 @@ export default function CheltuieliPage() {
   const [scanError, setScanError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
-  const [showingDemoData, setShowingDemoData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { locale } = useLocale();
+
+  // Sample expenses for empty state display
+  const sampleExpenses: Expense[] = [
+    {
+      id: 'exp1',
+      user_id: 'u1',
+      site_id: 's1',
+      category: 'fuel',
+      status: 'approved',
+      document_type: 'receipt',
+      payment_method: 'personal',
+      amount: 125.50,
+      reimbursable_amount: 125.50,
+      currency: 'RON',
+      description: 'Combustibil pentru generator',
+      created_at: '2026-09-20T09:15:00',
+      updated_at: '2026-09-20T09:15:00',
+    },
+    {
+      id: 'exp2',
+      user_id: 'u2',
+      site_id: 's2',
+      category: 'food',
+      status: 'approved',
+      document_type: 'receipt',
+      payment_method: 'personal',
+      amount: 87.25,
+      reimbursable_amount: 87.25,
+      currency: 'RON',
+      description: 'Mese lucrători - șantier Timisoara',
+      created_at: '2026-09-20T13:30:00',
+      updated_at: '2026-09-20T13:30:00',
+    },
+    {
+      id: 'exp3',
+      user_id: 'u3',
+      site_id: 's3',
+      category: 'transport',
+      status: 'submitted',
+      document_type: 'receipt',
+      payment_method: 'company_card',
+      amount: 45.00,
+      reimbursable_amount: 45.00,
+      currency: 'RON',
+      description: 'Taxe auto pentru deplasări',
+      created_at: '2026-09-21T08:45:00',
+      updated_at: '2026-09-21T08:45:00',
+    },
+  ];
+
+  /**
+   * Maps backend OcrExtractionResult (camelCase) to shared OcrResult (snake_case)
+   */
+  const mapOcrResult = (backendResult: any): OcrResult => {
+    if (!backendResult) return {};
+    return {
+      document_type: backendResult.documentType,
+      merchant_name: backendResult.merchantName,
+      merchant_cui: backendResult.merchantCui,
+      invoice_series: backendResult.invoiceSeries,
+      document_number: backendResult.documentNumber,
+      document_date: backendResult.documentDate,
+      due_date: backendResult.dueDate,
+      currency: backendResult.currency,
+      subtotal: backendResult.subtotal,
+      vat: backendResult.vat,
+      total: backendResult.total,
+      payment_method: backendResult.paymentMethod,
+      raw_text: backendResult.rawText,
+      provider: backendResult.provider,
+      confidence: backendResult.confidence,
+      fields: backendResult.fields,
+      review_required: backendResult.reviewRequired,
+      validation_errors: backendResult.validationErrors,
+      document_hash: backendResult.documentHash,
+      recognition: backendResult.recognition,
+    };
+  };
+
 
   const processReceipt = async () => {
     if (!receipt) return;
@@ -32,53 +110,68 @@ export default function CheltuieliPage() {
       setScanError('Trebuie să te autentifici înainte de procesarea OCR.');
       return;
     }
-    if (!supabase) {
-      setScanError('Supabase nu este disponibil.');
-      return;
-    }
+
     setProcessing(true);
     setScanError('');
     setOcrResult(null);
     try {
-      if (receipt.type === 'application/pdf') {
-        throw new Error('PDF-ul poate fi încărcat, dar OCR-ul web acceptă momentan imagini JPG, PNG sau WEBP.');
+      // Use apiClient.processOcrDocument with direct File upload (multipart/form-data)
+      // Backend OCR controller supports: JPG, PNG, WEBP, PDF, XML
+      const response = await apiClient.processOcrDocument(receipt) as any;
+      
+      // Backend returns: { job, result } where result is OcrExtractionResult (camelCase)
+      // We need to map to OcrResult (snake_case)
+      if (response?.result) {
+        const mapped = mapOcrResult(response.result);
+        setOcrResult(mapped);
+      } else if (response?.data?.result) {
+        // Some response formats wrap in data
+        const mapped = mapOcrResult(response.data.result);
+        setOcrResult(mapped);
+      } else {
+        // Try to extract from any available field
+        const resultData = response?.data || response;
+        if (resultData?.result || resultData?.ocr) {
+          const mapped = mapOcrResult(resultData.result || resultData.ocr);
+          setOcrResult(mapped);
+        } else {
+          throw new Error("OCR-ul nu a gasit date in document.");
+        }
       }
-      const imageBase64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(new Error('Nu am putut citi imaginea selectată.'));
-        reader.onload = () => {
-          const value = typeof reader.result === 'string' ? reader.result : '';
-          const comma = value.indexOf(',');
-          resolve(comma >= 0 ? value.slice(comma + 1) : value);
-        };
-        reader.readAsDataURL(receipt);
-      });
-      const { data, error } = await supabase.functions.invoke('ocr-extract', {
-        body: { imageBase64, mimeType: receipt.type || 'image/jpeg' },
-      });
-      if (error) throw new Error(error.message || 'OCR-ul nu a putut procesa documentul.');
-      if (!data?.ocr) throw new Error('OCR-ul nu a găsit date în document.');
-      setOcrResult(data.ocr as OcrResult);
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       setScanError(
-        /failed to send a request|function not found|404/i.test(message)
-          ? 'Serviciul OCR nu este publicat în Supabase. Publică funcția „ocr-extract”, configurează PADDLEOCR_URL și PADDLEOCR_TOKEN, apoi încearcă din nou.'
-          : message || 'OCR-ul a eșuat.'
+        error instanceof ApiError ? error.message : message || "OCR-ul a esuat."
       );
-    } finally {
+    }
+    finally {
       setProcessing(false);
     }
   };
 
   useEffect(() => {
     async function load() {
-      if (!isSupabaseConfigured || !supabase) { setLoading(false); return; }
-      const { data } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
-      const usingDemoData = !data?.length;
-      setExpenses(usingDemoData ? MOCK_EXPENSES : data as Expense[]);
-      setShowingDemoData(usingDemoData);
-      setLoading(false);
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.getExpenses();
+        let data = (response.data || []) as Expense[];
+        // Sort by created_at descending
+        data.sort((a: any, b: any) => 
+          new Date(b.created_at || b.createdAt || 0).getTime() - 
+          new Date(a.created_at || a.createdAt || 0).getTime()
+        );
+        setExpenses(data);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError(err instanceof Error ? err.message : 'Eroare la incarcarea cheltuielilor.');
+        }
+        setExpenses([]);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -88,9 +181,9 @@ export default function CheltuieliPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="expenses" />
-      {showingDemoData && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Date demo afișate local. Nu sunt salvate în Supabase.
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

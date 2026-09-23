@@ -1,5 +1,5 @@
 /**
- * SettingsScreen — language picker.
+ * SettingsScreen — language picker + account logout.
  *
  * This screen was added to fulfil the HIIEKO language-switcher requirement.
  * It uses the **shared** translation system (no second i18n here): labels
@@ -17,9 +17,10 @@
  */
 
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Check, Globe2 } from 'lucide-react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Alert, ActivityIndicator } from 'react-native';
+import { Check, Globe2, LogOut, User } from 'lucide-react-native';
 import { useLocale, t as translate, type Locale } from '@solar/shared';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LangOption {
   value: Locale;
@@ -45,9 +46,88 @@ const LANG_OPTIONS: LangOption[] = [
 
 export function SettingsScreen() {
   const { locale, setLocale } = useLocale();
+  const { currentUser, logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
+
+  const handleLogout = () => {
+    Alert.alert(
+      locale === 'ro' ? 'Deconectare' : 'Logout',
+      locale === 'ro' ? 'Sigur doriți să vă deconectați?' : 'Are you sure you want to log out?',
+      [
+        {
+          text: locale === 'ro' ? 'Anulare' : 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: locale === 'ro' ? 'Deconectare' : 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            setIsLoggingOut(true);
+            try {
+              await logout();
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert(
+                locale === 'ro' ? 'Eroare' : 'Error',
+                locale === 'ro' ? 'Nu s-a putut deconecta.' : 'Could not log out.'
+              );
+            } finally {
+              setIsLoggingOut(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container} testID="settings-screen">
+      {/* User Info Section */}
+      {currentUser && (
+        <View style={[styles.section, styles.accountSection]}>
+          <View style={styles.sectionHeader}>
+            <User size={18} color="#f59e0b" />
+            <Text style={styles.sectionTitle}>
+              {locale === 'ro' ? 'Cont' : 'Account'}
+            </Text>
+          </View>
+          
+          <View style={styles.userInfo}>
+            <View style={styles.userAvatar}>
+              <Text style={styles.userAvatarText}>
+                {currentUser.full_name?.charAt(0)?.toUpperCase() || 'U'}
+              </Text>
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{currentUser.full_name}</Text>
+              <Text style={styles.userEmail}>{currentUser.email}</Text>
+              <Text style={styles.userRole}>
+                {locale === 'ro' ? 'Rol: ' : 'Role: '}
+                {formatRole(currentUser.role, locale)}
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
+            onPress={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <>
+                <LogOut size={18} color="#ffffff" />
+                <Text style={styles.logoutButtonText}>
+                  {locale === 'ro' ? 'Deconectare' : 'Log Out'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Language Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Globe2 size={18} color="#f59e0b" />
@@ -102,6 +182,17 @@ export function SettingsScreen() {
   );
 }
 
+function formatRole(role: string, locale: Locale): string {
+  const roleMap: Record<string, { ro: string; en: string }> = {
+    admin: { ro: 'Administrator', en: 'Administrator' },
+    manager: { ro: 'Manager', en: 'Manager' },
+    team_leader: { ro: 'Șef Echipă', en: 'Team Leader' },
+    worker: { ro: 'Muncitor', en: 'Worker' },
+    owner: { ro: 'Proprietar', en: 'Owner' },
+  };
+  return roleMap[role]?.[locale] || role;
+}
+
 const styles = StyleSheet.create({
   container: {
     padding: 16,
@@ -110,6 +201,66 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
+  },
+  accountSection: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
+    paddingBottom: 24,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  userAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#f59e0b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  userAvatarText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0f172a',
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    color: '#f1f5f9',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  userEmail: {
+    color: '#94a3b8',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  userRole: {
+    color: '#64748b',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#dc2626',
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  logoutButtonDisabled: {
+    backgroundColor: '#991b1b',
+    opacity: 0.7,
+  },
+  logoutButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -27,15 +27,15 @@ export class TeamsController {
     return this.teamsService.findOne(id);
   }
 
-  @Post()
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MANAGER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER)
+  @Post()
   @ApiOperation({ summary: 'Create a new work team' })
   async create(@Body() dto: CreateTeamDto, @CurrentUser() user: AuthenticatedUser) {
     return this.teamsService.create(dto, user.id);
   }
 
-  @Post(':id/members')
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MANAGER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER, UserRoleEnum.TEAM_LEADER)
+  @Post(':id/members')
   @ApiOperation({ summary: 'Add a worker to team roster' })
   async addMember(
     @Param('id') teamId: string,
