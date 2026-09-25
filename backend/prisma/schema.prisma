@@ -25,28 +25,28 @@ model Organization {
 }
 
 model User {
-  id                 String                   @id @default(uuid())
-  organization_id    String?
-  email              String                   @unique
-  password_hash      String?
-  role               UserRoleEnum             @default(WORKER)
-  is_active          Boolean                  @default(true)
-  created_at         DateTime                 @default(now())
-  updated_at         DateTime                 @updatedAt
-  time_logs          AttendanceRecord[]
-  audit_logs         AuditLog[]               @relation("AuditActor")
-  daily_reports      DailyReport[]            @relation("ReportLeader")
-  employee           Employee?
-  approvals          ExpenseApproval[]        @relation("ExpenseApprover")
-  expenses           Expense[]                @relation("ExpenseSubmitter")
-  notification_prefs NotificationPreference[]
-  notifications      Notification[]
-  project_members    ProjectMember[]
-  assigned_tasks     TaskAssignment[]
-  team_members       TeamMember[]
-  created_daily_plans DailyPlan[]        @relation("DailyPlanCreator")
-  profile            UserProfile?
-  organization       Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  id                  String                   @id @default(uuid())
+  organization_id     String?
+  email               String                   @unique
+  password_hash       String?
+  role                UserRoleEnum             @default(WORKER)
+  is_active           Boolean                  @default(true)
+  created_at          DateTime                 @default(now())
+  updated_at          DateTime                 @updatedAt
+  time_logs           AttendanceRecord[]
+  audit_logs          AuditLog[]               @relation("AuditActor")
+  daily_reports       DailyReport[]            @relation("ReportLeader")
+  employee            Employee?
+  approvals           ExpenseApproval[]        @relation("ExpenseApprover")
+  expenses            Expense[]                @relation("ExpenseSubmitter")
+  notification_prefs  NotificationPreference[]
+  notifications       Notification[]
+  project_members     ProjectMember[]
+  assigned_tasks      TaskAssignment[]
+  team_members        TeamMember[]
+  created_daily_plans DailyPlan[]              @relation("DailyPlanCreator")
+  profile             UserProfile?
+  organization        Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
   @@index([role])
@@ -202,6 +202,7 @@ model Project {
   stock_balances         StockBalance[]
   stock_movements        StockMovement[]
   tasks                  Task[]
+  solar_designs          SolarDesign[]
 
   @@index([organization_id])
   @@index([code])
@@ -372,14 +373,14 @@ model DailyPlan {
 }
 
 model DailyPlanTask {
-  id              String     @id @default(uuid())
+  id              String    @id @default(uuid())
   daily_plan_id   String
   task_id         String
-  target_quantity Decimal    @db.Decimal(12, 3)
-  actual_quantity Decimal?   @db.Decimal(12, 3)
-  completed       Boolean    @default(false)
-  daily_plan      DailyPlan  @relation(fields: [daily_plan_id], references: [id], onDelete: Cascade)
-  task            Task       @relation(fields: [task_id], references: [id], onDelete: Cascade)
+  target_quantity Decimal   @db.Decimal(12, 3)
+  actual_quantity Decimal?  @db.Decimal(12, 3)
+  completed       Boolean   @default(false)
+  daily_plan      DailyPlan @relation(fields: [daily_plan_id], references: [id], onDelete: Cascade)
+  task            Task      @relation(fields: [task_id], references: [id], onDelete: Cascade)
 
   @@unique([daily_plan_id, task_id])
   @@map("daily_plan_tasks")
@@ -477,6 +478,7 @@ model Material {
   purchase_order_items PurchaseOrderItem[]
   stock_balances       StockBalance[]
   stock_movements      StockMovement[]
+  solar_products       SolarProduct[]
 
   @@map("materials")
 }
@@ -1195,4 +1197,290 @@ enum OCRJobStateEnum {
   COMPLETED
   FAILED
   REVIEW_REQUIRED
+}
+
+enum SolarDesignStatusEnum {
+  DRAFT
+  IN_PROGRESS
+  REVIEW
+  APPROVED
+  SUPERSEDED
+}
+
+enum SolarModuleOrientationEnum {
+  PORTRAIT
+  LANDSCAPE
+}
+
+enum SolarRoofTypeEnum {
+  FLAT
+  PITCHED
+  GABLE
+  HIP
+  COMPLEX
+}
+
+enum SolarProductTypeEnum {
+  RAIL
+  ROOF_HOOK
+  END_CLAMP
+  MID_CLAMP
+  RAIL_CONNECTOR
+  FASTENER
+  BRACKET
+  TILE_HOOK
+  TRAPEZOID_ATTACHMENT
+  STANDING_SEAM_CLAMP
+  BALLAST
+  EPDM
+  OTHER
+}
+
+enum SolarCatalogStatusEnum {
+  DEMO
+  DRAFT
+  VALIDATED
+}
+
+enum SolarBomItemTypeEnum {
+  MODULE
+  RAIL
+  HOOK
+  CLAMP
+  CONNECTOR
+  FASTENER
+  EPDM
+  CUSTOM
+}
+
+model SolarDesign {
+  id                 String                @id @default(uuid())
+  project_id         String
+  name               String
+  description        String?
+  status             SolarDesignStatusEnum @default(DRAFT)
+  current_version_id String?
+  created_by         String?
+  created_at         DateTime              @default(now())
+  updated_at         DateTime              @updatedAt
+
+  project           Project                @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  current_version   SolarDesignVersion?    @relation("CurrentVersion", fields: [current_version_id], references: [id], onDelete: SetNull)
+  versions          SolarDesignVersion[]   @relation("VersionDesign")
+  roof_sections     SolarRoofSection[]
+  layout_settings   SolarLayoutSettings?
+  module_placements SolarModulePlacement[]
+
+  @@unique([project_id, name])
+  @@index([project_id])
+  @@index([status])
+  @@map("solar_designs")
+}
+
+model SolarDesignVersion {
+  id         String                @id @default(uuid())
+  design_id  String
+  version    Int
+  label      String?
+  status     SolarDesignStatusEnum @default(DRAFT)
+  snapshot   Json
+  created_by String?
+  created_at DateTime              @default(now())
+
+  design       SolarDesign       @relation("VersionDesign", fields: [design_id], references: [id], onDelete: Cascade)
+  current_for  SolarDesign[]     @relation("CurrentVersion")
+  bom_snapshot SolarBomSnapshot?
+
+  @@unique([design_id, version])
+  @@map("solar_design_versions")
+}
+
+model SolarRoofSection {
+  id            String            @id @default(uuid())
+  design_id     String
+  name          String
+  roof_type     SolarRoofTypeEnum @default(FLAT)
+  slope_deg     Decimal           @default(0) @db.Decimal(6, 3)
+  azimuth_deg   Decimal           @default(0) @db.Decimal(6, 3)
+  roof_material String?
+  polygon       Json
+  origin        Json
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+
+  design     SolarDesign            @relation(fields: [design_id], references: [id], onDelete: Cascade)
+  obstacles  SolarObstacle[]
+  placements SolarModulePlacement[]
+
+  @@index([design_id])
+  @@map("solar_roof_sections")
+}
+
+model SolarObstacle {
+  id                String  @id @default(uuid())
+  roof_section_id   String
+  name              String?
+  obstacle_type     String?
+  polygon           Json
+  keepout_margin_mm Decimal @default(0) @db.Decimal(10, 3)
+
+  roof_section SolarRoofSection @relation(fields: [roof_section_id], references: [id], onDelete: Cascade)
+
+  @@index([roof_section_id])
+  @@map("solar_obstacles")
+}
+
+model SolarModuleSpec {
+  id           String   @id @default(uuid())
+  manufacturer String
+  model        String
+  power_wp     Decimal? @db.Decimal(10, 3)
+  length_mm    Decimal  @db.Decimal(10, 3)
+  width_mm     Decimal  @db.Decimal(10, 3)
+  thickness_mm Decimal? @db.Decimal(10, 3)
+  weight_kg    Decimal? @db.Decimal(10, 3)
+  voc          Decimal? @db.Decimal(10, 4)
+  isc          Decimal? @db.Decimal(10, 4)
+  vmp          Decimal? @db.Decimal(10, 4)
+  imp          Decimal? @db.Decimal(10, 4)
+  technology   String?
+  module_type  String?
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  layout_settings SolarLayoutSettings[]
+  placements      SolarModulePlacement[]
+
+  @@unique([manufacturer, model])
+  @@map("solar_module_specs")
+}
+
+model SolarLayoutSettings {
+  id                String                     @id @default(uuid())
+  design_id         String                     @unique
+  module_spec_id    String?
+  orientation       SolarModuleOrientationEnum @default(PORTRAIT)
+  edge_margin_mm    Decimal                    @default(300) @db.Decimal(10, 3)
+  row_spacing_mm    Decimal                    @default(0) @db.Decimal(10, 3)
+  column_spacing_mm Decimal                    @default(20) @db.Decimal(10, 3)
+
+  design      SolarDesign      @relation(fields: [design_id], references: [id], onDelete: Cascade)
+  module_spec SolarModuleSpec? @relation(fields: [module_spec_id], references: [id])
+
+  @@map("solar_layout_settings")
+}
+
+model SolarModulePlacement {
+  id              String  @id @default(uuid())
+  design_id       String
+  roof_section_id String
+  module_spec_id  String?
+  row             Int
+  column          Int
+  local_x         Decimal @db.Decimal(12, 4)
+  local_y         Decimal @db.Decimal(12, 4)
+  local_z         Decimal @default(0) @db.Decimal(12, 4)
+  rotation_deg    Decimal @default(0) @db.Decimal(6, 3)
+  width_mm        Decimal @db.Decimal(10, 3)
+  height_mm       Decimal @db.Decimal(10, 3)
+
+  design       SolarDesign      @relation(fields: [design_id], references: [id], onDelete: Cascade)
+  roof_section SolarRoofSection @relation(fields: [roof_section_id], references: [id], onDelete: Cascade)
+  module_spec  SolarModuleSpec? @relation(fields: [module_spec_id], references: [id])
+
+  @@index([design_id])
+  @@index([roof_section_id])
+  @@map("solar_module_placements")
+}
+
+model SolarMountingFamily {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  description String?
+
+  products SolarProduct[]
+
+  @@map("solar_mounting_families")
+}
+
+model SolarProduct {
+  id                    String                 @id @default(uuid())
+  code                  String                 @unique
+  name                  String
+  family_id             String?
+  product_type          SolarProductTypeEnum
+  unit                  String                 @default("buc")
+  length_mm             Decimal?               @db.Decimal(10, 3)
+  width_mm              Decimal?               @db.Decimal(10, 3)
+  height_mm             Decimal?               @db.Decimal(10, 3)
+  weight_kg             Decimal?               @db.Decimal(10, 3)
+  alloy                 String?
+  cross_section         Json?
+  structural_properties Json?
+  cad_ref               String?
+  catalog_status        SolarCatalogStatusEnum @default(DEMO)
+  material_id           String?
+  is_active             Boolean                @default(true)
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+
+  family        SolarMountingFamily?        @relation(fields: [family_id], references: [id])
+  material      Material?                   @relation(fields: [material_id], references: [id], onDelete: SetNull)
+  compat_source SolarProductCompatibility[] @relation("CompatSource")
+  compat_target SolarProductCompatibility[] @relation("CompatTarget")
+  bom_items     SolarBomItem[]
+
+  @@index([family_id])
+  @@index([product_type])
+  @@index([material_id])
+  @@index([catalog_status])
+  @@map("solar_products")
+}
+
+model SolarProductCompatibility {
+  id                    String  @id @default(uuid())
+  product_id            String
+  compatible_product_id String
+  rule_type             String?
+  notes                 String?
+
+  product            SolarProduct @relation("CompatSource", fields: [product_id], references: [id], onDelete: Cascade)
+  compatible_product SolarProduct @relation("CompatTarget", fields: [compatible_product_id], references: [id], onDelete: Cascade)
+
+  @@unique([product_id, compatible_product_id])
+  @@map("solar_product_compatibilities")
+}
+
+model SolarBomSnapshot {
+  id                String   @id @default(uuid())
+  design_version_id String   @unique
+  generated_at      DateTime @default(now())
+  total_weight_kg   Decimal? @db.Decimal(12, 3)
+  notes             String?
+
+  design_version SolarDesignVersion @relation(fields: [design_version_id], references: [id], onDelete: Cascade)
+  items          SolarBomItem[]
+
+  @@map("solar_bom_snapshots")
+}
+
+model SolarBomItem {
+  id                String               @id @default(uuid())
+  bom_snapshot_id   String
+  product_id        String?
+  item_type         SolarBomItemTypeEnum
+  code              String
+  name              String
+  quantity_required Decimal              @db.Decimal(14, 3)
+  unit              String
+  cut_length_mm     Decimal?             @db.Decimal(10, 3)
+  notes             String?
+
+  bom_snapshot SolarBomSnapshot @relation(fields: [bom_snapshot_id], references: [id], onDelete: Cascade)
+  product      SolarProduct?    @relation(fields: [product_id], references: [id])
+
+  @@index([bom_snapshot_id])
+  @@map("solar_bom_items")
 }

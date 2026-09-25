@@ -19,7 +19,12 @@
  * NEVER USE THESE CREDENTIALS IN PRODUCTION.
  */
 
-import { PrismaClient, UserRoleEnum } from '@prisma/client';
+import {
+  PrismaClient,
+  UserRoleEnum,
+  SolarProductTypeEnum,
+  SolarCatalogStatusEnum,
+} from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -36,6 +41,96 @@ const DEV_SEED_PASSWORD = process.env.DEV_SEED_PASSWORD || 'DevPassword123!';
 const DEV_SEED_FULL_NAME = process.env.DEV_SEED_FULL_NAME || 'HIIEKO Development Admin';
 
 const SALT_ROUNDS = 10;
+
+/**
+ * Seeds clearly-marked DEMO Solar engineering catalog records (idempotent).
+ * These are PLACEHOLDER/TEST records — NOT validated HIIEKO engineering data.
+ */
+async function seedSolarDemoCatalog(): Promise<void> {
+  console.log();
+  console.log('Solar DEMO catalog...');
+
+  const moduleSpec = await prisma.solarModuleSpec.upsert({
+    where: { manufacturer_model: { manufacturer: 'DemoSolar', model: 'DEMO-450' } },
+    update: {},
+    create: {
+      manufacturer: 'DemoSolar',
+      model: 'DEMO-450',
+      power_wp: 450,
+      length_mm: 1722,
+      width_mm: 1134,
+      thickness_mm: 30,
+      weight_kg: 21.5,
+      voc: 41.6,
+      isc: 13.9,
+      vmp: 34.8,
+      imp: 12.94,
+      technology: 'PERC',
+      module_type: 'Monocrystalline (DEMO)',
+    },
+  });
+  console.log('  module spec:', moduleSpec.manufacturer, moduleSpec.model);
+
+  const demoProducts: Array<{
+    code: string;
+    name: string;
+    product_type: SolarProductTypeEnum;
+    unit: string;
+  }> = [
+    {
+      code: 'DEMO-RAIL',
+      name: 'Demo aluminium rail (PROTOTYPE)',
+      product_type: SolarProductTypeEnum.RAIL,
+      unit: 'mm',
+    },
+    {
+      code: 'DEMO-HOOK',
+      name: 'Demo roof hook (PROTOTYPE)',
+      product_type: SolarProductTypeEnum.ROOF_HOOK,
+      unit: 'buc',
+    },
+    {
+      code: 'DEMO-END-CLAMP',
+      name: 'Demo end clamp (PROTOTYPE)',
+      product_type: SolarProductTypeEnum.END_CLAMP,
+      unit: 'buc',
+    },
+    {
+      code: 'DEMO-MID-CLAMP',
+      name: 'Demo mid clamp (PROTOTYPE)',
+      product_type: SolarProductTypeEnum.MID_CLAMP,
+      unit: 'buc',
+    },
+    {
+      code: 'DEMO-FASTENER',
+      name: 'Demo fastener (PROTOTYPE)',
+      product_type: SolarProductTypeEnum.FASTENER,
+      unit: 'buc',
+    },
+    {
+      code: 'DEMO-EPDM',
+      name: 'Demo EPDM seal (PROTOTYPE)',
+      product_type: SolarProductTypeEnum.EPDM,
+      unit: 'buc',
+    },
+  ];
+
+  for (const p of demoProducts) {
+    const created = await prisma.solarProduct.upsert({
+      where: { code: p.code },
+      update: {},
+      create: {
+        code: p.code,
+        name: p.name,
+        product_type: p.product_type,
+        unit: p.unit,
+        catalog_status: SolarCatalogStatusEnum.DEMO,
+        is_active: true,
+      },
+    });
+    console.log('  product:', created.code);
+  }
+}
 
 async function main() {
   console.log('========================================');
@@ -228,6 +323,8 @@ main()
       }
       workers.push(user);
     }
+
+    await seedSolarDemoCatalog();
 
     console.log();
     console.log('========================================');

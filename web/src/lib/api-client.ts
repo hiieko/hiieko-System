@@ -5,7 +5,7 @@
  * All endpoints return standardized response envelopes.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export interface ApiResponse<T> {
   data: T;
@@ -99,7 +99,7 @@ class ApiClient {
   /**
    * Internal request helper
    */
-  private async request<T>(
+  public async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {

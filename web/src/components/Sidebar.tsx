@@ -21,6 +21,7 @@ import { t, useLocale } from '@solar/shared';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Turn de Control', icon: LayoutDashboard },
+  { href: '/solar-configurator', label: 'Configurator Solar', icon: SunMedium },
   { href: '/pontaj', label: 'Pontaj & Ore Suplim.', icon: Clock },
   { href: '/rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
   { href: '/avize', label: 'Avize & Receptie', icon: Truck },
