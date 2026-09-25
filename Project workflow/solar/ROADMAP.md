@@ -27,14 +27,16 @@ See `M1-PROGRESS.md` for the detailed section-by-section status.
 
 ---
 
-## M2 — Geometry ⏳ DEFERRED
+## M2 — Geometry ✅ IMPLEMENTED
 
 - Multiple roof sections
-- Arbitrary/parametric polygons (M1 uses axis-aligned bounding box)
+- Arbitrary/parametric polygons (concave supported; simple non-self-intersecting only)
 - Obstacles
 - Keep-out zones
-- Setbacks
+- Setbacks (exact segment-distance clearance)
 - Improved collision logic
+
+Geometry is exact (segment-to-segment minimum distance), not corner/edge sampling. See `DOMAIN-MODEL.md` and `TESTING.md`.
 
 ---
 

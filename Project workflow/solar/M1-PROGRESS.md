@@ -78,12 +78,12 @@ Main status document for the HIIEKO Solar Configurator.
 
 | Suite | Tests |
 |---|---|
-| `solar-geometry.spec.ts` | 4 |
-| `solar-layout.spec.ts` | 3 |
+| `solar-geometry.spec.ts` | 12 |
+| `solar-layout.spec.ts` | 6 |
 | `solar-design-access.guard.spec.ts` | 3 |
-| `solar.service.spec.ts` | 10 |
-| `solar.controller.spec.ts` | 3 |
-| **Total** | **23 tests / 5 suites** |
+| `solar.service.spec.ts` | 20 |
+| `solar.controller.spec.ts` | 7 |
+| **Total** | **48 tests / 5 suites** |
 
 ### Validation commands
 

@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuditService } from '../src/common/audit/audit.service';
 import { PrismaService } from '../src/common/prisma/prisma.service';
@@ -77,6 +77,16 @@ describe('SolarService', () => {
       solarRoofSection: {
         create: jest.fn(),
         findMany: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      solarObstacle: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
       },
       solarModuleSpec: {
         findUnique: jest.fn(),
@@ -241,6 +251,142 @@ describe('SolarService', () => {
       expect(moduleLine?.quantityRequired).toBe(6);
       expect(railLine?.quantityRequired).toBe(13808);
       expect(railLine?.unit).toBe('mm');
+    });
+
+    it('calculates layout across multiple roof sections', async () => {
+      const roof2 = { ...roofSection, id: 'roof-2', name: 'Roof 2' };
+      prisma.solarDesign.findUnique.mockResolvedValue({
+        ...design,
+        roof_sections: [roofSection, roof2],
+      });
+      const result = await service.calculateLayout('design-1');
+      expect(result.totalModules).toBe(12);
+      expect(result.placements.filter((p) => p.roofSectionId === 'roof-1')).toHaveLength(6);
+      expect(result.placements.filter((p) => p.roofSectionId === 'roof-2')).toHaveLength(6);
+    });
+  });
+
+  describe('SolarService (M2 — roof update/delete + obstacle CRUD)', () => {
+    const roof = {
+      id: 'roof-1',
+      design_id: 'design-1',
+      name: 'R',
+      roof_type: 'FLAT',
+      slope_deg: 0,
+      azimuth_deg: 0,
+      roof_material: null,
+      polygon: [
+        { x: 0, y: 0 },
+        { x: 8000, y: 0 },
+        { x: 8000, y: 4000 },
+        { x: 0, y: 4000 },
+      ],
+      origin: { x: 0, y: 0, z: 0 },
+    };
+    const obstacle = {
+      id: 'obs-1',
+      roof_section_id: 'roof-1',
+      name: 'Skylight',
+      obstacle_type: 'SKYLIGHT',
+      polygon: [
+        { x: 2000, y: 1500 },
+        { x: 2500, y: 1500 },
+        { x: 2500, y: 2000 },
+        { x: 2000, y: 2000 },
+      ],
+      keepout_margin_mm: 200,
+    };
+
+    beforeEach(() => {
+      prisma.solarRoofSection.findFirst.mockResolvedValue(roof);
+    });
+
+    it('updates a roof section within its design', async () => {
+      prisma.solarRoofSection.update.mockResolvedValue({ ...roof, name: 'New' });
+      const result = await service.updateRoofSection(
+        'design-1',
+        'roof-1',
+        { name: 'New' } as any,
+        { id: 'u1', organizationId: 'o1' } as any,
+      );
+      expect(prisma.solarRoofSection.update).toHaveBeenCalled();
+      expect(result.name).toBe('New');
+    });
+
+    it('rejects updating a roof not in the design', async () => {
+      prisma.solarRoofSection.findFirst.mockResolvedValue(null);
+      await expect(
+        service.updateRoofSection('design-1', 'roof-OTHER', { name: 'X' } as any, {} as any),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('deletes a roof section within its design', async () => {
+      prisma.solarRoofSection.delete.mockResolvedValue(roof);
+      const result = await service.deleteRoofSection('design-1', 'roof-1', {} as any);
+      expect(prisma.solarRoofSection.delete).toHaveBeenCalledWith({ where: { id: 'roof-1' } });
+      expect(result.id).toBe('roof-1');
+    });
+
+    it('adds an obstacle contained in the roof', async () => {
+      prisma.solarObstacle.create.mockResolvedValue(obstacle);
+      const result = await service.addObstacle(
+        'design-1',
+        'roof-1',
+        {
+          name: 'Skylight',
+          obstacleType: 'SKYLIGHT',
+          polygon: obstacle.polygon,
+          keepoutMarginMm: 200,
+        } as any,
+        { id: 'u1', organizationId: 'o1' } as any,
+      );
+      expect(prisma.solarObstacle.create).toHaveBeenCalled();
+      expect(result.id).toBe('obs-1');
+    });
+
+    it('rejects an obstacle crossing the roof boundary', async () => {
+      const crossing = [
+        { x: 7000, y: 3000 },
+        { x: 9000, y: 3000 },
+        { x: 9000, y: 5000 },
+        { x: 7000, y: 5000 },
+      ];
+      await expect(
+        service.addObstacle('design-1', 'roof-1', { polygon: crossing, keepoutMarginMm: 0 } as any, {} as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects a self-intersecting obstacle polygon', async () => {
+      const bowtie = [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 },
+        { x: 10, y: 0 },
+        { x: 0, y: 10 },
+      ];
+      await expect(
+        service.addObstacle('design-1', 'roof-1', { polygon: bowtie, keepoutMarginMm: 0 } as any, {} as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('lists obstacles for a roof', async () => {
+      prisma.solarObstacle.findMany.mockResolvedValue([obstacle]);
+      const result = await service.listObstacles('design-1', 'roof-1');
+      expect(result).toHaveLength(1);
+    });
+
+    it('deletes an obstacle within its design', async () => {
+      prisma.solarObstacle.findFirst.mockResolvedValue({ id: 'obs-1', roof_section_id: 'roof-1' });
+      prisma.solarObstacle.delete.mockResolvedValue(obstacle);
+      const result = await service.deleteObstacle('design-1', 'obs-1', {} as any);
+      expect(prisma.solarObstacle.delete).toHaveBeenCalledWith({ where: { id: 'obs-1' } });
+      expect(result.id).toBe('obs-1');
+    });
+
+    it('rejects deleting an obstacle not in the design', async () => {
+      prisma.solarObstacle.findFirst.mockResolvedValue(null);
+      await expect(service.deleteObstacle('design-1', 'obs-OTHER', {} as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

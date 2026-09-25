@@ -10,11 +10,11 @@ All Solar tests live under `backend/test/` (the backend Jest suite; it also runs
 
 | File | Covers |
 |---|---|
-| `solar-geometry.spec.ts` | Shared geometry — polygon area, point-in-polygon, rect↔polygon intersection, `roofLocalToWorld`/`worldToRoofLocal` round-trip. |
-| `solar-layout.spec.ts` | Shared layout/mounting/BOM — deterministic grid, obstacle exclusion, mounting + BOM derivation. |
+| `solar-geometry.spec.ts` | Shared geometry — polygon area, point-in-polygon, rect↔polygon intersection, transforms; **M2**: exact segment-to-segment distance, boundary clearance, containment, normalization, self-intersection/validation, winding-order independence. |
+| `solar-layout.spec.ts` | Shared layout/mounting/BOM — deterministic grid, obstacle exclusion, mounting + BOM; **M2**: irregular polygon, obstacle keep-out margin, multiple roof sections. |
 | `solar-design-access.guard.spec.ts` | `SolarDesignAccessGuard` — Admin bypass, member access, non-member denial. |
-| `solar.service.spec.ts` | `SolarService` — create/list/get, roof creation, layout calculation, BOM, known module count/rail length/quantities, placement persistence. |
-| `solar.controller.spec.ts` | `SolarController` — list-design authorization (missing `projectId` rejected; exact-project delegation; no cross-project mixing). |
+| `solar.service.spec.ts` | `SolarService` — CRUD, layout/BOM, persistence; **M2**: roof update/delete, obstacle CRUD, polygon/containment validation, multi-roof layout. |
+| `solar.controller.spec.ts` | `SolarController` — list-design authorization; **M2**: roof/obstacle route delegation. |
 
 ## How to run Solar tests
 
@@ -41,12 +41,12 @@ npm test
 
 | Item | Status |
 |---|---|
-| Solar tests | ✅ **5 suites / 23 tests, passing** |
+| Solar tests | ✅ **5 suites / 48 tests, passing** |
 | Shared build | ✅ PASS |
 | Web typecheck | ✅ PASS |
 | Web production build | ✅ PASS |
 | Backend typecheck | ⚠️ blocked by pre-existing unrelated `TRANSFER_IN` / `TRANSFER_OUT` errors (see below) |
-| Full backend tests | ⚠️ **84 passed**; one pre-existing `stock.service.spec.ts` compilation failure caused by the same unrelated inventory issue |
+| Full backend tests | ⚠️ **109 passed**; one pre-existing `stock.service.spec.ts` compilation failure caused by the same unrelated inventory issue |
 | Browser/runtime smoke test | ❌ NOT EXECUTED — no live PostgreSQL/auth/browser environment was available |
 | Solar migration | ⚠️ generated and schema-validated, but **NOT deployed** against PostgreSQL |
 

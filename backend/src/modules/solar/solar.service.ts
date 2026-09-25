@@ -1,17 +1,23 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { SolarModuleOrientationEnum, SolarRoofTypeEnum } from '@prisma/client';
+import { Point2D, polygonContainedInPolygon, polygonIsValid } from '@solar/shared';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { AuditService } from '../../common/audit/audit.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { CreateObstacleDto } from './dto/create-obstacle.dto';
 import { CreateRoofSectionDto } from './dto/create-roof-section.dto';
 import { CreateSolarDesignDto } from './dto/create-solar-design.dto';
+import { UpdateObstacleDto } from './dto/update-obstacle.dto';
+import { UpdateRoofSectionDto } from './dto/update-roof-section.dto';
 import { UpsertLayoutSettingsDto } from './dto/upsert-layout-settings.dto';
 import {
   loadDesignModel,
+  polygonFromJson,
   runEngines,
   SolarCalcResult,
   toLayoutSettingsModel,
   toModuleSpecModel,
+  toObstacleModel,
   toRoofSectionModel,
 } from './solar.util';
 
@@ -60,6 +66,7 @@ export class SolarService {
 
   async addRoofSection(designId: string, dto: CreateRoofSectionDto, user: AuthenticatedUser) {
     await this.ensureDesign(designId);
+    this.validatePolygon(dto.polygon as Point2D[]);
 
     const section = await this.prisma.solarRoofSection.create({
       data: {
@@ -92,6 +99,149 @@ export class SolarService {
       orderBy: { created_at: 'asc' },
     });
     return sections.map(toRoofSectionModel);
+  }
+
+  async updateRoofSection(
+    designId: string,
+    roofSectionId: string,
+    dto: UpdateRoofSectionDto,
+    user: AuthenticatedUser,
+  ) {
+    const roof = await this.getRoofInDesign(designId, roofSectionId);
+    if (dto.polygon) this.validatePolygon(dto.polygon as Point2D[]);
+
+    const updated = await this.prisma.solarRoofSection.update({
+      where: { id: roofSectionId },
+      data: {
+        name: dto.name,
+        roof_type: (dto.roofType as SolarRoofTypeEnum) ?? roof.roof_type,
+        slope_deg: dto.slopeDeg ?? roof.slope_deg,
+        azimuth_deg: dto.azimuthDeg ?? roof.azimuth_deg,
+        roof_material: dto.roofMaterial,
+        polygon: dto.polygon ? (dto.polygon as never) : undefined,
+        origin: dto.origin ? (dto.origin as never) : undefined,
+      },
+    });
+
+    await this.audit.record({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      action: 'SOLAR_ROOF_SECTION_UPDATED',
+      entity: 'SolarRoofSection',
+      entityId: roofSectionId,
+      after: dto as never,
+    });
+
+    return toRoofSectionModel(updated);
+  }
+
+  async deleteRoofSection(designId: string, roofSectionId: string, user: AuthenticatedUser) {
+    await this.getRoofInDesign(designId, roofSectionId);
+    await this.prisma.solarRoofSection.delete({ where: { id: roofSectionId } });
+
+    await this.audit.record({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      action: 'SOLAR_ROOF_SECTION_DELETED',
+      entity: 'SolarRoofSection',
+      entityId: roofSectionId,
+    });
+
+    return { id: roofSectionId };
+  }
+
+  async addObstacle(
+    designId: string,
+    roofSectionId: string,
+    dto: CreateObstacleDto,
+    user: AuthenticatedUser,
+  ) {
+    const roof = await this.getRoofInDesign(designId, roofSectionId);
+    this.validatePolygon(dto.polygon as Point2D[]);
+    this.assertObstacleWithinRoof(dto.polygon as Point2D[], roof);
+
+    const obstacle = await this.prisma.solarObstacle.create({
+      data: {
+        roof_section_id: roofSectionId,
+        name: dto.name,
+        obstacle_type: dto.obstacleType,
+        polygon: dto.polygon as never,
+        keepout_margin_mm: dto.keepoutMarginMm ?? 0,
+      },
+    });
+
+    await this.audit.record({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      action: 'SOLAR_OBSTACLE_CREATED',
+      entity: 'SolarObstacle',
+      entityId: obstacle.id,
+      after: { roofSectionId, name: dto.name },
+    });
+
+    return toObstacleModel(obstacle);
+  }
+
+  async listObstacles(designId: string, roofSectionId: string) {
+    await this.getRoofInDesign(designId, roofSectionId);
+    const obstacles = await this.prisma.solarObstacle.findMany({
+      where: { roof_section_id: roofSectionId },
+      orderBy: { id: 'asc' },
+    });
+    return obstacles.map(toObstacleModel);
+  }
+
+  async updateObstacle(
+    designId: string,
+    obstacleId: string,
+    dto: UpdateObstacleDto,
+    user: AuthenticatedUser,
+  ) {
+    const obstacle = await this.getObstacleInDesign(designId, obstacleId);
+
+    if (dto.polygon) {
+      this.validatePolygon(dto.polygon as Point2D[]);
+      const roof = await this.prisma.solarRoofSection.findUnique({
+        where: { id: obstacle.roof_section_id },
+      });
+      if (roof) this.assertObstacleWithinRoof(dto.polygon as Point2D[], roof);
+    }
+
+    const updated = await this.prisma.solarObstacle.update({
+      where: { id: obstacleId },
+      data: {
+        name: dto.name,
+        obstacle_type: dto.obstacleType,
+        polygon: dto.polygon ? (dto.polygon as never) : undefined,
+        keepout_margin_mm: dto.keepoutMarginMm,
+      },
+    });
+
+    await this.audit.record({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      action: 'SOLAR_OBSTACLE_UPDATED',
+      entity: 'SolarObstacle',
+      entityId: obstacleId,
+      after: dto as never,
+    });
+
+    return toObstacleModel(updated);
+  }
+
+  async deleteObstacle(designId: string, obstacleId: string, user: AuthenticatedUser) {
+    await this.getObstacleInDesign(designId, obstacleId);
+    await this.prisma.solarObstacle.delete({ where: { id: obstacleId } });
+
+    await this.audit.record({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      action: 'SOLAR_OBSTACLE_DELETED',
+      entity: 'SolarObstacle',
+      entityId: obstacleId,
+    });
+
+    return { id: obstacleId };
   }
 
   async upsertLayoutSettings(designId: string, dto: UpsertLayoutSettingsDto, user: AuthenticatedUser) {
@@ -188,6 +338,38 @@ export class SolarService {
       where: { is_active: true },
       orderBy: { code: 'asc' },
     });
+  }
+
+  private async getRoofInDesign(designId: string, roofSectionId: string) {
+    const roof = await this.prisma.solarRoofSection.findFirst({
+      where: { id: roofSectionId, design_id: designId },
+    });
+    if (!roof) {
+      throw new NotFoundException(`Roof section ${roofSectionId} not found in design ${designId}`);
+    }
+    return roof;
+  }
+
+  private async getObstacleInDesign(designId: string, obstacleId: string) {
+    const obstacle = await this.prisma.solarObstacle.findFirst({
+      where: { id: obstacleId, roof_section: { design_id: designId } },
+    });
+    if (!obstacle) {
+      throw new NotFoundException(`Obstacle ${obstacleId} not found in design ${designId}`);
+    }
+    return obstacle;
+  }
+
+  private validatePolygon(polygon: Point2D[]): void {
+    const result = polygonIsValid(polygon);
+    if (!result.valid) throw new BadRequestException(`Invalid polygon: ${result.reason}`);
+  }
+
+  private assertObstacleWithinRoof(polygon: Point2D[], roof: { polygon: unknown }): void {
+    const roofPoly = polygonFromJson(roof.polygon);
+    if (!polygonContainedInPolygon(polygon, roofPoly)) {
+      throw new BadRequestException('Obstacle polygon must be contained within the roof section');
+    }
   }
 
   private async ensureDesign(designId: string) {

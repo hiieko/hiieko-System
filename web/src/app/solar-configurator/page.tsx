@@ -7,6 +7,7 @@ import {
   ModulePlacement,
   ModuleSpecModel,
   MountingResult,
+  ObstacleModel,
   SolarDesignModel,
 } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
@@ -18,6 +19,10 @@ import {
 import { SummaryPanel } from '../../features/solar-configurator/components/SummaryPanel';
 import { BomPanel } from '../../features/solar-configurator/bom/BomPanel';
 import { RoofEditor, RoofInput } from '../../features/solar-configurator/editor/RoofEditor';
+import {
+  ObstacleEditor,
+  ObstacleInput,
+} from '../../features/solar-configurator/editor/ObstacleEditor';
 import {
   LayoutInput,
   ModuleSelector,
@@ -49,6 +54,7 @@ export default function SolarConfiguratorPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRoofSectionId, setSelectedRoofSectionId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -127,23 +133,66 @@ export default function SolarConfiguratorPage() {
     setSaving(true);
     setError(null);
     try {
-      const polygon = [
-        { x: 0, y: 0 },
-        { x: input.widthMm, y: 0 },
-        { x: input.widthMm, y: input.lengthMm },
-        { x: 0, y: input.lengthMm },
-      ];
-      await solarApi.addRoofSection(designId, {
+      const res = await solarApi.addRoofSection(designId, {
         name: input.name,
-        roofType: input.slopeDeg > 0 ? 'PITCHED' : 'FLAT',
+        roofType: input.roofType,
         slopeDeg: input.slopeDeg,
         azimuthDeg: input.azimuthDeg,
-        polygon,
+        polygon: input.polygon,
         origin: { x: 0, y: 0, z: 0 },
       });
+      setSelectedRoofSectionId(res.data?.id ?? null);
       await loadDesign(designId);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Eroare la salvarea acoperișului');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteRoof = async (roofSectionId: string) => {
+    if (!designId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await solarApi.deleteRoofSection(designId, roofSectionId);
+      if (selectedRoofSectionId === roofSectionId) setSelectedRoofSectionId(null);
+      await loadDesign(designId);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Eroare la ștergerea acoperișului');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addObstacle = async (input: ObstacleInput) => {
+    if (!designId || !selectedRoofSectionId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await solarApi.addObstacle(designId, selectedRoofSectionId, {
+        name: input.name,
+        obstacleType: input.obstacleType,
+        polygon: input.polygon,
+        keepoutMarginMm: input.keepoutMarginMm,
+      });
+      await loadDesign(designId);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Eroare la adăugarea obstacolului');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteObstacle = async (obstacleId: string) => {
+    if (!designId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await solarApi.deleteObstacle(designId, obstacleId);
+      await loadDesign(designId);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Eroare la ștergerea obstacolului');
     } finally {
       setSaving(false);
     }
@@ -180,6 +229,7 @@ export default function SolarConfiguratorPage() {
 
   const placements = useMemo(() => result?.placements ?? design?.placements ?? [], [result, design]);
   const roofSections = design?.roofSections ?? [];
+  const obstacles = design?.obstacles ?? [];
   const totalModules = result?.totalModules ?? design?.placements?.length ?? 0;
 
   return (
@@ -221,6 +271,62 @@ export default function SolarConfiguratorPage() {
                 <RoofEditor onSave={saveRoof} saving={saving} />
               </div>
 
+              {roofSections.length > 0 && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                  <h2 className="text-sm font-semibold text-slate-700 mb-3">Secțiuni acoperiș</h2>
+                  <div className="space-y-1.5">
+                    {roofSections.map((r) => (
+                      <div
+                        key={r.id}
+                        onClick={() => setSelectedRoofSectionId(r.id)}
+                        className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-sm cursor-pointer ${
+                          selectedRoofSectionId === r.id
+                            ? 'bg-amber-100 text-slate-900'
+                            : 'hover:bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        <span className="font-medium">{r.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void deleteRoof(r.id);
+                          }}
+                          className="text-xs text-red-600 hover:text-red-700 font-semibold"
+                        >
+                          Șterge
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedRoofSectionId && (
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                  <h2 className="text-sm font-semibold text-slate-700 mb-3">Obstacole</h2>
+                  <ObstacleEditor onAdd={addObstacle} adding={saving} />
+                  <div className="mt-2 space-y-1.5">
+                    {obstacles
+                      .filter((o) => o.roofSectionId === selectedRoofSectionId)
+                      .map((o) => (
+                        <div key={o.id} className="flex items-center justify-between text-xs px-1">
+                          <span className="text-slate-600">
+                            {o.name || o.obstacleType || 'Obstacol'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => void deleteObstacle(o.id)}
+                            className="text-red-600 hover:text-red-700 font-semibold"
+                          >
+                            Șterge
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
                 <h2 className="text-sm font-semibold text-slate-700 mb-3">3. Modul PV & Layout</h2>
                 <ModuleSelector
@@ -248,13 +354,18 @@ export default function SolarConfiguratorPage() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Vizualizare 3D</h2>
             <div className="h-[380px] rounded-lg overflow-hidden border border-slate-100">
-              <SolarScene roofSections={roofSections} placements={placements} />
+              <SolarScene roofSections={roofSections} placements={placements} obstacles={obstacles} />
             </div>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Plan 2D (acoperiș)</h2>
             <div className="h-[320px] flex items-center justify-center">
-              <RoofPlan2D roofSections={roofSections} placements={placements} />
+              <RoofPlan2D
+                roofSections={roofSections}
+                obstacles={obstacles}
+                placements={placements}
+                selectedRoofSectionId={selectedRoofSectionId}
+              />
             </div>
           </div>
         </div>

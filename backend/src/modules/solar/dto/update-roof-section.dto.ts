@@ -10,9 +10,10 @@ import {
 } from 'class-validator';
 import { Point2DDto, Point3DDto } from './point.dto';
 
-export class CreateRoofSectionDto {
+export class UpdateRoofSectionDto {
+  @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
   @IsOptional()
   @IsString()
@@ -34,16 +35,14 @@ export class CreateRoofSectionDto {
   @IsString()
   roofMaterial?: string;
 
-  /** Roof-local 2D outline [{ x, y }] in millimetres. */
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => Point2DDto)
-  polygon!: Point2DDto[];
+  polygon?: Point2DDto[];
 
-  /** World anchor { x, y, z } in millimetres. */
   @IsOptional()
   @ValidateNested()
   @Type(() => Point3DDto)
   origin?: Point3DDto;
 }
-

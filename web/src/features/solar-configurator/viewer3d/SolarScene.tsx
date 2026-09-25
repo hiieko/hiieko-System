@@ -4,7 +4,7 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Grid, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { ModulePlacement, Point3D, RoofSectionModel, roofLocalToWorld } from '@solar/shared';
+import { ModulePlacement, ObstacleModel, Point3D, RoofSectionModel, roofLocalToWorld } from '@solar/shared';
 
 const MM_TO_M = 1 / 1000;
 const MODULE_THICKNESS_M = 0.03;
@@ -17,7 +17,15 @@ function toWorldMeters(roof: RoofSectionModel, p: Point3D): THREE.Vector3 {
   return new THREE.Vector3(w.x * MM_TO_M, w.y * MM_TO_M, w.z * MM_TO_M);
 }
 
-function RoofGroup({ roof, modules }: { roof: RoofSectionModel; modules: ModulePlacement[] }) {
+function RoofGroup({
+  roof,
+  modules,
+  obstacles,
+}: {
+  roof: RoofSectionModel;
+  modules: ModulePlacement[];
+  obstacles: ObstacleModel[];
+}) {
   const groupRef = useRef<THREE.Group>(null);
 
   useLayoutEffect(() => {
@@ -44,6 +52,22 @@ function RoofGroup({ roof, modules }: { roof: RoofSectionModel; modules: ModuleP
     return s;
   }, [roof]);
 
+  const obstacleShapes = useMemo(
+    () =>
+      obstacles.map((o) => {
+        const s = new THREE.Shape();
+        const pts = o.polygon;
+        if (pts.length === 0) return s;
+        s.moveTo(pts[0].x * MM_TO_M, pts[0].y * MM_TO_M);
+        for (let i = 1; i < pts.length; i++) {
+          s.lineTo(pts[i].x * MM_TO_M, pts[i].y * MM_TO_M);
+        }
+        s.closePath();
+        return s;
+      }),
+    [obstacles],
+  );
+
   return (
     <group ref={groupRef}>
       <mesh>
@@ -63,6 +87,12 @@ function RoofGroup({ roof, modules }: { roof: RoofSectionModel; modules: ModuleP
           <meshStandardMaterial color="#1e3a8a" />
         </mesh>
       ))}
+      {obstacleShapes.map((s, i) => (
+        <mesh key={`obs-${i}`} position={[0, 0, 0.02]}>
+          <shapeGeometry args={[s]} />
+          <meshStandardMaterial color="#dc2626" side={THREE.DoubleSide} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -70,9 +100,11 @@ function RoofGroup({ roof, modules }: { roof: RoofSectionModel; modules: ModuleP
 export function SolarScene({
   roofSections,
   placements,
+  obstacles,
 }: {
   roofSections: RoofSectionModel[];
   placements: ModulePlacement[];
+  obstacles: ObstacleModel[];
 }) {
   const byRoof = useMemo(() => {
     const map = new Map<string, ModulePlacement[]>();
@@ -83,6 +115,16 @@ export function SolarScene({
     }
     return map;
   }, [placements]);
+
+  const byRoofObstacles = useMemo(() => {
+    const map = new Map<string, ObstacleModel[]>();
+    for (const o of obstacles) {
+      const list = map.get(o.roofSectionId) ?? [];
+      list.push(o);
+      map.set(o.roofSectionId, list);
+    }
+    return map;
+  }, [obstacles]);
 
   return (
     <Canvas camera={{ position: [12, 9, 12], fov: 45 }}>
@@ -99,7 +141,12 @@ export function SolarScene({
         infiniteGrid
       />
       {roofSections.map((roof) => (
-        <RoofGroup key={roof.id} roof={roof} modules={byRoof.get(roof.id) ?? []} />
+        <RoofGroup
+          key={roof.id}
+          roof={roof}
+          modules={byRoof.get(roof.id) ?? []}
+          obstacles={byRoofObstacles.get(roof.id) ?? []}
+        />
       ))}
     </Canvas>
   );

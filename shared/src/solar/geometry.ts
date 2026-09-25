@@ -213,3 +213,158 @@ export function worldToRoofLocal(plane: RoofPlane, p: Point3D): Point3D {
 
   return { x, y, z };
 }
+
+// ============================================================================
+// M2 geometry — exact clearance, containment, normalization, validation
+// ============================================================================
+
+/**
+ * Normalize a polygon to canonical open form (no duplicated closing vertex).
+ * The canonical representation is [x1,y1], [x2,y2], …, [xn,yn] without the
+ * first point repeated as the final point.
+ */
+export function normalizePolygon(polygon: Polygon2D): Polygon2D {
+  if (polygon.length === 0) return polygon;
+  const first = polygon[0];
+  const last = polygon[polygon.length - 1];
+  if (approxEq(first.x, last.x) && approxEq(first.y, last.y)) {
+    return polygon.slice(0, -1);
+  }
+  return polygon;
+}
+
+/** Convert an axis-aligned rectangle to a 4-vertex polygon. */
+export function rectToPolygon(rect: Rect2D): Polygon2D {
+  return [
+    { x: rect.minX, y: rect.minY },
+    { x: rect.maxX, y: rect.minY },
+    { x: rect.maxX, y: rect.maxY },
+    { x: rect.minX, y: rect.maxY },
+  ];
+}
+
+/** Exact distance from a point to a line segment (mm). */
+export function pointToSegmentDistanceMm(p: Point2D, a: Point2D, b: Point2D): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  if (len2 <= GEOMETRY_EPSILON_MM * GEOMETRY_EPSILON_MM) {
+    return Math.hypot(p.x - a.x, p.y - a.y);
+  }
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+}
+
+/**
+ * Exact minimum distance between two line segments (mm).
+ * Returns 0 if the segments intersect or touch.
+ */
+export function segmentToSegmentDistanceMm(
+  a1: Point2D,
+  a2: Point2D,
+  b1: Point2D,
+  b2: Point2D,
+): number {
+  if (segmentsIntersect(a1, a2, b1, b2)) return 0;
+  return Math.min(
+    pointToSegmentDistanceMm(a1, b1, b2),
+    pointToSegmentDistanceMm(a2, b1, b2),
+    pointToSegmentDistanceMm(b1, a1, a2),
+    pointToSegmentDistanceMm(b2, a1, a2),
+  );
+}
+
+/** Exact minimum distance between the boundaries of two polygons (mm). */
+export function polygonBoundaryDistanceMm(a: Polygon2D, b: Polygon2D): number {
+  const na = normalizePolygon(a);
+  const nb = normalizePolygon(b);
+  if (na.length < 3 || nb.length < 3) return 0;
+  let min = Infinity;
+  for (let i = 0; i < na.length; i++) {
+    const a1 = na[i];
+    const a2 = na[(i + 1) % na.length];
+    for (let j = 0; j < nb.length; j++) {
+      const b1 = nb[j];
+      const b2 = nb[(j + 1) % nb.length];
+      const d = segmentToSegmentDistanceMm(a1, a2, b1, b2);
+      if (d < min) min = d;
+    }
+  }
+  return min === Infinity ? 0 : min;
+}
+
+/** Proper (interior) segment intersection — excludes collinear overlap and endpoint touch. */
+export function segmentsProperlyIntersect(
+  a1: Point2D,
+  a2: Point2D,
+  b1: Point2D,
+  b2: Point2D,
+): boolean {
+  const d1 = cross2(b1, b2, a1);
+  const d2 = cross2(b1, b2, a2);
+  const d3 = cross2(a1, a2, b1);
+  const d4 = cross2(a1, a2, b2);
+  return (
+    ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+    ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+  );
+}
+
+/** True if every vertex of `inner` is inside `outer` and no inner edge properly crosses `outer`. */
+export function polygonContainedInPolygon(inner: Polygon2D, outer: Polygon2D): boolean {
+  const ni = normalizePolygon(inner);
+  const no = normalizePolygon(outer);
+  if (ni.length < 3 || no.length < 3) return false;
+  for (const v of ni) {
+    if (!pointInPolygon(v, no)) return false;
+  }
+  for (let i = 0; i < ni.length; i++) {
+    const a1 = ni[i];
+    const a2 = ni[(i + 1) % ni.length];
+    for (let j = 0; j < no.length; j++) {
+      const b1 = no[j];
+      const b2 = no[(j + 1) % no.length];
+      if (segmentsProperlyIntersect(a1, a2, b1, b2)) return false;
+    }
+  }
+  return true;
+}
+
+/** True if an axis-aligned rectangle is fully contained within a polygon. */
+export function rectContainedInPolygon(rect: Rect2D, polygon: Polygon2D): boolean {
+  return polygonContainedInPolygon(rectToPolygon(rect), polygon);
+}
+
+/** True if a polygon is simple (non-self-intersecting). */
+export function polygonIsSimple(polygon: Polygon2D): boolean {
+  const n = normalizePolygon(polygon);
+  const m = n.length;
+  for (let i = 0; i < m; i++) {
+    const a1 = n[i];
+    const a2 = n[(i + 1) % m];
+    for (let j = i + 1; j < m; j++) {
+      // skip adjacent edges (they share a vertex)
+      if (j === i + 1 || (i === 0 && j === m - 1)) continue;
+      const b1 = n[j];
+      const b2 = n[(j + 1) % m];
+      if (segmentsIntersect(a1, a2, b1, b2)) return false;
+    }
+  }
+  return true;
+}
+
+export interface PolygonValidationResult {
+  valid: boolean;
+  reason?: string;
+}
+
+/** Validate a polygon: >=3 vertices, non-zero area, simple (non-self-intersecting). */
+export function polygonIsValid(polygon: Polygon2D): PolygonValidationResult {
+  const n = normalizePolygon(polygon);
+  if (n.length < 3) return { valid: false, reason: 'polygon must have at least 3 vertices' };
+  if (Math.abs(polygonAreaMm2(n)) <= GEOMETRY_EPSILON_MM) {
+    return { valid: false, reason: 'polygon has zero area' };
+  }
+  if (!polygonIsSimple(n)) return { valid: false, reason: 'polygon is self-intersecting' };
+  return { valid: true };
+}

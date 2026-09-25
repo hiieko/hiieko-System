@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -17,8 +19,11 @@ import { CurrentUser } from '../../common/auth/decorators/current-user.decorator
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
+import { CreateObstacleDto } from './dto/create-obstacle.dto';
 import { CreateRoofSectionDto } from './dto/create-roof-section.dto';
 import { CreateSolarDesignDto } from './dto/create-solar-design.dto';
+import { UpdateObstacleDto } from './dto/update-obstacle.dto';
+import { UpdateRoofSectionDto } from './dto/update-roof-section.dto';
 import { UpsertLayoutSettingsDto } from './dto/upsert-layout-settings.dto';
 import { SolarDesignAccessGuard } from './guards/solar-design-access.guard';
 import { SolarService } from './solar.service';
@@ -78,6 +83,79 @@ export class SolarController {
   @ApiOperation({ summary: 'List roof sections of a design' })
   async listRoofSections(@Param('designId') designId: string) {
     return this.solarService.listRoofSections(designId);
+  }
+
+  @Patch('designs/:designId/roof-sections/:roofSectionId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER)
+  @UseGuards(SolarDesignAccessGuard)
+  @ApiOperation({ summary: 'Update a roof section' })
+  async updateRoofSection(
+    @Param('designId') designId: string,
+    @Param('roofSectionId') roofSectionId: string,
+    @Body() dto: UpdateRoofSectionDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.solarService.updateRoofSection(designId, roofSectionId, dto, user);
+  }
+
+  @Delete('designs/:designId/roof-sections/:roofSectionId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER)
+  @UseGuards(SolarDesignAccessGuard)
+  @ApiOperation({ summary: 'Delete a roof section' })
+  async deleteRoofSection(
+    @Param('designId') designId: string,
+    @Param('roofSectionId') roofSectionId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.solarService.deleteRoofSection(designId, roofSectionId, user);
+  }
+
+  @Post('designs/:designId/roof-sections/:roofSectionId/obstacles')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER)
+  @UseGuards(SolarDesignAccessGuard)
+  @ApiOperation({ summary: 'Add an obstacle to a roof section' })
+  async addObstacle(
+    @Param('designId') designId: string,
+    @Param('roofSectionId') roofSectionId: string,
+    @Body() dto: CreateObstacleDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.solarService.addObstacle(designId, roofSectionId, dto, user);
+  }
+
+  @Get('designs/:designId/roof-sections/:roofSectionId/obstacles')
+  @UseGuards(SolarDesignAccessGuard)
+  @ApiOperation({ summary: 'List obstacles of a roof section' })
+  async listObstacles(
+    @Param('designId') designId: string,
+    @Param('roofSectionId') roofSectionId: string,
+  ) {
+    return this.solarService.listObstacles(designId, roofSectionId);
+  }
+
+  @Patch('designs/:designId/obstacles/:obstacleId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER)
+  @UseGuards(SolarDesignAccessGuard)
+  @ApiOperation({ summary: 'Update an obstacle' })
+  async updateObstacle(
+    @Param('designId') designId: string,
+    @Param('obstacleId') obstacleId: string,
+    @Body() dto: UpdateObstacleDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.solarService.updateObstacle(designId, obstacleId, dto, user);
+  }
+
+  @Delete('designs/:designId/obstacles/:obstacleId')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER)
+  @UseGuards(SolarDesignAccessGuard)
+  @ApiOperation({ summary: 'Delete an obstacle' })
+  async deleteObstacle(
+    @Param('designId') designId: string,
+    @Param('obstacleId') obstacleId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.solarService.deleteObstacle(designId, obstacleId, user);
   }
 
   // ── Layout ─────────────────────────────────────────────────────────────────

@@ -54,7 +54,7 @@ Transform inputs for a roof section (roof-local ↔ world).
 - `roofSectionId`, `moduleSpecId?`, `row`, `column`.
 - **Roof-local mm**: `localX`, `localY`, `localZ`, `rotationDeg`, `widthMm`, `heightMm`.
 
-### `ObstacleModel` — DEFERRED (type exists, no UI/API writes it in M1)
+### `ObstacleModel` — IMPLEMENTED (M2)
 
 - `id`, `roofSectionId`, `name?`, `obstacleType?`, `polygon: Polygon2D`, `keepoutMarginMm`.
 
@@ -95,10 +95,11 @@ The engineering design attached to a `Project`.
 - `id`, `design_id` (FK, cascade), `name`, `roof_type` (default `FLAT`), `slope_deg` (deg), `azimuth_deg` (deg), `roof_material?`, `polygon Json` (roof-local 2D, mm), `origin Json` (world anchor, mm), timestamps.
 - Relations: `design`, `obstacles[]`, `placements[]`.
 
-### `SolarObstacle` — DEFERRED (schema only)
+### `SolarObstacle` — IMPLEMENTED (M2)
 
 - `id`, `roof_section_id` (FK, cascade), `name?`, `obstacle_type?`, `polygon Json`, `keepout_margin_mm` (default 0).
 - Relation: `roof_section`.
+- On write: polygon validated (simple, ≥3 vertices, non-zero area) and required to be contained within its parent roof section.
 
 ### `SolarModuleSpec` — IMPLEMENTED (global catalog)
 

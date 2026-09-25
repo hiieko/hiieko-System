@@ -68,3 +68,61 @@ export function listSolarModules(): Promise<SolarResponse<any[]>> {
 export function listSolarProducts(): Promise<SolarResponse<any[]>> {
   return apiClient.request<SolarResponse<any[]>>('/api/solar/products');
 }
+
+export function updateRoofSection(
+  designId: string,
+  roofSectionId: string,
+  data: unknown,
+): Promise<SolarResponse<any>> {
+  return apiClient.request<SolarResponse<any>>(
+    `/api/solar/designs/${designId}/roof-sections/${roofSectionId}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+  );
+}
+
+export function deleteRoofSection(
+  designId: string,
+  roofSectionId: string,
+): Promise<SolarResponse<any>> {
+  return apiClient.request<SolarResponse<any>>(
+    `/api/solar/designs/${designId}/roof-sections/${roofSectionId}`,
+    { method: 'DELETE' },
+  );
+}
+
+export function addObstacle(
+  designId: string,
+  roofSectionId: string,
+  data: unknown,
+): Promise<SolarResponse<any>> {
+  return apiClient.request<SolarResponse<any>>(
+    `/api/solar/designs/${designId}/roof-sections/${roofSectionId}/obstacles`,
+    { method: 'POST', body: JSON.stringify(data) },
+  );
+}
+
+export function listObstacles(
+  designId: string,
+  roofSectionId: string,
+): Promise<SolarResponse<any[]>> {
+  return apiClient.request<SolarResponse<any[]>>(
+    `/api/solar/designs/${designId}/roof-sections/${roofSectionId}/obstacles`,
+  );
+}
+
+export function updateObstacle(
+  designId: string,
+  obstacleId: string,
+  data: unknown,
+): Promise<SolarResponse<any>> {
+  return apiClient.request<SolarResponse<any>>(`/api/solar/designs/${designId}/obstacles/${obstacleId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteObstacle(designId: string, obstacleId: string): Promise<SolarResponse<any>> {
+  return apiClient.request<SolarResponse<any>>(`/api/solar/designs/${designId}/obstacles/${obstacleId}`, {
+    method: 'DELETE',
+  });
+}

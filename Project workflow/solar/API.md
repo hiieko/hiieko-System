@@ -58,6 +58,44 @@ The application uses two standard envelopes (set by global NestJS filters/interc
 - **Auth**: `JwtAuthGuard`, `RolesGuard`, `SolarDesignAccessGuard`.
 - **Response `data`**: `RoofSectionModel[]`.
 
+#### `PATCH /api/solar/designs/:designId/roof-sections/:roofSectionId` — IMPLEMENTED (M2)
+
+- **Purpose**: update a roof section (name, polygon, slope/azimuth, origin, roofType).
+- **Body**: `{ name?, roofType?, slopeDeg?, azimuthDeg?, roofMaterial?, polygon?, origin? }`.
+- **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
+- **Validation**: `roofSectionId` must belong to `designId` (else 404); polygon must be valid (simple, ≥3 vertices, non-zero area).
+
+#### `DELETE /api/solar/designs/:designId/roof-sections/:roofSectionId` — IMPLEMENTED (M2)
+
+- **Purpose**: delete a roof section (cascade deletes its obstacles/placements).
+- **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
+
+### Obstacles
+
+#### `POST /api/solar/designs/:designId/roof-sections/:roofSectionId/obstacles` — IMPLEMENTED (M2)
+
+- **Purpose**: add an obstacle (skylight, chimney, vent, service area…) to a roof section.
+- **Body**: `{ name?, obstacleType?, polygon: [{x,y},...], keepoutMarginMm? }`.
+- **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
+- **Validation**: polygon valid (simple, ≥3 vertices, non-zero area) and fully contained within the parent roof section (else 400).
+
+#### `GET /api/solar/designs/:designId/roof-sections/:roofSectionId/obstacles` — IMPLEMENTED (M2)
+
+- **Purpose**: list a roof section's obstacles.
+- **Auth**: `JwtAuthGuard`, `RolesGuard`, `SolarDesignAccessGuard`.
+
+#### `PATCH /api/solar/designs/:designId/obstacles/:obstacleId` — IMPLEMENTED (M2)
+
+- **Purpose**: update an obstacle.
+- **Body**: `{ name?, obstacleType?, polygon?, keepoutMarginMm? }`.
+- **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
+- **Validation**: `obstacleId` must belong to `designId` (else 404); polygon valid and contained within the parent roof (when provided).
+
+#### `DELETE /api/solar/designs/:designId/obstacles/:obstacleId` — IMPLEMENTED (M2)
+
+- **Purpose**: delete an obstacle.
+- **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
+
 ### Layout
 
 #### `PUT /api/solar/designs/:designId/layout-settings` — IMPLEMENTED
@@ -101,7 +139,6 @@ These are in the roadmap but have **no** controller routes yet:
 
 - `GET/POST /api/solar/designs/:id/versions` (revisions/snapshots)
 - `POST /api/solar/designs/:id/versions/:vid/restore`
-- Obstacle endpoints (`POST /api/solar/roof-sections/:id/obstacles`, …)
 - Product/module **manage** endpoints (`POST /api/solar/products`, `POST /api/solar/modules`)
 - `POST /api/solar/designs/:id/mounting/calculate`
 - `GET /api/solar/mounting-families`

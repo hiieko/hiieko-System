@@ -18,7 +18,15 @@ describe('SolarController (list-design authorization)', () => {
   let service: any;
 
   beforeEach(() => {
-    service = { findAll: jest.fn() };
+    service = {
+      findAll: jest.fn(),
+      updateRoofSection: jest.fn(),
+      deleteRoofSection: jest.fn(),
+      addObstacle: jest.fn(),
+      listObstacles: jest.fn(),
+      updateObstacle: jest.fn(),
+      deleteObstacle: jest.fn(),
+    };
     controller = new SolarController(service as SolarService);
   });
 
@@ -45,5 +53,28 @@ describe('SolarController (list-design authorization)', () => {
     const resultA = await controller.listDesigns('project-a');
     expect(resultA).toEqual([{ id: 'design-a1' }]);
     expect(resultA).not.toContainEqual({ id: 'design-b1' });
+  });
+
+  it('delegates roof update to the service with design + roof ids', async () => {
+    const user = { id: 'u1' };
+    await controller.updateRoofSection('design-1', 'roof-1', { name: 'New' } as any, user as any);
+    expect(service.updateRoofSection).toHaveBeenCalledWith('design-1', 'roof-1', { name: 'New' }, user);
+  });
+
+  it('delegates roof delete to the service', async () => {
+    await controller.deleteRoofSection('design-1', 'roof-1', {} as any);
+    expect(service.deleteRoofSection).toHaveBeenCalledWith('design-1', 'roof-1', {});
+  });
+
+  it('delegates obstacle creation to the service with design + roof ids', async () => {
+    const user = { id: 'u1' };
+    const dto = { polygon: [{ x: 0, y: 0 }] };
+    await controller.addObstacle('design-1', 'roof-1', dto as any, user as any);
+    expect(service.addObstacle).toHaveBeenCalledWith('design-1', 'roof-1', dto, user);
+  });
+
+  it('delegates obstacle delete to the service with design + obstacle ids', async () => {
+    await controller.deleteObstacle('design-1', 'obs-1', {} as any);
+    expect(service.deleteObstacle).toHaveBeenCalledWith('design-1', 'obs-1', {});
   });
 });
