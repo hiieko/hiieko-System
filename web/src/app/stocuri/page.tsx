@@ -106,7 +106,7 @@ export default function StocuriPage() {
       {loading ? (
         <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">Încarcând datele de stoc...</p>
+          <p className="mt-2 text-sm text-slate-500">ÃŽcarcÄƒd datele de stoc...</p>
         </div>
       ) : error ? (
         <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
@@ -144,7 +144,7 @@ export default function StocuriPage() {
               {stockBalances.length === 0 && materials.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400 text-sm">
-                    Nu exista materiale în stoc
+                    Nu exista materiale Ã¢ stoc
                   </td>
                 </tr>
               ) : stockBalances.length > 0 ? (
@@ -228,7 +228,7 @@ export default function StocuriPage() {
               {stockMovements.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400 text-sm">
-                    Nu exista mi?cari de stoc înregistrate
+                    Nu exista mi?cari de stoc Ã¢registrate
                   </td>
                 </tr>
               ) : (

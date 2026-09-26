@@ -85,7 +85,7 @@ export default function RapoartePage() {
       {loading ? (
         <div className="py-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">Încarcând rapoartele zilnice...</p>
+          <p className="mt-2 text-sm text-slate-500">ÃŽcarcÄƒd rapoartele zilnice...</p>
         </div>
       ) : error ? (
         <div className="py-12 text-center">
@@ -168,7 +168,7 @@ export default function RapoartePage() {
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini înregistrate</p>
+                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini Ã¢registrate</p>
                     )}
                   </div>
 
@@ -225,7 +225,7 @@ export default function RapoartePage() {
                   </h3>
                   <div className="grid grid-cols-1 gap-3">
                     <p className="text-xs text-slate-400 italic py-3">
-                      Fotografiile nu sunt înca disponibile în aceasta versiune
+                      Fotografiile nu sunt Ã¢ca disponibile Ã¢ aceasta versiune
                     </p>
                   </div>
                 </div>
