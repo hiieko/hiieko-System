@@ -11,7 +11,7 @@
  *                      timestamp: string, path: string, method: string }
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 // ====================
 // ENVELOPE TYPES (R1.5 CONTRACT)
@@ -195,7 +195,7 @@ export class NestApiClient {
   /**
    * Internal request helper
    */
-  private async request<T>(
+  public async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
