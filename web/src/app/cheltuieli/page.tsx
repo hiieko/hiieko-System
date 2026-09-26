@@ -23,6 +23,16 @@ export default function CheltuieliPage() {
   const [processing, setProcessing] = useState(false);
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  // Expense form fields
+  const [formCategory, setFormCategory] = useState('FUEL');
+  const [formAmount, setFormAmount] = useState('');
+  const [formCurrency, setFormCurrency] = useState('RON');
+  const [formPaymentMethod, setFormPaymentMethod] = useState('COMPANY_CARD');
+  const [formExpenseDate, setFormExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formDescription, setFormDescription] = useState('');
+  const [formMerchantName, setFormMerchantName] = useState('');
   const { user } = useAuth();
   const { locale } = useLocale();
 
@@ -101,6 +111,47 @@ export default function CheltuieliPage() {
     }
   };
 
+  const handleCreateExpense = async () => {
+    if (!formAmount || Number(formAmount) <= 0) {
+      setSubmitError('Introdu o sumă validă.');
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const payload: Record<string, unknown> = {
+        category: formCategory,
+        paymentMethod: formPaymentMethod,
+        amount: Number(formAmount),
+        currency: formCurrency,
+        expenseDate: formExpenseDate,
+        description: formDescription || undefined,
+        merchantName: formMerchantName || undefined,
+      };
+      const response = await apiClient.createExpense(payload);
+      if (response.error) {
+        setSubmitError(response.error);
+        return;
+      }
+      // Reset form and reload
+      setShowNew(false);
+      setReceipt(null);
+      setOcrResult(null);
+      setFormAmount('');
+      setFormDescription('');
+      setFormMerchantName('');
+      setFormExpenseDate(new Date().toISOString().split('T')[0]);
+      // Reload expenses
+      const reload = await apiClient.getExpenses();
+      if (reload.data) setExpenses(reload.data as Expense[]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Eroare la trimiterea cheltuielii.';
+      setSubmitError(err instanceof ApiError ? err.message : message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -149,48 +200,113 @@ export default function CheltuieliPage() {
         </div>
         {showNew && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-            <div role="dialog" aria-modal="true" aria-labelledby="new-expense-title" className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+            <div role="dialog" aria-modal="true" aria-labelledby="new-expense-title" className="w-full max-w-lg rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-200 p-5">
                 <div>
-                  <h2 id="new-expense-title" className="text-lg font-bold text-slate-900">Bon fiscal / factură</h2>
-                  <p className="text-xs text-slate-500 mt-1">Fotografiază sau selectează documentul pentru OCR.</p>
+                  <h2 id="new-expense-title" className="text-lg font-bold text-slate-900">{locale === 'ro' ? 'Cheltuială Nouă' : 'New Expense'}</h2>
+                  <p className="text-xs text-slate-500 mt-1">{locale === 'ro' ? 'Completează detaliile și trimite spre aprobare.' : 'Fill in the details and submit for approval.'}</p>
                 </div>
                 <button type="button" onClick={() => setShowNew(false)} aria-label="Închide" className="p-2 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
               </div>
               <div className="space-y-4 p-5">
-                {!user && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Poți selecta documentul, dar trebuie să te autentifici pentru OCR și salvare. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
-                <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50 px-4 text-center hover:bg-amber-50">
-                  <Upload className="mb-2 h-8 w-8 text-amber-600" />
-                  <span className="text-sm font-semibold text-slate-800">{receipt ? receipt.name : 'Încarcă bonul fiscal sau factura'}</span>
-                  <span className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP sau PDF · poți folosi camera telefonului</span>
-                  <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" className="sr-only"
-                    onChange={e => setReceipt(e.target.files?.[0] || null)} />
-                </label>
-                {receipt && !ocrResult && <p className="text-xs text-emerald-700">Document selectat. Apasă „Procesează documentul” pentru OCR.</p>}
-                {scanError && <p className="text-sm text-red-700">{scanError}</p>}
-                {ocrResult && (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm">
-                    <p className="font-semibold text-emerald-900">Date extrase — verifică înainte de trimitere</p>
-                    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-slate-700">
-                      {([
-                        ['Furnizor', ocrResult.merchant_name],
-                        ['CUI', ocrResult.merchant_cui],
-                        ['Nr. document', ocrResult.document_number],
-                        ['Data', ocrResult.document_date],
-                        ['Subtotal', ocrResult.subtotal],
-                        ['TVA', ocrResult.vat],
-                        ['Total', ocrResult.total],
-                        ['Monedă', ocrResult.currency],
-                      ] as Array<[string, string | number | undefined]>).map(([label, value]) => value !== undefined && (
-                        <div key={label}><dt className="font-medium text-slate-500">{label}</dt><dd className="font-semibold">{String(value)}</dd></div>
+                {!user && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Trebuie să te autentifici pentru a trimite o cheltuială. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
+                {/* --- OCR Upload Section --- */}
+                <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                  <p className="text-xs font-semibold text-slate-600 mb-2">{locale === 'ro' ? 'Scanare document (opțională)' : 'Document scan (optional)'}</p>
+                  <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50 px-4 text-center hover:bg-amber-50">
+                    <Upload className="mb-2 h-6 w-6 text-amber-600" />
+                    <span className="text-sm font-semibold text-slate-800">{receipt ? receipt.name : (locale === 'ro' ? 'Încarcă bonul fiscal sau factura' : 'Upload receipt or invoice')}</span>
+                    <span className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP sau PDF</span>
+                    <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" className="sr-only"
+                      onChange={e => setReceipt(e.target.files?.[0] || null)} />
+                  </label>
+                  {receipt && !ocrResult && <p className="text-xs text-emerald-700 mt-2">{locale === 'ro' ? 'Document selectat. Apasă „Procesează documentul” pentru OCR.' : 'Document selected. Press "Process document" for OCR.'}</p>}
+                  {receipt && (
+                    <button type="button" disabled={processing} onClick={() => void processReceipt()} className="mt-2 w-full rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">
+                      {processing ? (locale === 'ro' ? 'Se procesează...' : 'Processing...') : (locale === 'ro' ? 'Procesează documentul' : 'Process document')}
+                    </button>
+                  )}
+                  {scanError && <p className="text-sm text-red-700 mt-2">{scanError}</p>}
+                  {ocrResult && (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm mt-2">
+                      <p className="font-semibold text-emerald-900 text-xs">{locale === 'ro' ? 'Date extrase — verifică înainte de trimitere' : 'Extracted data — verify before submitting'}</p>
+                      <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
+                        {([
+                          [locale === 'ro' ? 'Furnizor' : 'Merchant', ocrResult.merchant_name],
+                          ['CUI', ocrResult.merchant_cui],
+                          [locale === 'ro' ? 'Nr. document' : 'Doc. no.', ocrResult.document_number],
+                          [locale === 'ro' ? 'Data' : 'Date', ocrResult.document_date],
+                          [locale === 'ro' ? 'Subtotal' : 'Subtotal', ocrResult.subtotal],
+                          ['TVA', ocrResult.vat],
+                          [locale === 'ro' ? 'Total' : 'Total', ocrResult.total],
+                          [locale === 'ro' ? 'Monedă' : 'Currency', ocrResult.currency],
+                        ] as Array<[string, string | number | undefined]>).map(([label, value]) => value !== undefined && (
+                          <div key={label}><dt className="font-medium text-slate-500">{label}</dt><dd className="font-semibold">{String(value)}</dd></div>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
+                </div>
+
+                {/* --- Expense Form Fields --- */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Categorie' : 'Category'}</label>
+                    <select value={formCategory} onChange={e => setFormCategory(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                      {['FUEL','ACCOMMODATION','FOOD','TRANSPORT','PARKING','TOLLS','MATERIALS','TOOLS','EQUIPMENT','OTHER'].map(c => (
+                        <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</option>
                       ))}
-                    </dl>
-                    <p className="mt-3 text-xs text-amber-800">OCR-ul este un asistent. Corectează datele pe documentul original înainte de aprobare.</p>
+                    </select>
                   </div>
-                )}
-                <div className="flex justify-end gap-3">
-                  <button type="button" onClick={() => setShowNew(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">Anulează</button>
-                  <button type="button" disabled={!receipt || processing} onClick={() => void processReceipt()} className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">{processing ? 'Se procesează...' : 'Procesează documentul'}</button>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Metodă plată' : 'Payment'}</label>
+                    <select value={formPaymentMethod} onChange={e => setFormPaymentMethod(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                      <option value="COMPANY_CARD">{locale === 'ro' ? 'Card companie' : 'Company card'}</option>
+                      <option value="PERSONAL">{locale === 'ro' ? 'Personal' : 'Personal'}</option>
+                      <option value="COMPANY_CASH">{locale === 'ro' ? 'Cash avans' : 'Company cash'}</option>
+                      <option value="OTHER">{locale === 'ro' ? 'Alta' : 'Other'}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Suma' : 'Amount'}</label>
+                    <input type="number" step="0.01" min="0" value={formAmount} onChange={e => setFormAmount(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Monedă' : 'Currency'}</label>
+                    <select value={formCurrency} onChange={e => setFormCurrency(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                      <option value="RON">RON</option>
+                      <option value="EUR">EUR</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Data' : 'Date'}</label>
+                    <input type="date" value={formExpenseDate} onChange={e => setFormExpenseDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Furnizor' : 'Merchant'}</label>
+                    <input type="text" value={formMerchantName} onChange={e => setFormMerchantName(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder={locale === 'ro' ? 'Nume furnizor' : 'Merchant name'} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Descriere' : 'Description'}</label>
+                  <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={2}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none resize-none"
+                    placeholder={locale === 'ro' ? 'Descrie cheltuiala...' : 'Describe the expense...'} />
+                </div>
+                {submitError && <p className="text-sm text-red-700">{submitError}</p>}
+                <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
+                  <button type="button" onClick={() => setShowNew(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">{locale === 'ro' ? 'Anulează' : 'Cancel'}</button>
+                  <button type="button" disabled={submitting || !formAmount || Number(formAmount) <= 0} onClick={() => void handleCreateExpense()}
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
+                    {submitting ? (locale === 'ro' ? 'Se trimite...' : 'Submitting...') : (locale === 'ro' ? 'Trimite spre aprobare' : 'Submit for approval')}
+                  </button>
                 </div>
               </div>
             </div>

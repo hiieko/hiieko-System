@@ -1,9 +1,11 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
+import { WorkerAttendanceView } from '../../components/WorkerAttendanceView';
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../lib/api-client';
 import { useLocale } from '@solar/shared';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   Clock, 
   Calendar, 
@@ -37,6 +39,11 @@ interface AttendanceRecord {
 }
 
 export default function PontajPage() {
+  const { user } = useAuth();
+  const role = user?.role?.toLowerCase();
+  if (role === 'worker' || role === 'team_leader' || role === 'technician' || role === 'foreman' || role === 'site_manager') {
+    return <WorkerAttendanceView />;
+  }
   const [activeTab, setActiveTab] = useState<'daily' | 'monthly'>('daily');
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -66,8 +73,12 @@ export default function PontajPage() {
         setAttendanceRecords((attendanceResponse.data || []) as AttendanceRecord[]);
 
         // Load users (workers)
-        const usersResponse = await apiClient.getUsers();
-        setUsers((usersResponse.data || []) as any[]);
+        let usersData: any[] = [];
+        try {
+          const usersResponse = await apiClient.getUsers();
+          usersData = (usersResponse.data || []) as any[];
+        } catch { /* skip for restricted roles */ }
+        setUsers(usersData);
       } catch (err: any) {
         console.error('Failed to load attendance data:', err);
         setError(err.message || 'Failed to load data');
@@ -162,7 +173,7 @@ export default function PontajPage() {
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
               <Calendar className="w-4 h-4 text-amber-600" />
-              <span>Registru Prezență — 14 Septembrie 2026</span>
+              <span>Registru Prezență â€” 14 Septembrie 2026</span>
             </div>
             <div className="text-xs text-slate-500">
               Program standard: <span className="font-semibold text-slate-700">09:00 - 18:00 (1h pauză)</span>
@@ -188,7 +199,7 @@ export default function PontajPage() {
                   <tr>
                     <td colSpan={8} className="py-12 text-center">
                       <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-                      <p className="mt-2 text-sm text-slate-500">Încarcând datele pontaj...</p>
+                      <p className="mt-2 text-sm text-slate-500">Žncarcând datele pontaj...</p>
                     </td>
                   </tr>
                 ) : error ? (
@@ -210,8 +221,8 @@ export default function PontajPage() {
                     {attendanceRecords.map((log) => {
                     const user = users.find(u => u.id === log.user_id);
                     const userName = log.user?.profile?.full_name || user?.full_name || user?.profile?.full_name || 'Necunoscut';
-                    const checkInTime = log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
-                    const checkOutTime = log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
+                    const checkInTime = log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : 'â€”';
+                    const checkOutTime = log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : 'â€”';
                     const otHours = ((log.overtime_minutes || 0) / 60).toFixed(1);
                     const userRole = (log.user?.profile?.role || user?.role || 'worker').toString().toLowerCase();
 
@@ -227,7 +238,7 @@ export default function PontajPage() {
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-slate-600 text-xs">
-                          {log.project?.name || '—'}
+                          {log.project?.name || 'â€”'}
                         </td>
                         <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
                           {checkInTime}
@@ -315,7 +326,7 @@ export default function PontajPage() {
                       );
                       const isWeekend = day % 7 === 5 || day % 7 === 6;
                       if (isWeekend) {
-                        return <td key={day} className="py-2 px-1 text-slate-300 bg-slate-50/50 border-r border-slate-100">—</td>;
+                        return <td key={day} className="py-2 px-1 text-slate-300 bg-slate-50/50 border-r border-slate-100">â€”</td>;
                       }
                       if (!dayRecord) {
                         return <td key={day} className="py-2 px-1 text-slate-300 border-r border-slate-100">·</td>;

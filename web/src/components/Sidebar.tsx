@@ -12,14 +12,15 @@ interface NavGroup { title: string; items: NavItem[]; roles?: string[]; }
 const NAV_GROUPS: NavGroup[] = [
   { title: 'Operațiuni', items: [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/solar-configurator', label: 'Configurator Solar', icon: SunMedium },
+    { href: '/solar-configurator', label: 'Configurator Solar', icon: SunMedium, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'technician'] },
+    { href: '/tasks', label: 'Task-uri', icon: ClipboardCheck, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'] },
     { href: '/pontaj', label: 'Pontaj & Ore', icon: Clock },
     { href: '/rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
     { href: '/avize', label: 'Procurement / Avize', icon: Truck },
     { href: '/stocuri', label: 'Materiale & Stoc', icon: Boxes },
     { href: '/cheltuieli', label: 'Cheltuieli', icon: Euro },
   ]},
-  { title: 'Management', roles: ['admin', 'owner', 'manager', 'pm'], items: [
+  { title: 'Management', roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'], items: [
     { href: '/projects', label: 'Proiecte', icon: MapPin },
     { href: '/teams', label: 'Echipe', icon: Users },
     { href: '/workforce', label: 'Forță de Muncă', icon: User },

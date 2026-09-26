@@ -74,8 +74,12 @@ export default function StocuriPage() {
         const movementsResponse = await apiClient.getStockMovements();
         setStockMovements((movementsResponse.data || []) as StockMovement[]);
 
-        const usersResponse = await apiClient.getUsers();
-        setUsers((usersResponse.data || []) as any[]);
+        let usersData: any[] = [];
+        try {
+          const usersResponse = await apiClient.getUsers();
+          usersData = (usersResponse.data || []) as any[];
+        } catch { /* skip for restricted roles */ }
+        setUsers(usersData);
       } catch (err: any) {
         console.error('Failed to load stock data:', err);
         setError(err.message || 'Failed to load data');
@@ -92,9 +96,9 @@ export default function StocuriPage() {
       <PageTutorial sectionId="stock" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Gestiune Stocuri & Mișcări Materiale</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Gestiune Stocuri & Mi?cari Materiale</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Controlul inventarului pe fiecare șantier, calculat strict din intrările de pe avize și ieșirile din rapoartele zilnice.
+            Controlul inventarului pe fiecare ?antier, calculat strict din intrarile de pe avize ?i ie?irile din rapoartele zilnice.
           </p>
         </div>
       </div>
@@ -102,7 +106,7 @@ export default function StocuriPage() {
       {loading ? (
         <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">Încărcând datele de stoc...</p>
+          <p className="mt-2 text-sm text-slate-500">�ncarc�nd datele de stoc...</p>
         </div>
       ) : error ? (
         <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
@@ -119,7 +123,7 @@ export default function StocuriPage() {
             <span>Stoc Curent</span>
           </div>
           <div className="text-xs text-slate-500">
-            Actualizat automat prin triggeri de bază de date
+            Actualizat automat prin triggeri de baza de date
           </div>
         </div>
 
@@ -140,7 +144,7 @@ export default function StocuriPage() {
               {stockBalances.length === 0 && materials.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400 text-sm">
-                    Nu există materiale în stoc
+                    Nu exista materiale �n stoc
                   </td>
                 </tr>
               ) : stockBalances.length > 0 ? (
@@ -188,7 +192,7 @@ export default function StocuriPage() {
                       0 <span className="text-xs font-normal text-slate-500">{material.unit}</span>
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="text-xs text-slate-400">Fără stoc</span>
+                      <span className="text-xs text-slate-400">Fara stoc</span>
                     </td>
                   </tr>
                 ))
@@ -203,9 +207,9 @@ export default function StocuriPage() {
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
             <History className="w-4 h-4 text-amber-600" />
-            <span>Jurnal Imutabil Mișcări de Stoc (Audit Trail)</span>
+            <span>Jurnal Imutabil Mi?cari de Stoc (Audit Trail)</span>
           </div>
-          <span className="text-xs text-slate-500">Conformitate Regula 11: Fiecare mișcare are autor, timestamp și sursă</span>
+          <span className="text-xs text-slate-500">Conformitate Regula 11: Fiecare mi?care are autor, timestamp ?i sursa</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -213,18 +217,18 @@ export default function StocuriPage() {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
                 <th className="py-3 px-4">Data & Ora</th>
-                <th className="py-3 px-4">Tip Operațiune</th>
+                <th className="py-3 px-4">Tip Opera?iune</th>
                 <th className="py-3 px-4">Material</th>
                 <th className="py-3 px-4 text-right">Cantitate</th>
                 <th className="py-3 px-4">Executat De</th>
-                <th className="py-3 px-4">Referință Document</th>
+                <th className="py-3 px-4">Referin?a Document</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {stockMovements.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400 text-sm">
-                    Nu există mișcări de stoc înregistrate
+                    Nu exista mi?cari de stoc �nregistrate
                   </td>
                 </tr>
               ) : (

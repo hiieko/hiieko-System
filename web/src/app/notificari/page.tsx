@@ -4,7 +4,7 @@ import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { normalizeEnvelope } from '../../lib/normalize-envelope';
 
 interface NotifItem {
@@ -58,7 +58,7 @@ export default function NotificariPage() {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError(err instanceof Error ? err.message : 'Eroare la incarcarea notificarilor.');
+        setError(err instanceof Error ? err.message : t('notifications.load_error', locale));
       }
     } finally {
       setLoading(false);
@@ -89,11 +89,11 @@ export default function NotificariPage() {
   };
 
   const pBadge = (p: string) => {
-    if (p === 'high') return <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded">URGENT</span>;
+    if (p === 'high') return <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded">{t('notifications.urgent', locale)}</span>;
     return null;
   };
 
-  const tabs = [{ k: 'all', l: 'Toate' }, { k: 'unread', l: 'Necitite' }];
+  const tabs = [{ k: 'all', l: t('notifications.all', locale) }, { k: 'unread', l: t('notifications.unread', locale) }];
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -106,16 +106,16 @@ export default function NotificariPage() {
         <div className="flex items-center space-x-3">
           {unreadCount > 0 && (
             <span className="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-xs font-bold">
-              <Bell className="w-3.5 h-3.5 mr-1.5" />{unreadCount} necitite
+              <Bell className="w-3.5 h-3.5 mr-1.5" />{unreadCount} {t('notifications.unread', locale).toLowerCase()}
             </span>
           )}
           <button onClick={() => loadNotifs()}
             className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reimprospateaza
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('notifications.refresh', locale)}
           </button>
           <button onClick={markAllRead}
             className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm">
-            <CheckCheck className="w-3.5 h-3.5 mr-1.5" />Marcheaza tot citit
+            <CheckCheck className="w-3.5 h-3.5 mr-1.5" />{t('notifications.mark_all_read', locale)}
           </button>
         </div>
       </div>
@@ -136,12 +136,12 @@ export default function NotificariPage() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca notificarile...
+            <Loader2 className="w-6 h-6 animate-spin mr-2" />{t('notifications.loading', locale)}
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
             <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-600">Fara notificari</h3>
+            <h3 className="text-base font-semibold text-slate-600">{t('notifications.no_notifications', locale)}</h3>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">

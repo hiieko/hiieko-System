@@ -1,8 +1,8 @@
-
+﻿
 | **OCR** | **\xf0\x9f\xa7\x8a FROZEN / DEFERRED** | OCR is not a current workstream. Deferred to final milestone per CLINE_MASTER_ROADMAP.md section 17. |
-# HIIEKO â€” Current Status
+# HIIEKO — Current Status
 
-**Last Updated:** 2026-09-25 (Phase 1-2 Documentation Truth-Up + OCR FROZEN; actual counts: 15 suites / 125 tests, 21 routes, PostgreSQL 18)
+**Last Updated:** 2026-09-26 (Phase 12 — Worker Final Defect Pass COMPLETE; Phase 11 — Team Leader Mutation Acceptance COMPLETE; 25 suites / 202 tests, 23 web pages, PostgreSQL 18)
 **Version:** pre-1.0 (NOT production-ready)
 
 ---
@@ -24,7 +24,7 @@ All data flows through the NestJS API. No direct database access from clients.
 - Zero `@supabase/*` dependencies in any workspace
 - Zero `createClient` / `SUPABASE_*` env var assignments in active source
 - Zero `supabase/functions` or Edge Function references in runtime code
-- Legacy DDL archived at `database/archive/supabase-migrations/` (ETL source of truth only â€” never loaded at runtime)
+- Legacy DDL archived at `database/archive/supabase-migrations/` (ETL source of truth only — never loaded at runtime)
 - `package-lock.json` has 0 Supabase references
 
 **No new Supabase functionality will be introduced.** Supabase will not be reintroduced as a runtime dependency.
@@ -43,10 +43,11 @@ All data flows through the NestJS API. No direct database access from clients.
 | **R2.5 Notifications/Audit** | âœ… **E2E VERIFIED** | Backend complete; PostgreSQL-authoritative |
 | **R2.1 Sitesâ†’Projects P1** | âœ… **COMPLETE** | Shared contract: `Project`/`ProjectMember`, `project_id`, `isWithinProjectGeofence` |
 | **R2.1 Sitesâ†’Projects P2** | âœ… **COMPLETE** | Mobile screens migrated; `mapToScreenProject` mapper |
-| **R2.1 Sitesâ†’Projects P3** | âœ… **COMPLETE** | Web (Header, symbols, delete mock-data) â€” ProjectContext, no Site, no mock data |
-| **R2.1 Sitesâ†’Projects P4** | âœ… **COMPLETE** | Shared cleanup â€” all dead Site-era contracts removed; `AuditLog.site_id?`, `Warehouse.site_id?`, `SiteStatus` type, `NotificationType.'site_assignment'`, `DashboardStats.active_sites` deleted; `site_id` zeroed from shared/dist; no DB migration required |
-| **R2.1 Sitesâ†’Projects P5** | âœ… **COMPLETE** | Project authorization (members, guards, backfill) â€” 13 guard tests PASS, all routes protected |
-| **R2.1 Sitesâ†’Projects P6** | âœ… **COMPLETE** | Documentation / closure reconciliation â€” all 12 workflow docs edited; verification gates re-run |
+| **R2.1 Sitesâ†’Projects P3** | âœ… **COMPLETE** | Web (Header, symbols, delete mock-data) — ProjectContext, no Site, no mock data |
+| **R2.1 Sitesâ†’Projects P4** | âœ… **COMPLETE** | Shared cleanup — all dead Site-era contracts removed; `AuditLog.site_id?`, `Warehouse.site_id?`, `SiteStatus` type, `NotificationType.'site_assignment'`, `DashboardStats.active_sites` deleted; `site_id` zeroed from shared/dist; no DB migration required |
+| **R2.1 Sitesâ†’Projects P5** | âœ… **COMPLETE** | Project authorization (members, guards, backfill) — 13 guard tests PASS, all routes protected |
+| **R2.1 Sites→Projects P6** | ✅ **COMPLETE** | Documentation / closure reconciliation — all 12 workflow docs edited; verification gates re-run |
+| **Solar Configurator** | ✅ **INTEGRATED** | origin/feature/solar-configurator merged into origin/master via integrate/solar-configuration; 52 new files; 202 tests; 22 web routes |
 
 ## 4. Latest completed work
 
@@ -72,12 +73,26 @@ All data flows through the NestJS API. No direct database access from clients.
 - Full document OCR returns `needs_review` (correct production behavior)
 - No configuration changes required — ports already unified
 
-**R2.1 P6 â€” Documentation / closure reconciliation (2026-09-24).**
+**R2.1 P6 — Documentation / closure reconciliation (2026-09-24).**
+
+**Phase 10 — Solar Configurator Integration (2026-09-26).**
+
+- origin/feature/solar-configurator merged into origin/master at commit 73d78e8
+- Integration branch integrate/solar-configuration created, conflicts resolved (Sidebar.tsx only genuine conflict)
+- Prisma client regenerated, shared package built
+- Backend typecheck: 0 errors
+- Web typecheck: 0 errors (dependencies installed: @react-three/drei, @react-three/fiber, three)
+- Backend build: PASS
+- Web build: PASS (22 routes, +solar-configurator)
+- Backend tests: 25 suites / 202 tests PASS (was 154)
+- Prisma validate: PASS
+- Solar feature branch preserved; integration branch preserved
+- OCR remains frozen/deferred; Supabase runtime remains removed
 
 - All 12 `Project workflow/*.md` documents audited for factual consistency against live code and DB
 - 47 factual defects cataloged and corrected across 5 primary docs + 7 tier-2 docs
 - Historical Supabase/site-era sections marked with `> **âš ï¸ HISTORICAL / SUPERSEDED**` banners
-- `CONFIGURATION.md` â€” entire file superseded; top-level banner redirects to current architecture
+- `CONFIGURATION.md` — entire file superseded; top-level banner redirects to current architecture
 - Test counts unified to **15 suites / 125 tests** wherever current-state counts appear
 - 401/403 semantics corrected: NestJS JwtGuard returns 401 for missing/invalid token; ProjectAccessGuard returns 403 for unauthorized; 404 for entity not found
 - **8 non-global users (3 TEAM_LEADER, 5 WORKER) currently unassigned to projects** documented in ISSUES.md (ISSUE-023)
@@ -101,7 +116,7 @@ All data flows through the NestJS API. No direct database access from clients.
 | db:verify | âœ… **41/41 checks PASS** |
 | E2E authorization | âœ… **12/12 tests PASS** (after test-script fix: `Array.isArray` assertions corrected for NestJS response envelope) |
 
-**R2.1 P4 â€” Shared cleanup (Site-era dead types removed).**
+**R2.1 P4 — Shared cleanup (Site-era dead types removed).**
 
 - Deleted `Site` interface from `shared/src/types.ts`
 - Deleted `SiteAssignment` interface
@@ -125,65 +140,71 @@ All data flows through the NestJS API. No direct database access from clients.
 
 ## 5. Latest completed work
 
-**R2.1 P5 â€” Project authorization (COMPLETE 2026-09-24):**
+**R2.1 P5 — Project authorization (COMPLETE 2026-09-24):**
 
 ### Summary
 Implemented full project-scoped authorization across all 102 routes:
 
-1. **Hardened `ProjectAccessGuard`** â€” fail-closed, global-scope allowlist (ADMIN/OWNER/PM/MANAGER), entity-derived project resolution (tasks, plans, reports, teams, documents, expenses, change orders, inspections, issues, OCR jobs, purchase orders, avize), 403 for missing params, 404 for nonexistent entities.
+1. **Hardened `ProjectAccessGuard`** — fail-closed, global-scope allowlist (ADMIN/OWNER/PM/MANAGER), entity-derived project resolution (tasks, plans, reports, teams, documents, expenses, change orders, inspections, issues, OCR jobs, purchase orders, avize), 403 for missing params, 404 for nonexistent entities.
 
-2. **Membership endpoints** â€” `GET/POST/PATCH/DELETE /api/projects/:projectId/members` with role validation, uniqueness, audit logging, last-member protection.
+2. **Membership endpoints** — `GET/POST/PATCH/DELETE /api/projects/:projectId/members` with role validation, uniqueness, audit logging, last-member protection.
 
-3. **Auto-provisioning** â€” Project creation automatically creates the creator's `ProjectMember` row.
+3. **Auto-provisioning** — Project creation automatically creates the creator's `ProjectMember` row.
 
-4. **Evidence-derived backfill** â€” Script at `backend/scripts/backfill-project-members.ts` with `--dry-run` support, deriving candidates from global-scope users, attendance, teams, daily plans/reports, expenses, issues, and tasks.
+4. **Evidence-derived backfill** — Script at `backend/scripts/backfill-project-members.ts` with `--dry-run` support, deriving candidates from global-scope users, attendance, teams, daily plans/reports, expenses, issues, and tasks.
 
-5. **Project list scoping** â€” `GET /api/projects` now returns only authorized projects for non-global roles, fixing both web ProjectContext and mobile project lists simultaneously.
+5. **Project list scoping** — `GET /api/projects` now returns only authorized projects for non-global roles, fixing both web ProjectContext and mobile project lists simultaneously.
 
-6. **Purchase orders** â€” Project-scoped; `findAllPurchaseOrders` accepts optional `projectId` filter.
+6. **Purchase orders** — Project-scoped; `findAllPurchaseOrders` accepts optional `projectId` filter.
 
-7. **Controller protection** â€” All 30 controllers updated: `ProjectAccessGuard` + `@RequireProjectAccess`/`@RequireEntityProjectAccess` decorators.
+7. **Controller protection** — All 30 controllers updated: `ProjectAccessGuard` + `@RequireProjectAccess`/`@RequireEntityProjectAccess` decorators.
 
-8. **Tests** â€” 13 guard unit tests (global roles, member access, fail-closed, entity-derived, unauthenticated). E2E test at `e2e/project-access.js`.
+8. **Tests** — 13 guard unit tests (global roles, member access, fail-closed, entity-derived, unauthenticated). E2E test at `e2e/project-access.js`.
 
 ## 6. Next development step
 
-**R2.6 â€” Core Operations Completion (Implementation Audit).** R2.1 Sitesâ†’Projects is fully complete across all 6 phases. See `IMPLEMENTATION_ROADMAP.md` for the next milestones.
+**Solar Configurator integration COMPLETE.** The solar feature branch has been merged and verified.
+
+**R2.6 — Core Operations Completion (Implementation Audit).** R2.1 Sites→Projects is fully complete across all 6 phases. See `IMPLEMENTATION_ROADMAP.md` for the next milestones.
 
 ### R2.6 Audit Summary (2026-09-24)
 
-**All 28 backend modules verified** â€” Every module in `backend/src/modules/` has a controller, service, and module file. Full inventory in PROGRESS.md.
+**All 28 backend modules verified** — Every module in `backend/src/modules/` has a controller, service, and module file. Full inventory in PROGRESS.md.
 
 **Correction to prior session summary:** The modules `asks` and `ask-dependencies` do NOT exist in the codebase (they were likely planned but never created). All other previously-reported-missing modules DO exist: daily-plans, daily-reports, attendance, inventory (stock), procurement (purchase-orders), qa-qc, issues, change-orders, costs, control-tower, notifications, documents, upload, ocr, roles, permissions, materials, suppliers, warehouses, users, auth, expenses, project-stages, audit.
 
 **Next recommended actions:**
-1. Add unit tests for untested modules (14 of 28 modules have zero tests)
-2. Fix known gaps (missing route, missing role decorators, activate PermissionsGuard)
-3. Perform frontend audit (web + mobile coverage against backend modules)
+1. Verify the solar-configurator route works in development environment
+2. Apply Prisma migration to production database (npx prisma migrate deploy)
+3. Monitor for any runtime issues with solar module
+4. Consider adding integration tests for solar configurator API endpoints
+5. Add unit tests for untested modules (14 of 28 modules have zero tests)
+6. Fix known gaps (missing route, missing role decorators, activate PermissionsGuard)
+7. Perform frontend audit (web + mobile coverage against backend modules)
 
 ## 7. Known carried-over gaps
 
-- `GET /api/users/:id` â€” No organization-scope enforcement (ISSUE-018, OPEN)
-- `GET /api/users/:id` â€” Global-role users can access any user by ID regardless of organization (ISSUE-019, OPEN)
-- `POST /api/inventory/transfer` â€” Guard checks both sourceProjectId and targetProjectId (P5 GAP1 fixed); global-role users bypass membership checks by design (see ISSUE-019)
+- `GET /api/users/:id` — No organization-scope enforcement (ISSUE-018, OPEN)
+- `GET /api/users/:id` — Global-role users can access any user by ID regardless of organization (ISSUE-019, OPEN)
+- `POST /api/inventory/transfer` — Guard checks both sourceProjectId and targetProjectId (P5 GAP1 fixed); global-role users bypass membership checks by design (see ISSUE-019)
 - No authentication rate limiting (ISSUE-021, OPEN)
 - No refresh-token rotation or revocation (ISSUE-022, OPEN)
 - 8 non-global users (3 TEAM_LEADER, 5 WORKER) currently unassigned to any project (ISSUE-023, OPEN)
 - `PermissionsGuard` not activated; permission tables unseeded
 - `GET /api/procurement/avize/:id` route absent from controller (documented in HANDOFF.md)
-- `GET /api/users/:id` â€” No organization-scope enforcement. Deferred from P5.
-- `POST /api/inventory/transfer` â€” Uses sourceProjectId/targetProjectId; guard checks both (fixed in P5). Residual: global-role bypass by design.
+- `GET /api/users/:id` — No organization-scope enforcement. Deferred from P5.
+- `POST /api/inventory/transfer` — Uses sourceProjectId/targetProjectId; guard checks both (fixed in P5). Residual: global-role bypass by design.
 
 ## 8. Project authorization
 
-**R2.1 P5: COMPLETE** â€” Full project-scoped authorization enforced.
+**R2.1 P5: COMPLETE** — Full project-scoped authorization enforced.
 
 ### Global-scope roles (membership-exempt)
-- ADMIN, OWNER, PM, MANAGER â€” bypass membership checks, retain organization-level access.
+- ADMIN, OWNER, PM, MANAGER — bypass membership checks, retain organization-level access.
 
 ### Membership lifecycle
 - **Provisioning:** Auto-created on project creation. Manual via `POST /api/projects/:projectId/members`.
-- **Management:** `GET` (list), `PATCH :userId` (change role), `DELETE :userId` (remove) â€” restricted to ADMIN/OWNER/PM/MANAGER roles.
+- **Management:** `GET` (list), `PATCH :userId` (change role), `DELETE :userId` (remove) — restricted to ADMIN/OWNER/PM/MANAGER roles.
 - **Backfill:** `backend/scripts/backfill-project-members.ts` (evidence-derived, idempotent, `--dry-run` support).
 - **Last-member protection:** Removal blocked when project would have zero members.
 

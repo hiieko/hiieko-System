@@ -157,7 +157,7 @@ const d: Record<string, { ro: string; en: string }> = {
 };
 
 // ============================================================================
-// HIIEKO Camera/OCR + In-App Tutorials — extra keys (spec §§9-20)
+// HIIEKO Camera/OCR + In-App Tutorials â€” extra keys (spec §§9-20)
 // All tutorial copy is referenced here as translation keys (never hardcoded).
 // ============================================================================
 const T = (ro: string, en: string) => ({ ro, en });
@@ -200,7 +200,7 @@ Object.assign(d, {
   // --- Deliveries ---
   'tutorial.deliveries.title': T('Avize & Receptie', 'Deliveries'),
   'tutorial.deliveries.short': T('Recepția materialelor primite la șantier.', 'Receiving materials delivered to the site.'),
-  'tutorial.deliveries.purpose': T('Înregistrezi avizul, furnizorul și materialele primite, cu document fotografic.', 'You record the delivery note, supplier and received materials, with photo documentation.'),
+  'tutorial.deliveries.purpose': T('Žnregistrezi avizul, furnizorul și materialele primite, cu document fotografic.', 'You record the delivery note, supplier and received materials, with photo documentation.'),
   'tutorial.deliveries.step1': T('Introdu numărul avizului și furnizorul.', 'Enter the delivery note number and supplier.'),
   'tutorial.deliveries.step2': T('Adaugă materialele primite și cantitățile.', 'Add the received materials and quantities.'),
   'tutorial.deliveries.step3': T('Fotografiază documentul și confirmă recepția.', 'Photograph the document and confirm receipt.'),
@@ -235,7 +235,7 @@ Object.assign(d, {
   'tutorial.expenses.title': T('Cheltuieli Companie', 'Company Expenses'),
   'tutorial.expenses.short': T('Înregistrarea cheltuielilor companiei cu document fiscal.', 'Recording company expenses with a fiscal document.'),
   'tutorial.expenses.purpose': T('Fiecare angajat înregistrează cheltuielile sale cu bon/factură, categorie, șantier și scop, apoi urmează aprobarea și rambursarea.', 'Each employee records their expenses with receipt/invoice, category, site and purpose, then approval and reimbursement follow.'),
-  'tutorial.expenses.step1': T('Apasă CHELTUIALĂ NOUĂ și alege Scanează documentul.', 'Tap NEW EXPENSE and choose Scan document.'),
+  'tutorial.expenses.step1': T('Apasă CHELTUIALÄ‚ NOUÄ‚ și alege Scanează documentul.', 'Tap NEW EXPENSE and choose Scan document.'),
   'tutorial.expenses.step2': T('Fotografiază bonul/factura și verifică datele extrase prin OCR.', 'Photograph the receipt/invoice and check the OCR-extracted data.'),
   'tutorial.expenses.step3': T('Completează categoria, șantierul, scopul și suma.', 'Complete the category, site, purpose and amount.'),
   'tutorial.expenses.step4': T('Confirmă și trimite pentru aprobare.', 'Confirm and submit for approval.'),
@@ -352,12 +352,12 @@ Object.assign(d, {
   'camera.tip2': T('Asigură lumină bună.', 'Use good lighting.'),
   'camera.tip3': T('Include toate colțurile documentului.', 'Include all document corners.'),
   'camera.tip4': T('Evită umbrele și reflexiile.', 'Avoid shadows and reflections.'),
-  'camera.tip5': T('Ține telefonul drept.', 'Hold the phone straight.'),
+  'camera.tip5': T('șine telefonul drept.', 'Hold the phone straight.'),
   'camera.tip6': T('Verifică documentul înainte de trimitere.', 'Review the document before submitting.'),
 
   // --- Scan actions ---
   'scan.open': T('Scanează documentul', 'Scan document'),
-  'scan.capture': T('FOTOGRAFIAZĂ', 'CAPTURE'),
+  'scan.capture': T('FOTOGRAFIAZÄ‚', 'CAPTURE'),
   'scan.retake': T('Refă', 'Retake'),
   'scan.add_page': T('Adaugă pagină', 'Add page'),
   'scan.preview': T('Previzualizare', 'Preview'),
@@ -377,7 +377,7 @@ Object.assign(d, {
   'ocr.processing': T('Se procesează documentul...', 'Processing the document...'),
   'ocr.not_configured': T('Furnizorul OCR nu este configurat. Completează manual câmpurile cheltuielii.', 'The OCR provider is not configured. Fill in the expense fields manually.'),
   'ocr.no_data': T('Nu s-au găsit date în document. Completează manual.', 'No data found in the document. Fill in manually.'),
-  'ocr.low_confidence': T('Câmpuri cu încredere scăzută — verifică-le atent.', 'Low-confidence fields — check them carefully.'),
+  'ocr.low_confidence': T('Câmpuri cu încredere scăzută â€” verifică-le atent.', 'Low-confidence fields â€” check them carefully.'),
   'ocr.review_prompt': T('OCR-ul este un asistent. Verifică și corectează datele extrase înainte de trimitere.', 'OCR is an assistant. Review and correct the extracted data before submitting.'),
   'ocr.assistant_note': T('Datele extrase automat nu sunt adevăr contabil.', 'Automatically extracted data is not accounting truth.'),
   'ocr.field.merchant_name': T('Furnizor', 'Supplier'),
@@ -412,8 +412,8 @@ Object.assign(d, {
   'howItWorks': T('Cum funcționează?', 'How it works'),
   'general.error': T('Eroare', 'Error'),
   'general.something_wrong': T('Ceva nu a funcționat corect. Încearcă din nou.', 'Something went wrong. Please try again.'),
-  'general.retry': T('Încearcă din nou', 'Retry'),
-  'status.saved_offline': T('Salvat local — se sincronizează mai târziu.', 'Saved locally — will sync later.'),
+  'general.retry': T('Žncearcă din nou', 'Retry'),
+  'status.saved_offline': T('Salvat local â€” se sincronizează mai târziu.', 'Saved locally â€” will sync later.'),
 
   // --- Settings screen (language picker) ---
   'settings.title': T('Setări', 'Settings'),
@@ -580,7 +580,7 @@ Object.assign(d, {
   'general.confirm_delete': T('Ești sigur?', 'Are you sure?'),
   'general.yes': T('Da', 'Yes'),
   'general.no': T('Nu', 'No'),
-  'general.close': T('Închide', 'Close'),
+  'general.close': T('Žnchide', 'Close'),
   'general.all': T('Toate', 'All'),
 
   // --- Tutorial: Projects ---
@@ -610,7 +610,82 @@ Object.assign(d, {
   'tutorial.project-detail.role_worker': T('Poti vizualiza informatiile proiectului si lista de membri.', 'You can view project information and member list.'),
   'tutorial.project-detail.role_viewer': T('Poti vizualiza informatiile proiectului.', 'You can view project information.'),
   'tutorial.project-detail.important': T('Membrii adaugati primesc automat acces la proiect in aplicatie.', 'Added members automatically get access to the project in the app.'),
-});
+
+  // --- Worker Dashboard ---
+  'worker.greeting': T('Salut', 'Hello'),
+  'worker.select_project': T('Selecteaza un proiect din bara de sus', 'Select a project from the top bar'),
+  'worker.attendance_today': T('Pontajul de astazi', "Today's Attendance"),
+  'worker.arrival': T('Sosire', 'Arrival'),
+  'worker.departure': T('Plecare', 'Departure'),
+  'worker.hours_worked': T('Ore lucrate', 'Hours Worked'),
+  'worker.overtime': T('Ore suplim.', 'Overtime'),
+  'worker.clock_in': T('AM VENIT', 'CLOCK IN'),
+  'worker.clock_out': T('AM PLECAT', 'CLOCK OUT'),
+  'worker.my_tasks': T('Task-urile mele', 'My Tasks'),
+  'worker.view_all': T('Vezi toate', 'View All'),
+  'worker.no_active_tasks': T('Nu ai task-uri active.', 'No active tasks.'),
+  'worker.attendance_title': T('Pontajul Meu', 'My Attendance'),
+  'worker.attendance_subtitle': T('Inregistreaza-ti prezenta la santier', 'Record your presence at the site'),
+  'worker.attendance_gps_note': T('Pontajul tau este inregistrat cu geolocatie. Asigura-te ca esti la santier.', 'Your attendance is recorded with geolocation. Make sure you are at the site.'),
+  'worker.gps_denied': T('Activeaza accesul la locatie in setarile browser-ului.', 'Enable location access in your browser settings.'),
+  'worker.gps_timeout': T('Cererea de locatie a expirat. Incearca din nou.', 'Location request timed out. Try again.'),
+  'worker.gps_unavailable': T('Locația nu este disponibila. Verifica semnalul GPS.', 'Location unavailable. Check GPS signal.'),
+  'worker.gps_error': T('Nu s-a putut obtine locatia. Verifica setarile GPS.', 'Could not get location. Check GPS settings.'),
+  'worker.checkin_success': T('Pontaj de intrare inregistrat!', 'Check-in recorded!'),
+  'worker.checkout_success': T('Pontaj de iesire inregistrat!', 'Check-out recorded!'),
+  'worker.select_project_first': T('Selecteaza un proiect mai intai.', 'Select a project first.'),
+  'worker.error_generic': T('Eroare', 'Error'),
+
+  // --- Worker Task Status ---
+  'task.status.todo': T('De facut', 'To Do'),
+  'task.status.in_progress': T('In lucru', 'In Progress'),
+  'task.status.done': T('Finalizat', 'Done'),
+  'task.status.blocked': T('Blocat', 'Blocked'),
+  'task.status.review': T('In verificare', 'In Review'),
+  'task.start': T('Incepe task-ul', 'Start Task'),
+  'task.send_review': T('Trimite spre verificare', 'Submit for Review'),
+  'task.mark_done': T('Marcheaza finalizat', 'Mark as Done'),
+  'task.update_status': T('Actualizare status:', 'Update Status:'),
+  'task.progress': T('Progres:', 'Progress:'),
+  'task.deadline': T('Termen:', 'Deadline:'),
+  'task.load_error': T('Eroare la incarcarea task-urilor', 'Error loading tasks'),
+  'task.update_success': T('Status actualizat', 'Status updated'),
+  'task.update_error': T('Eroare la actualizare', 'Error updating'),
+  'task.no_tasks': T('Nu exista task-uri atribuite.', 'No assigned tasks.'),
+
+  // --- Worker Navigation ---
+  'nav.my_tasks': T('Task-uri', 'Tasks'),
+  'nav.my_expenses': T('Cheltuieli', 'Expenses'),
+  'nav.my_notifications': T('Notificari', 'Notifications'),
+
+  // --- Worker Notifications ---
+  'notifications.title': T('Notificari', 'Notifications'),
+  'notifications.subtitle': T('Vezi toate evenimentele din sistem.', 'View all system events.'),
+  'notifications.all': T('Toate', 'All'),
+  'notifications.unread': T('Necitite', 'Unread'),
+  'notifications.urgent': T('URGENT', 'URGENT'),
+  'notifications.refresh': T('Reimprospateaza', 'Refresh'),
+  'notifications.mark_all_read': T('Marcheaza tot citit', 'Mark All Read'),
+  'notifications.no_notifications': T('Fara notificari', 'No notifications'),
+  'notifications.loading': T('Se incarca notificarile...', 'Loading notifications...'),
+  'notifications.load_error': T('Eroare la incarcarea notificarilor.', 'Error loading notifications.'),
+
+  // --- Worker Profile ---
+  'profile.title': T('Profil', 'Profile'),
+  'profile.subtitle': T('Informațiile personale și preferințele.', 'Personal information and preferences.'),
+  'profile.full_name': T('Nume complet', 'Full Name'),
+  'profile.email': T('Email', 'Email'),
+  'profile.phone': T('Telefon', 'Phone'),
+  'profile.language': T('Limbă', 'Language'),
+  'profile.ro': T('Română', 'Romanian'),
+  'profile.en': T('English', 'English'),
+  'profile.edit_disabled': T('Editarea profilului nu este disponibilă în această versiune.', 'Profile editing is not available in this version.'),
+  'profile.default_user': T('Utilizator', 'User'),
+  'profile.default_profile': T('Profil utilizator', 'User Profile'),
+
+  // --- Error / Empty States ---
+  'empty.no_data': T('Nu exista date', 'No data available'),
+  'error.generic': T('A aparut o eroare.', 'An error occurred.'),});
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

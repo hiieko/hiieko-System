@@ -1,7 +1,7 @@
 ﻿# Role / Sidebar / Action Visibility Matrix
 
 > Source of truth: comprehensive backend (31 controllers) + frontend (21 routes + Sidebar.tsx + AppShell.tsx) audit.
-> Last Updated: 2026-09-25
+> Last Updated: 2026-09-26
 
 ---
 
@@ -168,7 +168,7 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 | 3 | /avize (Procurement) | Only PROCUREMENT | ADMIN/PROCUREMENT/SITE_MGR/TEAM_LEAD | Low: UI too restrictive |
 | 4 | /cheltuieli approve | FINANCE only | ADMIN/MANAGER/PM/FINANCE | Low: UI too restrictive |
 | 5 | /teams create | ADMIN only | ADMIN/MANAGER/PM/SITE_MGR | Low: UI too restrictive |
-| 6 | /teams add member | ADMIN only | ADMIN/MANAGER/PM/SITE_MGR/TEAM_LEAD | Low: UI too restrictive |
+| 6 | /teams add member | ADMIN only | ADMIN/MANAGER/PM/SITE_MGR/TEAM_LEAD | Low: FIXED in Phase 11 — Sidebar and RoleGuard updated for team_leader |
 | 7 | /santiere | ADMIN/MANAGER/PM | ADMIN/OWNER/MANAGER/PM | Low: OWNER missing from UI |
 | 8 | Pontaj/Ore list | All roles | Backend scoped | Medium: no @Roles (scoped by project) |
 | 9 | FOREMAN daily plans | Not in UI | Create/Edit/Complete | Medium: needs UI update |
@@ -184,3 +184,6 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 - **RoleGuard WIRED**: Client-side route guard blocks direct URL access on 8 restricted pages.
 - **OWNER ADDED**: To management sidebar tier.
 - **FOREMAN ADDED**: To daily-plans create/complete, teams member ops, daily-reports create.
+
+- **TEAM_LEADER SIDEBAR**: Added to Management section (access to /teams).
+- **TEAMS PAGE**: RoleGuard updated to allow team_leader, site_manager, foreman; action buttons role-gated.

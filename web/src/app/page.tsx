@@ -30,8 +30,18 @@ import { ControlTowerDrilldownDrawer, DrilldownData } from '../components/Contro
 import { ControlTowerRedFlagsCard } from '../components/ControlTowerRedFlagsCard';
 import { PageTutorial } from '../components/PageTutorial';
 import { useProject } from '../contexts/ProjectContext';
+import { useAuth } from '../contexts/AuthContext';
+import { WorkerDashboard } from '../components/WorkerDashboard';
 
 export default function ControlTowerDashboardPage() {
+  const { user } = useAuth();
+  const userRole = user?.role?.toLowerCase();
+
+  // For Worker, Team Leader, Technician, Foreman, Site Manager — show Worker Dashboard
+  const isFieldRole = userRole === 'worker' || userRole === 'team_leader' || userRole === 'technician' || userRole === 'foreman' || userRole === 'site_manager';
+  if (isFieldRole) {
+    return <WorkerDashboard />;
+  }
   const [overview, setOverview] = useState<ControlTowerOverviewDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
