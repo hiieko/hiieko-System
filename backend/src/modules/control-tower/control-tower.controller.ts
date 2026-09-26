@@ -13,18 +13,24 @@ import {
 import { ControlTowerService } from './control-tower.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
+import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
+import { RequireProjectAccess } from '../../common/auth/decorators/auth-metadata.decorator';
+import { ProjectScope } from '../../common/auth/decorators/project-scope.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
+import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
+import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
 import { DrillDownParams } from './interfaces/control-tower.interface';
 
 @ApiTags('Control Tower')
 @Controller('api/control-tower')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ProjectAccessGuard)
 @ApiBearerAuth()
 export class ControlTowerController {
   constructor(private readonly controlTowerService: ControlTowerService) {}
 
   @Get('overview')
+  @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({
     summary:
       'Get comprehensive cross-functional Control Tower overview metrics',
@@ -37,9 +43,11 @@ export class ControlTowerController {
     description: 'Filter metrics to a specific project',
   })
   async getOverview(
+    @ProjectScope() scope: ProjectScopeType,
     @CurrentUser() user: AuthenticatedUser,
     @Query('projectId') projectId?: string,
   ) {
+    const where = buildScopedProjectWhere(scope, projectId);
     return this.controlTowerService.getOverview(
       user.organizationId,
       projectId,
@@ -47,6 +55,7 @@ export class ControlTowerController {
   }
 
   @Get('drilldown')
+  @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({
     summary: 'Drill down into specific operational domain details',
     description:
@@ -74,6 +83,7 @@ export class ControlTowerController {
     description: 'Pagination offset (default: 0)',
   })
   async getDrillDown(
+    @ProjectScope() scope: ProjectScopeType,
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: {
       category: string;
@@ -82,6 +92,7 @@ export class ControlTowerController {
       offset?: string;
     },
   ) {
+    const where = buildScopedProjectWhere(scope, query.projectId);
     const params: DrillDownParams = {
       category: query.category,
       projectId: query.projectId,
@@ -95,6 +106,7 @@ export class ControlTowerController {
   }
 
   @Get('red-flags')
+  @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({
     summary: 'Get active cross-functional red flags and rule-based alerts',
     description:
@@ -111,10 +123,12 @@ export class ControlTowerController {
     description: 'Filter by severity: LOW, MEDIUM, HIGH, CRITICAL',
   })
   async getRedFlags(
+    @ProjectScope() scope: ProjectScopeType,
     @CurrentUser() user: AuthenticatedUser,
     @Query('projectId') projectId?: string,
     @Query('severity') severity?: string,
   ) {
+    const where = buildScopedProjectWhere(scope, projectId);
     return this.controlTowerService.getRedFlags(
       user.organizationId,
       projectId,

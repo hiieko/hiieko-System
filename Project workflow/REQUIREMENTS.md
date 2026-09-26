@@ -1,6 +1,8 @@
 # Requirements
 
-Last Updated: 2026-09-18
+Last Updated: 2026-09-24 (R2.1 P6 CLOSURE — Documentation reconciliation)
+
+> **⚠️ HISTORICAL / SUPERSEDED:** Requirements below that reference Supabase auth, Supabase storage, Supabase Edge Functions, or RLS policies were originally written against the Supabase-era architecture. As of 2026-09-23, the backend is NestJS + Prisma + PostgreSQL 18, and Supabase has been fully removed from the runtime. See CURRENT_STATUS.md for the authoritative architecture.
 
 ## Status Legend
 - `DONE` — implemented and verified

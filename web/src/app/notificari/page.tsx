@@ -5,76 +5,55 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useLocale } from '@solar/shared';
+import { normalizeEnvelope } from '../../lib/normalize-envelope';
 
 interface NotifItem {
   id: string;
   title_ro: string;
-  title_en: string;
-  body_ro: string;
-  body_en: string;
+  title_en?: string | null;
+  message_ro: string;
+  message_en?: string | null;
   is_read: boolean;
-  type: string;
   priority: string;
-  action_url?: string;
+  action_url?: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
+}
+
+interface PaginatedNotifs {
+  data: NotifItem[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export default function NotificariPage() {
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
+  const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { locale } = useLocale();
 
-  // Sample notifications for empty state display
-  const sampleNotifications: NotifItem[] = [
-    {
-      id: 'n1',
-      title_ro: 'Raport zilnic neaprobat',
-      title_en: 'Daily report not approved',
-      body_ro: 'Raportul zilnic pentru șantierul AR-001 a fost trimis spre aprobare.',
-      body_en: 'Daily report for site AR-001 has been submitted for approval.',
-      is_read: false,
-      type: 'report',
-      priority: 'normal',
-      action_url: '/rapoarte',
-      created_at: '2026-09-21T17:30:00',
-    },
-    {
-      id: 'n2',
-      title_ro: 'Cheltuială în așteptare',
-      title_en: 'Expense pending approval',
-      body_ro: 'O cheltuială de 125.50 RON a fost trimisă spre aprobare.',
-      body_en: 'An expense of 125.50 RON has been submitted for approval.',
-      is_read: false,
-      type: 'expense',
-      priority: 'normal',
-      action_url: '/aprobare',
-      created_at: '2026-09-21T14:45:00',
-    },
-    {
-      id: 'n3',
-      title_ro: 'Aviz receptionat',
-      title_en: 'Delivery note received',
-      body_ro: 'Avizul AV-2026-0921 pentru materialul MC-001 a fost recepționat.',
-      body_en: 'Delivery note AV-2026-0921 for material MC-001 has been received.',
-      is_read: true,
-      type: 'delivery',
-      priority: 'low',
-      action_url: '/avize',
-      created_at: '2026-09-21T11:20:00',
-    },
-  ];
-
   const loadNotifs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.getNotifications();
-      const data = (response.data || []) as NotifItem[];
-      // Sort by created_at descending
-      data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      setNotifs(data.slice(0, 50));
+      const rawResponse = await apiClient.getNotifications({ page: 1, pageSize: 50 });
+      // The apiClient wraps in { data, error }. The inner data is the paginated envelope:
+      // { data: NotifItem[], total, page, pageSize }
+      const normalized = normalizeEnvelope<PaginatedNotifs>(rawResponse);
+      if (normalized.error) {
+        setError(normalized.error);
+        setNotifs([]);
+      } else if (normalized.data) {
+        // normalized.data is the PaginatedNotifs object; access .data for the array
+        const paginated = normalized.data as unknown as PaginatedNotifs;
+        setNotifs(Array.isArray(paginated.data) ? paginated.data : []);
+        setTotal(paginated.total || 0);
+      } else {
+        setNotifs([]);
+      }
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -173,11 +152,11 @@ export default function NotificariPage() {
                 <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.is_read ? 'bg-slate-200' : 'bg-amber-500'}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-sm font-semibold text-slate-900">{n.title_ro}</h4>
+                    <h4 className="text-sm font-semibold text-slate-900">{locale === 'ro' ? n.title_ro : (n.title_en || n.title_ro)}</h4>
                     {pBadge(n.priority)}
                     {!n.is_read && <span className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0" />}
                   </div>
-                  <p className="text-xs text-slate-600 mt-0.5">{n.body_ro}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">{locale === 'ro' ? n.message_ro : (n.message_en || n.message_ro)}</p>
                   <span className="text-[11px] text-slate-400 mt-1 block">
                     {new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </span>

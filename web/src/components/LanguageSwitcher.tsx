@@ -48,7 +48,7 @@ export function LanguageSwitcher() {
             className={
               'min-w-[40px] px-2 py-1 rounded-md text-xs font-semibold transition-colors ' +
               (active
-                ? 'bg-white text-amber-700 shadow-sm border border-amber-200'
+                ? 'bg-white text-hii-700 shadow-sm border border-hii-200'
                 : 'text-slate-500 hover:text-slate-700 border border-transparent')
             }
           >

@@ -1,5 +1,6 @@
 'use client';
 import { PageTutorial } from '../../components/PageTutorial';
+import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect } from 'react';
 import { Users, MapPin, Euro, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
@@ -8,7 +9,7 @@ import { t } from '@solar/shared';
 interface Stats { employees: number; active_sites: number; expenses_month: number; pending_expenses: number; reports: number; }
 const empty: Stats = { employees:0, active_sites:0, expenses_month:0, pending_expenses:0, reports:0 };
 
-export default function StatisticiPage() {
+function StatisticiPageInner() {
   const [stats, setStats] = useState<Stats>(empty);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,37 +33,8 @@ export default function StatisticiPage() {
           });
         }
       } catch (err) {
-        // Fallback: try to get individual data
-        try {
-          const expenses = await apiClient.getExpenses();
-          const now = new Date();
-          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-          
-          const expensesData = (expenses.data || []) as any[];
-          const monthExpenses = expensesData.filter((e: any) => 
-            (e.created_at || e.createdAt || '') >= monthStart
-          );
-          
-          const totalMonth = monthExpenses.reduce((sum: number, e: any) => sum + (Number(e.amount) || 0), 0);
-          const pendingCount = expensesData.filter((e: any) => {
-            const status = (e.status || '').toLowerCase();
-            return status === 'submitted' || status === 'under_review';
-          }).length;
-          
-          setStats({
-            employees: 0, 
-            active_sites: 0,
-            expenses_month: totalMonth,
-            pending_expenses: pendingCount,
-            reports: 0,
-          });
-        } catch (e) {
-          if (e instanceof ApiError) {
-            setError(e.message);
-          } else {
-            setError(e instanceof Error ? e.message : 'Eroare la incarcarea statisticilor.');
-          }
-        }
+        const message = err instanceof ApiError ? err.message : (err instanceof Error ? err.message : 'Eroare la incarcarea statisticilor.');
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -99,5 +71,13 @@ export default function StatisticiPage() {
         })}
       </div>
     </div>
+  );
+}
+
+export default function StatisticiPage() {
+  return (
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm']}>
+      <StatisticiPageInner />
+    </RoleGuard>
   );
 }

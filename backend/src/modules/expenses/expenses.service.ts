@@ -43,13 +43,19 @@ export class ExpensesService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(projectId?: string, userId?: string, status?: ExpenseStatusEnum) {
+  async findAll(projectId?: string, userId?: string, status?: ExpenseStatusEnum, projectScopeWhere?: Record<string, any>) {
+    const where: any = { ...projectScopeWhere };
+    if (projectId) {
+      where.project_id = projectId;
+    }
+    if (userId) {
+      where.submitted_by_id = userId;
+    }
+    if (status) {
+      where.status = status;
+    }
     return this.prisma.expense.findMany({
-      where: {
-        project_id: projectId || undefined,
-        submitted_by_id: userId || undefined,
-        status: status || undefined,
-      },
+      where,
       include: {
         submitted_by: {
           include: { profile: true },

@@ -32,20 +32,13 @@ export type AttendanceStatus =
 
 export type ReportStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
 
-export type StockMovementType = 
-  | 'delivery'      // Receptie aviz (+)
-  | 'daily_usage'   // Consum raport zilnic (-)
-  | 'transfer_in'   // Transfer intrat (+)
-  | 'transfer_out'  // Transfer iesit (-)
-  | 'adjustment';   // Ajustare inventar (+/-)
-
 export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
   role: UserRole;
   phone_number?: string;
-  assigned_site_ids?: string[];
+  assigned_project_ids?: string[];
   team_id?: string;
   is_active: boolean;
   created_at: string;
@@ -82,24 +75,9 @@ export interface ProjectMember {
   assigned_at: string;
 }
 
-export interface Site {
-  id: string;
-  name: string;
-  code: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  geofence_radius_meters: number;
-  manager_id?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Team {
   id: string;
   name: string;
-  site_id?: string;
   project_id?: string;
   team_leader_id: string;
   member_ids: string[];
@@ -110,8 +88,7 @@ export interface Team {
 export interface TimeLog {
   id: string;
   user_id: string;
-  site_id: string;
-  project_id?: string;
+  project_id: string;
   date: string; // YYYY-MM-DD
   check_in: string; // ISO 8601
   check_out?: string | null; // ISO 8601
@@ -172,7 +149,7 @@ export interface DeliveryNote {
   id: string;
   invoice_or_aviz_number: string;
   supplier: string;
-  site_id: string;
+  project_id: string;
   receiver_user_id: string;
   delivery_date: string;
   photo_url?: string;
@@ -198,7 +175,7 @@ export interface DailyReportMaterialUsage {
 
 export interface DailyReport {
   id: string;
-  site_id: string;
+  project_id: string;
   team_id?: string;
   team_leader_id: string;
   report_date: string; // YYYY-MM-DD
@@ -262,8 +239,15 @@ export interface DailyPlan {
   updated_at: string;
 }
 
-export interface SiteStock {
-  site_id: string;
+export type StockMovementType =
+  | 'delivery'      // Receptie aviz (+)
+  | 'daily_usage'   // Consum raport zilnic (-)
+  | 'transfer_in'   // Transfer intrat (+)
+  | 'transfer_out'  // Transfer iesit (-)
+  | 'adjustment';   // Ajustare inventar (+/-)
+
+export interface ProjectStock {
+  project_id: string;
   material_id: string;
   current_quantity: number;
   last_updated_at: string;
@@ -271,8 +255,7 @@ export interface SiteStock {
 
 export interface StockMovement {
   id: string;
-  site_id: string;
-  project_id?: string;
+  project_id: string;
   material_id: string;
   quantity: number; // positive for additions, negative for consumptions
   movement_type: StockMovementType;
@@ -289,7 +272,6 @@ export interface AuditLog {
   action: string;
   entity_type: string;
   entity_id: string;
-  site_id?: string;
   project_id?: string;
   details?: Record<string, unknown>;
   ip_address?: string;
@@ -323,7 +305,7 @@ export interface AccountApplication {
   phone: string;
   employee_code?: string;
   requested_role: UserRole;
-  requested_site_id?: string;
+  requested_project_id?: string;
   requested_team_id?: string;
   status: AccountApplicationStatus;
   reviewed_by?: string;
@@ -353,8 +335,7 @@ export type DocumentType = 'bon_fiscal' | 'factura' | 'receipt' | 'other';
 export interface Expense {
   id: string;
   user_id: string;
-  site_id: string;
-  project_id?: string;
+  project_id: string;
   category: ExpenseCategory;
   status: ExpenseStatus;
   document_type: DocumentType;
@@ -462,7 +443,7 @@ export type NotificationType =
   | 'expense_correction_requested' | 'reimbursement_pending' | 'reimbursement_completed'
   | 'daily_report_submitted' | 'report_approved' | 'report_rejected'
   | 'aviz_new' | 'aviz_update' | 'stock_received' | 'low_stock'
-  | 'site_assignment' | 'team_assignment' | 'admin_message';
+  | 'team_assignment' | 'admin_message';
 
 export interface Notification {
   id: string;
@@ -495,7 +476,6 @@ export interface NotificationPreference {
 // Warehouse & Stock Expansion (Spec §18–§25)
 // ============================================================================
 
-export type SiteStatus = 'planned' | 'active' | 'paused' | 'completed' | 'cancelled';
 export type StockUnit = 'buc' | 'm' | 'kg' | 'role' | 'set' | 'box' | 'pallet' | 'l' | 'other';
 export type StockReceiptStatus = 'draft' | 'submitted' | 'review' | 'approved' | 'stock_posted';
 
@@ -503,7 +483,6 @@ export interface Warehouse {
   id: string;
   name: string;
   code: string;
-  site_id?: string;
   project_id?: string;
   address?: string;
   manager_id?: string;
@@ -516,8 +495,7 @@ export interface StockReceipt {
   id: string;
   aviz_number: string;
   supplier: string;
-  site_id: string;
-  project_id?: string;
+  project_id: string;
   warehouse_id?: string;
   receiver_user_id: string;
   delivery_date: string;
@@ -548,29 +526,12 @@ export interface StockConsumption {
   id: string;
   daily_report_id: string;
   material_id: string;
-  site_id: string;
-  project_id?: string;
+  project_id: string;
   quantity: number;
   consumed_by_user_id: string;
   is_approved: boolean;
   approved_by?: string;
   approved_at?: string;
-  created_at: string;
-}
-
-// ============================================================================
-// Site & Assignment Expansion (Spec §30–§31)
-// ============================================================================
-
-export interface SiteAssignment {
-  id: string;
-  user_id: string;
-  site_id: string;
-  project_id?: string;
-  role: UserRole;
-  start_date: string;
-  end_date?: string;
-  assigned_by?: string;
   created_at: string;
 }
 
@@ -582,7 +543,6 @@ export interface DashboardStats {
   total_employees: number;
   active_employees: number;
   pending_applications: number;
-  active_sites: number;
   active_projects: number;
   present_today: number;
   absent_today: number;
@@ -599,11 +559,9 @@ export interface DashboardStats {
   open_reports: number;
 }
 
-export interface SiteCostSummary {
-  site_id: string;
-  site_name: string;
-  project_id?: string;
-  project_name?: string;
+export interface ProjectCostSummary {
+  project_id: string;
+  project_name: string;
   labor_hours: number;
   overtime_hours: number;
   employee_expenses: number;

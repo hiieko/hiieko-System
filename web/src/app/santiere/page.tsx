@@ -1,6 +1,7 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
+import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { MapPin, ShieldCheck, Navigation, Sliders, Loader2, RefreshCw } from 'lucide-react';
@@ -17,7 +18,7 @@ interface Project {
   manager_id?: string;
 }
 
-export default function SantierePage() {
+function SantierePageInner() {
   const [sites, setSites] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,5 +113,13 @@ export default function SantierePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SantierePage() {
+  return (
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm']}>
+      <SantierePageInner />
+    </RoleGuard>
   );
 }

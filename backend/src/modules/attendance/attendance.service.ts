@@ -199,15 +199,17 @@ export class AttendanceService {
     });
   }
 
-  async getTodaySummary(projectId?: string) {
+  async getTodaySummary(projectId?: string, projectScopeWhere?: Record<string, any>) {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
+    const where: any = { ...projectScopeWhere, date: today };
+    if (projectId) {
+      where.project_id = projectId;
+    }
+
     const records = await this.prisma.attendanceRecord.findMany({
-      where: {
-        date: today,
-        project_id: projectId ? projectId : undefined,
-      },
+      where,
       include: {
         user: { include: { profile: true } },
         project: true,
@@ -233,8 +235,9 @@ export class AttendanceService {
     userId?: string;
     startDate?: string;
     endDate?: string;
+    projectScopeWhere?: Record<string, any>;
   }) {
-    const where: any = {};
+    const where: any = { ...params?.projectScopeWhere };
 
     if (params?.projectId) {
       where.project_id = params.projectId;

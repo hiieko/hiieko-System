@@ -35,7 +35,14 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        organization_id: true,
+        email: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
         profile: true,
         employee: true,
         project_members: {
@@ -63,7 +70,13 @@ export class UsersService {
     const updated = await this.prisma.user.update({
       where: { id },
       data: { role: newRole },
-      include: { profile: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        is_active: true,
+        profile: true,
+      },
     });
 
     await this.auditService.record({

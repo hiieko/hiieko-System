@@ -38,8 +38,11 @@ export class ProcurementService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAllPurchaseOrders() {
+  async findAllPurchaseOrders(projectId?: string, projectScopeWhere?: Record<string, any>) {
+    const where: any = { ...projectScopeWhere };
+    if (projectId) where.project_id = projectId;
     return this.prisma.purchaseOrder.findMany({
+      where,
       include: {
         supplier: true,
         items: { include: { material: true } },
@@ -80,9 +83,11 @@ export class ProcurementService {
     return po;
   }
 
-  async findAllAvize(projectId?: string) {
+  async findAllAvize(projectId?: string, projectScopeWhere?: Record<string, any>) {
+    const where: any = { ...projectScopeWhere };
+    if (projectId) where.project_id = projectId;
     return this.prisma.aviz.findMany({
-      where: projectId ? { project_id: projectId } : undefined,
+      where,
       include: {
         project: true,
         supplier: true,
@@ -90,6 +95,21 @@ export class ProcurementService {
       },
       orderBy: { delivery_date: 'desc' },
     });
+  }
+
+  async findAvizById(id: string) {
+    const aviz = await this.prisma.aviz.findUnique({
+      where: { id },
+      include: {
+        project: true,
+        supplier: true,
+        items: { include: { material: true } },
+      },
+    });
+    if (!aviz) {
+      throw new NotFoundException(`Aviz with id '${id}' not found`);
+    }
+    return aviz;
   }
 
   /**
@@ -211,3 +231,5 @@ export class ProcurementService {
     });
   }
 }
+
+

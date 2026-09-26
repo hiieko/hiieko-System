@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import {
@@ -144,6 +144,10 @@ export class ControlTowerService {
   ): Promise<DrillDownResult<any>> {
     const limit = params.limit && params.limit > 0 ? params.limit : 20;
     const offset = params.offset && params.offset >= 0 ? params.offset : 0;
+
+    if (!params.category) {
+      throw new BadRequestException('category query parameter is required');
+    }
 
     const overview = await this.getOverview(organizationId, params.projectId);
 

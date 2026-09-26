@@ -38,81 +38,22 @@ interface AttendanceRecord {
 
 export default function PontajPage() {
   const [activeTab, setActiveTab] = useState<'daily' | 'monthly'>('daily');
-  const [selectedMonth, setSelectedMonth] = useState('2026-09');
+  const now = new Date();
+  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
 
-  const daysInMonth = Array.from({ length: 30 }, (_, i) => i + 1);
+  // Calculate actual days in selected month
+  const getDaysInMonth = (ym: string) => {
+    const [y, m] = ym.split('-').map(Number);
+    return new Date(y, m, 0).getDate();
+  };
+  const daysInMonth = Array.from({ length: getDaysInMonth(selectedMonth) }, (_, i) => i + 1);
 
-  // Sample attendance records for empty state display
-  const sampleAttendanceRecords: AttendanceRecord[] = [
-    {
-      id: 'a1',
-      user_id: 'u1',
-      project_id: 'p1',
-      date: '2026-09-21',
-      check_in_time: '2026-09-21T07:30:00',
-      check_out_time: '2026-09-21T16:30:00',
-      check_in_latitude: 46.1539,
-      check_in_longitude: 21.3156,
-      check_in_distance_m: 45,
-      check_out_latitude: 46.1542,
-      check_out_longitude: 21.3160,
-      regular_hours: 8,
-      overtime_minutes: 0,
-      status: 'completed',
-      user: { profile: { full_name: 'Ion Munteanu', role: 'team_leader' } },
-      project: { name: 'Parc Solar Arad', code: 'AR-001' },
-    },
-    {
-      id: 'a2',
-      user_id: 'u2',
-      project_id: 'p1',
-      date: '2026-09-21',
-      check_in_time: '2026-09-21T07:45:00',
-      check_out_time: '2026-09-21T16:45:00',
-      check_in_latitude: 46.1540,
-      check_in_longitude: 21.3157,
-      check_in_distance_m: 62,
-      check_out_latitude: 46.1543,
-      check_out_longitude: 21.3161,
-      regular_hours: 8,
-      overtime_minutes: 60,
-      status: 'completed',
-      user: { profile: { full_name: 'Maria Popescu', role: 'worker' } },
-      project: { name: 'Parc Solar Arad', code: 'AR-001' },
-    },
-    {
-      id: 'a3',
-      user_id: 'u3',
-      project_id: 'p2',
-      date: '2026-09-21',
-      check_in_time: '2026-09-21T08:00:00',
-      check_out_time: '2026-09-21T17:00:00',
-      check_in_latitude: 45.7489,
-      check_in_longitude: 21.2087,
-      check_in_distance_m: 38,
-      check_out_latitude: 45.7492,
-      check_out_longitude: 21.2090,
-      regular_hours: 8,
-      overtime_minutes: 120,
-      status: 'completed',
-      user: { profile: { full_name: 'Andrei Popovici', role: 'worker' } },
-      project: { name: 'Parc Solar Timisoara', code: 'TM-002' },
-    },
-  ];
-
-  // Sample projects for dropdown
-  const sampleProjects = [
-    { id: 'p1', name: 'Parc Solar Arad', code: 'AR-001' },
-    { id: 'p2', name: 'Parc Solar Timisoara', code: 'TM-002' },
-    { id: 'p3', name: 'Parc Solar Cluj', code: 'CJ-003' },
-  ];
-
-  const [selectedProject, setSelectedProject] = useState(sampleProjects[0]);
+  // Load data from API
 
   // Load data from API
   useEffect(() => {
@@ -123,10 +64,6 @@ export default function PontajPage() {
         // Load attendance records
         const attendanceResponse = await apiClient.getAttendanceRecords();
         setAttendanceRecords((attendanceResponse.data || []) as AttendanceRecord[]);
-
-        // Load projects (sites)
-        const projectsResponse = await apiClient.getProjects();
-        setProjects((projectsResponse.data || []) as any[]);
 
         // Load users (workers)
         const usersResponse = await apiClient.getUsers();
@@ -151,9 +88,8 @@ export default function PontajPage() {
     const header = ['Nume', 'Șantier', 'Sosire', 'Plecare', 'Distanță GPS (m)', 'Ore normale', 'Ore suplimentare', 'Stare'];
     const rows = attendanceRecords.map((log) => {
       const user = users.find(u => u.id === log.user_id);
-      const site = projects.find(p => p.id === log.project_id);
+      const siteName = log.project?.name || '';
       const userName = log.user?.profile?.full_name || user?.full_name || user?.profile?.full_name || '';
-      const siteName = log.project?.name || site?.name || '';
       return [
         userName,
         siteName,
@@ -273,7 +209,6 @@ export default function PontajPage() {
                   <>
                     {attendanceRecords.map((log) => {
                     const user = users.find(u => u.id === log.user_id);
-                    const site = projects.find(p => p.id === log.project_id);
                     const userName = log.user?.profile?.full_name || user?.full_name || user?.profile?.full_name || 'Necunoscut';
                     const checkInTime = log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
                     const checkOutTime = log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -292,7 +227,7 @@ export default function PontajPage() {
                           </div>
                         </td>
                         <td className="py-3.5 px-4 text-slate-600 text-xs">
-                          {log.project?.name || site?.name || '—'}
+                          {log.project?.name || '—'}
                         </td>
                         <td className="py-3.5 px-4 font-mono font-semibold text-slate-800">
                           {checkInTime}
@@ -344,7 +279,7 @@ export default function PontajPage() {
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
               <Calendar className="w-4 h-4 text-amber-600" />
-              <span>Matrice Pontaj Lunar — Septembrie 2026</span>
+              <span>Matrice Pontaj Lunar</span>
             </div>
             <div className="text-xs text-slate-500">
               Legendă: <span className="font-bold text-emerald-700">8</span> = 8 ore normale, <span className="font-bold text-amber-700 bg-amber-100 px-1 rounded">+1</span> = ore suplimentare
@@ -373,28 +308,37 @@ export default function PontajPage() {
                       <div className="text-[11px] text-slate-400 capitalize">{worker.role.replace('_', ' ')}</div>
                     </td>
                     {daysInMonth.map((day) => {
-                      // Demo day entry simulation
-                      const isToday = day === 14;
+                      // Compute attendance from real records for this worker on this day
+                      const dayStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
+                      const dayRecord = attendanceRecords.find(
+                        (r) => r.user_id === worker.id && r.date && r.date.startsWith(dayStr)
+                      );
                       const isWeekend = day % 7 === 5 || day % 7 === 6;
                       if (isWeekend) {
                         return <td key={day} className="py-2 px-1 text-slate-300 bg-slate-50/50 border-r border-slate-100">—</td>;
                       }
-                      if (day > 14) {
+                      if (!dayRecord) {
                         return <td key={day} className="py-2 px-1 text-slate-300 border-r border-slate-100">·</td>;
                       }
-                      const extraOt = isToday && worker.id === 'u3' ? '+2' : isToday && worker.id === 'u2' ? '+1' : '';
+                      const hasOt = dayRecord.overtime_minutes > 0;
                       return (
                         <td key={day} className="py-2 px-1 border-r border-slate-100 font-mono">
-                          <span className="text-slate-800 font-semibold">8</span>
-                          {extraOt && <span className="block text-[10px] text-amber-700 font-bold">{extraOt}</span>}
+                          <span className="text-slate-800 font-semibold">{dayRecord.regular_hours || 8}</span>
+                          {hasOt && <span className="block text-[10px] text-amber-700 font-bold">+{Math.round(dayRecord.overtime_minutes / 60)}</span>}
                         </td>
                       );
                     })}
                     <td className="py-3 px-3 bg-amber-50/50 font-bold text-slate-900">
-                      80 ore
+                      {attendanceRecords
+                        .filter(r => r.user_id === worker.id)
+                        .reduce((sum, r) => sum + (r.regular_hours || 0), 0)} ore
                     </td>
                     <td className="py-3 px-3 bg-amber-100/50 font-extrabold text-amber-800 text-sm">
-                      {worker.id === 'u3' ? '2.0 ore' : worker.id === 'u2' ? '1.0 ore' : '0.0 ore'}
+                      {(
+                        attendanceRecords
+                          .filter(r => r.user_id === worker.id)
+                          .reduce((sum, r) => sum + (r.overtime_minutes || 0), 0) / 60
+                      ).toFixed(1)} ore
                     </td>
                   </tr>
                 ))}

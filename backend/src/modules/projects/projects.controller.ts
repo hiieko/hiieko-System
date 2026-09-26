@@ -17,9 +17,14 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all accessible projects' })
+  @ApiOperation({ summary: 'List all accessible projects (membership-scoped)' })
   async findAll(@CurrentUser() user: AuthenticatedUser) {
-    return this.projectsService.findAll(user.organizationId);
+    const memberProjectIds = Object.keys(user.projectRoles || {});
+    return this.projectsService.findAllScoped(
+      user.organizationId!,
+      user.role,
+      memberProjectIds,
+    );
   }
 
   @Get(':id')
@@ -33,7 +38,7 @@ export class ProjectsController {
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM)
   @ApiOperation({ summary: 'Create a new solar construction project' })
   async create(@Body() dto: CreateProjectDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.projectsService.create(dto, user.id);
+    return this.projectsService.create(dto, user.id, user.role);
   }
 
   @Patch(':id')

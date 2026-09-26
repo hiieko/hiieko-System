@@ -28,28 +28,28 @@ When sources conflict, stop and record a decision. Never silently replace the ac
 
 ## 2. Current state: what is already DONE
 
-### Milestone R0 — Repo stabilization
+### Milestone R0 â€” Repo stabilization
 **Status: DONE.**
 
 The current progress record marks R0 complete, including the previously identified issues around dashboard queries, mobile authentication bypass, mobile submission persistence, gitignore hygiene, OCR documentation references, pytest support, SQL header drift and encoding cleanup.
 
-### Milestone R1 — NestJS foundation
+### Milestone R1 â€” NestJS foundation
 **Status: DONE.**
 
-R1.1–R1.5 are complete. This includes:
+R1.1â€“R1.5 are complete. This includes:
 
 - NestJS workspace and root scripts
 - JWT guard and authorization foundation
 - health/profile/auth endpoints
 - NestJS API client seam
-- Supabase compatibility adapters
+- Supabase compatibility adapters (SUPERSEDED — Supabase runtime removed 2026-09-23)
 - standardized error envelope and 401/403/404/422/500 contract tests
 
 ### Current backend/data foundation
 
 Preserve the confirmed runtime:
 
-`Web + Mobile → NestJS :4000 → Prisma 5.22 → PostgreSQL 14 :5433`
+`Web + Mobile â†’ NestJS :4000 â†’ Prisma 5.22 â†’ PostgreSQL 18 :5432`
 
 The local Prisma migration is applied and the PostgreSQL schema is in sync. Do not rebuild this foundation.
 
@@ -84,15 +84,17 @@ The repository now contains a draft/published/completed/cancelled daily-plan wor
 Preserve and extend existing working functionality. Do not recreate it as a new dashboard.
 
 ### OCR
-**Status: IMPLEMENTED IN SOURCE; PRODUCTION ARCHITECTURE STILL OPEN.**
+**Status: FROZEN / DEFERRED — Not a current workstream.**
 
-PaddleOCR path, Romanian normalization, e-Factura support and validation exist. The live storage/proxy architecture still has legacy Supabase/Edge Function elements and must be explicitly decided before final cut-over.
+> **⚠️ FROZEN (2026-09-25):** OCR implementation is frozen. The existing PaddleOCR provider code, FastAPI service (`ocr-service/`), and backend OCR module remain in the repository but are NOT part of the current development workstream. Do not modify OCR code, run OCR regression tests, or work on OCR until explicitly instructed. See `CLINE_MASTER_ROADMAP.md` §17 for the execution order — OCR is the final milestone.
+
+PaddleOCR path, Romanian normalization, e-Factura support and validation exist. The live storage/proxy architecture was previously open but is now deferred until the final OCR milestone.
 
 ---
 
 ## 3. What is CURRENTLY being migrated
 
-### R2 — Core Operations Dual-Write
+### R2 â€” Core Operations Dual-Write
 **Overall status: IN PROGRESS.**
 
 | Order | Package | Current status | Cline action |
@@ -101,7 +103,7 @@ PaddleOCR path, Romanian normalization, e-Factura support and validation exist. 
 | R2.4 | Daily Reports | Not started for dual-write | Add legacy compatibility write + mapping + E2E verification |
 | R2.5 | Notifications / Audit | Not started for dual-write | Map legacy records, verify audit/notification consistency |
 | R2.3 | Stock + Avize | Not started | Inspect current mapping, migrate/verify without duplicating inventory logic |
-| R2.1 | Sites → Projects | Not started; largest schema change | Produce migration plan first; then implement controlled schema/data/API migration |
+| R2.1 | Sites â†’ Projects | Not started; largest schema change | Produce migration plan first; then implement controlled schema/data/API migration |
 
 ### R2 execution rule
 
@@ -113,7 +115,7 @@ R2 exists to prove that the new NestJS/PostgreSQL system can coexist safely with
 
 ## 4. Immediate next actions
 
-### NOW — R2.2 Attendance
+### NOW â€” R2.2 Attendance
 
 Cline must finish and verify:
 
@@ -133,19 +135,19 @@ Cline must finish and verify:
 
 **Exit condition:** all relevant backend tests pass and a real PostgreSQL E2E run proves both primary and legacy states are correct.
 
-### NEXT — R2.4 Daily Reports
+### NEXT â€” R2.4 Daily Reports
 
 Preserve the current daily-report implementation. Add the required legacy compatibility mapping and verify online/offline/idempotent behavior.
 
-### NEXT — R2.5 Notifications / Audit
+### NEXT â€” R2.5 Notifications / Audit
 
 Do not create a new notification framework if one already exists. Reconcile the current NestJS records with the legacy representation, then verify event delivery and audit consistency.
 
-### NEXT — R2.3 Stock + Avize
+### NEXT â€” R2.3 Stock + Avize
 
 Preserve the existing stock invariants, especially **no negative stock**. Add legacy compatibility only where required. Verify delivery-note creation, stock movements and sync behavior.
 
-### NEXT — R2.1 Sites → Projects
+### NEXT â€” R2.1 Sites â†’ Projects
 
 This is the major schema migration. Before editing the schema, create:
 
@@ -170,11 +172,11 @@ Do not implement R2.1 blindly.
 
 ## 5. What comes AFTER R2 but BEFORE final cut-over
 
-The exact repository-specific R3–R6 milestone names are not established in the supplied progress record. Cline must use the repository's own milestone documents if they exist and must not invent milestone IDs.
+The exact repository-specific R3â€“R6 milestone names are not established in the supplied progress record. Cline must use the repository's own milestone documents if they exist and must not invent milestone IDs.
 
 The following are **capability gates**, not invented milestone names.
 
-### Gate A — Authorization and scope alignment
+### Gate A â€” Authorization and scope alignment
 
 The application target state requires role + organization + project/site scope + action permission.
 
@@ -188,7 +190,7 @@ Resolve:
 
 Do not perform a destructive role rewrite while R2 migration is active. First establish a compatibility mapping and tests.
 
-### Gate B — Mobile production readiness
+### Gate B â€” Mobile production readiness
 
 Mobile authentication foundation is done. Before cut-over, finish:
 
@@ -202,30 +204,27 @@ Mobile authentication foundation is done. Before cut-over, finish:
 - durable idempotency
 - device/version diagnostics
 
-### Gate C — Data integrity and migration observability
+### Gate C â€” Data integrity and migration observability
 
 Every migrated domain must have:
 
-- source → target field mapping
+- source â†’ target field mapping
 - duplicate prevention
 - reconciliation checks
 - failure logging
 - rollback/repair procedure
 - audit evidence
 
-### Gate D — OCR and file architecture decision
+### Gate D â€” File storage architecture decision
 
 Before final cut-over, management/technical owner must explicitly choose:
 
 - file/object storage provider
 - private access mechanism
-- OCR request path
-- whether Supabase Edge Function remains temporarily
-- final NestJS-owned path, if required
 
-No silent architecture migration.
+> **\xe2\x9a\xa0\xef\xb8\x8f OCR DEFERRED:** OCR request path and related architecture decisions are deferred to the final OCR milestone. See CLINE_MASTER_ROADMAP.md \xc2\xa717 for the execution order.
 
-### Gate E — Production infrastructure
+### Gate E â€” Production infrastructure
 
 Before final cut-over:
 
@@ -249,7 +248,7 @@ The target-state gap document contains many capabilities that are valid but not 
 ### Postponed business-expansion features
 
 - full Project Manager financial/control layer (budget, forecast, variations, risks/issues beyond existing Control Tower needs)
-- full procurement workflow: material request → quotation → comparison → PO → approval → receipt
+- full procurement workflow: material request â†’ quotation â†’ comparison â†’ PO â†’ approval â†’ receipt
 - advanced stock traceability, tools and asset custody
 - complete HSE module
 - full quality / punch-list module
@@ -258,7 +257,7 @@ The target-state gap document contains many capabilities that are valid but not 
 - client/stakeholder communication workflows
 - full project document management/versioning
 - commissioning / EPC handover / O&M asset management
-- Commercial → Project formal handover workflow
+- Commercial â†’ Project formal handover workflow
 
 These are **target-state backlog items**, not reasons to interrupt R2 migration.
 
@@ -282,7 +281,7 @@ The final cut-over is a migration event, not a normal feature release.
 ### Required pre-cut-over checklist
 
 - [ ] All R2 domain dual-writes verified
-- [ ] R2.1 Sites → Projects migration complete and reconciled
+- [ ] R2.1 Sites â†’ Projects migration complete and reconciled
 - [ ] All critical API contracts stable
 - [ ] Web uses NestJS as primary
 - [ ] Mobile uses NestJS as primary
@@ -291,7 +290,7 @@ The final cut-over is a migration event, not a normal feature release.
 - [ ] No unacceptable data drift
 - [ ] Authentication/session lifecycle validated
 - [ ] Offline sync validated
-- [ ] OCR/file architecture decision resolved
+- [ ] OCR/file architecture decision resolved (DEFERRED - OCR not a current workstream)
 - [ ] Staging migration rehearsal passed
 - [ ] Backup restore tested
 - [ ] Monitoring/alerts configured
@@ -320,7 +319,7 @@ Do not delete legacy infrastructure during this event.
 
 ## 8. What happens AFTER final cut-over
 
-### Post-cut-over Wave 1 — Legacy retirement
+### Post-cut-over Wave 1 â€” Legacy retirement
 
 Only after stable operation:
 
@@ -334,7 +333,7 @@ Only after stable operation:
 
 This is the target **GAP-18** phase.
 
-### Post-cut-over Wave 2 — Complete business capabilities
+### Post-cut-over Wave 2 â€” Complete business capabilities
 
 Then implement the remaining target-state gaps in controlled product waves:
 
@@ -353,7 +352,7 @@ Then implement the remaining target-state gaps in controlled product waves:
 
 Exact ordering may change after cut-over if business priorities change, but dependencies in the target specification must be respected.
 
-### Post-cut-over Wave 3 — Full UAT / production hardening
+### Post-cut-over Wave 3 â€” Full UAT / production hardening
 
 Complete:
 
@@ -361,7 +360,7 @@ Complete:
 - role-by-role UAT
 - real-device mobile tests
 - offline/online transitions
-- OCR/camera flows
+- OCR/camera flows (DEFERRED to final OCR milestone)
 - concurrency/integrity testing
 - security testing
 - performance baselines
@@ -389,13 +388,13 @@ Complete:
 | GAP-12 Commissioning/handover/O&M | **Post-cut-over** |
 | GAP-13 Mobile authentication | **DONE at foundation level; harden session lifecycle before cut-over** |
 | GAP-14 Offline sync/conflict handling | **Partially done; complete reliability before cut-over** |
-| GAP-15 Expense + OCR | **Core exists; complete live/deploy architecture + full workflow before production cut-over** |
+| GAP-15 Expense + OCR | **FROZEN - deferred to final OCR milestone. Core exists; not currently a workstream.** |
 | GAP-16 Notifications | **Existing backend; finish migration/dual-write before cut-over** |
 | GAP-17 Audit/security governance | **Core AuditService exists; expand coverage before cut-over** |
 | GAP-18 Legacy runtime removal | **WAIT until after final cut-over** |
 | GAP-19 Production/deployment/observability | **Must be completed before production cut-over** |
 | GAP-20 Full E2E/UAT | **Must be completed as release gate before production** |
-| GAP-21 Commercial → Project handover | **Post-cut-over unless approved earlier as a business dependency** |
+| GAP-21 Commercial â†’ Project handover | **Post-cut-over unless approved earlier as a business dependency** |
 
 ---
 
@@ -403,8 +402,8 @@ Complete:
 
 - Preserve working functionality.
 - Do not rebuild completed foundations.
-- Do not delete legacy paths while dual-write is active.
-- NestJS/PostgreSQL is the new primary path; Supabase is transitional compatibility until formal cut-over.
+- ~~Do not delete legacy paths while dual-write is active.~~ (SUPERSEDED — dual-write completed, legacy paths removed)
+- ~~NestJS/PostgreSQL is the new primary path; Supabase is transitional compatibility until formal cut-over.~~ (SUPERSEDED — cut-over complete, Supabase removed)
 - Use Prisma migrations for schema changes.
 - Do not create duplicate concepts when an existing model can be extended safely.
 - Enforce authorization server-side.
@@ -413,7 +412,7 @@ Complete:
 - Make mobile sync idempotent.
 - Record before/after audit information for high-risk changes.
 - Do not add mock/fallback runtime data to hide missing functionality.
-- Do not invent R3–R6 milestone definitions when the repository does not document them.
+- Do not invent R3â€“R6 milestone definitions when the repository does not document them.
 - Every completed item must have tests and updated project documentation.
 
 ---
@@ -451,9 +450,9 @@ Maintain:
 >
 > Finish the active R2 migration first. The immediate task is R2.2 Attendance E2E verification, including PostgreSQL primary write, legacy `time_logs` compatibility write, check-out, offline sync, idempotency, geofence/conflict behavior and audit. After R2.2 passes, continue the documented R2 sequence.
 >
-> Do not remove Supabase adapters or legacy paths while dual-write is active. Do not invent undocumented R3–R6 milestone names. Before any large schema migration, create a migration plan and verify the data mapping.
+> ~~Do not remove Supabase adapters or legacy paths while dual-write is active.~~ (SUPERSEDED — Supabase already removed, no adapters remain) Do not invent undocumented R3â€“R6 milestone names. Before any large schema migration, create a migration plan and verify the data mapping.
 >
-> When R2 is complete, move to cut-over readiness: authorization/scope alignment, mobile sync reliability, OCR/file architecture decision, production infrastructure, reconciliation, backup/restore, observability, security tests and full critical-journey verification.
+> When R2 is complete, move to cut-over readiness: authorization/scope alignment, mobile sync reliability, file storage architecture decision, production infrastructure, reconciliation, backup/restore, observability, security tests and full critical-journey verification. OCR is deferred to the final milestone (see CLINE_MASTER_ROADMAP.md section 17).
 >
 > Only after formal final cut-over should legacy runtime removal begin. Only then should the larger post-cut-over business capabilities in the HIIEKO specification be implemented as new product waves.
 >
@@ -461,7 +460,7 @@ Maintain:
 
 ---
 
-## 13. Definition of “on track”
+## 13. Definition of â€œon trackâ€
 
 The project is on track when:
 
@@ -472,3 +471,4 @@ The project is on track when:
 - legacy removal happens only after cut-over;
 - target-state business modules are added after the migration foundation is stable;
 - documentation always reflects what the repository actually does.
+

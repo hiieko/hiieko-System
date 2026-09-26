@@ -97,7 +97,7 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
       const newLog: TimeLog = {
         id: `tl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         user_id: user.id,
-        site_id: selectedProject.id,
+        project_id: selectedProject.id,
         date: now.split('T')[0],
         check_in: now,
         check_in_lat: workerLat,

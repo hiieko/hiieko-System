@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { TaskStatusEnum } from '@prisma/client';
@@ -30,9 +30,13 @@ export class TasksService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(projectId?: string) {
+  async findAll(projectId?: string, projectScopeWhere?: Record<string, any>) {
+    const where: any = { ...projectScopeWhere };
+    if (projectId) {
+      where.project_id = projectId;
+    }
     return this.prisma.task.findMany({
-      where: projectId ? { project_id: projectId } : undefined,
+      where,
       include: {
         work_package: true,
         zone: true,
@@ -132,6 +136,40 @@ export class TasksService {
   }
 
   async assignUser(taskId: string, userId: string, actorId?: string) {
+    // R3.1 INTEGRITY: Verify the task exists and get its project_id
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, project_id: true },
+    });
+    if (!task) {
+      throw new NotFoundException(`Task ${taskId} not found`);
+    }
+
+    // R3.1 INTEGRITY: Verify the user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) {
+      throw new BadRequestException(`User ${userId} not found`);
+    }
+
+    // R3.1 INTEGRITY: Verify the user is a member of the task's project
+    const membership = await this.prisma.projectMember.findUnique({
+      where: {
+        project_id_user_id: {
+          project_id: task.project_id,
+          user_id: userId,
+        },
+      },
+      select: { id: true },
+    });
+    if (!membership) {
+      throw new ForbiddenException(
+        `User ${userId} is not a member of project ${task.project_id} and cannot be assigned to this task`
+      );
+    }
+
     const assignment = await this.prisma.taskAssignment.create({
       data: {
         task_id: taskId,

@@ -103,20 +103,27 @@ export class OcrService {
         }),
       );
 
-      // Update job with results
+      // Determine correct state based on OCR result quality
+      const state = result.reviewRequired || result.lowConfidenceFields.length > 0
+        ? OCRJobStateEnum.REVIEW_REQUIRED
+        : OCRJobStateEnum.COMPLETED;
+
+      // Update job with results and re-fetch to return the updated state
       await this.updateJobResults(
         job.id,
-        OCRJobStateEnum.COMPLETED,
+        state,
         extractions,
         undefined,
         result,
       );
 
+      const updatedJob = await this.findJob(job.id);
+
       this.logger.log(
-        `OCR completed for job ${job.id}: ${result.documentType}, confidence ${result.confidence}`,
+        `OCR completed for job ${job.id}: ${result.documentType}, confidence ${result.confidence}, state ${state}`,
       );
 
-      return { job, result };
+      return { job: updatedJob, result };
     } catch (error) {
       // Update job with error
       await this.updateJobResults(

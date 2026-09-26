@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 interface DNRow {
-  id: string; invoice_or_aviz_number: string; supplier: string; site_id: string;
+  id: string; invoice_or_aviz_number: string; supplier: string; project_id: string;
   receiver_user_id: string; delivery_date: string; photo_url?: string;
   notes?: string; created_at: string;
 }
@@ -26,55 +26,6 @@ export default function AvizePage() {
   const [error, setError] = useState<string | null>(null);
   const { locale } = useLocale();
 
-  // Sample deliveries for empty state display
-  const sampleDeliveries: (DNRow & { items: DNItem[] })[] = [
-    {
-      id: 'd1',
-      invoice_or_aviz_number: 'AV-2026-001',
-      supplier: 'Construct Materials SRL',
-      site_id: 'p1',
-      receiver_user_id: 'u1',
-      delivery_date: '2026-09-21',
-      photo_url: '',
-      notes: 'Livrare betonarmata',
-      created_at: '2026-09-21T09:30:00',
-      items: [
-        { material_id: 'm1', material_code: 'BR-40', material_name: 'Beton armat 40MPa', unit: 'mc', quantity: 5 },
-        { material_id: 'm2', material_code: 'BR-30', material_name: 'Beton armat 30MPa', unit: 'mc', quantity: 3 },
-      ],
-    },
-    {
-      id: 'd2',
-      invoice_or_aviz_number: 'AV-2026-002',
-      supplier: 'Electro Supply SRL',
-      site_id: 'p2',
-      receiver_user_id: 'u2',
-      delivery_date: '2026-09-21',
-      photo_url: '',
-      notes: 'Instalatie electrica',
-      created_at: '2026-09-21T11:15:00',
-      items: [
-        { material_id: 'm3', material_code: 'EL-001', material_name: 'Cablu electrice 2.5mm', unit: 'buc', quantity: 50 },
-        { material_id: 'm4', material_code: 'EL-002', material_name: 'Boxe electrice', unit: 'buc', quantity: 20 },
-      ],
-    },
-    {
-      id: 'd3',
-      invoice_or_aviz_number: 'AV-2026-003',
-      supplier: 'Furnizor General SRL',
-      site_id: 'p3',
-      receiver_user_id: 'u3',
-      delivery_date: '2026-09-21',
-      photo_url: '',
-      notes: 'Materiale generale',
-      created_at: '2026-09-21T13:45:00',
-      items: [
-        { material_id: 'm5', material_code: 'MG-001', material_name: 'Suruburi metal', unit: 'pungi', quantity: 10 },
-        { material_id: 'm6', material_code: 'MG-002', material_name: 'Glonți șuruburi', unit: 'pungi', quantity: 5 },
-      ],
-    },
-  ];
-
   const load = async () => {
     setLoading(true);
     setError(null);
@@ -89,7 +40,7 @@ export default function AvizePage() {
         id: aviz.id,
         invoice_or_aviz_number: aviz.aviz_number || '',
         supplier: aviz.supplier?.name || 'Necunoscut',
-        site_id: aviz.project_id || '',
+        project_id: aviz.project_id || '',
         receiver_user_id: '',
         delivery_date: aviz.delivery_date || aviz.created_at,
         photo_url: '',
@@ -185,7 +136,7 @@ export default function AvizePage() {
                   </span>
                   <span className="flex items-center">
                     <MapPin className="w-3.5 h-3.5 mr-1" />
-                    Destinație: <strong className="ml-1 text-slate-700">{siteNames[dn.site_id] || 'Necunoscut'}</strong>
+                    Destinație: <strong className="ml-1 text-slate-700">{siteNames[dn.project_id] || 'Necunoscut'}</strong>
                   </span>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
