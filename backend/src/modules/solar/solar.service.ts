@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { SolarModuleOrientationEnum, SolarRoofTypeEnum } from '@prisma/client';
+import { SolarModuleOrientationEnum, SolarRoofTypeEnum, SolarSurfaceTypeEnum } from '@prisma/client';
 import { Point2D, polygonContainedInPolygon, polygonIsValid } from '@solar/shared';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { AuditService } from '../../common/audit/audit.service';
@@ -8,6 +8,7 @@ import { CreateObstacleDto } from './dto/create-obstacle.dto';
 import { CreateRoofSectionDto } from './dto/create-roof-section.dto';
 import { CreateSolarDesignDto } from './dto/create-solar-design.dto';
 import { UpdateObstacleDto } from './dto/update-obstacle.dto';
+import { UpdatePlacementsDto } from './dto/update-placements.dto';
 import { UpdateRoofSectionDto } from './dto/update-roof-section.dto';
 import { UpsertLayoutSettingsDto } from './dto/upsert-layout-settings.dto';
 import {
@@ -73,9 +74,11 @@ export class SolarService {
         design_id: designId,
         name: dto.name,
         roof_type: (dto.roofType as SolarRoofTypeEnum) ?? SolarRoofTypeEnum.FLAT,
+        surface_type: (dto.surfaceType as SolarSurfaceTypeEnum) ?? SolarSurfaceTypeEnum.ROOF,
         slope_deg: dto.slopeDeg ?? 0,
         azimuth_deg: dto.azimuthDeg ?? 0,
         roof_material: dto.roofMaterial,
+        thickness_mm: dto.thicknessMm,
         polygon: dto.polygon as never,
         origin: (dto.origin as never) ?? { x: 0, y: 0, z: 0 },
       },
@@ -115,9 +118,11 @@ export class SolarService {
       data: {
         name: dto.name,
         roof_type: (dto.roofType as SolarRoofTypeEnum) ?? roof.roof_type,
+        surface_type: (dto.surfaceType as SolarSurfaceTypeEnum) ?? roof.surface_type,
         slope_deg: dto.slopeDeg ?? roof.slope_deg,
         azimuth_deg: dto.azimuthDeg ?? roof.azimuth_deg,
         roof_material: dto.roofMaterial,
+        thickness_mm: dto.thicknessMm,
         polygon: dto.polygon ? (dto.polygon as never) : undefined,
         origin: dto.origin ? (dto.origin as never) : undefined,
       },
@@ -276,6 +281,58 @@ export class SolarService {
     });
 
     return toLayoutSettingsModel(settings);
+  }
+
+  async replacePlacements(designId: string, dto: UpdatePlacementsDto, user: AuthenticatedUser) {
+    await this.ensureDesign(designId);
+
+    // Guard against cross-design injection: every placement must target a
+    // roof section that belongs to this design.
+    const roofs = await this.prisma.solarRoofSection.findMany({
+      where: { design_id: designId },
+      select: { id: true },
+    });
+    const validRoofIds = new Set(roofs.map((r) => r.id));
+    for (const p of dto.placements) {
+      if (!validRoofIds.has(p.roofSectionId)) {
+        throw new BadRequestException(
+          `Placement ${p.id} references an unknown roof section ${p.roofSectionId}`,
+        );
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.solarModulePlacement.deleteMany({ where: { design_id: designId } });
+      if (dto.placements.length > 0) {
+        await tx.solarModulePlacement.createMany({
+          data: dto.placements.map((p) => ({
+            id: p.id,
+            design_id: designId,
+            roof_section_id: p.roofSectionId,
+            module_spec_id: p.moduleSpecId ?? null,
+            row: p.row,
+            column: p.column,
+            local_x: p.localX,
+            local_y: p.localY,
+            local_z: p.localZ,
+            rotation_deg: p.rotationDeg,
+            width_mm: p.widthMm,
+            height_mm: p.heightMm,
+          })),
+        });
+      }
+    });
+
+    await this.audit.record({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      action: 'SOLAR_PLACEMENTS_REPLACED',
+      entity: 'SolarDesign',
+      entityId: designId,
+      after: { count: dto.placements.length },
+    });
+
+    return { id: designId, count: dto.placements.length };
   }
 
   async calculateLayout(designId: string): Promise<SolarCalcResult> {

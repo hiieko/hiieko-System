@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -19,6 +20,10 @@ export class CreateRoofSectionDto {
   roofType?: string;
 
   @IsOptional()
+  @IsIn(['ROOF', 'GROUND', 'GRASS', 'GRAVEL', 'ROCK', 'ASPHALT', 'CONCRETE', 'PARKING', 'CARPORT', 'CUSTOM'])
+  surfaceType?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(90)
@@ -34,13 +39,18 @@ export class CreateRoofSectionDto {
   @IsString()
   roofMaterial?: string;
 
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  thicknessMm?: number;
+
   /** Roof-local 2D outline [{ x, y }] in millimetres. */
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => Point2DDto)
   polygon!: Point2DDto[];
 
-  /** World anchor { x, y, z } in millimetres. */
+  /** World anchor { x, y, z } in millimetres (z = elevation). */
   @IsOptional()
   @ValidateNested()
   @Type(() => Point3DDto)

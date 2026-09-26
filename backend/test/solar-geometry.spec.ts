@@ -170,3 +170,52 @@ describe('Solar geometry (M2 — clearance/containment/validation)', () => {
     ).toBeCloseTo(0, 5);
   });
 });
+
+describe('Solar surface transform (Phase E/G — elevation/slope/azimuth)', () => {
+  // A module placed in the parent surface's local frame (origin at local origin).
+  const moduleLocal = { x: 4000, y: 2000, z: 0 };
+
+  it('maps surface elevation to world Z', () => {
+    const world = roofLocalToWorld(
+      { origin: { x: 0, y: 0, z: 120500 }, slopeDeg: 0, azimuthDeg: 0 },
+      moduleLocal,
+    );
+    expect(world.z).toBeCloseTo(120500, 6);
+  });
+
+  it('maps surface slope to a down-slope Z drop (module follows surface)', () => {
+    const flat = roofLocalToWorld(
+      { origin: { x: 0, y: 0, z: 0 }, slopeDeg: 0, azimuthDeg: 0 },
+      moduleLocal,
+    );
+    const pitched = roofLocalToWorld(
+      { origin: { x: 0, y: 0, z: 0 }, slopeDeg: 30, azimuthDeg: 0 },
+      moduleLocal,
+    );
+    // Down-slope offset = localY * sin(slope); sin(30°) = 0.5.
+    expect(pitched.z).toBeCloseTo(flat.z - 1000, 4);
+    // X is unchanged for azimuth 0 (rotation only about the down-slope axis).
+    expect(pitched.x).toBeCloseTo(flat.x, 6);
+  });
+
+  it('maps surface azimuth to a rotated world XY', () => {
+    const south = roofLocalToWorld(
+      { origin: { x: 0, y: 0, z: 0 }, slopeDeg: 0, azimuthDeg: 180 },
+      moduleLocal,
+    );
+    expect(south.x).toBeCloseTo(-4000, 6);
+    expect(south.y).toBeCloseTo(-2000, 6);
+  });
+
+  it('translates the whole module rigidly with elevation (shared transform)', () => {
+    const a = roofLocalToWorld(
+      { origin: { x: 0, y: 0, z: 1000 }, slopeDeg: 20, azimuthDeg: 45 },
+      moduleLocal,
+    );
+    const b = roofLocalToWorld(
+      { origin: { x: 0, y: 0, z: 6000 }, slopeDeg: 20, azimuthDeg: 45 },
+      moduleLocal,
+    );
+    expect(b.z - a.z).toBeCloseTo(5000, 6);
+  });
+});

@@ -389,4 +389,60 @@ describe('SolarService', () => {
       );
     });
   });
+
+  describe('SolarService (Phase H — replace placements)', () => {
+    const dtoPlacement = {
+      id: 'p-1',
+      roofSectionId: 'roof-1',
+      moduleSpecId: 'spec-1',
+      row: 0,
+      column: 0,
+      localX: 100,
+      localY: 200,
+      localZ: 0,
+      rotationDeg: 0,
+      widthMm: 1134,
+      heightMm: 1722,
+    };
+
+    beforeEach(() => {
+      prisma.solarDesign.findUnique.mockResolvedValue(design);
+      prisma.solarRoofSection.findMany.mockResolvedValue([{ id: 'roof-1' }]);
+    });
+
+    it('replaces all placements in a transaction', async () => {
+      const result = await service.replacePlacements(
+        'design-1',
+        { placements: [dtoPlacement] } as any,
+        { id: 'u1', organizationId: 'o1' } as any,
+      );
+      expect(txMock.solarModulePlacement.deleteMany).toHaveBeenCalledWith({
+        where: { design_id: 'design-1' },
+      });
+      expect(txMock.solarModulePlacement.createMany).toHaveBeenCalledWith({
+        data: [
+          expect.objectContaining({
+            id: 'p-1',
+            design_id: 'design-1',
+            roof_section_id: 'roof-1',
+            local_x: 100,
+            local_y: 200,
+            rotation_deg: 0,
+          }),
+        ],
+      });
+      expect(result).toEqual({ id: 'design-1', count: 1 });
+    });
+
+    it('rejects a placement referencing an unknown roof section', async () => {
+      prisma.solarRoofSection.findMany.mockResolvedValue([{ id: 'other-roof' }]);
+      await expect(
+        service.replacePlacements(
+          'design-1',
+          { placements: [dtoPlacement] } as any,
+          { id: 'u1', organizationId: 'o1' } as any,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
 });

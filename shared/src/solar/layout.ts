@@ -97,6 +97,7 @@ export function computeLayout(
       if (blocked) continue;
 
       placements.push({
+        id: `${roofSection.id}-${r}-${c}`,
         roofSectionId: roofSection.id,
         moduleSpecId: moduleSpec.id,
         row: r,

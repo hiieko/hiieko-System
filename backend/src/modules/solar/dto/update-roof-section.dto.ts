@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -20,6 +21,10 @@ export class UpdateRoofSectionDto {
   roofType?: string;
 
   @IsOptional()
+  @IsIn(['ROOF', 'GROUND', 'GRASS', 'GRAVEL', 'ROCK', 'ASPHALT', 'CONCRETE', 'PARKING', 'CARPORT', 'CUSTOM'])
+  surfaceType?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(90)
@@ -34,6 +39,11 @@ export class UpdateRoofSectionDto {
   @IsOptional()
   @IsString()
   roofMaterial?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  thicknessMm?: number;
 
   @IsOptional()
   @IsArray()

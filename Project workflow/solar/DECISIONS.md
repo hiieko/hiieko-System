@@ -1,6 +1,6 @@
 # Solar Architecture Decisions
 
-Last Updated: 2026-09-25
+Last Updated: 2026-09-26
 
 Architecture Decision Records (ADR) for the HIIEKO Solar Configurator. Each entry documents what was actually decided and its current status.
 
@@ -134,6 +134,69 @@ Status values:
 
 - **Decision**: All Solar documentation lives in `Project workflow/solar/` only.
 - **Reason**: Centralize and isolate Solar docs without scattering Markdown across the repo.
-- **Consequence**: `README.md`, `ARCHITECTURE.md`, `DOMAIN-MODEL.md`, `API.md`, `M1-PROGRESS.md`, `ROADMAP.md`, `DECISIONS.md`, `TESTING.md`.
+- **Consequence**: `README.md`, `ARCHITECTURE.md`, `DOMAIN-MODEL.md`, `API.md`, `SITE-OBJECT.md`, `PHASES.md`, `ROADMAP.md`, `DECISIONS.md`, `TESTING.md`, `M1-PROGRESS.md`.
 - **Status**: ACCEPTED.
+
+## D-19 — Keep SVG; do not introduce Konva/Fabric/Pixi
+
+- **Decision**: The interactive 2D editor remains SVG-based (single `<svg>` canvas with pointer events).
+- **Reason**: The existing geometry/state architecture supports pointer interaction without another rendering framework; SVG keeps the dependency surface small and the plan a pure projection of the model.
+- **Consequence**: `RoofPlan2D` handles pointer→local conversion (`screenToLocal`) and hit-testing; no canvas library.
+- **Status**: ACCEPTED.
+
+## D-20 — Viewport state is separate from domain geometry
+
+- **Decision**: `zoom/panX/panY`, grid, tool, and measurement are **visual/interaction state**, never written into `ModulePlacement`/`SiteObject` coordinates.
+- **Reason**: Zooming or panning must not mutate engineering mm; screen pixels are a projection.
+- **Consequence**: A single `Viewport` transform (`screen = local·zoom + pan`) in `shared/src/solar/viewport.ts`; domain coordinates are only changed by explicit edit operations.
+- **Status**: ACCEPTED.
+
+## D-21 — One history entry per logical operation
+
+- **Decision**: Dragging is one committed change (`pointerdown → many moves → pointerup → one commit`); undo/redo never records per-pointer-move states.
+- **Reason**: History should reflect meaningful editor operations, not transient motion.
+- **Consequence**: `createHistory<T>` (pure) + `useHistory` (React) — `set()` is called once per move/rotate/duplicate/delete/align.
+- **Status**: ACCEPTED.
+
+## D-22 — Debounced bulk persistence
+
+- **Decision**: After an edit operation completes, persist the full placements array via a single `PUT /designs/:id/placements`, debounced (~800 ms) — not per pointer event.
+- **Reason**: Avoid a network request per move while keeping the backend the durable source of truth.
+- **Consequence**: A single `replacePlacements()` endpoint (transactional `deleteMany`+`createMany`); loads/resets skip saving via a reference guard.
+- **Status**: ACCEPTED.
+
+## D-23 — Surface is an additive generalization of Roof
+
+- **Decision**: Keep `SolarRoofSection`/`roof_type` and add `surface_type` (+ `thickness_mm`) rather than a new surface table or renaming `roof_type`.
+- **Reason**: Existing designs must load unchanged; `roof_type` (shape) and `surface_type` (category/material) are complementary axes.
+- **Consequence**: Additive migration `20260926120000_add_surface_type`; `SurfaceModel` is an alias of `RoofSectionModel`; `surface_type` defaults to `ROOF`.
+- **Status**: ACCEPTED.
+
+## D-24 — SiteObject is a type-level generalization first (no destructive migration)
+
+- **Decision**: `SiteObject`/`Pose`/`SiteObjectType` are shared-type + editor-level generalizations; `SolarModulePlacement` is the first concrete object and is **not** renamed/dropped. No new table yet.
+- **Reason**: The existing `solar_module_placements` already stores the generalized pose; adding a table prematurely would create fake implementations and dual-write complexity.
+- **Consequence**: `toSiteObject()` is a non-destructive view; a dedicated `solar_site_objects` table is deferred to the first non-module object (additive, with a compatibility layer).
+- **Status**: ACCEPTED.
+
+## D-25 — Generic editor operations over a new CRUD framework
+
+- **Decision**: Editor ops (`move/rotate/snap/duplicate/delete/align/distribute`) are generic over `T extends Placeable` rather than building object-type-specific handlers.
+- **Reason**: Future structures/inverters/cameras reuse the exact same interaction path without a competing editor.
+- **Consequence**: `shared/src/solar/editor.ts` is generic; `ModulePlacement` and `SiteObject` both satisfy `Placeable`.
+- **Status**: ACCEPTED.
+
+## D-26 — Single world transform (no competing systems)
+
+- **Decision**: All local→world resolution goes through `roofLocalToWorld` via `surfaceToPlane`/`objectWorldPosition`/`moduleWorldCorners`/`siteObjectWorldOrigin`.
+- **Reason**: One source of truth for coordinate math prevents divergence between 2D, 3D, and future schematic/BOM views.
+- **Consequence**: `shared/src/solar/site-object.ts` centralizes the `Surface → SiteObject → local pose → world pose` chain.
+- **Status**: ACCEPTED.
+
+## D-27 — Source vs. derived data separation
+
+- **Decision**: Source data (surfaces, placements/objects) is stored/edited; derived data (module count, power, BOM, mounting, areas, distances) is recomputed by pure engines.
+- **Reason**: Avoid duplicating derived state that can drift from source after manual edits.
+- **Consequence**: BOM/mounting currently recompute only on `calculateLayout`; a future phase recomputes them client-side after each edit.
+- **Status**: ACCEPTED (partial — client-side recompute after edits not yet built).
 

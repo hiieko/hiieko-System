@@ -5,3 +5,7 @@ export * from './engine-versions';
 export * from './layout';
 export * from './mounting';
 export * from './bom';
+export * from './viewport';
+export * from './editor';
+export * from './history';
+export * from './site-object';

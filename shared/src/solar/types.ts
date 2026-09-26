@@ -36,19 +36,43 @@ export interface RoofPlane {
 
 export type SolarRoofType = 'FLAT' | 'PITCHED' | 'GABLE' | 'HIP' | 'COMPLEX';
 
+/**
+ * Generalized surface category. A surface is the foundation of the site model:
+ * roof, ground, grass, gravel, rock, asphalt, concrete, parking, carport, custom.
+ */
+export type SolarSurfaceType =
+  | 'ROOF'
+  | 'GROUND'
+  | 'GRASS'
+  | 'GRAVEL'
+  | 'ROCK'
+  | 'ASPHALT'
+  | 'CONCRETE'
+  | 'PARKING'
+  | 'CARPORT'
+  | 'CUSTOM';
+
 export interface RoofSectionModel {
   id: string;
   designId: string;
   name: string;
+  /** Roof shape (FLAT/PITCHED/...); retained for backward compatibility. */
   roofType: SolarRoofType;
+  /** Surface category/material (defaults to ROOF). */
+  surfaceType: SolarSurfaceType;
   slopeDeg: number;
   azimuthDeg: number;
   roofMaterial?: string;
+  /** Surface thickness (mm) where applicable. */
+  thicknessMm?: number;
   /** Roof-local 2D outline, mm, closed. */
   polygon: Polygon2D;
-  /** World anchor, mm (defines roof-local <-> world transform). */
+  /** World anchor, mm (elevation = origin.z; defines roof-local <-> world transform). */
   origin: Point3D;
 }
+
+/** `SurfaceModel` is the generalized name for `RoofSectionModel`. */
+export type SurfaceModel = RoofSectionModel;
 
 export interface ObstacleModel {
   id: string;
@@ -88,6 +112,8 @@ export interface LayoutSettingsModel {
 }
 
 export interface ModulePlacement {
+  /** Stable identifier: DB UUID when persisted; deterministic when computed; fresh when duplicated. */
+  id: string;
   roofSectionId: string;
   moduleSpecId?: string;
   row: number;
@@ -104,6 +130,42 @@ export interface ModulePlacement {
   widthMm: number;
   /** In-plane Y extent (mm). */
   heightMm: number;
+}
+
+/**
+ * Extensible object-type strategy. PV_MODULE is the first concrete type;
+ * future site objects (structures, inverters, cameras, …) reuse the same
+ * pose + surface attachment model without a new coordinate system.
+ */
+export type SiteObjectType =
+  | 'PV_MODULE'
+  | 'STRUCTURE'
+  | 'INVERTER'
+  | 'COMBINER'
+  | 'EQUIPMENT'
+  | 'CAMERA'
+  | 'OBSTACLE'
+  | 'CABLE_NODE';
+
+/** Local placement of an object in its parent surface's frame (mm, degrees). */
+export interface Pose {
+  localX: number;
+  localY: number;
+  localZ: number;
+  rotationDeg: number;
+}
+
+/**
+ * Generalized placed site object: an object attached to a surface at a local
+ * pose. `ModulePlacement` is the first concrete implementation (objectType
+ * 'PV_MODULE') carrying extra module data (widthMm/heightMm/row/column/
+ * moduleSpecId); its `roofSectionId` is the generalized `surfaceId`.
+ */
+export interface SiteObject extends Pose {
+  id: string;
+  designId: string;
+  surfaceId: string;
+  objectType: SiteObjectType;
 }
 
 export interface RailRun {
