@@ -15,8 +15,8 @@ export interface UseApiQueryResult<T> {
 }
 
 /**
- * React hook for API queries with loading/error states
- * Similar to useSupabaseQuery but uses the typed API client
+ * React hook for API queries with loading/error states.
+ * Uses the typed NestJS API client.
  */
 export function useApiQuery<T>(
   queryFn: () => Promise<{ data: T }>,

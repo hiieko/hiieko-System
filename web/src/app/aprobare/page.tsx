@@ -1,6 +1,7 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
+import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Euro, User, MapPin, Calendar,
@@ -9,27 +10,11 @@ import {
 } from 'lucide-react';
 import { Expense } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
+import { formatDecimal, enumLabel, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_COLORS, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/formatters';
 
-const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  draft: { label: 'Ciorna', color: 'text-slate-600', bg: 'bg-slate-100' },
-  submitted: { label: 'Trimisa', color: 'text-blue-700', bg: 'bg-blue-100' },
-  under_review: { label: 'In Analiza', color: 'text-amber-700', bg: 'bg-amber-100' },
-  approved: { label: 'Aprobata', color: 'text-emerald-700', bg: 'bg-emerald-100' },
-  rejected: { label: 'Respinsa', color: 'text-rose-700', bg: 'bg-rose-100' },
-  needs_correction: { label: 'Corectii', color: 'text-orange-700', bg: 'bg-orange-100' },
-  reimbursement_pending: { label: 'Rambursare', color: 'text-purple-700', bg: 'bg-purple-100' },
-  reimbursed: { label: 'Rambursata', color: 'text-green-700', bg: 'bg-green-100' },
-  cancelled: { label: 'Anulata', color: 'text-slate-500', bg: 'bg-slate-100' },
-};
+// STATUS_MAP and CAT_MAP replaced by shared formatters (EXPENSE_STATUS_LABELS, EXPENSE_CATEGORY_LABELS)
 
-const CAT_MAP: Record<string, string> = {
-  fuel: 'Combustibil', accommodation: 'Cazare', food: 'Mancare',
-  transport: 'Transport', parking: 'Parcare', tolls: 'Taxe Drum',
-  materials: 'Materiale', tools: 'Unelte', equipment: 'Echipamente',
-  phone_internet: 'Telefon/Internet', other: 'Altele',
-};
-
-export default function AprobarePage() {
+function AprobarePageInner() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [filter, setFilter] = useState('pending');
   const [search, setSearch] = useState('');
@@ -38,55 +23,6 @@ export default function AprobarePage() {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Sample expenses for empty state display
-  const sampleExpenses: Expense[] = [
-    {
-      id: 'exp1',
-      user_id: 'u1',
-      site_id: 's1',
-      category: 'fuel',
-      status: 'submitted',
-      document_type: 'receipt',
-      payment_method: 'personal',
-      amount: 125.50,
-      reimbursable_amount: 125.50,
-      currency: 'RON',
-      description: 'Combustibil pentru generator',
-      created_at: '2026-09-21T09:15:00',
-      updated_at: '2026-09-21T09:15:00',
-    },
-    {
-      id: 'exp2',
-      user_id: 'u2',
-      site_id: 's2',
-      category: 'materials',
-      status: 'submitted',
-      document_type: 'receipt',
-      payment_method: 'personal',
-      amount: 450.00,
-      reimbursable_amount: 450.00,
-      currency: 'RON',
-      description: 'Materiale de_consum - șantier Arad',
-      created_at: '2026-09-21T14:30:00',
-      updated_at: '2026-09-21T14:30:00',
-    },
-    {
-      id: 'exp3',
-      user_id: 'u3',
-      site_id: 's3',
-      category: 'equipment',
-      status: 'submitted',
-      document_type: 'receipt',
-      payment_method: 'company_card',
-      amount: 180.75,
-      reimbursable_amount: 180.75,
-      currency: 'RON',
-      description: 'Reparație echipament',
-      created_at: '2026-09-21T16:45:00',
-      updated_at: '2026-09-21T16:45:00',
-    },
-  ];
 
   const loadExpenses = useCallback(async () => {
     setLoading(true);
@@ -98,14 +34,15 @@ export default function AprobarePage() {
       let data = (response.data || []) as Expense[];
       
       // Filter by status
+      // Backend returns UPPERCASE status values (SUBMITTED, APPROVED, etc.)
       if (filter === 'pending') {
         data = data.filter((e: any) => {
-          const status = (e.status || '').toLowerCase();
-          return status === 'submitted' || status === 'under_review';
+          const status = (e.status || '').toUpperCase();
+          return status === 'SUBMITTED' || status === 'UNDER_REVIEW';
         });
       } else if (filter !== 'all') {
         data = data.filter((e: any) => {
-          return (e.status || '').toLowerCase() === filter.toLowerCase();
+          return (e.status || '').toUpperCase() === filter.toUpperCase();
         });
       }
       
@@ -130,8 +67,9 @@ export default function AprobarePage() {
   useEffect(() => { loadExpenses(); }, [loadExpenses]);
 
   const filtered = expenses.filter(e => {
-    if (filter === 'pending' && e.status !== 'submitted' && e.status !== 'under_review') return false;
-    if (filter !== 'all' && filter !== 'pending' && e.status !== filter) return false;
+    const status = (e.status || '').toUpperCase();
+    if (filter === 'pending' && status !== 'SUBMITTED' && status !== 'UNDER_REVIEW') return false;
+    if (filter !== 'all' && filter !== 'pending' && status !== filter.toUpperCase()) return false;
     if (search) {
       const q = search.toLowerCase();
       return e.description?.toLowerCase().includes(q) || e.category?.toLowerCase().includes(q);
@@ -139,18 +77,20 @@ export default function AprobarePage() {
     return true;
   });
 
-  const pending = expenses.filter(e => e.status === 'submitted' || e.status === 'under_review').length;
+  const pending = expenses.filter(e => {
+    const status = (e.status || '').toUpperCase();
+    return status === 'SUBMITTED' || status === 'UNDER_REVIEW';
+  }).length;
 
-  const act = async (id: string, action: 'approved' | 'rejected' | 'correction_requested', st: Expense['status']) => {
-    setLoading(true);
+  const act = async (id: string, action: 'APPROVED' | 'REJECTED') => {
+    setActing(id);
+    setError(null);
     try {
-      // Use apiClient.approveExpense for approval/rejection
-      const isApproved = action === 'approved';
+      // Backend expects { status: 'APPROVED' | 'REJECTED', notes?: string }
       await apiClient.approveExpense(id, {
-        approved: isApproved,
+        status: action,
         notes: note || undefined,
       });
-      // Refresh the list
       await loadExpenses();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -159,9 +99,9 @@ export default function AprobarePage() {
         setError(err instanceof Error ? err.message : 'Eroare la actualizarea cheltuielii.');
       }
     } finally {
-      setSelId(null); 
-      setNote(''); 
-      setLoading(false);
+      setSelId(null);
+      setNote('');
+      setActing(null);
     }
   };
 
@@ -212,8 +152,8 @@ export default function AprobarePage() {
             <p className="text-sm text-slate-500 mt-1">Nu exista cheltuieli de analizat.</p>
           </div>
         ) : filtered.map(exp => {
-          const st = STATUS_MAP[exp.status] || STATUS_MAP.draft;
-          const cat = CAT_MAP[exp.category] || exp.category;
+          const stLabel = enumLabel(exp.status, EXPENSE_STATUS_LABELS);
+          const catLabel = enumLabel(exp.category, EXPENSE_CATEGORY_LABELS);
           return (
             <div key={exp.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -223,18 +163,18 @@ export default function AprobarePage() {
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-bold text-base text-slate-900">{cat}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${st.bg} ${st.color}`}>
-                        {st.label}
+                      <h3 className="font-bold text-base text-slate-900">{catLabel}</h3>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${EXPENSE_STATUS_COLORS[exp.status?.toUpperCase()] || 'bg-slate-100 text-slate-700'}`}>
+                        {stLabel}
                       </span>
                     </div>
                     <p className="text-sm text-slate-600 mt-1">{exp.description || 'Fara descriere'}</p>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
                       <span className="flex items-center">
-                        <User className="w-3.5 h-3.5 mr-1 text-slate-400" />{exp.user_id}
+                        <User className="w-3.5 h-3.5 mr-1 text-slate-400" />{((exp as any).submitted_by?.profile?.full_name) || exp.user_id}
                       </span>
                       <span className="flex items-center">
-                        <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" />{exp.site_id}
+                        <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" />{((exp as any).project?.name) || exp.project_id}
                       </span>
                       <span className="flex items-center">
                         <Calendar className="w-3.5 h-3.5 mr-1 text-slate-400" />
@@ -246,10 +186,10 @@ export default function AprobarePage() {
                 <div className="flex items-center space-x-3 shrink-0">
                   <div className="text-right">
                     <div className="text-lg font-extrabold text-slate-900">
-                      {exp.amount.toFixed(2)} <span className="text-xs font-normal text-slate-500">{exp.currency}</span>
+                      {formatDecimal(exp.amount)} <span className="text-xs font-normal text-slate-500">{exp.currency}</span>
                     </div>
                     <div className="text-xs text-slate-400">
-                      {exp.payment_method === 'personal' ? 'Rambursabil' : 'Card/Firma'}
+                      {enumLabel(exp.payment_method, PAYMENT_METHOD_LABELS)}
                     </div>
                   </div>
                   <div className="flex items-center space-x-1.5">
@@ -257,11 +197,11 @@ export default function AprobarePage() {
                       className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button type="button" onClick={() => act(exp.id, 'approved', 'approved')} disabled={loading}
+                    <button type="button" onClick={() => act(exp.id, 'APPROVED')} disabled={loading}
                       className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg disabled:opacity-50">
                       <CheckCircle2 className="w-5 h-5" />
                     </button>
-                    <button type="button" onClick={() => act(exp.id, 'rejected', 'rejected')} disabled={loading}
+                    <button type="button" onClick={() => act(exp.id, 'REJECTED')} disabled={loading}
                       className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg disabled:opacity-50">
                       <XCircle className="w-5 h-5" />
                     </button>
@@ -280,15 +220,12 @@ export default function AprobarePage() {
                       className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 resize-none" />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button type="button" onClick={() => act(exp.id, 'approved', 'approved')} disabled={loading}
+                    <button type="button" onClick={() => act(exp.id, 'APPROVED')} disabled={loading}
                       className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg disabled:opacity-50">
                       <CheckCircle2 className="w-4 h-4 mr-1.5" />Aproba
                     </button>
-                    <button type="button" onClick={() => act(exp.id, 'correction_requested', 'needs_correction')} disabled={loading}
-                      className="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-xs rounded-lg disabled:opacity-50">
-                      <AlertCircle className="w-4 h-4 mr-1.5" />Corectii
-                    </button>
-                    <button type="button" onClick={() => act(exp.id, 'rejected', 'rejected')} disabled={loading}
+                    
+                    <button type="button" onClick={() => act(exp.id, 'REJECTED')} disabled={loading}
                       className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg disabled:opacity-50">
                       <XCircle className="w-4 h-4 mr-1.5" />Respinge
                     </button>
@@ -300,6 +237,14 @@ export default function AprobarePage() {
         })}
       </div>
     </div>
+  );
+}
+
+export default function AprobarePage() {
+  return (
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm']}>
+      <AprobarePageInner />
+    </RoleGuard>
   );
 }
 

@@ -24,9 +24,13 @@ export class IssuesService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(projectId?: string) {
+  async findAll(projectId?: string, projectScopeWhere?: Record<string, any>) {
+    const where: any = { ...projectScopeWhere };
+    if (projectId) {
+      where.project_id = projectId;
+    }
     return this.prisma.issue.findMany({
-      where: projectId ? { project_id: projectId } : undefined,
+      where,
       include: {
         ncrs: true,
         project: true,

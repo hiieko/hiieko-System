@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "AvizStatusEnum" AS ENUM ('PENDING', 'DELIVERED', 'PARTIALLY_DELIVERED', 'CANCELLED');
+
+-- AlterTable
+ALTER TABLE "avize" ADD COLUMN "status" "AvizStatusEnum" NOT NULL DEFAULT 'PENDING';

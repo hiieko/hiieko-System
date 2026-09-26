@@ -1,6 +1,6 @@
 # Issues
 
-Last Updated: 2026-09-23 (Repository hygiene checkpoint — R2.1 P2 Mobile screens complete: typecheck PASS)
+Last Updated: 2026-09-25 (Phase 1-2 Documentation Truth-Up + R2.1 P6 closure; ISSUE-033/034/035 added)
 
 ## Status Legend
 - `OPEN`
@@ -10,6 +10,41 @@ Last Updated: 2026-09-23 (Repository hygiene checkpoint — R2.1 P2 Mobile scree
 - `WONT FIX`
 
 # Open Issues
+
+---
+
+## ISSUE-035 — Tasks controller missing @Roles on all endpoints
+**Status:** ✅ `RESOLVED` (2026-09-25 — R2.1 P5 authorization sweep)
+
+### Description
+The tasks controller had missing or incomplete `@Roles()` decorators on its endpoints, leaving them accessible to roles that should not have access.
+
+### Resolution
+All 4 task endpoints now have explicit `@Roles()` decorators matching the authorization matrix. Verified via code inspection.
+
+---
+
+## ISSUE-034 — Registration allows any role to be self-assigned
+**Status:** ✅ `FIXED` (2026-09-25 — Phase 3.2 security hardening)
+
+### Description
+The public `POST /api/auth/register` endpoint allowed any role to be specified in the request body, enabling self-elevation to privileged roles.
+
+### Resolution
+Registration now whitelists only WORKER and VIEWER roles. All privileged roles (ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, etc.) must be assigned by an ADMIN via the admin panel. Verified via `auth-registration.spec.ts` test.
+
+---
+
+## ISSUE-033 — Project-scope query filtering not applied in all controllers
+**Status:** ✅ `FIXED` (2026-09-25 — Phase 3.2 authorization sweep)
+
+### Description
+After implementing `buildScopedProjectWhere()` in ProjectAccessGuard, some controller/service pairs were not passing the scoped project filter into their Prisma queries, allowing cross-project data access.
+
+### Resolution
+All 13 controller/service pairs that handle project-scoped entities now correctly pass the `buildScopedProjectWhere()` result into their Prisma `findMany`/`findFirst`/etc. queries. Verified via `project-scope.controller.spec.ts` test.
+
+---
 
 ## ISSUE-016 — Backend Jest has pre-existing Babel/ts-jest configuration issue
 **Status:** ✅ `RESOLVED` (2026-09-23 — R2.1 P2 checkpoint)
@@ -127,3 +162,7 @@ Receipt images remained only on the device. The OCR extraction and all expense f
 - **`HOW_TO_RUN.md` and `Project workflow/CONFIGURATION.md`** — These documentation files still reference Supabase setup steps. They are outdated but harmless (no runtime impact). Should be updated as part of a documentation pass.
 - **`MOBILE_MIGRATION_PROGRESS.md` and other migration docs** — Historical migration documents that reference Supabase. These are archival/planning docs, not runtime dependencies.
 - **`ocr-service/README.md`** — References Supabase as part of the historical architecture description. This is a standalone OCR service, not an active runtime dependency.
+- **`PermissionsGuard` not activated** — The `PermissionsGuard` exists but is not wired into any controller. Permission tables are unseeded. Deferred from P5.
+- **`GET /api/procurement/avize/:id` route missing** — The procurement controller lacks this single-aviz retrieval endpoint. Documented in HANDOFF.md.
+- **RoleGuard on 8 pages** — Client-side route guard blocks direct URL access for unauthorized roles on: projects, project detail, teams, workforce, santiere, statistici, aprobare, utilizatori pages.
+- **ISSUE-033/034/035 FIXED** — Project-scope query filtering, registration role whitelist, and tasks controller @Roles all resolved during Phase 3.2.

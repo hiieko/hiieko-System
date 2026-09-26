@@ -39,7 +39,6 @@ export default function RapoartePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reports, setReports] = useState<DailyReport[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -49,9 +48,6 @@ export default function RapoartePage() {
       try {
         const reportsResponse = await apiClient.getDailyReports();
         setReports((reportsResponse.data || []) as DailyReport[]);
-
-        const projectsResponse = await apiClient.getProjects();
-        setProjects((projectsResponse.data || []) as any[]);
 
         const usersResponse = await apiClient.getUsers();
         setUsers((usersResponse.data || []) as any[]);
@@ -96,9 +92,8 @@ export default function RapoartePage() {
       ) : (
         <div className="space-y-6">
           {reports.map((report) => {
-            const project = projects.find(p => p.id === report.project_id);
-            const siteName = report.project?.name || project?.name || 'Șantier';
-            const siteCode = report.project?.code || project?.code || '—';
+            const siteName = report.project?.name || 'Șantier';
+            const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
                              users.find(u => u.id === report.team_leader_id)?.full_name || 
                              'Necunoscut';

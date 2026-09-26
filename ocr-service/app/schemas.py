@@ -14,10 +14,45 @@ class LineItem(BaseModel):
     total: float | None = None
 
 
+class RawOcrLine(BaseModel):
+    """A single line of OCR output from the engine — Layer 1 contract."""
+
+    text: str
+    confidence: float
+    bbox: list[list[float]]  # [[x1,y1],[x2,y1],[x2,y2],[x1,y2]]
+    page: int = 0
+
+
+class RawOcrPage(BaseModel):
+    """All lines belonging to one page — Layer 1 contract."""
+
+    page: int
+    lines: list[RawOcrLine]
+    engine_order: list[int]  # indices into lines in engine-native order
+
+
+class RawOcrResult(BaseModel):
+    """Layer 1 output: raw OCR data before any field extraction."""
+
+    pages: list[RawOcrPage]
+    ordered_text: str = ""
+    engine: str = "paddleocr"
+    engine_version: str = ""
+    document_hash: str = ""
+
+
 class Recognition(BaseModel):
     text: str
     confidence: float | None = Field(default=None, ge=0, le=1)
     box: list[list[float]] | None = None
+
+
+class UnresolvedField(BaseModel):
+    """Records why a field could not be extracted — never null."""
+
+    field_name: str
+    reason: str
+    candidates_considered: int = 0
 
 
 class NormalizedDocument(BaseModel):
@@ -43,6 +78,7 @@ class NormalizedDocument(BaseModel):
     confidence: float = Field(ge=0, le=1)
     fields: dict[str, OcrField] = Field(default_factory=dict)
     low_confidence_fields: list[str] = Field(default_factory=list)
+    unresolved: list[UnresolvedField] = Field(default_factory=list)
     review_required: bool = True
     validation_errors: list[str] = Field(default_factory=list)
     document_hash: str | None = None
@@ -54,8 +90,25 @@ class OcrResponse(BaseModel):
     ocr: NormalizedDocument
 
 
+class RawOcrResponse(BaseModel):
+    """Layer 1 API response — raw OCR data only, no field extraction."""
+
+    correlation_id: str
+    document_state: Literal["ocr_completed", "failed"]
+    raw: RawOcrResult
+
+
 class XmlResponse(BaseModel):
     correlation_id: str
     document_state: Literal["ocr_completed", "needs_review"]
     ocr: NormalizedDocument
     original_format: Literal["efactura_xml"] = "efactura_xml"
+
+
+class OcrEngineInfo(BaseModel):
+    """Reported by /health for honest engine identification."""
+
+    status: str = "ok"
+    provider: str = "paddleocr"
+    version: str = ""
+    model: str = ""

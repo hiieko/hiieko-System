@@ -47,10 +47,9 @@ This is a **pre-1.0 development checkpoint**. Key milestones:
 | R2.3 Stock + Avize | ✅ E2E verified |
 | R2.4 Daily Reports | ✅ E2E verified |
 | R2.5 Notifications/Audit | ✅ E2E verified |
-| R2.1 Sites→Projects (P1–P2) | ✅ Shared + Mobile done |
-| R2.1 Sites→Projects (P3–P6) | ⬜ Web, cleanup, auth, docs |
+| R2.1 Sites→Projects (P1–P6) | ✅ **P6 CLOSURE (all 6 phases complete)** |
 
-**Current work:** R2.1 P3 Web — migrate Header and remaining `Site` references to `Project`.
+**Current work:** R2.1 P6 CLOSURE — Documentation reconciliation complete. R2.2 onward next.
 
 For detailed status, see [Project workflow/CURRENT_STATUS.md](Project%20workflow/CURRENT_STATUS.md).
 

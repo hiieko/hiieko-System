@@ -19,24 +19,35 @@ import {
 } from './daily-plans.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
-import { Roles } from '../../common/auth/decorators/auth-metadata.decorator';
+import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
+import {
+  Roles,
+  RequireProjectAccess,
+  RequireEntityProjectAccess,
+} from '../../common/auth/decorators/auth-metadata.decorator';
+import { ProjectScope } from '../../common/auth/decorators/project-scope.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
+import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
+import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
 
 @ApiTags('Daily Plans')
 @Controller('api/daily-plans')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ProjectAccessGuard)
 @ApiBearerAuth()
 export class DailyPlansController {
   constructor(private readonly dailyPlansService: DailyPlansService) {}
 
   @Get()
+  @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({ summary: 'Get daily plans for project and date' })
   async findByProject(
-    @Query('projectId') projectId: string,
+    @ProjectScope() scope: ProjectScopeType,
+    @Query('projectId') projectId?: string,
     @Query('date') date = new Date().toISOString().split('T')[0],
   ) {
-    return this.dailyPlansService.findByProjectAndDate(projectId, date);
+    const where = buildScopedProjectWhere(scope, projectId);
+    return this.dailyPlansService.findByProjectAndDate(projectId, date, where);
   }
 
   @Get('my-tasks')
@@ -49,18 +60,21 @@ export class DailyPlansController {
   }
 
   @Get(':id')
+  @RequireEntityProjectAccess('dailyPlan', 'id')
   @ApiOperation({ summary: 'Get daily plan by id' })
   async findById(@Param('id') id: string) {
     return this.dailyPlansService.findById(id);
   }
 
   @Post()
+  @RequireProjectAccess('projectId')
   @Roles(
     UserRoleEnum.ADMIN,
     UserRoleEnum.OWNER,
     UserRoleEnum.MANAGER,
     UserRoleEnum.PM,
     UserRoleEnum.SITE_MANAGER,
+    UserRoleEnum.FOREMAN,
     UserRoleEnum.TEAM_LEADER,
   )
   @ApiOperation({ summary: 'Create a new daily plan for a team' })
@@ -70,6 +84,7 @@ export class DailyPlansController {
 
   @Post(':id/publish')
   @HttpCode(HttpStatus.OK)
+  @RequireEntityProjectAccess('dailyPlan', 'id')
   @Roles(
     UserRoleEnum.ADMIN,
     UserRoleEnum.OWNER,
@@ -84,12 +99,14 @@ export class DailyPlansController {
 
   @Post(':id/complete')
   @HttpCode(HttpStatus.OK)
+  @RequireEntityProjectAccess('dailyPlan', 'id')
   @Roles(
     UserRoleEnum.ADMIN,
     UserRoleEnum.OWNER,
     UserRoleEnum.MANAGER,
     UserRoleEnum.PM,
     UserRoleEnum.SITE_MANAGER,
+    UserRoleEnum.FOREMAN,
     UserRoleEnum.TEAM_LEADER,
   )
   @ApiOperation({ summary: 'Mark a PUBLISHED daily plan as COMPLETED' })
@@ -99,6 +116,7 @@ export class DailyPlansController {
 
   @Post(':id/cancel')
   @HttpCode(HttpStatus.OK)
+  @RequireEntityProjectAccess('dailyPlan', 'id')
   @Roles(
     UserRoleEnum.ADMIN,
     UserRoleEnum.OWNER,
@@ -112,6 +130,7 @@ export class DailyPlansController {
   }
 
   @Patch('tasks/:planTaskId/progress')
+  @RequireEntityProjectAccess('dailyPlanTask', 'planTaskId')
   @ApiOperation({ summary: 'Update progress on an assigned daily plan task' })
   async updateTaskProgress(
     @Param('planTaskId') planTaskId: string,

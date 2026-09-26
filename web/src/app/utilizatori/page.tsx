@@ -1,6 +1,7 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
+import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { Users, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, Mail, Shield } from 'lucide-react';
@@ -10,7 +11,7 @@ interface AppRow { id: string; first_name: string; last_name: string; email: str
 const RC: Record<string, string> = { admin: 'bg-red-100 text-red-800', manager: 'bg-blue-100 text-blue-800', team_leader: 'bg-amber-100 text-amber-800', worker: 'bg-emerald-100 text-emerald-800' };
 const RL: Record<string, string> = { admin: 'Admin', manager: 'Manager', team_leader: 'Sef Santier', worker: 'Muncitor' };
 
-export default function UtilizatoriPage() {
+function UtilizatoriPageInner() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
   const [apps, setApps] = useState<AppRow[]>([]);
   const [tab, setTab] = useState<'emp' | 'app'>('emp');
@@ -118,5 +119,13 @@ export default function UtilizatoriPage() {
       </div>)}</div>
       }
     </div>
+  );
+}
+
+export default function UtilizatoriPage() {
+  return (
+    <RoleGuard allowedRoles={['admin']}>
+      <UtilizatoriPageInner />
+    </RoleGuard>
   );
 }

@@ -27,9 +27,9 @@ export function calculateHaversineDistance(
 }
 
 /**
- * Verifies if a worker's coordinates are within the site geofence boundary.
+ * Verifies if a worker's coordinates are within the project geofence boundary.
  */
-export function isWithinSiteGeofence(
+export function isWithinProjectGeofence(
   workerLat: number,
   workerLng: number,
   siteLat: number,
@@ -42,9 +42,6 @@ export function isWithinSiteGeofence(
     distanceMeters,
   };
 }
-
-/** @alias isWithinSiteGeofence — canonical name for Project-based geofence. */
-export const isWithinProjectGeofence = isWithinSiteGeofence;
 
 export interface AttendanceCalculationResult {
   totalMinutesWorked: number;

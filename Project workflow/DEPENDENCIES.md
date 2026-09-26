@@ -13,7 +13,7 @@ Last Updated: 2026-09-23
 |---|---|---|---|
 | next | 14.2.4 | Web framework | Yes |
 | react / react-dom | ^18.3.1 | UI | Yes |
-| @supabase/supabase-js | ^2.43.4 | Data + auth | ~~Yes~~ **REMOVED** |
+| @supabase/supabase-js | ^2.43.4 | Data + auth | ~~Yes~~ **REMOVED (2026-09-23)** |
 | tailwindcss | ^3.4.4 | Styling | Yes |
 | lucide-react | — | Icons | Yes |
 | clsx / tailwind-merge | — | Class joining | Yes |
@@ -29,7 +29,7 @@ Last Updated: 2026-09-23
 | expo-location | — | Geofence GPS | Yes |
 | expo-image-manipulator | — | Crop/rotate receipt | Yes |
 | @react-native-async-storage/async-storage | ^1.23.1 | Offline queue + settings | Yes |
-| @supabase/supabase-js | ^2 | Data + auth | ~~Yes~~ **REMOVED** |
+| @supabase/supabase-js | ^2 | Data + auth | ~~Yes~~ **REMOVED (2026-09-23)** |
 | @solar/shared | workspace | Domain logic | Yes (built `dist`) |
 
 ## Runtime Dependencies — `ocr-service` (FastAPI + PaddleOCR)
@@ -61,7 +61,7 @@ Last Updated: 2026-09-23
 | Database | PostgreSQL 18 | Yes (local or remote) |
 | Package Manager | npm 10/11+ (workspaces) | Yes |
 | OCR runtime | Python 3.12+ + PaddlePaddle 3.x (Docker/Linux recommended) | Yes |
-| Edge runtime | N/A (no Edge Functions) | No |
+| Edge runtime | N/A (no Edge Functions — Supabase Edge Functions decommissioned 2026-09-23) | No |
 | Container runtime | Docker (ocr-service image) | Yes |
 
 # Installation
@@ -74,9 +74,10 @@ Full runbook in `HOW_TO_RUN.md`.
 | Date | Package | Change | Reason |
 |---|---|---|---|
 | 2026-09-23 | all | Post-cleanup audit | Supabase deps REMOVED; PostgreSQL 18; no Edge Functions |
+| 2026-09-24 | Documentation | P6 closure | Verification date updated; Supabase status clarified |
 
 # Dependency Verification
-Last checked: 2026-09-18
+Last checked: 2026-09-24 (R2.1 P6 closure)
 
 Commands:
 ```text

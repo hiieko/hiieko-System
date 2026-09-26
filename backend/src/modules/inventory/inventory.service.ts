@@ -52,12 +52,13 @@ export class InventoryService {
   /**
    * Get current stock balance for a material at a project or warehouse
    */
-  async getStockBalance(materialId: string, projectId?: string, warehouseId?: string) {
+  async getStockBalance(materialId: string, projectId?: string, warehouseId?: string, projectScopeWhere?: any) {
     return this.prisma.stockBalance.findFirst({
       where: {
         material_id: materialId,
         project_id: projectId || null,
         warehouse_id: warehouseId || null,
+        ...(projectScopeWhere || {}),
       },
       include: {
         material: true,
@@ -476,11 +477,12 @@ export class InventoryService {
     });
   }
 
-  async getMovements(projectId?: string, materialId?: string) {
+  async getMovements(projectId?: string, materialId?: string, projectScopeWhere?: any) {
     return this.prisma.stockMovement.findMany({
       where: {
         project_id: projectId || undefined,
         material_id: materialId || undefined,
+        ...(projectScopeWhere || {}),
       },
       include: {
         material: true,
@@ -492,11 +494,12 @@ export class InventoryService {
     });
   }
 
-  async listAllBalances(params?: { projectId?: string; materialId?: string }) {
+  async listAllBalances(params?: { projectId?: string; materialId?: string }, projectScopeWhere?: any) {
     return this.prisma.stockBalance.findMany({
       where: {
         project_id: params?.projectId || undefined,
         material_id: params?.materialId || undefined,
+        ...(projectScopeWhere || {}),
       },
       include: {
         material: true,

@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { EmployeesService, CreateEmployeeDto } from './employees.service';
+import { EmployeesService, CreateEmployeeDto, UpdateEmployeeDto } from './employees.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { Roles } from '../../common/auth/decorators/auth-metadata.decorator';
@@ -33,5 +33,26 @@ export class EmployeesController {
   @ApiOperation({ summary: 'Create a new employee profile' })
   async create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: AuthenticatedUser) {
     return this.employeesService.create(dto, user.id);
+  }
+
+  @Patch(':id')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MANAGER)
+  @ApiOperation({ summary: 'Update employee details' })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateEmployeeDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employeesService.update(id, dto, user.id);
+  }
+
+  @Delete(':id')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MANAGER)
+  @ApiOperation({ summary: 'Archive (soft-delete) an employee' })
+  async remove(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employeesService.remove(id, user.id);
   }
 }

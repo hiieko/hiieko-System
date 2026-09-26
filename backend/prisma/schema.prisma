@@ -674,6 +674,7 @@ model Aviz {
   supplier_id     String?
   aviz_number     String
   delivery_date   DateTime   @db.Date
+  status          AvizStatusEnum @default(PENDING)
   driver_name     String?
   vehicle_plate   String?
   notes           String?
@@ -683,6 +684,7 @@ model Aviz {
   project         Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
   supplier        Supplier?  @relation(fields: [supplier_id], references: [id])
 
+  @@unique([project_id, aviz_number])
   @@map("avize")
 }
 
@@ -1094,6 +1096,8 @@ enum DependencyTypeEnum {
 enum StockMovementTypeEnum {
   RECEIPT
   TRANSFER
+  TRANSFER_IN
+  TRANSFER_OUT
   CONSUMPTION
   ALLOCATION
   RETURN
@@ -1187,6 +1191,13 @@ enum NotificationChannelEnum {
   PUSH
   EMAIL
   SMS
+}
+
+enum AvizStatusEnum {
+  PENDING
+  DELIVERED
+  PARTIALLY_DELIVERED
+  CANCELLED
 }
 
 enum OCRJobStateEnum {

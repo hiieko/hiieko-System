@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 
@@ -41,10 +41,15 @@ export class DailyReportsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(projectId?: string) {
+  async findAll(projectId?: string, projectScopeWhere?: Record<string, any>) {
+    const where: any = { ...projectScopeWhere };
+    if (projectId) {
+      where.project_id = projectId;
+    }
     return this.prisma.dailyReport.findMany({
-      where: projectId ? { project_id: projectId } : undefined,
+      where,
       include: {
+        project: true,
         team: true,
         team_leader: {
           include: { profile: true },
@@ -80,6 +85,28 @@ export class DailyReportsService {
   async create(teamLeaderId: string, dto: CreateDailyReportDto) {
     const reportDate = new Date(dto.reportDate);
     reportDate.setUTCHours(0, 0, 0, 0);
+
+    // R3.1 INTEGRITY: Validate all referenced tasks belong to the same project as this report
+    if (dto.tasks && dto.tasks.length > 0) {
+      const taskIds = [...new Set(dto.tasks.map((t) => t.taskId))];
+      const tasks = await this.prisma.task.findMany({
+        where: { id: { in: taskIds } },
+        select: { id: true, project_id: true },
+      });
+
+      const foundMap = new Map(tasks.map((t) => [t.id, t.project_id]));
+      for (const taskRef of dto.tasks) {
+        const taskProjectId = foundMap.get(taskRef.taskId);
+        if (!taskProjectId) {
+          throw new NotFoundException(`Task ${taskRef.taskId} not found`);
+        }
+        if (taskProjectId !== dto.projectId) {
+          throw new ForbiddenException(
+            `Task ${taskRef.taskId} belongs to a different project (${taskProjectId}) than the daily report (${dto.projectId})`
+          );
+        }
+      }
+    }
 
     // R2.4 IDEMPOTENCY: Check if this is a retry - return existing if idempotencyKey matches
     // This ensures offline SQLite queue retries don't create duplicates

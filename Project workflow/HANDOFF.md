@@ -2,14 +2,15 @@
 
 > Primary continuation point for the next AI assistant.
 
-Last Updated: 2026-09-23 (R2.5 Notifications E2E VERIFIED: backend + web + mobile integration live-verified on PostgreSQL 18)
+Last Updated: 2026-09-25 (Phase 1-2 Documentation Truth-Up + R2.1 P6 closure; 15 suites / 125 tests, 31 controllers, 21 routes)
 
 ## Current Status
-**Status:** STABLE — **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; R2.5 Notifications ✅ E2E VERIFIED; next: R2.3 Stock + Avize)
+**Status:** STABLE — **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; R2.1 P6 ✅ COMPLETE; R2.2-2.5 ✅ E2E VERIFIED; actual counts: 15 suites / 125 tests, 31 controllers, 21 routes, RoleGuard wired on 8 pages, ISSUE-033/034/035 FIXED)
 
 ## Current Task
-**R2.5 Notifications ✅ E2E VERIFIED.** Backend: `NotificationsService` + `NotificationsController` with audit logging (`AuditService`), pagination (`skip`/`take`/`page`/`pageSize`), `send()` (internal, no public endpoint), `markAsRead` (ownership-enforced via `updateMany` with `{id, user_id}`), `markAllAsRead`. 13 unit tests all pass. Web: `NotifItem` interface fixed (`message_ro`/`message_en` instead of `body_ro`/`body_en`), locale-aware rendering (`title_ro`/`title_en`/`message_ro`/`message_en`). Mobile: real API calls with correct field names. Live E2E verified on PostgreSQL 18: login, own notifications, pagination, mark all read, unread filter, unauthenticated blocked (401), field validation, audit endpoint accessible.
-**Next: R2.3 Stock + Avize** as PostgreSQL-authoritative module.
+**R2.1 Sites→Projects P6 CLOSURE ✅ (All 6 phases complete).** P1: Shared contract; P2: Mobile screens; P3: Web (ProjectContext); P4: Shared cleanup (dead Site-era types); P5: Project authorization (13 guard tests, 102 routes protected); P6: Documentation closure reconciliation (47 defects corrected). **R2.2-2.5 all E2E VERIFIED.** See CURRENT_STATUS.md for full status.
+
+**Next: R2.6 Audit & remaining phases per roadmap.**
 
 > **⚠️ ARCHITECTURE DECISION (2026-09-23) — read before continuing:** Legacy `legacy.*` dual-write is a **temporary compatibility artifact only**, NOT a required pattern. PostgreSQL/NestJS is authoritative; there is no live Supabase project/keys and no `legacy.*` schema in dev. **Do NOT add legacy dual-write to R2.3 Stock or any other module.** The existing R2.2/R2.4 legacy helpers were **REMOVED on 2026-09-23** (ahead of the R7 cut-over) after live-DB verification. The orphan `public.time_logs` table was **DROPPED on 2026-09-23** (D-012). The `supabase/` directory was **ARCHIVED on 2026-09-23** (D-015). R2.5 Notifications is **✅ E2E VERIFIED** as PostgreSQL-authoritative module. Next: R2.3 Stock + Avize as **PostgreSQL-authoritative** module (verify invariants + live E2E), with no legacy mirroring. See `PROGRESS.md` → Architecture Decision and `IMPLEMENTATION_ROADMAP.md` Milestone R7.
 
@@ -132,19 +133,19 @@ See DECISIONS.md. Key: monorepo workspaces, **NestJS + Prisma + PostgreSQL 18 ba
 - The 2026-09-18 status report is the current ground truth (any disagreement → update docs + report).
 
 # Known Problems
-- Full list in ISSUES.md (ISSUE-001 .. 009).
+- Full list in ISSUES.md (ISSUE-001 .. 035).
 - Summary: dashboard queries a nonexistent table; mobile auth bypass; OCR doc/code drift; dead parser; offline sync gaps; repo hygiene (gitignore, missing pytest, SQL header); mojibake.
 
 # Next Action
 The next AI should:
-1. **Phase 4: Authorization & project scoping** — ensure `actorId` propagated from auth context.
-2. **Phase 5: DTO validation** — add class-validator decorators to DTOs.
-3. **Phase 6: Read APIs** — add pagination/filters to `getMovements` and `listAllBalances`.
-4. **Phase 7: Web `/stocuri` rewrite** — handle new TRANSFER_IN/TRANSFER_OUT types.
-5. **Phase 8: Web `/avize` rewrite** — add create form using new `createAviz`.
-6. **Phase 9: Mobile delivery intake fixes** — verify mobile creates avize correctly.
-7. **Phase 10: Integration/E2E tests** — concurrent consume/transfer, aviz→stock flow.
-8. **Phase 11: Documentation updates** — PROGRESS.md, ISSUES.md, IMPLEMENTATION_ROADMAP.md, VERIFICATION.md.
+1. **R2.6 Audit** — implement remaining audit recommendations (add tests for untested modules, fix missing routes, activate PermissionsGuard)
+2. **Phase 4: Authorization & project scoping** — ensure `actorId` propagated from auth context.
+3. **Phase 5: DTO validation** — add class-validator decorators to DTOs.
+4. **Phase 6: Read APIs** — add pagination/filters to `getMovements` and `listAllBalances`.
+5. **Phase 7: Web `/stocuri` rewrite** — handle new TRANSFER_IN/TRANSFER_OUT types.
+6. **Phase 8: Web `/avize` rewrite** — add create form using new `createAviz`.
+7. **Phase 9: Mobile delivery intake fixes** — verify mobile creates avize correctly.
+8. **Phase 10: Integration/E2E tests** — concurrent consume/transfer, aviz→stock flow.
 9. **Missing endpoint:** Add `GET /api/procurement/avize/:id` route to controller.
 
 # Context For The Next AI
@@ -154,7 +155,7 @@ The next AI should:
 - Aviz creation atomically posts stock in a single transaction.
 - Per-project aviz number scoping — same number allowed on different projects.
 - `StockMovementTypeEnum` now includes TRANSFER_IN and TRANSFER_OUT (added via ALTER TYPE).
-- Backend tests: 12 suites / 69 tests passing.
+- Backend tests: 15 suites / 125 tests passing.
 - All quality gates green: shared/backend/web typecheck, backend build, web build.
 
 # Context For The Next AI
@@ -162,7 +163,9 @@ The next AI should:
 - The mobile app currently runs on a hardcoded demo user; real login is implemented but unwired.
 - The OCR pipeline now runs entirely server-side: `POST /api/ocr/process` -> `PaddleOcrProvider` -> self-hosted PaddleOCR (`PADDLEOCR_URL`). The Edge Function is gone. In dev the PaddleOCR service is not running, so the endpoint correctly returns 502 `PaddleOCR service is unavailable` and `GET /api/ocr/health` reports `unavailable`.
 - The Mobile receipt flow now uploads the receipt binary to the server blob store (`POST /api/upload`, ISSUE-013/014) at submit time; local copies are retained until a confirmed upload, and the offline SQLite queue still only replays the expense. Document + DocumentVersion rows are materialized for every confirmed upload.
-- `/pontaj`, `/rapoarte`, `/stocuri` are mock pages; the dashboard was fixed (Control Tower).
+- `/pontaj`, `/rapoarte`, `/stocuri` are live pages with real API data; the dashboard was fixed (Control Tower).
+- **RoleGuard** wired on 8 restricted pages (projects, teams, workforce, santiere, statistici, aprobare, utilizatori) — blocks direct URL access for unauthorized roles.
+- **ISSUE-033/034/035 FIXED** — project-scope query filtering, registration whitelist (WORKER/VIEWER only), tasks controller @Roles on all endpoints.
 - `/notificari` page is fully functional with real API, locale-aware rendering (`title_ro`/`title_en`/`message_ro`/`message_en`), and pagination.
 - All `Project workflow/` docs were regenerated from a static audit; verification columns are intentionally NOT RUN/UNVERIFIED rather than guessed.
 

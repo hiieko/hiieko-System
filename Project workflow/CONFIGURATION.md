@@ -1,6 +1,14 @@
 # Configuration
 
-Last Updated: 2026-09-18
+> **⚠️ HISTORICAL / SUPERSEDED — Last Updated: 2026-09-18**
+>
+> This document describes the **Supabase-era** configuration and setup. As of 2026-09-23, Supabase has been **fully removed from the runtime** and replaced by NestJS + Prisma + PostgreSQL 18.
+>
+> **The current architecture has NO Supabase dependencies.** See `CURRENT_STATUS.md` for the authoritative architecture diagram and `HOW_TO_RUN.md` for current setup instructions.
+>
+> This file is retained for historical reference only. Do not use these instructions for current development.
+
+Last Updated: 2026-09-18 (⚠️ SUPERSEDED — see CURRENT_STATUS.md)
 
 Never store actual secrets in this document. Values below are placeholders or values that are already public (anon/publishable keys).
 

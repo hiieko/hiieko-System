@@ -2,6 +2,7 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IOcrProvider, OcrExtractionResult, OcrProviderConfig } from '../interfaces/ocr-provider.interface';
 import * as FormData from 'form-data';
+import { Readable } from 'stream';
 
 interface PaddleOcrResponse {
   correlation_id: string;
@@ -80,6 +81,15 @@ export class PaddleOcrProvider extends IOcrProvider {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
+      // Convert form-data stream to Buffer for fetch compatibility
+      const formBuffer = await new Promise<Buffer>((resolve, reject) => {
+        const chunks: (Buffer | string)[] = [];
+        form.on('data', (chunk: Buffer | string) => chunks.push(chunk));
+        form.on('end', () => resolve(Buffer.concat(chunks.map(c => typeof c === 'string' ? Buffer.from(c) : c))));
+        form.on('error', reject);
+        form.resume();
+      });
+
       const response = await fetch(`${this.config.url}/v1/ocr/document`, {
         method: 'POST',
         headers: {
@@ -87,7 +97,7 @@ export class PaddleOcrProvider extends IOcrProvider {
           'x-correlation-id': cid,
           ...form.getHeaders(),
         },
-        body: form as any,
+        body: formBuffer,
         signal: controller.signal,
       });
 

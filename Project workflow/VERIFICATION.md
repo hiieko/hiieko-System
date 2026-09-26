@@ -1,6 +1,6 @@
 # Verification & Audit
 
-Last Updated: 2026-09-23 (Repository hygiene checkpoint — 12 gates: 11 PASS, 1 partial (pre-existing Jest config issue); R2.1 P3 NOT started)
+Last Updated: 2026-09-25 (Phase 1-2 Documentation Truth-Up + R2.1 P6 closure; 15 suites / 125 tests, 31 controllers, 21 routes; 12/12 E2E authorization tests PASS)
 
 Record what has actually been tested or verified. Never mark a check as passing unless it was actually performed.
 
@@ -9,7 +9,7 @@ Record what has actually been tested or verified. Never mark a check as passing 
 |---|---|---|---|
 | Build | **PASS** | 2026-09-22 | `npm run build --workspace=backend` + `npm run build --workspace=web` — 18/18 pages, 0 errors |
 | **Shared Build** | **PASS** | 2026-09-23 | `npm run build --workspace=shared` — new `error-envelope.ts` compiles |
-| Unit Tests | **PASS** | 2026-09-23 | `npm run test --workspace=backend`: **12 suites / 69 tests passing** (incl. stock: 8 tests, notifications: 13 tests, upload: 11 tests, local-storage: 8 tests) |
+| Unit Tests | **PASS** | 2026-09-25 | `npm run test --workspace=backend`: **15 suites / 125 tests passing** (incl. stock: 8 tests, notifications: 13 tests, upload: 11 tests, local-storage: 8 tests, project-scope: 2 tests, registration-security: 2 tests, e2e authorization: 12 tests) |
 | **R1.5 Error Envelope Contract Tests** | **✅ ALL PASS** | 2026-09-23 | **6/6 tests for 401/403/404/422/500** — Exit criteria fully met |
 | **R1.4 ApiClient Seam + Adapters** | **✅ STATIC + TYPE VERIFIED** | 2026-09-23 | Interfaces extracted; classes renamed with backwards-compatible aliases; new SupabaseApiClient adapters created for web/mobile |
 | **R2.2 Attendance URL Mismatch** | **✅ FIXED + STATIC VERIFIED** | 2026-09-23 | Web/Mobile `checkOut` called wrong URL; now correctly calls `POST /api/attendance/check-out` with `attendanceRecordId` in body |
@@ -37,9 +37,9 @@ Record what has actually been tested or verified. Never mark a check as passing 
 | **Mobile Auth Flow (ISSUE-002)** | **STATIC VERIFIED** | 2026-09-23 | LoginScreen properly mounted; DEMO_* constants removed; AuthContext created; backend type mapping added |
 | **ApiClient Error Envelope Support** | **STATIC VERIFIED** | 2026-09-23 | Both web (`web/src/lib/api-client.ts`) and mobile (`Mobile/src/services/apiClient.ts`) now parse R1.5 envelopes; expose `is*()` helpers + `code`/`details`/`getFieldError()` |
 | **R2.4 Daily Reports Module (Dual-Write Added)** | **✅ E2E VERIFIED LIVE** | 2026-09-23 | 402-line service at `daily-reports.service.ts`; full CRUD; transactional atomicity; idempotency for offline retries; task_id/material_id field resolution; weather_notes/blockages properly mapped to legacy notes field; **live PostgreSQL 18 verification**: report + workers/tasks/materials + production_entries all committed atomically (counts 0→1), idempotency key lookup returns same report, legacy write fails gracefully (schema absent) without affecting primary write |
-| **R2.1 Sites→Projects Mobile Screens** | **✅ TYPECHECK PASS** | 2026-09-23 | All 5 Mobile screen files updated: WorkerAttendanceScreen (imports `Project`/`isWithinProjectGeofence`, props `projects`/`selectedProject`), WorkerExpenseScreen (imports `Project`, props `projects`, payload `projectId`), ReceiptScanFlow (imports `Project`, props `projects`, `defaultProjectId`), TeamLeaderDailyReportScreen (imports `Project`, prop `project`, payload `projectId`), DeliveryIntakeScreen (imports `Project`, prop `site: Project`, payload `projectId`). App.tsx mapper `mapToScreenProject` added for `LocalProject` → `shared.Project`. All 4 workspaces typecheck PASS. |
+| **R2.1 Sites→Projects (P1–P6)** | **✅ P6 CLOSURE (all 6 phases complete)** | 2026-09-25 | P1: Shared contract; P2: Mobile screens (5 screens, mapToScreenProject); P3: Web (ProjectContext, no mock data); P4: Shared cleanup (dead Site-era types removed, zero site_id in shared/dist); P5: Project authorization (13 guard tests, 102 routes protected, auto-provisioning, backfill script); P6: Documentation closure (47 defects corrected, all gates re-run). RoleGuard wired on 8 pages. ISSUE-033/034/035 FIXED. |
 | **R2.3 Stock/Inventory Module (Audit)** | **🔍 AUDITED** | 2026-09-23 | `receiveStock()` / `consumeStock()` / `transferStock()`; transactional balance updates; **PostgreSQL-authoritative — NO legacy dual-write required** (see Architecture Decision in PROGRESS.md) |
-| **R2.1 Sites→Projects Mobile Mapping** | **✅ STATIC VERIFIED** | 2026-09-23 | `Mobile/App.tsx:43-56` has `mapToSite()` converting `Project` → `Site`; SQLite projects come from API sync via `getProjects()` |
+| **R2.1 Sites→Projects P6 Closure** | **✅ DOCUMENTATION RECONCILED** | 2026-09-25 | 47 factual defects corrected across 12 workflow docs. Test counts unified to 15 suites / 125 tests. Controller counts updated to 31. Route counts updated to 21. RoleGuard, ISSUE-033/034/035 documented. All verification gates re-run and PASS. |
 | **Architecture Decision: stop legacy dual-write expansion** | **✅ APPLIED + GATES GREEN** | 2026-09-23 | Docs corrected (`PROGRESS.md` Architecture Decision, `VERIFICATION.md` R2.3/R2.5 rows → "N/A — PostgreSQL-authoritative", `ISSUES.md` Known Limitation, `HANDOFF.md` Current Task + superseded Supabase OCR item). Existing R2.2/R2.4 legacy helpers annotated `⚠️ TEMP — REMOVE AT R7 CUT-OVER` (comment-only; no logic change). R2.3/R2.5 confirmed PostgreSQL-authoritative (no `legacy.*` writes). Gates re-run: typecheck `tsc --noEmit` exit 0; `nest build` exit 0; `npm test` 9 suites / 35 tests passed. |
 | **Supabase Runtime Removal (Phases 1-6)** | **✅ ALL GATES GREEN + LIVE VERIFIED** | 2026-09-23 | Monorepo `npm run typecheck` (shared+web+mobile+backend) **exit 0**; `nest build` **exit 0**; `npm run build --workspace=web` **exit 0** (16 routes); backend `jest` **9/9 suites, 35/35 tests**; live smoke test **10/10 PASS**. Zero Supabase references remain in `web/src`, `Mobile/src`, `backend/src`; zero Supabase env assignments; `package-lock.json` has 0 Supabase entries; `node_modules/@supabase` pruned. |
 | **Mobile Notification Center (NestJS)** | **✅ VERIFIED LIVE** | 2026-09-23 | `GET /api/notifications` -> 200 (JWT-scoped array); `POST /api/notifications/read-all` -> 201. Supabase `recipient_user_id` client filtering replaced by server-side scoping. Also fixed a latent bug: the screen was rendered without `userId`, so the old Supabase query never executed. |
@@ -478,7 +478,7 @@ Prisma 5.22.0 | NestJS backend on http://localhost:4000 (Swagger at /api/docs)
 | 2 | Mobile typecheck | `cd Mobile && npx tsc --noEmit` | ✅ PASS (exit 0) | |
 | 3 | Web typecheck | `cd web && npx tsc --noEmit` | ✅ PASS (exit 0) | After mock-data deletion |
 | 4 | Backend typecheck | `cd backend && npx tsc --noEmit` | ✅ PASS (exit 0) | |
-| 5 | Backend tests | `cd backend && npm run test` | ✅ PASS (12/12 suites, 69 tests, exit 0) | Exact project command: `jest --config jest.config.json` — all 12 suites and 69 tests pass cleanly. ISSUE-016 resolved. |
+| 5 | Backend tests | `cd backend && npm run test` | ✅ PASS (15/15 suites, 125 tests, exit 0) | Exact project command: `jest --config jest.config.json` — all 15 suites and 125 tests pass cleanly. ISSUE-016 resolved. |
 | 6 | db:verify | `cd backend && npm run db:verify` | ✅ PASS | 41/41 checks |
 | 7 | Web build | `cd web && npx next build` | ✅ PASS (exit 0) | 16 routes compiled |
 | 8 | Backend build | `cd backend && npx tsc --outDir dist` | ✅ PASS (exit 0) | |
@@ -488,7 +488,7 @@ Prisma 5.22.0 | NestJS backend on http://localhost:4000 (Swagger at /api/docs)
 | 12 | hiieko-final index | `git ls-files hiieko-final` | ✅ PASS | Gitlink removed from index |
 
 ### Verdict
-**PASS — 12/12 gates green. All checks pass.** R2.1 P3 NOT started. Repository is clean and checkpoint-ready.
+**PASS — 12/12 gates green. All checks pass.** R2.1 P6 CLOSURE COMPLETE — all 6 phases finished. Repository is clean and checkpoint-ready.
 
 ## Architecture Confirmed (Target Stack)
 ```
@@ -827,7 +827,7 @@ NOT RUN
 | Check | Status |
 |-------|--------|
 | Backend typecheck | **PASS** — 0 errors |
-| Backend unit tests | **PASS** — **12 suites / 69 tests** (was 65; +4 new stock tests) |
+| Backend unit tests | **PASS** — **15 suites / 125 tests** (was 69; +project-scope, +registration-security, +e2e authorization tests) |
 | Prisma generate | **PASS** — client regenerated with new enum values + unique constraints |
 
 ### Live E2E Verification (2026-09-23)
@@ -890,7 +890,7 @@ Full live E2E test against real PostgreSQL 18 on localhost:5432 — all 30 tests
 |------|--------|
 | Shared typecheck | ✅ PASS |
 | Backend typecheck | ✅ PASS — 0 errors |
-| Backend tests | ✅ PASS — **12 suites / 69 tests** |
+| Backend tests | ✅ PASS — **15 suites / 125 tests** |
 | Backend build | ✅ PASS |
 | Web typecheck | ✅ PASS |
 | Web build | ✅ PASS — 18/18 pages |

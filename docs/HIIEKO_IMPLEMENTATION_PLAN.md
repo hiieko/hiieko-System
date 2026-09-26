@@ -1,4 +1,4 @@
-﻿# HIIEKO Implementation Plan
+# HIIEKO Implementation Plan
 
 **Last Updated:** 2026-09-22  
 **Version:** 1.0  
@@ -10,12 +10,12 @@
 
 | Area | Status | Notes |
 |---|---|---|
-| **Architecture** | ✅ Confirmed | Target Stack: Web/Mobile → NestJS :4000 → Prisma 5.22 → PostgreSQL 14 :5433 |
+| **Architecture** | ✅ Confirmed | Target Stack: Web/Mobile → NestJS :4000 → Prisma 5.22 → PostgreSQL 18 :5432 |
 | **Backend Modules** | ✅ 28 Modules | All domain modules implemented |
 | **Database** | ✅ Live | Prisma migration 20260922102428_init applied, 66 tables in PostgreSQL |
 | **Authentication** | ✅ Verified | JWT auth, seed ADMIN user, /api/auth/login & /api/auth/me working |
-| **Testing** | ✅ Green | 8/8 Jest suites, 29/29 tests passing |
-| **Build** | ✅ PASS | Backend typecheck (0 errors), web build (18/18 pages), 0 errors |
+| **Testing** | ✅ Green | 15/15 Jest suites, 125 tests passing (verified 2026-09-25) |
+| **Build** | ✅ PASS | Backend typecheck (0 errors), web build (20/20 user-facing pages, 21 routes with /_not-found), 0 errors |
 | **Daily Reports** | ✅ Complete | PostgreSQL verified: 3 records, all CRUD operations working |
 | **Attendance** | ✅ Complete | PostgreSQL verified: 5 records, geofence & overtime working |
 | **Control Tower** | ✅ Complete | Real data aggregation across 7 operational domains |
@@ -148,7 +148,8 @@
 | users | Modify | Add new roles: MAINTENANCE_DIRECTOR, TECHNICAL_DIRECTOR, FOREMAN, SITE_LOGISTICS, FINANCE, PROCUREMENT, O&M, EXTERNAL_SPECIALIST |
 | user_roles | Modify | Update role enum to include new roles |
 | permissions | Modify | Add new permissions for new roles |
-| oles | Modify | Update role model with new permissions |
+| 
+oles | Modify | Update role model with new permissions |
 | projects | Modify | Add PM, Site Manager assignment fields |
 | sites | Create | Add sites table for multi-site support |
 
@@ -165,7 +166,8 @@
 | Entity | Action | Reason |
 |---|---|---|
 | material_requests | Create | Material request workflow |
-| fqs | Create | Request for Quotation workflow |
+| 
+fqs | Create | Request for Quotation workflow |
 | purchase_orders | Create | Purchase order workflow |
 | delivery_status | Create | Track delivery status |
 | stock_traceability | Create | Lot/location/team/activity traceability |
@@ -190,7 +192,8 @@ ear_misses | Create | Near miss reports |
 
 | Entity | Action | Reason |
 |---|---|---|
-| fis | Create | RFI workflow |
+| 
+fis | Create | RFI workflow |
 | 	echnical_issues | Create | Technical issue reports |
 | 	echnical_approvals | Create | Technical approval workflow |
 | deviations | Create | Deviation requests |
@@ -342,7 +345,7 @@ Each gap is COMPLETE when:
 
 ### Prerequisites
 
-- PostgreSQL 14+ running on localhost:5433
+- PostgreSQL 18+ running on localhost:5432
 - Prisma CLI installed
 - NestJS runtime available
 - Web dev server available
@@ -372,3 +375,4 @@ Each gap is COMPLETE when:
 ---
 
 *This document is a living reference. Update it as implementation proceeds.*
+

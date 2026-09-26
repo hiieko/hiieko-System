@@ -1,0 +1,30 @@
+﻿{
+  "version": "5.22.0",
+  "steps": [
+    {
+      "tag": "CreateEnum",
+      "enum": {
+        "name": "AvizStatusEnum",
+        "values": ["PENDING", "DELIVERED", "PARTIALLY_DELIVERED", "CANCELLED"]
+      }
+    },
+    {
+      "tag": "AlterTable",
+      "table": "avize",
+      "addColumns": [
+        {
+          "name": "status",
+          "type": "AvizStatusEnum",
+          "default": "PENDING",
+          "isRequired": true
+        }
+      ]
+    }
+  ],
+  "datasource": {
+    "provider": "postgresql",
+    "url": {
+      "env": "DATABASE_URL"
+    }
+  }
+}

@@ -27,7 +27,11 @@ export type TutorialSectionId =
   | 'profile'
   | 'scan'
   | 'expenseReview'
-  | 'login';
+  | 'login'
+  | 'projects'
+  | 'project-detail'
+  | 'workforce'
+  | 'teams';
 
 export interface TutorialRoleNote {
   role: UserRole;
@@ -305,6 +309,72 @@ export const TUTORIALS: Record<TutorialSectionId, TutorialContent> = {
     ],
     roles: [],
     importantKey: `${K('login')}.important`,
+  },
+  projects: {
+    id: 'projects',
+    titleKey: `${K('projects')}.title`,
+    shortKey: `${K('projects')}.short`,
+    purposeKey: `${K('projects')}.purpose`,
+    steps: [
+      `${K('projects')}.step1`,
+      `${K('projects')}.step2`,
+      `${K('projects')}.step3`,
+    ],
+    roles: [
+      { role: 'admin', noteKey: `${K('projects')}.role_admin` },
+      { role: 'manager', noteKey: `${K('projects')}.role_manager` },
+      { role: 'pm', noteKey: `${K('projects')}.role_pm` },
+      { role: 'worker', noteKey: `${K('projects')}.role_worker` },
+      { role: 'viewer', noteKey: `${K('projects')}.role_viewer` },
+    ],
+    importantKey: `${K('projects')}.important`,
+  },
+  'project-detail': {
+    id: 'project-detail',
+    titleKey: `${K('project-detail')}.title`,
+    shortKey: `${K('project-detail')}.short`,
+    purposeKey: `${K('project-detail')}.purpose`,
+    steps: [
+      `${K('project-detail')}.step1`,
+      `${K('project-detail')}.step2`,
+      `${K('project-detail')}.step3`,
+    ],
+    roles: [
+      { role: 'admin', noteKey: `${K('project-detail')}.role_admin` },
+      { role: 'manager', noteKey: `${K('project-detail')}.role_manager` },
+      { role: 'pm', noteKey: `${K('project-detail')}.role_pm` },
+      { role: 'worker', noteKey: `${K('project-detail')}.role_worker` },
+      { role: 'viewer', noteKey: `${K('project-detail')}.role_viewer` },
+    ],
+    importantKey: `${K('project-detail')}.important`,
+  },
+  workforce: {
+    id: 'workforce',
+    titleKey: `${K('workforce')}.title`,
+    shortKey: `${K('workforce')}.short`,
+    purposeKey: `${K('workforce')}.purpose`,
+    steps: [
+      `${K('workforce')}.step1`,
+      `${K('workforce')}.step2`,
+    ],
+    roles: [
+      { role: 'admin', noteKey: `${K('workforce')}.role_admin` },
+      { role: 'manager', noteKey: `${K('workforce')}.role_manager` },
+    ],
+  },
+  teams: {
+    id: 'teams',
+    titleKey: `${K('teams')}.title`,
+    shortKey: `${K('teams')}.short`,
+    purposeKey: `${K('teams')}.purpose`,
+    steps: [
+      `${K('teams')}.step1`,
+      `${K('teams')}.step2`,
+    ],
+    roles: [
+      { role: 'admin', noteKey: `${K('teams')}.role_admin` },
+      { role: 'manager', noteKey: `${K('teams')}.role_manager` },
+    ],
   },
 };
 

@@ -2,15 +2,246 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 :root {
+  /* HIIEKO Brand Tokens */
+  --hii-brand: #188C51;
+  --hii-brand-hover: #0f7040;
+  --hii-brand-soft: #d1fae0;
+  --hii-brand-light: #ecfdf3;
+  --hii-surface: #ffffff;
+  --hii-surface-muted: #f8fafc;
+  --hii-surface-alt: #f1f5f9;
+  --hii-border: #e2e8f0;
+  --hii-border-light: #f1f5f9;
+  --hii-text: #0f172a;
+  --hii-text-secondary: #475569;
+  --hii-text-muted: #94a3b8;
+  --hii-success: #16a34a;
+  --hii-warning: #d97706;
+  --hii-critical: #dc2626;
+  --hii-info: #2563eb;
+
+  /* Legacy support */
   --foreground-rgb: 15, 23, 42;
   --background-start-rgb: 248, 250, 252;
   --background-end-rgb: 241, 245, 249;
+
+  /* Spacing scale */
+  --hii-space-1: 0.25rem;
+  --hii-space-2: 0.5rem;
+  --hii-space-3: 0.75rem;
+  --hii-space-4: 1rem;
+  --hii-space-5: 1.25rem;
+  --hii-space-6: 1.5rem;
+  --hii-space-8: 2rem;
+  --hii-space-10: 2.5rem;
+  --hii-space-12: 3rem;
+
+  /* Radius */
+  --hii-radius-sm: 0.375rem;
+  --hii-radius-md: 0.5rem;
+  --hii-radius-lg: 0.75rem;
+
+  /* Shadows */
+  --hii-shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+  --hii-shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
-  min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+@layer base {
+  * {
+    border-color: var(--hii-border);
+  }
+
+  body {
+    color: var(--hii-text);
+    background: var(--hii-surface-muted);
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    outline: 2px solid var(--hii-brand);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Page container */
+  .hii-page {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8;
+  }
+
+  /* Card */
+  .hii-card {
+    background: var(--hii-surface);
+    border: 1px solid var(--hii-border);
+    border-radius: var(--hii-radius-lg);
+    box-shadow: var(--hii-shadow-card);
+  }
+
+  .hii-card-header {
+    @apply px-5 py-4 border-b border-slate-100;
+  }
+
+  .hii-card-body {
+    @apply p-5;
+  }
+
+  /* Page header */
+  .hii-page-header {
+    @apply mb-6;
+  }
+
+  .hii-page-title {
+    @apply text-2xl font-bold text-slate-900 tracking-tight;
+  }
+
+  .hii-page-desc {
+    @apply text-sm text-slate-500 mt-1;
+  }
+
+  /* Status badges */
+  .hii-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .hii-badge-green {
+    @apply hii-badge bg-emerald-100 text-emerald-800;
+  }
+
+  .hii-badge-amber {
+    @apply hii-badge bg-amber-100 text-amber-800;
+  }
+
+  .hii-badge-red {
+    @apply hii-badge bg-red-100 text-red-800;
+  }
+
+  .hii-badge-blue {
+    @apply hii-badge bg-blue-100 text-blue-800;
+  }
+
+  .hii-badge-neutral {
+    @apply hii-badge bg-slate-100 text-slate-700;
+  }
+
+  /* Button base */
+  .hii-btn {
+    @apply inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hii-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .hii-btn-primary {
+    @apply hii-btn bg-hii-500 text-white hover:bg-hii-600 active:bg-hii-700 px-4 py-2 text-sm;
+  }
+
+  .hii-btn-secondary {
+    @apply hii-btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100 px-4 py-2 text-sm shadow-sm;
+  }
+
+  .hii-btn-destructive {
+    @apply hii-btn bg-red-600 text-white hover:bg-red-700 active:bg-red-800 px-4 py-2 text-sm;
+  }
+
+  .hii-btn-ghost {
+    @apply hii-btn text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-2 text-sm;
+  }
+
+  .hii-btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .hii-btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  /* Form elements */
+  .hii-input {
+    @apply w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-hii-500/30 focus:border-hii-500 transition-colors;
+  }
+
+  .hii-label {
+    @apply block text-sm font-medium text-slate-700 mb-1.5;
+  }
+
+  .hii-select {
+    @apply hii-input appearance-none cursor-pointer;
+  }
+
+  /* Table */
+  .hii-table {
+    @apply w-full text-left text-sm border-collapse;
+  }
+
+  .hii-table th {
+    @apply py-3 px-4 text-xs font-semibold uppercase text-slate-500 bg-slate-50 border-b border-slate-200;
+  }
+
+  .hii-table td {
+    @apply py-3 px-4 border-b border-slate-100;
+  }
+
+  .hii-table tr:hover td {
+    @apply bg-slate-50;
+  }
+
+  /* KPI Tile */
+  .hii-kpi {
+    @apply hii-card p-5;
+  }
+
+  .hii-kpi-value {
+    @apply text-3xl font-extrabold text-slate-900 mt-2;
+  }
+
+  .hii-kpi-label {
+    @apply text-xs font-semibold uppercase text-slate-400;
+  }
+
+  /* Tab */
+  .hii-tabs {
+    @apply flex items-center space-x-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit;
+  }
+
+  .hii-tab {
+    @apply px-4 py-1.5 text-xs font-semibold rounded-md transition-colors;
+  }
+
+  .hii-tab-active {
+    @apply hii-tab bg-hii-500 text-white shadow-sm;
+  }
+
+  .hii-tab-inactive {
+    @apply hii-tab text-slate-600 hover:text-slate-900;
+  }
+
+  /* Section card */
+  .hii-section {
+    @apply hii-card overflow-hidden;
+  }
+
+  .hii-section-title {
+    @apply text-xs font-bold uppercase tracking-wider text-slate-400;
+  }
+
+  /* Empty state */
+  .hii-empty {
+    @apply text-center py-12 border border-dashed border-slate-200 rounded-xl bg-white;
+  }
+
+  .hii-empty-icon {
+    @apply w-12 h-12 text-slate-300 mx-auto mb-3;
+  }
+
+  .hii-empty-title {
+    @apply text-base font-semibold text-slate-600;
+  }
+
+  .hii-empty-desc {
+    @apply text-sm text-slate-500 mt-1 max-w-md mx-auto;
+  }
 }

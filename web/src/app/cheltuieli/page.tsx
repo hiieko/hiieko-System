@@ -7,9 +7,10 @@ import { Receipt, Plus, Search, X, Upload } from 'lucide-react';
 import { t, Expense, OcrResult, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiClient, ApiError } from '../../lib/api-client';
+import { formatDecimal, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_COLORS, enumLabel } from '../../lib/formatters';
 
-const CATS: Record<string,string> = { fuel:'Combustibil', accommodation:'Cazare', food:'Mancare', transport:'Transport', parking:'Parcare', tolls:'Taxe drum', materials:'Materiale', tools:'Scule', equipment:'Echipamente', phone_internet:'Telefon', other:'Altele' };
-const SC: Record<string,string> = { draft:'bg-slate-100 text-slate-700', submitted:'bg-blue-100 text-blue-800', under_review:'bg-amber-100 text-amber-800', approved:'bg-emerald-100 text-emerald-800', rejected:'bg-red-100 text-red-800', reimbursement_pending:'bg-purple-100 text-purple-800', reimbursed:'bg-green-100 text-green-800', cancelled:'bg-slate-200 text-slate-600', needs_correction:'bg-orange-100 text-orange-800' };
+// Category labels now use EXPENSE_CATEGORY_LABELS from formatters
+// Status colors now use EXPENSE_STATUS_COLORS from formatters
 
 export default function CheltuieliPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -24,55 +25,6 @@ export default function CheltuieliPage() {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { locale } = useLocale();
-
-  // Sample expenses for empty state display
-  const sampleExpenses: Expense[] = [
-    {
-      id: 'exp1',
-      user_id: 'u1',
-      site_id: 's1',
-      category: 'fuel',
-      status: 'approved',
-      document_type: 'receipt',
-      payment_method: 'personal',
-      amount: 125.50,
-      reimbursable_amount: 125.50,
-      currency: 'RON',
-      description: 'Combustibil pentru generator',
-      created_at: '2026-09-20T09:15:00',
-      updated_at: '2026-09-20T09:15:00',
-    },
-    {
-      id: 'exp2',
-      user_id: 'u2',
-      site_id: 's2',
-      category: 'food',
-      status: 'approved',
-      document_type: 'receipt',
-      payment_method: 'personal',
-      amount: 87.25,
-      reimbursable_amount: 87.25,
-      currency: 'RON',
-      description: 'Mese lucrători - șantier Timisoara',
-      created_at: '2026-09-20T13:30:00',
-      updated_at: '2026-09-20T13:30:00',
-    },
-    {
-      id: 'exp3',
-      user_id: 'u3',
-      site_id: 's3',
-      category: 'transport',
-      status: 'submitted',
-      document_type: 'receipt',
-      payment_method: 'company_card',
-      amount: 45.00,
-      reimbursable_amount: 45.00,
-      currency: 'RON',
-      description: 'Taxe auto pentru deplasări',
-      created_at: '2026-09-21T08:45:00',
-      updated_at: '2026-09-21T08:45:00',
-    },
-  ];
 
   /**
    * Maps backend OcrExtractionResult (camelCase) to shared OcrResult (snake_case)
@@ -278,11 +230,11 @@ export default function CheltuieliPage() {
                 {filtered.map(exp => (
                   <tr key={exp.id} className="hover:bg-slate-50">
                     <td className="py-3 px-4 text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString('ro-RO')}</td>
-                    <td className="py-3 px-4 text-xs font-medium text-slate-700">{CATS[exp.category] || exp.category}</td>
+                    <td className="py-3 px-4 text-xs font-medium text-slate-700">{enumLabel(exp.category, EXPENSE_CATEGORY_LABELS, locale)}</td>
                     <td className="py-3 px-4 text-slate-800 font-medium">{exp.description || '-'}</td>
-                    <td className="py-3 px-4 text-right font-bold text-slate-900">{exp.amount.toFixed(2)} {exp.currency}</td>
-                    <td className="py-3 px-4 text-xs text-slate-500">{exp.payment_method}</td>
-                    <td className="py-3 px-4 text-center"><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${SC[exp.status] || 'bg-slate-100'}`}>{exp.status}</span></td>
+                    <td className="py-3 px-4 text-right font-bold text-slate-900">{formatDecimal(exp.amount)} {exp.currency}</td>
+                    <td className="py-3 px-4 text-xs text-slate-500">{enumLabel(exp.payment_method, PAYMENT_METHOD_LABELS, locale)}</td>
+                    <td className="py-3 px-4 text-center"><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${EXPENSE_STATUS_COLORS[exp.status?.toUpperCase()] || 'bg-slate-100 text-slate-700'}`}>{enumLabel(exp.status, EXPENSE_STATUS_LABELS, locale)}</span></td>
                   </tr>
                 ))}
               </tbody>

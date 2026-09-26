@@ -1,6 +1,6 @@
 import { 
   calculateHaversineDistance, 
-  isWithinSiteGeofence, 
+  isWithinProjectGeofence, 
   calculateAttendanceWorkTime, 
   validateStockMovement 
 } from './calculations';
@@ -19,10 +19,10 @@ const craiovaSite = { lat: 44.2981, lng: 23.8122, radius: 350 };
 const workerNearby = { lat: 44.2982, lng: 23.8123 }; // ~14m away
 const workerFarAway = { lat: 44.3100, lng: 23.8500 }; // ~3.3km away
 
-const testNearby = isWithinSiteGeofence(workerNearby.lat, workerNearby.lng, craiovaSite.lat, craiovaSite.lng, craiovaSite.radius);
+const testNearby = isWithinProjectGeofence(workerNearby.lat, workerNearby.lng, craiovaSite.lat, craiovaSite.lng, craiovaSite.radius);
 assert(testNearby.isWithin === true, `Worker nearby (${testNearby.distanceMeters}m) is within 350m geofence`);
 
-const testFar = isWithinSiteGeofence(workerFarAway.lat, workerFarAway.lng, craiovaSite.lat, craiovaSite.lng, craiovaSite.radius);
+const testFar = isWithinProjectGeofence(workerFarAway.lat, workerFarAway.lng, craiovaSite.lat, craiovaSite.lng, craiovaSite.radius);
 assert(testFar.isWithin === false, `Worker far away (${testFar.distanceMeters}m) is correctly marked outside geofence`);
 
 // 2. Attendance & Overtime tests (09:00 - 18:00 with 1h rest = 8h normal)

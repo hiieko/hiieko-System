@@ -2,10 +2,12 @@
 
 **Date:** 2026-09-18/19 · **Severity:** CRIT / HIGH / MED / LOW · **Effort:** S (≤0.5d) / M (0.5–2d) / L (2–5d+) · Status: OPEN unless noted. Fixed = linked to its issue in `ISSUES.md`/`TODO.md`.
 
+> **⚠️ HISTORICAL / SUPERSEDED:** Many items below (TD-001 through TD-030) were identified during the Supabase-era audit (2026-09-18/19). Several have been resolved during the migration to NestJS + Prisma + PostgreSQL 18. Items marked **SUPERSEDED** are no longer relevant to the current architecture. See `ISSUES.md` and `PROGRESS.md` for the current resolution status of each item.
+
 | ID | Item | Location | Severity | Effort | Notes / fix |
 |---|---|---|---|---|
-| TD-001 | Dashboard queries nonexistent `attendance_records` | web/src/app/page.tsx:54 | CRIT | S | Use `time_logs` + today filter (ISSUE-001) |
-| TD-002 | `worker_count` hardcoded 0 in dashboard report rows | web/src/app/page.tsx:98 | HIGH | S | resolve real counts (daily_report_workers) |
+| TD-001 | Dashboard queries nonexistent `attendance_records` | web/src/app/page.tsx:54 | CRIT | S | **SUPERSEDED** — Dashboard replaced with Control Tower consuming real NestJS API (2026-09-22) |
+| TD-002 | `worker_count` hardcoded 0 in dashboard report rows | web/src/app/page.tsx:98 | HIGH | S | **SUPERSEDED** — Dashboard replaced with Control Tower (2026-09-22) |
 | TD-003 | Mobile boots to hardcoded demo user; LoginScreen unwired | Mobile/App.tsx | CRIT | M | boot to LoginScreen; pass real user (ISSUE-002) |
 | TD-004 | `syncOfflineQueue()` exported but never called | Mobile/src/services/supabase.ts | CRIT | M | connectivity detection + flush; then SQLite (WS-E) |
 | TD-005 | Mobile online submit paths alert-only (attendance, report, delivery, expense) | 4 screens | CRIT | M | real inserts / queue for all (ISSUE-005) |
@@ -14,11 +16,11 @@
 | TD-008 | No `.git` / VCS in checkout | repo root | CRIT | S | `git init` + initial commit + CI pipeline |
 | TD-009 | `full_setup.sql` header drift (says 01–06 "1/9"; body has 11 sections incl 07/08) | supabase/full_setup.sql | LOW | S | regenerate header (ISSUE-008) |
 | TD-010 | Mojibake `â€"` in comments | edge `index.ts`, mobile `ocr.ts`, `ocr-service/app/main.py` | LOW | S | re-save UTF-8 (ISSUE-009) |
-| TD-011 | Unused root dep `@supabase/server` (+ root react/react-dom possibly) | package.json | LOW | S | **REMOVED** (2026-09-23) — confirmed no imports |
+| TD-011 | Unused root dep `@supabase/server` (+ root react/react-dom possibly) | package.json | LOW | S | **REMOVED** (2026-09-23) — confirmed no imports ✅ |
 | TD-012 | `.env.example` carries seemingly-real anon key + project ref; `.gitignore` hygiene issues (duplicated rules/partial anchors) | `.env.example`, `.gitignore` | MED | S–M | rotate/placeholder + clean ignore (ISSUE-006/007) |
 | TD-013 | `shared/dist` includes test files (`.test.js/.d.ts`) | shared/tsconfig.json | LOW | S | exclude `**/*.test.ts` from build |
-| TD-014 | Web header site switcher uses `MOCK_SITES` | web/src/components/Header.tsx | MED | S | **mock-data.ts DELETED** (2026-09-23); live API is sole source; rename `Site`→`Project` deferred to R2.1 P3 |
-| TD-015 | `/pontaj`, `/rapoarte`, `/stocuri`, `/profil` not live | 4 pages | HIGH | L | wire to API (R2–R3) |
+| TD-014 | Web header site switcher uses `MOCK_SITES` | web/src/components/Header.tsx | MED | S | **SUPERSEDED** — Header migrated to ProjectContext (R2.1 P3, 2026-09-23) |
+| TD-015 | `/pontaj`, `/rapoarte`, `/stocuri`, `/profil` not live | 4 pages | HIGH | L | **SUPERSEDED** — All 4 pages wired to real API (R2.1 P3, 2026-09-23) |
 | TD-016 | `daily_report_approvals` missing; self-approval report trigger disabled | migration 05 | MED | S–M | add table + wire flow |
 | TD-017 | Online `/cheltuieli` submit path demo-only | web/src/app/cheltuieli/page.tsx | HIGH | M | real insert + ocr-status persistence |
 | TD-018 | Reimbursement workflow no admin UI | web/mobile | MED | M | add (spec §71) |

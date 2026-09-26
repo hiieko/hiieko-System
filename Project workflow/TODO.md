@@ -1,6 +1,8 @@
 # TODO
 
-Last Updated: 2026-09-22
+Last Updated: 2026-09-24 (R2.1 P6 CLOSURE — Documentation reconciliation complete)
+
+> **⚠️ HISTORICAL / SUPERSEDED:** Items below that reference Supabase setup (deployment items, ISSUE-006/008/009 etc.) are **historical artifacts** from before the Supabase→NestJS migration. The current architecture has zero Supabase runtime dependencies.
 
 # Next
 - [ ] Fix ISSUE-002 — wire mobile login: mount `LoginScreen` in `App.tsx`, remove the demo-user fallback

@@ -19,9 +19,13 @@ export class ChangeOrdersService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAll(projectId?: string) {
+  async findAll(projectId?: string, projectScopeWhere?: Record<string, any>) {
+    const where: any = { ...projectScopeWhere };
+    if (projectId) {
+      where.project_id = projectId;
+    }
     return this.prisma.changeOrder.findMany({
-      where: projectId ? { project_id: projectId } : undefined,
+      where,
       include: { project: true },
       orderBy: { created_at: 'desc' },
     });

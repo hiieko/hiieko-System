@@ -45,7 +45,18 @@ export class AuthService {
     }
 
     const passwordHash = dto.password ? await bcrypt.hash(dto.password, 10) : null;
-    const role = dto.role || UserRoleEnum.WORKER;
+
+    // SECURITY: Public registration must NEVER accept a caller-supplied privileged role.
+    // Only WORKER and VIEWER can be self-requested; any other value defaults to WORKER.
+    const ALLOWED_PUBLIC_ROLES: UserRoleEnum[] = [
+      UserRoleEnum.WORKER,
+      UserRoleEnum.VIEWER,
+    ];
+    const requestedRole = dto.role ? (dto.role as UserRoleEnum) : undefined;
+    const role =
+      requestedRole && ALLOWED_PUBLIC_ROLES.includes(requestedRole)
+        ? requestedRole
+        : UserRoleEnum.WORKER;
 
     const user = await this.prisma.user.create({
       data: {

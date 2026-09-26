@@ -31,15 +31,17 @@ export class DailyPlansService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findByProjectAndDate(projectId: string, dateStr: string) {
+  async findByProjectAndDate(projectId: string, dateStr: string, projectScopeWhere?: Record<string, any>) {
     const d = new Date(dateStr);
     d.setUTCHours(0, 0, 0, 0);
 
+    const where: any = { ...projectScopeWhere, plan_date: d };
+    if (projectId) {
+      where.project_id = projectId;
+    }
+
     return this.prisma.dailyPlan.findMany({
-      where: {
-        project_id: projectId,
-        plan_date: d,
-      },
+      where,
       include: {
         team: true,
         creator: { select: { id: true, email: true } },

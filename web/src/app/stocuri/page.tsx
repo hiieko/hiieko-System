@@ -58,76 +58,7 @@ export default function StocuriPage() {
   const [stockBalances, setStockBalances] = useState<StockBalance[]>([]);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
   const { locale } = useLocale();
-
-  // Sample materials for empty state display
-  const sampleMaterials: Material[] = [
-    {
-      id: 'm1',
-      code: 'BR-40',
-      name: 'Beton armat 40MPa',
-      unit: 'mc',
-      barcode: '202609210001',
-      category: 'Materiale de construcție',
-      min_stock_threshold: 10,
-    },
-    {
-      id: 'm2',
-      code: 'EL-001',
-      name: 'Cablu electric 2.5mm',
-      unit: 'buc',
-      barcode: '202609210002',
-      category: 'Instalații electrice',
-      min_stock_threshold: 20,
-    },
-    {
-      id: 'm3',
-      code: 'MG-001',
-      name: 'Suruburi metal',
-      unit: 'pungi',
-      barcode: '202609210003',
-      category: 'Amprentari',
-      min_stock_threshold: 50,
-    },
-  ];
-
-  // Sample stock movements for empty state display
-  const sampleStockMovements: StockMovement[] = [
-    {
-      id: 'sm1',
-      material_id: 'm1',
-      project_id: 'p1',
-      movement_type: 'receipt',
-      quantity: 50,
-      created_by_id: 'u1',
-      notes: 'Recepție aviz AV-2026-001',
-      created_at: '2026-09-21T09:30:00',
-      material: { name: 'Beton armat 40MPa', unit: 'mc' },
-    },
-    {
-      id: 'sm2',
-      material_id: 'm2',
-      project_id: 'p2',
-      movement_type: 'receipt',
-      quantity: 100,
-      created_by_id: 'u2',
-      notes: 'Recepție aviz AV-2026-002',
-      created_at: '2026-09-21T11:15:00',
-      material: { name: 'Cablu electric 2.5mm', unit: 'buc' },
-    },
-    {
-      id: 'sm3',
-      material_id: 'm1',
-      project_id: 'p1',
-      movement_type: 'consumption',
-      quantity: 5,
-      created_by_id: 'u1',
-      notes: 'Consum șantier AR-001',
-      created_at: '2026-09-21T15:00:00',
-      material: { name: 'Beton armat 40MPa', unit: 'mc' },
-    },
-  ];
 
   useEffect(() => {
     const loadData = async () => {
@@ -145,9 +76,6 @@ export default function StocuriPage() {
 
         const usersResponse = await apiClient.getUsers();
         setUsers((usersResponse.data || []) as any[]);
-
-        const projectsResponse = await apiClient.getProjects();
-        setProjects((projectsResponse.data || []) as any[]);
       } catch (err: any) {
         console.error('Failed to load stock data:', err);
         setError(err.message || 'Failed to load data');
@@ -305,20 +233,21 @@ export default function StocuriPage() {
                   const user = users.find(u => u.id === mv.created_by_id);
                   const qty = Number(mv.quantity || 0);
                   
-                  // Determine if positive based on movement_type
-                  // RECEIPT, TRANSFER_IN = positive
-                  // CONSUMPTION, TRANSFER_OUT = negative
+                  // Determine sign based on movement_type semantics:
+                  // RECEIPT, TRANSFER_IN, RETURN, ADJUSTMENT (if qty >= 0) = positive (addition to stock)
+                  // CONSUMPTION, TRANSFER_OUT, ALLOCATION = negative (removal from stock)
                   const movType = (mv.movement_type || '').toString().toUpperCase();
-                  const isPositive = movType === 'RECEIPT' || movType === 'TRANSFER_IN' || 
-                                    movType === 'ADJUSTMENT' && qty > 0 ||
-                                    qty > 0;
+                  const isPositive = movType === 'RECEIPT' || movType === 'TRANSFER_IN' || movType === 'RETURN' ||
+                                    (movType === 'ADJUSTMENT' && qty >= 0);
                   const displayQty = qty;
 
-                  let operationLabel = 'Mișcare';
-                  if (movType === 'RECEIPT') operationLabel = 'Recepție Aviz';
-                  else if (movType === 'CONSUMPTION') operationLabel = 'Consum Șantier';
-                  else if (movType === 'TRANSFER') operationLabel = 'Transfer';
+                  let operationLabel = 'Miscare';
+                  if (movType === 'RECEIPT') operationLabel = 'Receptie Aviz';
+                  else if (movType === 'CONSUMPTION') operationLabel = 'Consum Santier';
+                  else if (movType === 'TRANSFER_OUT') operationLabel = 'Transfer Iesire';
+                  else if (movType === 'TRANSFER_IN') operationLabel = 'Transfer Intrare';
                   else if (movType === 'ADJUSTMENT') operationLabel = 'Ajustare';
+                  else if (movType === 'RETURN') operationLabel = 'Returnare';
 
                   return (
                     <tr key={mv.id} className="hover:bg-slate-50">

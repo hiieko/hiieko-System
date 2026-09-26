@@ -1,10 +1,10 @@
-# Project
+﻿# Project
 
 ## Project Name
-HIIEKO — Solar Site Management System (`solar-site-management-system` v1.0.0)
+HIIEKO â€” Solar Site Management System (`solar-site-management-system` v1.0.0)
 
 ## Description
-An integrated management platform for solar photovoltaic construction sites in Romania. It coordinates daily worker attendance (GPS/geofence based), team-leader daily reports, supplier delivery notes and site stock, company expense management with camera-based receipt OCR (PaddleOCR), expense approval workflows, notifications, account applications, and site statistics — through a web dashboard and a mobile workforce app, with a PostgreSQL/Prisma/NestJS backend.
+An integrated management platform for solar photovoltaic construction sites in Romania. It coordinates daily worker attendance (GPS/geofence based), team-leader daily reports, supplier delivery notes and site stock, company expense management with camera-based receipt OCR (PaddleOCR), expense approval workflows, notifications, account applications, and site statistics â€” through a web dashboard and a mobile workforce app, with a PostgreSQL/Prisma/NestJS backend.
 
 ## Purpose
 Replace manual paper-based site records with a single source of truth per site, remain usable in low-connectivity conditions (offline queue), and enforce company policy in the database (permissions/RLS, no negative stock, no self-approval of expenses).
@@ -21,17 +21,18 @@ Replace manual paper-based site records with a single source of truth per site, 
 - Last Updated: 2026-09-22
 
 ## Technology Stack
-- Language: TypeScript/TSX, Python, SQL/PLpgSQL, Deno (TypeScript)
+- Language: TypeScript/TSX, Python, SQL/PLpgSQL
 - Framework: Next.js 14 (web), Expo 51 / React Native 0.74 (mobile), FastAPI (OCR service), PaddleOCR 3.x
-- Runtime: Node.js (recommended 20 LTS; 24.x present here), Deno 2 (Edge Functions), Python 3.12+
-- Database: Supabase (PostgreSQL 15) + private storage bucket
-- Frontend: Next.js App Router (client-side Supabase SDK), React Native
-- Backend: Supabase (RLS, triggers, functions) + Deno Edge Function `ocr-extract` + self-hosted FastAPI/PaddleOCR service
-- Infrastructure: npm workspaces monorepo; Docker (ocr-service); Supabase Cloud
-- Testing: tsx/`node --test`-style scripts in `shared`, Deno tests in the Edge Function, pytest suite in `ocr-service`
+- Runtime: Node.js (recommended 20 LTS; 24.x present here), Python 3.12+
+- **Backend: NestJS + Prisma + PostgreSQL 18** (Supabase fully removed from runtime on 2026-09-23)
+- Frontend: Next.js App Router (NestJS API client), React Native
+- Infrastructure: npm workspaces monorepo; Docker (ocr-service)
+- Testing: Jest (backend, 15 suites / 125 tests), tsx/`node --test`-style scripts in `shared`, pytest suite in `ocr-service`
 
 ## Architecture Overview
-Monorepo with four workspaces. `shared` holds pure domain logic (types, calculations, i18n, permission helpers, OCR normalization) reused by web, mobile and tests. `web` and `Mobile` are thin clients over the Supabase REST API protected by row-level security. The OCR path is: mobile/web camera → Supabase storage (private `expense-documents` bucket) → Edge Function `ocr-extract` (validates caller JWT, proxies to the private service, stores normalized fields) → client review of low-confidence fields → approval. All authorization runs in the database (RLS). See `docs/`, `README.md`, and `HOW_TO_RUN.md`.
+Monorepo with four workspaces. `shared` holds pure domain logic (types, calculations, i18n, permission helpers, OCR normalization) reused by web, mobile and tests. `web` and `Mobile` are thin clients over the NestJS REST API protected by JWT authentication and project-scoped guards. The OCR path is: mobile/web camera â†’ NestJS upload â†’ PaddleOCR service (server-side) â†’ client review of low-confidence fields â†’ approval. All authorization runs in the NestJS middleware layer (guards, decorators). See `docs/`, `README.md`, and `HOW_TO_RUN.md`.
+
+> **âš ï¸ HISTORICAL / SUPERSEDED:** The earlier Supabase-based architecture (RLS policies, Edge Functions, Supabase Storage, `supabase/full_setup.sql` as the schema source) was fully decommissioned on 2026-09-23. The current authoritative backend is NestJS + Prisma + PostgreSQL 18. References to Supabase in the Important Directories and Important Files sections below are retained for historical documentation of the migration path.
 
 ## Important Directories
 | Directory | Purpose |
@@ -56,8 +57,11 @@ Monorepo with four workspaces. `shared` holds pure domain logic (types, calculat
 | `supabase/functions/ocr-extract/index.ts` | OCR proxy Edge Function (PaddleOCR) |
 | `ocr-service/app/main.py` | Private OCR HTTP service |
 
-## Development Workflow
-Install with `npm install` at the repository root (npm workspaces install all workspaces; `shared/dist` must be built first for web/mobile). Copy the relevant `.env.example` to `.env`/`.env.local` (web: `NEXT_PUBLIC_SUPABASE_URL` + anon key; mobile: `EXPO_PUBLIC_*`). Apply `supabase/full_setup.sql`, deploy the `ocr-extract` function with `PADDLEOCR_URL`/`PADDLEOCR_TOKEN` secrets, and run the OCR service (Docker or `uvicorn`). Detailed steps are in `HOW_TO_RUN.md`.
+## Development Workflow (CURRENT)
+Install with `npm install` at the repository root (npm workspaces install all workspaces; `shared/dist` must be built first for web/mobile). Copy `.env.example` to `.env` in each workspace. The NestJS backend runs on port 4000. Prisma migrations are managed via `npx prisma migrate deploy` in `backend/`. Detailed steps are in `HOW_TO_RUN.md`.
+
+> **⚠️ HISTORICAL / SUPERSEDED:** The previous workflow referenced Supabase setup (`NEXT_PUBLIC_SUPABASE_URL`, anon key, `supabase/full_setup.sql`, Edge Function deployment). These are no longer required. Supabase was fully removed from the runtime on 2026-09-23.
+
 
 ## Definition of Done
 A feature is complete when:
@@ -74,3 +78,4 @@ A feature is complete when:
 - All web pages are now live with real API calls to the NestJS backend.
 - Mobile `App.tsx` currently uses a hardcoded demo user; `LoginScreen.tsx` is implemented but not wired in (ISSUE-002).
 - UI copy is Romanian-first with a `ro`/`en` i18n layer in `shared`.
+

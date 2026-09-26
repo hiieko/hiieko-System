@@ -5,8 +5,8 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { AppShell } from '../components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'Solar Site Management — Panou Manager',
-  description: 'Sistem integrat de pontaj, rapoarte zilnice, avize și gestiune stocuri parcuri solare',
+  title: 'HIIEKO — Sistem Opera\u021bional EPC',
+  description: 'Sistem integrat de gestiune opera\u021bional\u0103 pentru proiecte solare EPC — pontaj, rapoarte, avize, stocuri, cheltuieli',
 };
 
 export default function RootLayout({
@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ro">
-      <body className="flex h-screen overflow-hidden bg-slate-50 antialiased font-sans">
+    <html lang="ro" className="h-full">
+      <body className="h-full bg-slate-50 antialiased">
         <LocaleProviderClient>
           <AuthProvider>
             <AppShell>{children}</AppShell>

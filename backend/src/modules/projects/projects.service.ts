@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
-import { ProjectStatusEnum } from '@prisma/client';
+import { ProjectStatusEnum, UserRoleEnum } from '@prisma/client';
 
 export interface CreateProjectDto {
   organizationId: string;
@@ -50,6 +50,51 @@ export class ProjectsService {
     });
   }
 
+  /**
+   * Find projects scoped by user membership.
+   * For global-scope roles, returns all org projects (same as findAll).
+   * For other roles, returns only projects where the user is a member.
+   */
+  async findAllScoped(
+    organizationId: string,
+    userRole: UserRoleEnum,
+    memberProjectIds: string[],
+  ) {
+    const isGlobalRole = [
+      UserRoleEnum.ADMIN,
+      UserRoleEnum.OWNER,
+      UserRoleEnum.PM,
+      UserRoleEnum.MANAGER,
+    ].includes(userRole as any);
+
+    const where: any = { is_active: true };
+
+    if (organizationId) {
+      where.organization_id = organizationId;
+    }
+
+    if (!isGlobalRole) {
+      where.id = { in: memberProjectIds };
+    }
+
+    return this.prisma.project.findMany({
+      where,
+      include: {
+        client: true,
+        stages: true,
+        zones: true,
+        members: {
+          include: {
+            user: {
+              include: { profile: true },
+            },
+          },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
   async findOne(id: string) {
     const project = await this.prisma.project.findUnique({
       where: { id },
@@ -75,7 +120,7 @@ export class ProjectsService {
     return project;
   }
 
-  async create(dto: CreateProjectDto, actorId?: string) {
+  async create(dto: CreateProjectDto, actorId?: string, actorRole?: UserRoleEnum) {
     const project = await this.prisma.project.create({
       data: {
         organization_id: dto.organizationId,
@@ -93,6 +138,18 @@ export class ProjectsService {
         currency: dto.currency || 'RON',
       },
     });
+
+    // Auto-provision creator membership
+    if (actorId) {
+      const membershipRole = actorRole || UserRoleEnum.PM;
+      await this.prisma.projectMember.create({
+        data: {
+          project_id: project.id,
+          user_id: actorId,
+          role: membershipRole,
+        },
+      });
+    }
 
     await this.auditService.record({
       organizationId: dto.organizationId,

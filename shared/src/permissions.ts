@@ -51,10 +51,6 @@ export const canViewAllAttendance = (role: UserRole): boolean =>
 /**
  * Can manage sites (create, edit, delete)
  */
-export const canManageSites = (role: UserRole): boolean =>
-  role === 'admin' ||
-  role === 'owner';
-
 /**
  * Can adjust stock levels
  */

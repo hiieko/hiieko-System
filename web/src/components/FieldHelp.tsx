@@ -27,7 +27,7 @@ export function FieldHelp({ labelKey, textKey, locale = 'ro', muted }: FieldHelp
         onClick={() => setOpen((o) => !o)}
         aria-label={labelKey}
         aria-expanded={open}
-        className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold leading-none hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+        className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[11px] font-bold leading-none hover:bg-hii-100 focus:outline-none focus:ring-2 focus:ring-hii-500"
       >
         ?
       </button>
