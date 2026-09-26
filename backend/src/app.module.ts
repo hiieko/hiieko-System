@@ -33,6 +33,7 @@ import { ChangeOrdersModule } from './modules/change-orders/change-orders.module
 import { CostsModule } from './modules/costs/costs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ControlTowerModule } from './modules/control-tower/control-tower.module';
+import { SolarModule } from './modules/solar/solar.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { ControlTowerModule } from './modules/control-tower/control-tower.module
     CostsModule,
     NotificationsModule,
     ControlTowerModule,
+    SolarModule,
   ],
   controllers: [AuditController],
 })

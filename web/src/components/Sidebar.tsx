@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro, ClipboardCheck, Bell, Users, BarChart3, ShieldCheck, X, User } from 'lucide-react';
+import { LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro, ClipboardCheck, Bell, Users, BarChart3, ShieldCheck, X, User, SunMedium } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavItem { href: string; label: string; icon: React.ComponentType<{ className?: string }>; roles?: string[]; }
@@ -12,6 +12,7 @@ interface NavGroup { title: string; items: NavItem[]; roles?: string[]; }
 const NAV_GROUPS: NavGroup[] = [
   { title: 'Operațiuni', items: [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/solar-configurator', label: 'Configurator Solar', icon: SunMedium },
     { href: '/pontaj', label: 'Pontaj & Ore', icon: Clock },
     { href: '/rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
     { href: '/avize', label: 'Procurement / Avize', icon: Truck },

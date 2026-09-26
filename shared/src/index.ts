@@ -1,5 +1,6 @@
 export * from './types';
 export * from './calculations';
+export * from './solar';
 export * from './translations';
 export * from './i18n';
 export * from './permissions';
