@@ -29,8 +29,12 @@ Pure TypeScript, zero dependencies on React/DOM/Three.js/Prisma/NestJS. It holds
 | File | Purpose |
 |---|---|
 | `units.ts` | Canonical units + `degToRad`/`radToDeg`. |
-| `types.ts` | Domain types (roof, module, placement, BOM, design model). |
+| `types.ts` | Domain types (surface, module, placement, `SiteObject`/`Pose`/`SiteObjectType`, BOM, design model). |
 | `geometry.ts` | `GEOMETRY_EPSILON_MM`, polygon ops, `roofLocalToWorld`/`worldToRoofLocal`. |
+| `viewport.ts` | 2D viewport math — `localToScreen`/`screenToLocal`, `fitViewport`, `zoomViewportAt`, `snapToGrid`, `pointDistanceMm`. |
+| `editor.ts` | Generic object ops (`move/rotate/snap/duplicate/delete/align/distribute`) over `T extends Placeable`. |
+| `history.ts` | Pure undo/redo state machine (`createHistory`). |
+| `site-object.ts` | World transform + mapping — `surfaceToPlane`, `objectWorldPosition`, `moduleWorldCorners`, `toSiteObject`. |
 | `engine-versions.ts` | Snapshot schema + engine version constants. |
 | `layout.ts` | Pure PV layout engine (`computeLayout`). |
 | `mounting.ts` | **Prototype** mounting rule engine (`computeMounting`). |
@@ -43,17 +47,20 @@ The engines are pure functions, run identically client-side (instant preview) an
 NestJS module that persists the model and runs the shared engines server-side:
 
 - `solar.controller.ts` — HTTP endpoints.
-- `solar.service.ts` — orchestration (CRUD, roof, layout, BOM, catalog).
+- `solar.service.ts` — orchestration (CRUD, surface, layout, placements, BOM, catalog).
 - `solar.util.ts` — Prisma row ↔ domain model mapping + `runEngines()`.
 - `guards/solar-design-access.guard.ts` — project isolation for design-scoped routes.
 - `dto/` — class-validator DTOs.
 
 ### Frontend — `web/src/features/solar-configurator/` and `web/src/app/solar-configurator/`
 
-- State/handlers live in the page; components are presentational projections.
+- Editor state/handlers live in the page; components are presentational projections.
 - `api/solar.ts` — all Solar endpoint methods (isolated from the generic client).
-- `layout/RoofPlan2D.tsx` — 2D SVG projection.
-- `viewer3d/SolarScene.tsx` — 3D R3F projection (dynamic import, `ssr:false`).
+- `layout/RoofPlan2D.tsx` — interactive 2D SVG editor (drag/select/pan/zoom/grid/measure).
+- `editor/EditorToolbar.tsx` — tool/transform/view/grid/undo controls.
+- `editor/useHistory.ts` — undo/redo hook (wraps shared `createHistory`).
+- `editor/types.ts` — `EditorTool`, `MeasureState`, plan viewport constants.
+- `viewer3d/SolarScene.tsx` — 3D R3F projection (dynamic import, `ssr:false`; per-object renderers).
 - `bom/BomPanel.tsx`, `components/SummaryPanel.tsx` — BOM/summary projections.
 
 ## Canonical units
@@ -91,11 +98,29 @@ Read from `shared/src/solar/geometry.ts` and `types.ts`:
 
 ## Projections
 
-- **2D**: `RoofPlan2D` draws `(localX, localY)` directly in SVG.
-- **3D**: `SolarScene` builds a per-roof basis matrix from `roofLocalToWorld` and renders modules as boxes in roof-local coordinates inside that basis.
+- **2D**: `RoofPlan2D` renders the active surface in SVG; pointer positions convert screen→local (`screenToLocal`), edits apply via generic `editor.ts` ops, and the viewport (`zoom/pan`) never mutates domain coordinates.
+- **3D**: `SolarScene` builds a per-surface basis from `surfaceToPlane`/`roofLocalToWorld`; per-object renderers (`ModuleMesh`) draw in local coordinates inside that basis.
 - **BOM**: `computeBom(placements, moduleSpec, mounting)` — derived from placements, never manual.
 
-Both 2D and 3D consume the **same** `ModulePlacement[]`.
+2D and 3D consume the **same** `ModulePlacement[]` (committed + live drag preview), so they never diverge.
+
+## Editor state architecture
+
+Three independent layers:
+
+- **Committed domain state** — `placements` (history `present`), edited only by explicit operations.
+- **Transient interaction state** — `previewPlacements` during a drag (committed once on pointer-up).
+- **Visual state** — `viewport` (`zoom/panX/panY`), tool, grid, measurement — never written to domain coordinates.
+
+Undo/redo is one history entry per logical operation (drag = pointerdown→moves→up→one commit), implemented by pure `createHistory` + the `useHistory` hook. Persistence is a debounced bulk `PUT /designs/:id/placements`.
+
+## SiteObject chain
+
+```
+Surface → SiteObject (id + surfaceId + local pose) → surfaceToPlane/roofLocalToWorld → world pose
+```
+
+`SiteObject` is a type-level generalization; `ModulePlacement` is the first concrete object (`PV_MODULE`). Generic editor ops and the single world transform let future object types reuse the same interaction model without a new coordinate system.
 
 ## Backend orchestration
 

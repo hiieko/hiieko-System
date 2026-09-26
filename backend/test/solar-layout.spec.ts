@@ -19,6 +19,7 @@ describe('PV layout + mounting + BOM engines', () => {
     designId: 'd1',
     name: 'Roof',
     roofType: 'FLAT',
+    surfaceType: 'ROOF',
     slopeDeg: 0,
     azimuthDeg: 0,
     polygon: [
@@ -116,6 +117,7 @@ describe('PV layout (M2 — polygon + obstacles + multiple sections)', () => {
       designId: 'd1',
       name: 'L',
       roofType: 'FLAT',
+      surfaceType: 'ROOF',
       slopeDeg: 0,
       azimuthDeg: 0,
       origin: { x: 0, y: 0, z: 0 },
@@ -151,6 +153,7 @@ describe('PV layout (M2 — polygon + obstacles + multiple sections)', () => {
       designId: 'd1',
       name: 'R',
       roofType: 'FLAT',
+      surfaceType: 'ROOF',
       slopeDeg: 0,
       azimuthDeg: 0,
       origin: { x: 0, y: 0, z: 0 },
@@ -195,11 +198,11 @@ describe('PV layout (M2 — polygon + obstacles + multiple sections)', () => {
       { x: 0, y: 4000 },
     ];
     const roofA: RoofSectionModel = {
-      id: 'roof-a', designId: 'd1', name: 'A', roofType: 'FLAT', slopeDeg: 0, azimuthDeg: 0,
+      id: 'roof-a', designId: 'd1', name: 'A', roofType: 'FLAT', surfaceType: 'ROOF', slopeDeg: 0, azimuthDeg: 0,
       origin: { x: 0, y: 0, z: 0 }, polygon: poly,
     };
     const roofB: RoofSectionModel = {
-      id: 'roof-b', designId: 'd1', name: 'B', roofType: 'FLAT', slopeDeg: 20, azimuthDeg: 90,
+      id: 'roof-b', designId: 'd1', name: 'B', roofType: 'FLAT', surfaceType: 'ROOF', slopeDeg: 20, azimuthDeg: 90,
       origin: { x: 0, y: 0, z: 0 }, polygon: poly,
     };
 

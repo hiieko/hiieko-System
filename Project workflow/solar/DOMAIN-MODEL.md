@@ -19,6 +19,7 @@ There are two representations of the same domain:
 | `SolarDesignStatusEnum` | `DRAFT`, `IN_PROGRESS`, `REVIEW`, `APPROVED`, `SUPERSEDED` |
 | `SolarModuleOrientationEnum` | `PORTRAIT`, `LANDSCAPE` |
 | `SolarRoofTypeEnum` | `FLAT`, `PITCHED`, `GABLE`, `HIP`, `COMPLEX` |
+| `SolarSurfaceTypeEnum` | `ROOF`, `GROUND`, `GRASS`, `GRAVEL`, `ROCK`, `ASPHALT`, `CONCRETE`, `PARKING`, `CARPORT`, `CUSTOM` |
 | `SolarProductTypeEnum` | `RAIL`, `ROOF_HOOK`, `END_CLAMP`, `MID_CLAMP`, `RAIL_CONNECTOR`, `FASTENER`, `BRACKET`, `TILE_HOOK`, `TRAPEZOID_ATTACHMENT`, `STANDING_SEAM_CLAMP`, `BALLAST`, `EPDM`, `OTHER` |
 | `SolarCatalogStatusEnum` | `DEMO`, `DRAFT`, `VALIDATED` |
 | `SolarBomItemTypeEnum` | `MODULE`, `RAIL`, `HOOK`, `CLAMP`, `CONNECTOR`, `FASTENER`, `EPDM`, `CUSTOM` |
@@ -33,11 +34,12 @@ Transform inputs for a roof section (roof-local ↔ world).
 - `slopeDeg: number` — degrees.
 - `azimuthDeg: number` — degrees, clockwise from North.
 
-### `RoofSectionModel` — IMPLEMENTED
+### `RoofSectionModel` / `SurfaceModel` — IMPLEMENTED
 
-- `id`, `designId`, `name`, `roofType` (`FLAT|PITCHED|GABLE|HIP|COMPLEX`), `slopeDeg`, `azimuthDeg`, `roofMaterial?`.
-- `polygon: Polygon2D` — roof-local 2D outline (mm, closed).
-- `origin: Point3D` — world anchor (mm).
+- `id`, `designId`, `name`, `roofType` (`FLAT|PITCHED|GABLE|HIP|COMPLEX`), `surfaceType` (`ROOF|GROUND|GRASS|GRAVEL|ROCK|ASPHALT|CONCRETE|PARKING|CARPORT|CUSTOM`), `slopeDeg`, `azimuthDeg`, `roofMaterial?`, `thicknessMm?`.
+- `polygon: Polygon2D` — surface-local 2D outline (mm, closed).
+- `origin: Point3D` — world anchor (mm); `origin.z` = elevation.
+- `SurfaceModel` is an alias of `RoofSectionModel` (the generalized name).
 
 ### `ModuleSpecModel` — IMPLEMENTED
 
@@ -49,10 +51,28 @@ Transform inputs for a roof section (roof-local ↔ world).
 
 - `moduleSpecId?`, `orientation` (`PORTRAIT|LANDSCAPE`), `edgeMarginMm`, `rowSpacingMm`, `columnSpacingMm`.
 
-### `ModulePlacement` — IMPLEMENTED (the layout engine output)
+### `ModulePlacement` — IMPLEMENTED (first concrete SiteObject)
 
 - `roofSectionId`, `moduleSpecId?`, `row`, `column`.
-- **Roof-local mm**: `localX`, `localY`, `localZ`, `rotationDeg`, `widthMm`, `heightMm`.
+- **Surface-local mm**: `localX`, `localY`, `localZ`, `rotationDeg`, `widthMm`, `heightMm`.
+- Stable `id`; `roofSectionId` is the generalized `surfaceId`.
+
+### `Pose` — IMPLEMENTED
+
+- `localX`, `localY`, `localZ` (mm), `rotationDeg` (degrees).
+
+### `SiteObjectType` — IMPLEMENTED (extensible)
+
+- `PV_MODULE | STRUCTURE | INVERTER | COMBINER | EQUIPMENT | CAMERA | OBSTACLE | CABLE_NODE`.
+
+### `SiteObject` — IMPLEMENTED (type-level generalization)
+
+- `Pose` + `id`, `designId`, `surfaceId`, `objectType`.
+- Not yet persisted as a separate table (deferred); `ModulePlacement` is the first concrete implementation.
+
+### `Placeable` — IMPLEMENTED (editor contract)
+
+- `{ id, localX, localY, rotationDeg }` — the minimal contract the generic editor ops operate on.
 
 ### `ObstacleModel` — IMPLEMENTED (M2)
 
@@ -92,7 +112,7 @@ The engineering design attached to a `Project`.
 
 ### `SolarRoofSection` — IMPLEMENTED (mutable)
 
-- `id`, `design_id` (FK, cascade), `name`, `roof_type` (default `FLAT`), `slope_deg` (deg), `azimuth_deg` (deg), `roof_material?`, `polygon Json` (roof-local 2D, mm), `origin Json` (world anchor, mm), timestamps.
+- `id`, `design_id` (FK, cascade), `name`, `roof_type` (default `FLAT`), `surface_type` (default `ROOF`), `slope_deg` (deg), `azimuth_deg` (deg), `roof_material?`, `thickness_mm?`, `polygon Json` (surface-local 2D, mm), `origin Json` (world anchor, mm; `z` = elevation), timestamps.
 - Relations: `design`, `obstacles[]`, `placements[]`.
 
 ### `SolarObstacle` — IMPLEMENTED (M2)
@@ -113,9 +133,10 @@ The engineering design attached to a `Project`.
 ### `SolarModulePlacement` — IMPLEMENTED (computed output, mutable current layout)
 
 - `id`, `design_id` (FK, cascade), `roof_section_id` (FK, cascade), `module_spec_id?`, `row`, `column`.
-- **Roof-local mm**: `local_x`, `local_y`, `local_z` (default 0), `rotation_deg` (default 0), `width_mm`, `height_mm`.
+- **Surface-local mm**: `local_x`, `local_y`, `local_z` (default 0), `rotation_deg` (default 0), `width_mm`, `height_mm`.
 - Indexes on `design_id`, `roof_section_id`.
-- Regenerated on every layout calculation (delete + recreate in a transaction).
+- Regenerated on layout calculation; **bulk-replaced** by `PUT /designs/:id/placements` for interactive edits (Phase H).
+- This is the first concrete `SiteObject` (objectType `PV_MODULE`, surfaceId = roof_section_id).
 
 ### `SolarMountingFamily` — DEFERRED (schema only, family reservation)
 

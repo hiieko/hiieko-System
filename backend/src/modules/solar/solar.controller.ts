@@ -23,6 +23,7 @@ import { CreateObstacleDto } from './dto/create-obstacle.dto';
 import { CreateRoofSectionDto } from './dto/create-roof-section.dto';
 import { CreateSolarDesignDto } from './dto/create-solar-design.dto';
 import { UpdateObstacleDto } from './dto/update-obstacle.dto';
+import { UpdatePlacementsDto } from './dto/update-placements.dto';
 import { UpdateRoofSectionDto } from './dto/update-roof-section.dto';
 import { UpsertLayoutSettingsDto } from './dto/upsert-layout-settings.dto';
 import { SolarDesignAccessGuard } from './guards/solar-design-access.guard';
@@ -177,6 +178,18 @@ export class SolarController {
   @ApiOperation({ summary: 'Calculate the PV module layout (roof-local placements)' })
   async calculateLayout(@Param('designId') designId: string) {
     return this.solarService.calculateLayout(designId);
+  }
+
+  @Put('designs/:designId/placements')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM, UserRoleEnum.SITE_MANAGER)
+  @UseGuards(SolarDesignAccessGuard)
+  @ApiOperation({ summary: 'Replace all module placements (bulk edit persistence)' })
+  async replacePlacements(
+    @Param('designId') designId: string,
+    @Body() dto: UpdatePlacementsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.solarService.replacePlacements(designId, dto, user);
   }
 
   // ── BOM ────────────────────────────────────────────────────────────────────

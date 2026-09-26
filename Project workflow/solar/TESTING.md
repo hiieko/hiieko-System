@@ -1,6 +1,6 @@
 # Solar Testing & Validation
 
-Last Updated: 2026-09-25
+Last Updated: 2026-09-26
 
 Documents the actual Solar test and validation setup and the current validation status. No credentials or `DATABASE_URL` are included.
 
@@ -10,11 +10,13 @@ All Solar tests live under `backend/test/` (the backend Jest suite; it also runs
 
 | File | Covers |
 |---|---|
-| `solar-geometry.spec.ts` | Shared geometry — polygon area, point-in-polygon, rect↔polygon intersection, transforms; **M2**: exact segment-to-segment distance, boundary clearance, containment, normalization, self-intersection/validation, winding-order independence. |
-| `solar-layout.spec.ts` | Shared layout/mounting/BOM — deterministic grid, obstacle exclusion, mounting + BOM; **M2**: irregular polygon, obstacle keep-out margin, multiple roof sections. |
+| `solar-geometry.spec.ts` | Shared geometry — polygon area, point-in-polygon, rect↔polygon intersection, transforms; M2 exact clearance/containment/validation; surface transform (elevation/slope/azimuth). |
+| `solar-layout.spec.ts` | Shared layout/mounting/BOM — deterministic grid, obstacle exclusion, mounting + BOM; irregular polygon, obstacle keep-out margin, multiple roof sections. |
+| `solar-editor.spec.ts` | Editor viewport (pointer↔local, fit, zoom-at-anchor, snap, distance) + module ops (move/rotate/duplicate/delete/align/snap) + undo/redo. |
+| `solar-site-object.spec.ts` | SiteObject model — mapping, surface attachment, local→world transform, rotation, generic editor on non-module objects, PV module through the generalized path. |
 | `solar-design-access.guard.spec.ts` | `SolarDesignAccessGuard` — Admin bypass, member access, non-member denial. |
-| `solar.service.spec.ts` | `SolarService` — CRUD, layout/BOM, persistence; **M2**: roof update/delete, obstacle CRUD, polygon/containment validation, multi-roof layout. |
-| `solar.controller.spec.ts` | `SolarController` — list-design authorization; **M2**: roof/obstacle route delegation. |
+| `solar.service.spec.ts` | `SolarService` — CRUD, layout/BOM, persistence, roof update/delete, obstacle CRUD, `replacePlacements` (Phase H). |
+| `solar.controller.spec.ts` | `SolarController` — list-design authorization; roof/obstacle/placement route delegation. |
 
 ## How to run Solar tests
 
@@ -32,31 +34,22 @@ npm test
 | Command | Purpose |
 |---|---|
 | `npm run build --workspace=shared` | Build the shared package (compiles `shared/src/solar/`). |
-| `npm run typecheck --workspace=web` | Type-check the web app. |
-| `npm run typecheck --workspace=backend` | Type-check the backend (currently blocked by a pre-existing unrelated issue, see below). |
-| `npm run build --workspace=web` | Next.js production build. |
-| `npm test` | Full backend Jest suite. |
+| `npx tsc --noEmit` (in `backend/`) | Type-check the backend. |
+| `npx tsc --noEmit` (in `web/`) | Type-check the web app. |
+| `npm test` (in `backend/`) | Full backend Jest suite. |
 
 ## Current validation status
 
 | Item | Status |
 |---|---|
-| Solar tests | ✅ **5 suites / 48 tests, passing** |
+| Full backend test suite | ✅ **27 suites / 232 tests, passing** (includes 7 Solar suites) |
 | Shared build | ✅ PASS |
+| Backend typecheck | ✅ PASS |
 | Web typecheck | ✅ PASS |
-| Web production build | ✅ PASS |
-| Backend typecheck | ⚠️ blocked by pre-existing unrelated `TRANSFER_IN` / `TRANSFER_OUT` errors (see below) |
-| Full backend tests | ⚠️ **109 passed**; one pre-existing `stock.service.spec.ts` compilation failure caused by the same unrelated inventory issue |
 | Browser/runtime smoke test | ❌ NOT EXECUTED — no live PostgreSQL/auth/browser environment was available |
-| Solar migration | ⚠️ generated and schema-validated, but **NOT deployed** against PostgreSQL |
+| Solar migrations | ⚠️ generated and schema-validated, but **NOT deployed** against PostgreSQL |
 
-### Pre-existing `TRANSFER_IN` / `TRANSFER_OUT` failures
-
-The `inventory.service.ts` and `test/stock.service.spec.ts` files reference `TRANSFER_IN` / `TRANSFER_OUT` enum values that do not exist in the current `StockMovementTypeEnum`. This is a **pre-existing, unrelated** issue:
-
-- It is **outside the Solar scope**.
-- It was **intentionally not modified**.
-- It blocks `backend` typecheck and causes the one failing Jest suite (`stock.service.spec.ts`), but has no impact on the Solar suites.
+> The previously documented pre-existing `TRANSFER_IN` / `TRANSFER_OUT` backend-typecheck issue is **resolved on this branch** (the transfer enum values now exist), so the backend typecheck and full suite pass.
 
 ## Future required validation
 
@@ -70,6 +63,8 @@ These are required before Solar can be considered fully validated, but could not
 
 ## Related documents
 
-- `M1-PROGRESS.md` — main progress/status.
+- `README.md` — current status + validation summary.
+- `PHASES.md` — phase-by-phase progress (A–G, H, I).
+- `SITE-OBJECT.md` — generalized SiteObject architecture.
 - `API.md` — endpoints to exercise in runtime tests.
 - `ARCHITECTURE.md` — what the tests validate at the domain level.

@@ -1,7 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Point2D } from '@solar/shared';
+import { Point2D, SolarSurfaceType } from '@solar/shared';
+
+const SURFACE_TYPES: SolarSurfaceType[] = [
+  'ROOF',
+  'GROUND',
+  'GRASS',
+  'GRAVEL',
+  'ROCK',
+  'ASPHALT',
+  'CONCRETE',
+  'PARKING',
+  'CARPORT',
+  'CUSTOM',
+];
 
 export interface RoofInput {
   name: string;
@@ -9,6 +22,10 @@ export interface RoofInput {
   slopeDeg: number;
   azimuthDeg: number;
   roofType: string;
+  surfaceType: SolarSurfaceType;
+  /** World elevation in metres (becomes origin.z in mm). */
+  elevationM: number;
+  thicknessMm?: number;
 }
 
 function parsePolygon(text: string): Point2D[] {
@@ -37,6 +54,9 @@ export function RoofEditor({
   const [polygonText, setPolygonText] = useState('0,0\n8000,0\n8000,4000\n0,4000');
   const [slopeDeg, setSlopeDeg] = useState(30);
   const [azimuthDeg, setAzimuthDeg] = useState(180);
+  const [surfaceType, setSurfaceType] = useState<SolarSurfaceType>('ROOF');
+  const [elevationM, setElevationM] = useState(0);
+  const [thicknessMm, setThicknessMm] = useState(0);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +80,9 @@ export function RoofEditor({
       slopeDeg,
       azimuthDeg,
       roofType: slopeDeg > 0 ? 'PITCHED' : 'FLAT',
+      surfaceType,
+      elevationM,
+      thicknessMm: thicknessMm > 0 ? thicknessMm : undefined,
     });
   };
 
@@ -147,6 +170,45 @@ export function RoofEditor({
             max="360"
             value={azimuthDeg}
             onChange={(e) => setAzimuthDeg(Number(e.target.value))}
+            className={field}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className={label}>Tip suprafață</label>
+        <select
+          value={surfaceType}
+          onChange={(e) => setSurfaceType(e.target.value as SolarSurfaceType)}
+          className={field}
+        >
+          {SURFACE_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className={label}>Elevație (m)</label>
+          <input
+            type="number"
+            step="0.1"
+            value={elevationM}
+            onChange={(e) => setElevationM(Number(e.target.value))}
+            className={field}
+          />
+        </div>
+        <div>
+          <label className={label}>Grosime (mm)</label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            value={thicknessMm}
+            onChange={(e) => setThicknessMm(Number(e.target.value))}
             className={field}
           />
         </div>

@@ -57,6 +57,13 @@ export function calculateLayout(designId: string): Promise<SolarResponse<any>> {
   });
 }
 
+export function replacePlacements(designId: string, placements: unknown[]): Promise<SolarResponse<any>> {
+  return apiClient.request<SolarResponse<any>>(`/api/solar/designs/${designId}/placements`, {
+    method: 'PUT',
+    body: JSON.stringify({ placements }),
+  });
+}
+
 export function getSolarBom(designId: string): Promise<SolarResponse<any>> {
   return apiClient.request<SolarResponse<any>>(`/api/solar/designs/${designId}/bom`);
 }

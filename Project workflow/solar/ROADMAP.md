@@ -1,14 +1,12 @@
 # Solar Roadmap
 
-Last Updated: 2026-09-25
+Last Updated: 2026-09-26
 
 Status legend:
 
-- ✅ **IMPLEMENTED** (M1 — code exists and is validated as far as possible in this environment)
-- ⏳ **DEFERRED** (planned; not yet implemented)
+- ✅ **IMPLEMENTED** (code exists and is validated: shared build + backend/web typechecks + tests)
+- ⏳ **DEFERRED / PLANNED** (not yet implemented)
 - ❌ **FUTURE / NOT IMPLEMENTED**
-
-All milestones after M1 are **DEFERRED / FUTURE** — nothing here is described as implemented.
 
 ---
 
@@ -37,6 +35,53 @@ See `M1-PROGRESS.md` for the detailed section-by-section status.
 - Improved collision logic
 
 Geometry is exact (segment-to-segment minimum distance), not corner/edge sampling. See `DOMAIN-MODEL.md` and `TESTING.md`.
+
+---
+
+## A–G — Surface Foundation ✅ IMPLEMENTED
+
+- Generalized `Surface` (`surface_type` enum + `thickness_mm`; additive `surface_type` column on `solar_roof_sections`).
+- Explicit elevation (`origin.z`), slope, azimuth.
+- Surface geometry = polygon (local mm) + origin (world mm) + slope/azimuth (single transform).
+- Rectangular surface creation UI; 2D + 3D surface representation.
+- Module-attachment proof (module follows the surface transform).
+
+---
+
+## H — Interactive 2D Editor ✅ IMPLEMENTED
+
+- Pointer-based module drag / rotate / duplicate / delete / multi-select.
+- Zoom / pan / fit / reset; configurable grid + snapping.
+- Measurement tool (engineering mm → m).
+- Undo / redo (one history entry per logical operation).
+- Debounced persistence (`PUT /designs/:id/placements`).
+- Live 2D → 3D synchronization.
+
+---
+
+## I — SiteObject Architecture ✅ IMPLEMENTED
+
+- `SiteObject` type + `Pose` + `SiteObjectType` (extensible).
+- Generic editor operations (`T extends Placeable`).
+- Single world transform (`surfaceToPlane` / `objectWorldPosition` / `moduleWorldCorners`).
+- PV module proven through the generalized path (non-destructive; no schema change).
+
+---
+
+## J — First non-module SiteObject (persistence) ⏳ NEXT
+
+- Additive `solar_site_objects` table (+ `object_type`).
+- Minimal SiteObject API (project-scoped, reuse `SolarDesignAccessGuard` + the `replacePlacements` pattern).
+- Placeholder Structure/Inverter renderer in 2D + 3D.
+- End-to-end proof: `Surface → SiteObject → local pose → world pose`.
+
+---
+
+## K — Combined top-down site plan ⏳ PLANNED
+
+- World-projected 2D view of all surfaces (drop Z) — not a separate coordinate system.
+- Obstacle dragging + marquee multi-select + keyboard undo/redo.
+- Client-side BOM/mounting recompute after edits.
 
 ---
 
@@ -101,9 +146,11 @@ Geometry is exact (segment-to-segment minimum distance), not corner/edge samplin
 ## Related documents
 
 - `README.md` — entry point and current status.
+- `PHASES.md` — phase-by-phase progress (A–G, H, I).
+- `SITE-OBJECT.md` — generalized SiteObject placement architecture.
 - `ARCHITECTURE.md` — architecture and principles.
 - `DOMAIN-MODEL.md` — models and their status.
 - `API.md` — implemented endpoints.
-- `M1-PROGRESS.md` — main progress/status document.
 - `DECISIONS.md` — architecture decisions.
 - `TESTING.md` — test/validation setup.
+- `M1-PROGRESS.md` — historical M1 progress.

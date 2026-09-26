@@ -47,8 +47,8 @@ The application uses two standard envelopes (set by global NestJS filters/interc
 
 #### `POST /api/solar/designs/:designId/roof-sections` — IMPLEMENTED
 
-- **Purpose**: add a roof section (rectangle in M1).
-- **Body**: `{ name: string, roofType?: string, slopeDeg?: number, azimuthDeg?: number, roofMaterial?: string, polygon: [{x,y},...], origin?: {x,y,z} }`.
+- **Purpose**: add a surface (rectangular or arbitrary polygon).
+- **Body**: `{ name: string, roofType?: string, surfaceType?: 'ROOF'|'GROUND'|'GRASS'|'GRAVEL'|'ROCK'|'ASPHALT'|'CONCRETE'|'PARKING'|'CARPORT'|'CUSTOM', slopeDeg?: number, azimuthDeg?: number, roofMaterial?: string, thicknessMm?: number, polygon: [{x,y},...], origin?: {x,y,z} }`.
 - **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
 - **Response `data`**: the created `RoofSectionModel`.
 
@@ -61,7 +61,7 @@ The application uses two standard envelopes (set by global NestJS filters/interc
 #### `PATCH /api/solar/designs/:designId/roof-sections/:roofSectionId` — IMPLEMENTED (M2)
 
 - **Purpose**: update a roof section (name, polygon, slope/azimuth, origin, roofType).
-- **Body**: `{ name?, roofType?, slopeDeg?, azimuthDeg?, roofMaterial?, polygon?, origin? }`.
+- **Body**: `{ name?, roofType?, surfaceType?, slopeDeg?, azimuthDeg?, roofMaterial?, thicknessMm?, polygon?, origin? }`.
 - **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
 - **Validation**: `roofSectionId` must belong to `designId` (else 404); polygon must be valid (simple, ≥3 vertices, non-zero area).
 
@@ -110,6 +110,16 @@ The application uses two standard envelopes (set by global NestJS filters/interc
 - **Purpose**: compute the module layout (roof-local placements) and persist it.
 - **Auth**: `JwtAuthGuard`, `RolesGuard`, `SolarDesignAccessGuard`.
 - **Response `data`**: `{ placements: ModulePlacement[], mounting: MountingResult, bom: BomLine[], totalModules: number, totalPowerWp: number }`.
+
+### Placements
+
+#### `PUT /api/solar/designs/:designId/placements` — IMPLEMENTED (Phase H)
+
+- **Purpose**: bulk-replace all module placements (the persistence boundary for the interactive 2D editor: move/rotate/duplicate/delete).
+- **Body**: `{ placements: ModulePlacementDto[] }` (each: `id`, `roofSectionId`, `moduleSpecId?`, `row`, `column`, `localX`, `localY`, `localZ`, `rotationDeg`, `widthMm`, `heightMm`).
+- **Auth**: `JwtAuthGuard`, `RolesGuard` (`ADMIN, OWNER, PM, SITE_MANAGER`), `SolarDesignAccessGuard`.
+- **Validation**: every placement's `roofSectionId` must belong to `designId` (else 400); transactional `deleteMany` + `createMany`.
+- **Response `data`**: `{ id: string, count: number }`.
 
 ### BOM
 

@@ -4,17 +4,36 @@ import { useLayoutEffect, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Grid, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { ModulePlacement, ObstacleModel, Point3D, RoofSectionModel, roofLocalToWorld } from '@solar/shared';
+import { ModulePlacement, ObstacleModel, Point3D, RoofSectionModel, roofLocalToWorld, surfaceToPlane } from '@solar/shared';
 
 const MM_TO_M = 1 / 1000;
 const MODULE_THICKNESS_M = 0.03;
 
 function toWorldMeters(roof: RoofSectionModel, p: Point3D): THREE.Vector3 {
-  const w = roofLocalToWorld(
-    { origin: roof.origin, slopeDeg: roof.slopeDeg, azimuthDeg: roof.azimuthDeg },
-    p,
-  );
+  const w = roofLocalToWorld(surfaceToPlane(roof), p);
   return new THREE.Vector3(w.x * MM_TO_M, w.y * MM_TO_M, w.z * MM_TO_M);
+}
+
+/**
+ * Object renderer for a PV module. It renders in the parent surface's LOCAL
+ * frame (mm→m); the surrounding `<group>` applies the world transform. Future
+ * object renderers (StructureRenderer, InverterRenderer, CameraRenderer, …)
+ * follow the same pattern inside the same group.
+ */
+function ModuleMesh({ m }: { m: ModulePlacement }) {
+  return (
+    <mesh
+      position={[
+        (m.localX + m.widthMm / 2) * MM_TO_M,
+        (m.localY + m.heightMm / 2) * MM_TO_M,
+        MODULE_THICKNESS_M / 2 + m.localZ * MM_TO_M,
+      ]}
+      rotation={[0, 0, THREE.MathUtils.degToRad(m.rotationDeg)]}
+    >
+      <boxGeometry args={[m.widthMm * MM_TO_M, m.heightMm * MM_TO_M, MODULE_THICKNESS_M]} />
+      <meshStandardMaterial color="#1e3a8a" />
+    </mesh>
+  );
 }
 
 function RoofGroup({
@@ -74,18 +93,8 @@ function RoofGroup({
         <shapeGeometry args={[shape]} />
         <meshStandardMaterial color="#94a3b8" side={THREE.DoubleSide} />
       </mesh>
-      {modules.map((m, i) => (
-        <mesh
-          key={`${m.row}-${m.column}-${i}`}
-          position={[
-            (m.localX + m.widthMm / 2) * MM_TO_M,
-            (m.localY + m.heightMm / 2) * MM_TO_M,
-            MODULE_THICKNESS_M / 2 + m.localZ * MM_TO_M,
-          ]}
-        >
-          <boxGeometry args={[m.widthMm * MM_TO_M, m.heightMm * MM_TO_M, MODULE_THICKNESS_M]} />
-          <meshStandardMaterial color="#1e3a8a" />
-        </mesh>
+      {modules.map((m) => (
+        <ModuleMesh key={m.id} m={m} />
       ))}
       {obstacleShapes.map((s, i) => (
         <mesh key={`obs-${i}`} position={[0, 0, 0.02]}>

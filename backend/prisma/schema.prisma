@@ -671,20 +671,20 @@ model Receipt {
 }
 
 model Aviz {
-  id              String     @id @default(uuid())
+  id              String         @id @default(uuid())
   project_id      String
   supplier_id     String?
   aviz_number     String
-  delivery_date   DateTime   @db.Date
+  delivery_date   DateTime       @db.Date
   status          AvizStatusEnum @default(PENDING)
   driver_name     String?
   vehicle_plate   String?
   notes           String?
-  idempotency_key String?    @unique
-  created_at      DateTime   @default(now())
+  idempotency_key String?        @unique
+  created_at      DateTime       @default(now())
   items           AvizItem[]
-  project         Project    @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  supplier        Supplier?  @relation(fields: [supplier_id], references: [id])
+  project         Project        @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  supplier        Supplier?      @relation(fields: [supplier_id], references: [id])
 
   @@unique([project_id, aviz_number])
   @@map("avize")
@@ -1231,6 +1231,19 @@ enum SolarRoofTypeEnum {
   COMPLEX
 }
 
+enum SolarSurfaceTypeEnum {
+  ROOF
+  GROUND
+  GRASS
+  GRAVEL
+  ROCK
+  ASPHALT
+  CONCRETE
+  PARKING
+  CARPORT
+  CUSTOM
+}
+
 enum SolarProductTypeEnum {
   RAIL
   ROOF_HOOK
@@ -1307,17 +1320,19 @@ model SolarDesignVersion {
 }
 
 model SolarRoofSection {
-  id            String            @id @default(uuid())
+  id            String               @id @default(uuid())
   design_id     String
   name          String
-  roof_type     SolarRoofTypeEnum @default(FLAT)
-  slope_deg     Decimal           @default(0) @db.Decimal(6, 3)
-  azimuth_deg   Decimal           @default(0) @db.Decimal(6, 3)
+  roof_type     SolarRoofTypeEnum    @default(FLAT)
+  surface_type  SolarSurfaceTypeEnum @default(ROOF)
+  slope_deg     Decimal              @default(0) @db.Decimal(6, 3)
+  azimuth_deg   Decimal              @default(0) @db.Decimal(6, 3)
   roof_material String?
+  thickness_mm  Decimal?             @db.Decimal(10, 3)
   polygon       Json
   origin        Json
-  created_at    DateTime          @default(now())
-  updated_at    DateTime          @updatedAt
+  created_at    DateTime             @default(now())
+  updated_at    DateTime             @updatedAt
 
   design     SolarDesign            @relation(fields: [design_id], references: [id], onDelete: Cascade)
   obstacles  SolarObstacle[]

@@ -57,9 +57,11 @@ export function toRoofSectionModel(s: SolarRoofSection): RoofSectionModel {
     designId: s.design_id,
     name: s.name,
     roofType: s.roof_type as RoofSectionModel['roofType'],
+    surfaceType: (s.surface_type as RoofSectionModel['surfaceType']) ?? 'ROOF',
     slopeDeg: toNum(s.slope_deg),
     azimuthDeg: toNum(s.azimuth_deg),
     roofMaterial: s.roof_material ?? undefined,
+    thicknessMm: s.thickness_mm == null ? undefined : toNum(s.thickness_mm),
     polygon: polygonFromJson(s.polygon),
     origin: originFromJson(s.origin),
   };
@@ -107,6 +109,7 @@ export function toLayoutSettingsModel(s: SolarLayoutSettings): LayoutSettingsMod
 
 export function toPlacement(p: SolarModulePlacement): ModulePlacement {
   return {
+    id: p.id,
     roofSectionId: p.roof_section_id,
     moduleSpecId: p.module_spec_id ?? undefined,
     row: p.row,
