@@ -33,6 +33,44 @@ module.exports = {
           800: '#92400e',
           900: '#78350f',
         },
+        surface: {
+          DEFAULT: 'var(--hii-surface)',
+          muted: 'var(--hii-surface-muted)',
+          alt: 'var(--hii-surface-alt)',
+        },
+        content: {
+          DEFAULT: 'var(--hii-text)',
+          secondary: 'var(--hii-text-secondary)',
+          muted: 'var(--hii-text-muted)',
+        },
+        border: {
+          DEFAULT: 'var(--hii-border)',
+          light: 'var(--hii-border-light)',
+        },
+        success: {
+          DEFAULT: 'var(--hii-success)',
+          soft: '#d1fae5',
+          foreground: '#065f46',
+        },
+        warning: {
+          DEFAULT: 'var(--hii-warning)',
+          soft: '#fef3c7',
+          foreground: '#78350f',
+        },
+        critical: {
+          DEFAULT: 'var(--hii-critical)',
+          soft: '#fee2e2',
+          foreground: '#991b1b',
+        },
+        info: {
+          DEFAULT: 'var(--hii-info)',
+          soft: '#dbeafe',
+          foreground: '#1e40af',
+        },
+        neutral: {
+          soft: '#f1f5f9',
+          foreground: '#475569',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
@@ -54,6 +92,22 @@ module.exports = {
         'card': '0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
         'card-hover': '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 2px 6px -1px rgb(0 0 0 / 0.08)',
         'elevated': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        'focus': '0 0 0 3px rgba(15, 112, 64, 0.3)',
+      },
+      maxWidth: {
+        'page': '80rem',
+      },
+      zIndex: {
+        'sidebar': '30',
+        'header': '40',
+        'backdrop': '50',
+        'drawer': '60',
+        'modal': '70',
+        'toast': '80',
+      },
+      transitionDuration: {
+        '250': '250ms',
+        '400': '400ms',
       },
     },
   },

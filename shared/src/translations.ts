@@ -15,6 +15,40 @@ const d: Record<string, { ro: string; en: string }> = {
 'nav.users': { ro: 'Utilizatori', en: 'Users' },
 'nav.statistics': { ro: 'Statistici', en: 'Statistics' },
 'nav.profile': { ro: 'Profil', en: 'Profile' },
+'nav.operations': { ro: 'Operațiuni', en: 'Operations' },
+'nav.management': { ro: 'Management', en: 'Management' },
+'nav.admin': { ro: 'Administrare', en: 'Administration' },
+'nav.personal': { ro: 'Personal', en: 'Personal' },
+'nav.solar_configurator': { ro: 'Configurator Solar', en: 'Solar Configurator' },
+'nav.tasks': { ro: 'Task-uri', en: 'Tasks' },
+'nav.planning': { ro: 'Plan Zilnic', en: 'Daily Plan' },
+'nav.issues': { ro: 'Probleme & Blocaje', en: 'Issues & Blockers' },
+'nav.pontaj': { ro: 'Pontaj & Ore', en: 'Attendance' },
+'nav.rapoarte': { ro: 'Rapoarte Zilnice', en: 'Daily Reports' },
+'nav.avize': { ro: 'Procurement / Avize', en: 'Procurement' },
+'nav.stocuri': { ro: 'Materiale & Stoc', en: 'Materials & Stock' },
+'nav.cheltuieli': { ro: 'Cheltuieli', en: 'Expenses' },
+'nav.projects': { ro: 'Proiecte', en: 'Projects' },
+'nav.teams': { ro: 'Echipe', en: 'Teams' },
+'nav.workforce': { ro: 'Forță de Muncă', en: 'Workforce' },
+'nav.santiere': { ro: 'Șantiere (GIS)', en: 'Sites (GIS)' },
+'nav.aprobare': { ro: 'Aprobări', en: 'Approvals' },
+'nav.statistici': { ro: 'Statistici', en: 'Statistics' },
+'nav.utilizatori': { ro: 'Utilizatori', en: 'Users' },
+'nav.notificari': { ro: 'Notificări', en: 'Notifications' },
+'nav.profil': { ro: 'Profil', en: 'Profile' },
+'header.title': { ro: 'HIIEKO', en: 'HIIEKO' },
+'header.menu': { ro: 'Meniu', en: 'Menu' },
+'header.user_menu': { ro: 'Meniul utilizator', en: 'User menu' },
+'header.profile': { ro: 'Profilul meu', en: 'My profile' },
+'header.settings': { ro: 'Setări', en: 'Settings' },
+'header.logout': { ro: 'Deconectare', en: 'Logout' },
+'header.current_project': { ro: 'Proiect curent', en: 'Current project' },
+'header.all_projects': { ro: 'Toate proiectele', en: 'All projects' },
+'header.select_project': { ro: 'Selectează proiect', en: 'Select project' },
+'sidebar.collapse': { ro: 'Restrânge meniul', en: 'Collapse menu' },
+'sidebar.expand': { ro: 'Extinde meniul', en: 'Expand menu' },
+'sidebar.close': { ro: 'Închide meniul', en: 'Close menu' },
 'auth.login': { ro: 'Autentificare', en: 'Login' },
 'auth.signup': { ro: 'Solicita Cont', en: 'Apply' },
 'auth.logout': { ro: 'Deconectare', en: 'Logout' },
@@ -612,6 +646,13 @@ Object.assign(d, {
   'tutorial.project-detail.important': T('Membrii adaugati primesc automat acces la proiect in aplicatie.', 'Added members automatically get access to the project in the app.'),
 
   // --- Worker Dashboard ---
+  'worker.my_day.title': T('Ziua Mea', 'My Day'),
+  'worker.my_day.subtitle': T('Activitatea și contextul de șantier pentru ziua de azi.', 'Your work and site context for today.'),
+  'worker.my_day.no_project': T('Niciun proiect sau șantier selectat.', 'No project or site selected.'),
+  'worker.my_day.attendance_description': T('Consultă detaliile prezenței și pontajul zilei.', 'Review your attendance details and today’s time record.'),
+  'worker.my_day.tasks_description': T('Deschide lista de sarcini pentru a vedea lucrările atribuite și progresul.', 'Open your task list to review assigned work and progress.'),
+  'worker.my_day.blockers_description': T('Consultă problemele și blocajele care pot afecta activitatea ta.', 'Review issues and blockers that may affect your work.'),
+  'worker.my_day.notifications_description': T('Vezi anunțurile și actualizările relevante pentru tine.', 'View notices and updates relevant to you.'),
   'worker.greeting': T('Salut', 'Hello'),
   'worker.select_project': T('Selecteaza un proiect din bara de sus', 'Select a project from the top bar'),
   'worker.attendance_today': T('Pontajul de astazi', "Today's Attendance"),
@@ -636,22 +677,107 @@ Object.assign(d, {
   'worker.select_project_first': T('Selecteaza un proiect mai intai.', 'Select a project first.'),
   'worker.error_generic': T('Eroare', 'Error'),
 
-  // --- Worker Task Status ---
-  'task.status.todo': T('De facut', 'To Do'),
-  'task.status.in_progress': T('In lucru', 'In Progress'),
-  'task.status.done': T('Finalizat', 'Done'),
+  // --- Tasks: statuses (must match Prisma TaskStatusEnum exactly) ---
+  'task.status.planned': T('Planificat', 'Planned'),
+  'task.status.ready': T('Gata de start', 'Ready to start'),
+  'task.status.in_progress': T('În lucru', 'In progress'),
   'task.status.blocked': T('Blocat', 'Blocked'),
-  'task.status.review': T('In verificare', 'In Review'),
-  'task.start': T('Incepe task-ul', 'Start Task'),
-  'task.send_review': T('Trimite spre verificare', 'Submit for Review'),
-  'task.mark_done': T('Marcheaza finalizat', 'Mark as Done'),
-  'task.update_status': T('Actualizare status:', 'Update Status:'),
-  'task.progress': T('Progres:', 'Progress:'),
-  'task.deadline': T('Termen:', 'Deadline:'),
-  'task.load_error': T('Eroare la incarcarea task-urilor', 'Error loading tasks'),
-  'task.update_success': T('Status actualizat', 'Status updated'),
-  'task.update_error': T('Eroare la actualizare', 'Error updating'),
-  'task.no_tasks': T('Nu exista task-uri atribuite.', 'No assigned tasks.'),
+  'task.status.completed': T('Finalizat', 'Completed'),
+  'task.status.verified': T('Verificat', 'Verified'),
+  'task.status.cancelled': T('Anulat', 'Cancelled'),
+
+  // --- Tasks: page chrome ---
+  'task.page_title': T('Task-uri', 'Tasks'),
+  'task.all_projects': T('Toate proiectele', 'All projects'),
+  'task.search_placeholder': T('Caută task-uri...', 'Search tasks...'),
+  'task.search_clear': T('Șterge căutarea', 'Clear search'),
+  'task.only_mine': T('Doar task-urile mele', 'Only my tasks'),
+  'task.tab_all': T('Toate', 'All'),
+  'task.new': T('Task Nou', 'New Task'),
+  'task.loading': T('Se încarcă task-urile...', 'Loading tasks...'),
+  'task.load_error': T('Nu s-au putut încărca task-urile', 'Could not load tasks'),
+  'task.toggle_details': T('Arată detaliile task-ului', 'Show task details'),
+  'task.expand_details': T('Arată detaliile task-ului', 'Show task details'),
+  'task.collapse_details': T('Ascunde detaliile task-ului', 'Hide task details'),
+  'task.list_updated': T('Lista de task-uri a fost actualizată.', 'Task list updated.'),
+
+  // --- Tasks: empty states ---
+  'task.empty_none': T('Niciun task găsit', 'No tasks found'),
+  'task.empty_mine': T('Nu ai task-uri atribuite', 'No tasks assigned to you'),
+  'task.empty_scope': T('Nu există task-uri în proiectele tale', 'No tasks in your projects'),
+  'task.empty_desc_create': T('Creează primul task pentru acest proiect.', 'Create the first task for this project.'),
+  'task.empty_desc_filtered': T('Încearcă să ștergi filtrele sau să schimbi proiectul.', 'Try clearing the filters or switching the project.'),
+  'task.empty_desc_scope': T('Poți vedea doar task-urile proiectelor în care ești membru. Cere administratorului acces la un proiect.', 'You can only see tasks from projects you are a member of. Ask an administrator for access to a project.'),
+  'task.empty_desc_no_tasks': T('Acest proiect nu are încă task-uri.', 'This project has no tasks yet.'),
+
+  // --- Tasks: card + detail ---
+  'task.planned': T('Planificat', 'Planned'),
+  'task.actual': T('Realizat', 'Actual'),
+  'task.planned_dates': T('Termene planificate', 'Planned dates'),
+  'task.actual_dates': T('Termene reale', 'Actual dates'),
+  'task.planned_start': T('Start planificat', 'Planned start'),
+  'task.planned_end': T('Final planificat', 'Planned end'),
+  'task.actual_start': T('Start real', 'Actual start'),
+  'task.actual_end': T('Final real', 'Actual end'),
+  'task.quantity_progress': T('Progres cantitativ', 'Quantity progress'),
+  'task.no_planned_qty': T('Fără cantitate planificată', 'No planned quantity'),
+  'task.dependencies': T('Dependențe', 'Dependencies'),
+  'task.depends_on': T('Depinde de', 'Depends on'),
+  'task.blocks': T('Blochează', 'Blocks'),
+
+  // --- Tasks: workflow + assignment ---
+  'task.update_status': T('Actualizează status', 'Update status'),
+  'task.final_status': T('Status final — nu mai există tranziții disponibile', 'Final status — no further transitions available'),
+  'task.change_status_to': T('Schimbă statusul în', 'Change status to'),
+  'task.actual_quantity': T('Cantitate realizată', 'Actual quantity'),
+  'task.quantity_save_hint': T('Enter sau clic în afara câmpului pentru salvare.', 'Press Enter or click away to save.'),
+  'task.assign_member': T('Atribuie membru', 'Assign member'),
+  'task.assigned_count': T('atribuiți', 'assigned'),
+  'task.assign': T('Atribuie', 'Assign'),
+  'task.assign_as': T('Atribuie ca', 'Assign as'),
+  'task.select_member': T('Selectează un membru al proiectului...', 'Select a project member...'),
+  'task.project_member': T('Membru proiect', 'Project member'),
+  'task.all_members_assigned': T('Toți membrii proiectului sunt deja atribuiți acestui task.', 'All project members are already assigned to this task.'),
+  'task.no_project_members': T('Proiectul nu are membri. Adaugă membri din pagina Proiecte.', 'This project has no members. Add members from the Projects page.'),
+  'task.members_loading': T('Se încarcă membrii proiectului...', 'Loading project members...'),
+  'task.unassign_unsupported': T('Eliminarea unei atribuiri nu este disponibilă — API-ul nu expune acest endpoint.', 'Removing an assignment is not available — the API does not expose this endpoint.'),
+
+  // --- Tasks: create form ---
+  'task.create_title': T('Task Nou', 'New Task'),
+  'task.field_title': T('Titlu', 'Title'),
+  'task.field_code': T('Cod', 'Code'),
+  'task.field_code_hint': T('Unic per proiect.', 'Unique per project.'),
+  'task.field_description': T('Descriere', 'Description'),
+  'task.field_work_package': T('Pachet de lucru', 'Work package'),
+  'task.field_zone': T('Zonă', 'Zone'),
+  'task.field_planned_qty': T('Cantitate planificată', 'Planned quantity'),
+  'task.field_uom': T('Unitate de măsură', 'Unit of measure'),
+  'task.none_option': T('— Niciunul —', '— None —'),
+  'task.creating': T('Se creează...', 'Creating...'),
+  'task.create': T('Creează Task', 'Create Task'),
+  'task.cancel': T('Anulează', 'Cancel'),
+  'task.select_project_first': T('Selectează un proiect din meniul de sus înainte de a crea un task.', 'Select a project from the top menu before creating a task.'),
+
+  // --- Tasks: confirmations + toasts ---
+  'task.confirm_cancel_title': T('Anulezi acest task?', 'Cancel this task?'),
+  'task.confirm_cancel_message': T('Task-ul va fi marcat ca anulat. Această tranziție nu poate fi reversată.', 'The task will be marked as cancelled. This transition cannot be reversed.'),
+  'task.confirm_cancel_confirm': T('Anulează task-ul', 'Cancel task'),
+  'task.confirm_cancel_dismiss': T('Păstrează task-ul', 'Keep task'),
+  'task.created': T('Task creat', 'Task created'),
+  'task.status_updated': T('Status actualizat', 'Status updated'),
+  'task.quantity_updated': T('Cantitate actualizată', 'Quantity updated'),
+  'task.assigned': T('Task atribuit', 'Task assigned'),
+  'task.generic_error': T('Eroare', 'Error'),
+
+  // --- Tasks: validation + translated network/API errors ---
+  'task.err_required': T('Titlul și codul sunt obligatorii.', 'Title and code are required.'),
+  'task.err_offline': T('Rețeaua nu a răspuns. Verifică conexiunea și încearcă din nou.', 'The network did not respond. Check your connection and try again.'),
+  'task.err_timeout': T('Cererea a durat prea mult. Încearcă din nou.', 'The request timed out. Try again.'),
+  'task.err_server': T('Serverul a răspuns cu o eroare. Încearcă din nou.', 'The server returned an error. Try again.'),
+  'task.err_forbidden': T('Nu ai permisiunea să efectuezi această acțiune.', 'You do not have permission to perform this action.'),
+  'task.err_not_found': T('Elementul nu a fost găsit. Reîncarcă pagina.', 'The item was not found. Reload the page.'),
+  'task.err_generic': T('A apărut o eroare. Încearcă din nou.', 'Something went wrong. Try again.'),
+
 
   // --- Worker Navigation ---
   'nav.my_tasks': T('Task-uri', 'Tasks'),
@@ -685,7 +811,248 @@ Object.assign(d, {
 
   // --- Error / Empty States ---
   'empty.no_data': T('Nu exista date', 'No data available'),
-  'error.generic': T('A aparut o eroare.', 'An error occurred.'),});
+  'error.generic': T('A aparut o eroare.', 'An error occurred.'),
+});
+
+// ============================================================================
+// Phase 3 — Daily Planning / Site Plan Experience
+// ============================================================================
+Object.assign(d, {
+  'planning.page_title': T('Plan Zilnic', 'Daily Plan'),
+  'planning.page_subtitle': T('Gestionează planurile zilnice pentru echipă și sarcini.', 'Manage daily plans for team and tasks.'),
+  'planning.refresh': T('Reîmprospătează', 'Refresh'),
+  'planning.refreshing': T('Se reîmprospătează...', 'Refreshing...'),
+  'planning.status.draft': T('Schiță', 'Draft'),
+  'planning.status.published': T('Publicat', 'Published'),
+  'planning.status.completed': T('Finalizat', 'Completed'),
+  'planning.status.cancelled': T('Anulat', 'Cancelled'),
+  'planning.new_plan': T('Plan Nou', 'New Plan'),
+  'planning.create': T('Creează Plan', 'Create Plan'),
+  'planning.publish': T('Publică', 'Publish'),
+  'planning.complete': T('Finalizează', 'Complete'),
+  'planning.cancel': T('Anulează', 'Cancel'),
+  'planning.expand': T('Extinde', 'Expand'),
+  'planning.collapse': T('Restrânge', 'Collapse'),
+});
+
+// Modal titles and form labels
+Object.assign(d, {
+  'planning.create_modal_title': T('Plan Nou', 'New Plan'),
+  'planning.form_date': T('Dată plan', 'Plan date'),
+  'planning.form_team': T('Echipă', 'Team'),
+  'planning.form_notes': T('Note', 'Notes'),
+  'planning.form_notes_placeholder': T('Informații suplimentare pentru această zi...', 'Additional information for this day...'),
+  'planning.form_tasks': T('Sarcini', 'Tasks'),
+  'planning.form_select_team': T('Selectează echipa', 'Select team'),
+  'planning.form_no_team': T('— Fără echipă —', '— No team —'),
+  'planning.today': T('Azi', 'Today'),
+  'planning.yesterday': T('Ieri', 'Yesterday'),
+  'planning.tomorrow': T('Mâine', 'Tomorrow'),
+  'planning.select_date': T('Selectează data', 'Select date'),
+});
+
+// Task selector
+Object.assign(d, {
+  'planning.task_selector_title': T('Selectează sarcini', 'Select tasks'),
+  'planning.task_selector_search': T('Caută sarcini...', 'Search tasks...'),
+  'planning.task_selector_clear': T('Șterge selecția', 'Clear selection'),
+  'planning.task_selector_selected': T('{count} selectate', '{count} selected'),
+  'planning.task_selector_none_selected': T('Nicio sarcină selectată', 'No tasks selected'),
+  'planning.task_selector_none_found': T('Nicio sarcină găsită', 'No tasks found'),
+  'planning.task_selector_project_required': T('Selectează un proiect pentru a vedea sarcinile.', 'Select a project to see tasks.'),
+  'planning.task_selector_loading': T('Se încarcă sarcinile...', 'Loading tasks...'),
+  'planning.task_selector_error': T('Nu s-au putut încărca sarcinile', 'Could not load tasks'),
+  'planning.task_selector_retry': T('Încearcă din nou', 'Retry'),
+  'planning.task_selector_no_project': T('Selectează proiect', 'Select project'),
+});
+
+// Target / Actual quantity
+Object.assign(d, {
+  'planning.target_quantity': T('Cantitate țintă', 'Target quantity'),
+  'planning.target_quantity_placeholder': T('0', '0'),
+  'planning.target_required': T('Cantitatea țintă este obligatorie', 'Target quantity is required'),
+  'planning.target_min_error': T('Cantitatea țintă trebuie să fie mai mare ca 0', 'Target quantity must be greater than 0'),
+  'planning.actual_quantity': T('Cantitate realizată', 'Actual quantity'),
+  'planning.quantity_saving': T('Se salvează...', 'Saving...'),
+  'planning.quantity_saved': T('Progres salvat', 'Progress saved'),
+  'planning.quantity_save_error': T('Nu s-a putut salva progresul', 'Could not save progress'),
+  'planning.quantity_unchanged': T('Progresul nu s-a schimbat', 'Progress unchanged'),
+  'planning.completed': T('Finalizat', 'Completed'),
+  'planning.mark_completed': T('Marchează ca finalizat', 'Mark as completed'),
+});
+
+// Plan cards
+Object.assign(d, {
+  'planning.plan_for_date': T('Plan pentru {date}', 'Plan for {date}'),
+  'planning.team': T('Echipă', 'Team'),
+  'planning.no_team': T('Fără echipă', 'No team'),
+  'planning.created_by': T('Creat de', 'Created by'),
+  'planning.task_count': T('{count} sarcini', '{count} tasks'),
+  'planning.expand_details': T('Extinde detaliile planului', 'Expand plan details'),
+  'planning.collapse_details': T('Restrânge detaliile planului', 'Collapse plan details'),
+});
+
+// Confirmation dialogs
+Object.assign(d, {
+  'planning.confirm_publish_title': T('Publici acest plan?', 'Publish this plan?'),
+  'planning.confirm_publish_message': T('Planul devine vizibil pentru toți membrii echipei. După publicare, mai poți adăuga note, dar nu mai poți schimba lista de sarcini sau echipa.', 'The plan becomes visible to all team members. After publishing, you can still add notes, but cannot change the task list or team.'),
+  'planning.confirm_publish_confirm': T('Publică planul', 'Publish plan'),
+  'planning.confirm_publish_dismiss': T('Păstrează ca schiță', 'Keep as draft'),
+  'planning.confirm_complete_title': T('Finalizezi acest plan?', 'Complete this plan?'),
+  'planning.confirm_complete_message': T('Marchează planul ca finalizat. Această acțiune marchează automat toate sarcinile din plan ca finalizate și nu poate fi anulată.', 'Mark the plan as completed. This action automatically marks all tasks in the plan as completed and cannot be undone.'),
+  'planning.confirm_complete_confirm': T('Finalizează planul', 'Complete plan'),
+  'planning.confirm_complete_dismiss': T('Nu finaliza încă', "Don't complete yet"),
+  'planning.confirm_cancel_title': T('Anulezi acest plan?', 'Cancel this plan?'),
+  'planning.confirm_cancel_message': T('Planul va fi marcat ca anulat. Această acțiune nu poate fi reversată.', 'The plan will be marked as cancelled. This action cannot be undone.'),
+  'planning.confirm_cancel_confirm': T('Anulează planul', 'Cancel plan'),
+  'planning.confirm_cancel_dismiss': T('Păstrează planul', 'Keep plan'),
+});
+
+// Success / Error toasts
+Object.assign(d, {
+  'planning.plan_created': T('Plan creat', 'Plan created'),
+  'planning.plan_published': T('Plan publicat', 'Plan published'),
+  'planning.plan_completed': T('Plan finalizat', 'Plan completed'),
+  'planning.plan_cancelled': T('Plan anulat', 'Plan cancelled'),
+  'planning.create_error': T('Nu s-a putut crea planul', 'Could not create plan'),
+  'planning.publish_error': T('Nu s-a putut publica planul', 'Could not publish plan'),
+  'planning.complete_error': T('Nu s-a putut finaliza planul', 'Could not complete plan'),
+  'planning.cancel_error': T('Nu s-a putut anula planul', 'Could not cancel plan'),
+});
+
+// Loading / Empty / Error states
+Object.assign(d, {
+  'planning.loading': T('Se încarcă planurile...', 'Loading plans...'),
+  'planning.load_error': T('Nu s-au putut încărca planurile', 'Could not load plans'),
+  'planning.empty_title': T('Niciun plan', 'No plans'),
+  'planning.empty_message': T('Nu există planuri pentru această dată și proiect. Creează un plan nou pentru a începe.', 'No plans for this date and project. Create a new plan to get started.'),
+  'planning.empty_no_project_title': T('Selectează un proiect', 'Select a project'),
+  'planning.empty_no_project_message': T('Alege un proiect din meniul de sus pentru a vedea planurile.', 'Choose a project from the top menu to see plans.'),
+  'planning.no_project_selected': T('Niciun proiect selectat', 'No project selected'),
+  'planning.retry': T('Încearcă din nou', 'Try again'),
+});
+
+// Transitions info and validation
+Object.assign(d, {
+  'planning.next_draft': T('Următor: Publică', 'Next: Publish'),
+  'planning.next_published': T('Următor: Finalizează', 'Next: Complete'),
+  'planning.status_final': T('Status final', 'Final status'),
+  'planning.err_tasks_required': T('Selectează cel puțin o sarcină', 'Select at least one task'),
+  'planning.err_date_required': T('Data este obligatorie', 'Date is required'),
+  'planning.err_quantity_invalid': T('Cantitate invalidă', 'Invalid quantity'),
+  // TaskSelector specific
+  'planning.search_placeholder': T('Caută după cod sau titlu...', 'Search by code or title...'),
+  'planning.selected': T('Selectate: {count}', 'Selected: {count}'),
+  'planning.clear_selected': T('Curăță selecția', 'Clear selection'),
+  'planning.empty_tasks_title': T('Nicio sarcină în proiect', 'No tasks in project'),
+  'planning.empty_tasks_message': T('Acest proiect nu are încă sarcini definite.', 'This project has no tasks defined yet.'),
+  'planning.no_search_results': T('Nicio sarcină găsită pentru căutarea ta', 'No tasks found for your search'),
+  'planning.create_modal_title': T('Plan Zilnic Nou', 'New Daily Plan'),
+  'planning.field_date': T('Data planului', 'Plan date'),
+  'planning.field_team': T('Echipă (opțional)', 'Team (optional)'),
+  'planning.field_tasks': T('Sarcini de inclus', 'Tasks to include'),
+  'planning.field_notes': T('Note (opțional)', 'Notes (optional)'),
+  'planning.field_notes_placeholder': T('Adăugă observații...', 'Add notes...'),
+  'planning.no_team_option': T('— Fără echipă —', '— No team —'),
+  'planning.loading_teams': T('Se încarcă echipele...', 'Loading teams...'),
+  'planning.submit_creating': T('Se creează...', 'Creating...'),
+});
+
+// ============================================================================
+// Issues & Blockers (Phase 4) — /issues
+// All page copy, labels and tutorial content as translation keys (ro + en).
+// ============================================================================
+
+Object.assign(d, {
+  // --- Page header / summary ---
+  'issues.title': T('Probleme & Blocaje', 'Issues & Blockers'),
+  'issues.subtitle': T('Raportează problemele din teren și urmărește blocajele până la soluționare.', 'Report field issues and track blockers until they are resolved.'),
+  'issues.action_report': T('Raportează problemă', 'Report Issue'),
+  'issues.loading': T('Se încarcă problemele...', 'Loading issues...'),
+  'issues.select_project_title': T('Selectează un proiect', 'Select a project'),
+  'issues.select_project_message': T('Alege un proiect pentru a vedea problemele și blocajele raportate.', 'Choose a project to see reported issues and blockers.'),
+  'issues.summary_active': T('Blocaje active', 'Active blockers'),
+  'issues.summary_critical': T('Critice', 'Critical'),
+  'issues.summary_total': T('Total probleme', 'Total issues'),
+
+  // --- Tabs / search / severity filter ---
+  'issues.tab_all': T('Toate', 'All'),
+  'issues.tab_active': T('Blocaje active', 'Active blockers'),
+  'issues.tab_resolved': T('Rezolvate', 'Resolved'),
+  'issues.tab_closed': T('Închise', 'Closed'),
+  'issues.search_placeholder': T('Caută după titlu sau descriere...', 'Search by title or description...'),
+  'issues.filter_severity': T('Severitate', 'Severity'),
+  'issues.severity_all': T('Toate', 'All'),
+  'issues.severity_LOW': T('Scăzută', 'Low'),
+  'issues.severity_MEDIUM': T('Medie', 'Medium'),
+  'issues.severity_HIGH': T('Ridicată', 'High'),
+  'issues.severity_CRITICAL': T('Critică', 'Critical'),
+
+  // --- Issue statuses (read-only display; Prisma IssueStatusEnum) ---
+  'issues.status_OPEN': T('Deschisă', 'Open'),
+  'issues.status_INVESTIGATING': T('În investigare', 'Investigating'),
+  'issues.status_CORRECTIVE_ACTION_PROPOSED': T('Acțiune corectivă propusă', 'Corrective action proposed'),
+  'issues.status_RESOLVED': T('Rezolvată', 'Resolved'),
+  'issues.status_CLOSED': T('Închisă', 'Closed'),
+});
+
+Object.assign(d, {
+  // --- Issue card ---
+  'issues.card.view_details': T('Detalii', 'Details'),
+  'issues.card.ncr_count': T('{count} NCR', '{count} NCR'),
+  'issues.card.reported': T('Raportată', 'Reported'),
+
+  // --- Empty / error states ---
+  'issues.empty_title': T('Nicio problemă raportată', 'No issues reported'),
+  'issues.empty_message': T('Nu există probleme înregistrate pentru acest proiect. Raportează prima problemă.', 'No issues recorded for this project yet. Report the first one.'),
+  'issues.empty_filtered_title': T('Nicio problemă găsită', 'No issues found'),
+  'issues.empty_filtered_message': T('Nicio problemă nu corespunde filtrelor selectate.', 'No issues match the selected filters.'),
+  'issues.clear_filters': T('Șterge filtrele', 'Clear filters'),
+  'issues.error_title': T('Nu s-au putut încărca problemele', 'Could not load issues'),
+  'issues.error_retry': T('Încearcă din nou', 'Try again'),
+
+  // --- Create modal (POST /api/issues — backend forces status OPEN) ---
+  'issues.create_title': T('Raportează o problemă', 'Report an Issue'),
+  'issues.field_title': T('Titlu', 'Title'),
+  'issues.field_title_placeholder': T('Descrie pe scurt problema', 'Briefly describe the issue'),
+  'issues.field_description': T('Descriere', 'Description'),
+  'issues.field_description_placeholder': T('Ce se întâmplă, ce blochează și unde?', 'What is happening, what does it block and where?'),
+  'issues.field_severity': T('Severitate', 'Severity'),
+  'issues.form_error_required': T('Completează titlul și descrierea.', 'Please fill in the title and description.'),
+  'issues.submit': T('Raportează', 'Report'),
+  'issues.submit_creating': T('Se trimite...', 'Submitting...'),
+  'issues.toast_success': T('Problema a fost raportată', 'Issue reported'),
+  'issues.toast_success_message': T('Problema a fost înregistrată cu statusul „Deschisă".', 'The issue was recorded with status "Open".'),
+  'issues.toast_error': T('Raportarea a eșuat', 'Could not report the issue'),
+
+  // --- Detail modal (read-only; NCRs come embedded in GET /api/issues) ---
+  'issues.detail_title': T('Detalii problemă', 'Issue Details'),
+  'issues.detail_description': T('Descriere', 'Description'),
+  'issues.detail_project': T('Proiect', 'Project'),
+  'issues.detail_status': T('Status', 'Status'),
+  'issues.detail_reported_at': T('Raportată la', 'Reported at'),
+  'issues.detail_updated_at': T('Ultima actualizare', 'Last updated'),
+  'issues.detail_ncrs': T('Rapoarte de neconformitate (NCR)', 'Non-conformance reports (NCR)'),
+  'issues.detail_ncrs_empty': T('Nicio neconformitate legată de această problemă.', 'No NCRs are linked to this issue.'),
+  'issues.detail_readonly_note': T('Statusul este gestionat de management și nu poate fi schimbat din această pagină.', 'Status is managed by management and cannot be changed from this page.'),
+
+  // --- NCR statuses (Prisma NCRStatusEnum — display only) ---
+  'issues.ncr_status_OPEN': T('Deschis', 'Open'),
+  'issues.ncr_status_DISPOSITION_PROPOSED': T('Soluție propusă', 'Disposition proposed'),
+  'issues.ncr_status_UNDER_REVIEW': T('În revizuire', 'Under review'),
+  'issues.ncr_status_APPROVED': T('Aprobat', 'Approved'),
+  'issues.ncr_status_IMPLEMENTED': T('Implementat', 'Implemented'),
+  'issues.ncr_status_VERIFIED_CLOSED': T('Verificat și închis', 'Verified and closed'),
+
+  // --- Tutorial copy referenced by TUTORIALS.issues (shared/src/tutorials.ts) ---
+  'tutorial.issues.title': T('Probleme & Blocaje', 'Issues & Blockers'),
+  'tutorial.issues.short': T('Raportează problemele din teren și urmărește blocajele active până la soluționare.', 'Report field issues and follow active blockers until they are resolved.'),
+  'tutorial.issues.purpose': T('Pagina centralizează problemele raportate pe proiect, ca echipele și managementul să vadă exact ce blochează lucrările și cât de grav este.', 'This page centralises per-project reported issues so crews and management can see exactly what is blocking the work and how severe it is.'),
+  'tutorial.issues.step1': T('Selectează proiectul, apoi folosește tab-urile și filtrele de severitate pentru a vedea blocajele active.', 'Select the project, then use the tabs and severity filters to see active blockers.'),
+  'tutorial.issues.step2': T('Raportează probleme noi cu butonul „Raportează problemă" și deschide „Detalii" pentru descrierea completă și NCR-urile legate.', 'Report new issues with the "Report Issue" button and open "Details" for the full description and linked NCRs.'),
+  'tutorial.issues.role_foreman': T('Raportează imediat problemele din teren și verifică zilnic blocajele active.', 'Immediately report field issues and check active blockers daily.'),
+  'tutorial.issues.role_site_manager': T('Prioritizează blocajele critice și asigură acțiuni corective pentru fiecare problemă activă.', 'Prioritise critical blockers and make sure every active issue gets a corrective action.'),
+});
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

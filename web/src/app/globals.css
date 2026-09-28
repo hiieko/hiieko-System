@@ -47,6 +47,16 @@
   /* Shadows */
   --hii-shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06);
   --hii-shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+  /* Shell tokens */
+  --hii-sidebar-bg: #0f172a;
+  --hii-sidebar-hover: #1e293b;
+  --hii-sidebar-text: #cbd5e1;
+  --hii-sidebar-text-muted: #64748b;
+  --hii-sidebar-active-bg: #188C51;
+  --hii-sidebar-active-text: #ffffff;
+  --hii-sidebar-width: 16rem;
+  --hii-header-height: 4rem;
 }
 
 @layer base {
@@ -136,7 +146,7 @@
   }
 
   .hii-btn-primary {
-    @apply hii-btn bg-hii-500 text-white hover:bg-hii-600 active:bg-hii-700 px-4 py-2 text-sm;
+    @apply hii-btn bg-hii-600 text-white hover:bg-hii-700 active:bg-hii-800 px-4 py-2 text-sm;
   }
 
   .hii-btn-secondary {
@@ -243,5 +253,56 @@
 
   .hii-empty-desc {
     @apply text-sm text-slate-500 mt-1 max-w-md mx-auto;
+  }
+
+  /* Skeleton loading placeholder */
+  .hii-skeleton {
+    @apply bg-slate-200 rounded animate-pulse;
+  }
+}
+
+/* Reduced motion: suppress scale/fade animations */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .hii-btn, button, a {
+    transform: none !important;
+  }
+}
+
+@layer utilities {
+  /* Scrollbar styling (Webkit) */
+  .hii-scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--hii-border) transparent;
+  }
+  .hii-scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .hii-scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .hii-scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--hii-border);
+    border-radius: 3px;
+  }
+
+  /* Shell sidebar tokens (consumable via Tailwind) */
+  .hii-shell-sidebar {
+    background-color: var(--hii-sidebar-bg);
+    width: var(--hii-sidebar-width);
+  }
+  .hii-shell-sidebar-text {
+    color: var(--hii-sidebar-text);
+  }
+  .hii-shell-sidebar-text-muted {
+    color: var(--hii-sidebar-text-muted);
+  }
+  .hii-shell-header {
+    height: var(--hii-header-height);
   }
 }

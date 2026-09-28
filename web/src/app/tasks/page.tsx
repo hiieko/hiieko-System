@@ -1,239 +1,423 @@
-﻿'use client';
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '../../lib/api-client';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { t, useLocale, UserRole } from '@solar/shared';
+import { Plus, RefreshCw, Loader2 } from 'lucide-react';
+
 import { useAuth } from '../../contexts/AuthContext';
-import { t, useLocale } from '@solar/shared';
+import { useProject } from '../../contexts/ProjectContext';
+import { useToast } from '../../components/ui/Toast';
+
 import {
-  ClipboardCheck,
-  Loader2,
-  CheckCircle2,
-  User,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  RefreshCw,
-} from 'lucide-react';
+  Task,
+  TaskStatus,
+  UpdateTaskDto,
+} from '../../features/tasks/types';
+import { getTasks, updateTask } from '../../features/tasks/api';
+import {
+  TaskCard,
+  TaskFilters,
+  TaskCreateModal,
+  TaskAssignModal,
+} from '../../features/tasks/components';
 
-interface TaskItem {
-  id: string;
-  title: string;
-  code: string;
-  description?: string;
-  status: string;
-  priority: string;
-  assigned_to_id?: string;
-  project_id: string;
-  due_date?: string;
-  progress?: number;
-  created_at: string;
-  project?: { name: string; code: string };
-  assigned_to?: { id: string; email: string; fullName?: string };
-}
+import {
+  PageHeader,
+  Button,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+} from '../../components/ui';
 
-const STATUS_LABELS: Record<string, string> = {
-  TODO: 'De facut', IN_PROGRESS: 'In lucru', DONE: 'Finalizat', BLOCKED: 'Blocat', REVIEW: 'In verificare',
+// ── Role-based permissions ────────────────────────────────────────────────
+
+const canCreateTasks = (role?: UserRole | string): boolean => {
+  if (!role) return false;
+  const r = role.toLowerCase();
+  return (
+    r === 'admin' ||
+    r === 'owner' ||
+    r === 'pm' ||
+    r === 'manager' ||
+    r === 'site_manager' ||
+    r === 'foreman' ||
+    r === 'team_leader'
+  );
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  TODO: 'bg-slate-100 text-slate-700', IN_PROGRESS: 'bg-blue-100 text-blue-800',
-  DONE: 'bg-emerald-100 text-emerald-800', BLOCKED: 'bg-red-100 text-red-800', REVIEW: 'bg-amber-100 text-amber-800',
+const canUpdateTaskStatus = (role?: UserRole | string): boolean => {
+  if (!role) return false;
+  const r = role.toLowerCase();
+  return (
+    r === 'admin' ||
+    r === 'owner' ||
+    r === 'pm' ||
+    r === 'manager' ||
+    r === 'site_manager' ||
+    r === 'foreman' ||
+    r === 'team_leader' ||
+    r === 'technician' ||
+    r === 'worker' ||
+    r === 'qa_qc'
+  );
 };
 
-const PROGRESS_OPTIONS = [0, 10, 25, 50, 75, 90, 100];
+const canUpdateTaskQuantity = (role?: UserRole | string): boolean => {
+  return canUpdateTaskStatus(role);
+};
+
+const canAssignTask = (role?: UserRole | string): boolean => {
+  return canCreateTasks(role);
+};
+
+const shouldFilterOnlyMine = (role?: UserRole | string): boolean => {
+  if (!role) return true;
+  const r = role.toLowerCase();
+  return r === 'worker' || r === 'technician';
+};
+
+// ── Page Component ────────────────────────────────────────────────────────
 
 export default function TasksPage() {
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<string>('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const { user } = useAuth();
+  const { selectedProject } = useProject();
+  const { success: toastSuccess, error: toastError } = useToast();
   const { locale } = useLocale();
 
+  // Data state
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeStatus, setActiveStatus] = useState<string>('all');
+  const [onlyMine, setOnlyMine] = useState(() => shouldFilterOnlyMine(user?.role as UserRole));
+
+  // UI state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [assignModalTask, setAssignModalTask] = useState<Task | null>(null);
+  const [updatingStatusIds, setUpdatingStatusIds] = useState<Set<string>>(new Set());
+  const [updatingQuantityIds, setUpdatingQuantityIds] = useState<Set<string>>(new Set());
+
+  // ── Load tasks ──────────────────────────────────────────────────────────
+
   const loadTasks = useCallback(async () => {
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
+
     try {
-      const response = await apiClient.getTasks();
-      setTasks((response.data || []) as TaskItem[]);
-    } catch (err: any) {
-      setError(err.message || t('task.load_error', locale));
-    } finally { setLoading(false); }
-  }, []);
+      const projectId = selectedProject?.id;
+      const res = await getTasks(projectId);
 
-  useEffect(() => { loadTasks(); }, [loadTasks]);
-
-  const myTasks = tasks.filter(t => {
-    if (!user) return false;
-    const r = user.role?.toLowerCase();
-    if (r === 'admin' || r === 'owner' || r === 'manager' || r === 'pm') {
-      return filter === 'all' ? true : t.status === filter;
+      if (res.data && !res.error) {
+        setTasks(res.data);
+      } else {
+        setError(res.error || t('task.err_generic'));
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : t('task.err_generic')
+      );
+    } finally {
+      setLoading(false);
+      setInitialLoadDone(true);
     }
-    if (t.assigned_to_id !== user.id) return false;
-    return filter === 'all' ? true : t.status === filter;
-  });
+  }, [selectedProject?.id]);
 
-  const handleUpdateProgress = async (taskId: string, newStatus: string, newProgress?: number) => {
-    setUpdatingId(taskId); setUpdateSuccess(null);
+  // Initial load
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  // ── Status counts ───────────────────────────────────────────────────────
+
+  const statusCounts = useMemo(() => {
+    const counts: Partial<Record<TaskStatus, number>> = {};
+    for (const task of tasks) {
+      counts[task.status] = (counts[task.status] || 0) + 1;
+    }
+    return counts;
+  }, [tasks]);
+
+  // ── Filtered tasks ──────────────────────────────────────────────────────
+
+  const filteredTasks = useMemo(() => {
+    let result = [...tasks];
+
+    // Status filter
+    if (activeStatus !== 'all') {
+      result = result.filter((t) => t.status === activeStatus);
+    }
+
+    // "Only mine" filter
+    if (onlyMine && user) {
+      result = result.filter((task) =>
+        task.assignments?.some((a) => a.user_id === user.id)
+      );
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.code.toLowerCase().includes(q) ||
+          (t.description && t.description.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [tasks, activeStatus, onlyMine, searchQuery, user]);
+
+  // ── Update status ───────────────────────────────────────────────────────
+
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    setUpdatingStatusIds((prev) => new Set(prev).add(taskId));
+
     try {
-      const body: any = { status: newStatus };
-      if (newProgress !== undefined) body.progress = newProgress;
-      await apiClient.updateTask(taskId, body);
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus, progress: newProgress ?? t.progress } : t));
-      setUpdateSuccess(t('task.update_success', locale));
-      setTimeout(() => setUpdateSuccess(null), 2000);
-    } catch (err: any) {
-      setError(err.message || t('task.update_error', locale));
-    } finally { setUpdatingId(null); }
+      const dto: UpdateTaskDto = { status: newStatus };
+
+      // Auto-fill actual_start when moving to IN_PROGRESS
+      if (newStatus === 'IN_PROGRESS') {
+        dto.actualStart = new Date().toISOString();
+      }
+
+      // Auto-fill actual_end when moving to COMPLETED or VERIFIED
+      if (newStatus === 'COMPLETED' || newStatus === 'VERIFIED') {
+        dto.actualEnd = new Date().toISOString();
+      }
+
+      const res = await updateTask(taskId, dto);
+
+      if (res.data && !res.error) {
+        // Update local state
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? res.data! : t))
+        );
+        toastSuccess(t('task.status_updated'));
+      } else {
+        toastError(t('task.generic_error'), res.error);
+      }
+    } catch (err) {
+      toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+    } finally {
+      setUpdatingStatusIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    }
   };
 
-  const getNextStatuses = (s: string): { status: string; label: string }[] => {
-    switch (s) {
-      case 'TODO': return [{ status: 'IN_PROGRESS', label: t('task.start', locale) }];
-      case 'IN_PROGRESS': return [
-        { status: 'REVIEW', label: t('task.send_review', locale) },
-        { status: 'DONE', label: t('task.mark_done', locale) },
-      ];
-      case 'REVIEW': return [
-        { status: 'IN_PROGRESS', label: 'Reia in lucru' },
-        { status: 'DONE', label: 'Confirma finalizat' },
-      ];
-      case 'BLOCKED': return [{ status: 'IN_PROGRESS', label: 'Reia in lucru' }];
-      default: return [];
+  // ── Update quantity ─────────────────────────────────────────────────────
+
+  const handleQuantityChange = async (taskId: string, quantity: number) => {
+    setUpdatingQuantityIds((prev) => new Set(prev).add(taskId));
+
+    try {
+      const res = await updateTask(taskId, { actualQuantity: quantity });
+
+      if (res.data && !res.error) {
+        // Update local state
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? res.data! : t))
+        );
+        toastSuccess(t('task.quantity_updated'));
+      } else {
+        toastError(t('task.generic_error'), res.error);
+      }
+    } catch (err) {
+      toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+    } finally {
+      setUpdatingQuantityIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
     }
   };
 
-  const tabs = [
-    { k: 'all', l: 'Toate' }, { k: 'TODO', l: 'De facut' }, { k: 'IN_PROGRESS', l: 'In lucru' },
-    { k: 'DONE', l: 'Finalizate' }, { k: 'BLOCKED', l: 'Blocate' },
-  ];
+  // ── Task created ────────────────────────────────────────────────────────
+
+  const handleTaskCreated = (task: Task) => {
+    setTasks((prev) => [task, ...prev]);
+    toastSuccess(t('task.created'), task.code);
+  };
+
+  // ── Task assigned ───────────────────────────────────────────────────────
+
+  const handleTaskAssigned = (updatedTask: Task) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+    );
+    toastSuccess(t('task.assigned'));
+  };
+
+  // ── Permissions ─────────────────────────────────────────────────────────
+
+  const userRole = user?.role as UserRole | undefined;
+  const userCanCreate = canCreateTasks(userRole);
+  const userCanUpdateStatus = canUpdateTaskStatus(userRole);
+  const userCanUpdateQuantity = canUpdateTaskQuantity(userRole);
+  const userCanAssign = canAssignTask(userRole);
+  const showOnlyMineFilter = !shouldFilterOnlyMine(userRole);
+
+  // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Task-uri</h1>
-          <p className="text-sm text-slate-500 mt-1">Sarcinile si activitatile atribuite</p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Create Modal */}
+      <TaskCreateModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        projectId={selectedProject?.id || null}
+        onCreated={handleTaskCreated}
+      />
+
+      {/* Assign Modal */}
+      {assignModalTask && (
+        <TaskAssignModal
+          open={true}
+          onClose={() => setAssignModalTask(null)}
+          task={assignModalTask}
+          onAssigned={(updatedTask) => {
+            handleTaskAssigned(updatedTask);
+            setAssignModalTask(null);
+          }}
+        />
+      )}
+
+      {/* Page Header */}
+      <PageHeader
+        title={t('task.page_title')}
+        subtitle={
+          selectedProject
+            ? `${selectedProject.code} — ${selectedProject.name}`
+            : t('task.all_projects')
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<RefreshCw className="w-4 h-4" />}
+              onClick={loadTasks}
+              loading={loading}
+            >
+              Refresh
+            </Button>
+            {userCanCreate && (
+              <Button
+                variant="primary"
+                size="md"
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => setShowCreateModal(true)}
+                disabled={!selectedProject}
+              >
+                {t('task.new') || 'New Task'}
+              </Button>
+            )}
+          </div>
+        }
+      />
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Error State */}
+        {error && !loading && (
+          <ErrorState
+            title={t('task.generic_error')}
+            error={error}
+            onRetry={loadTasks}
+            className="mb-6"
+          />
+        )}
+
+        {/* Filters */}
+        <div className="mb-6">
+          <TaskFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeStatus={activeStatus}
+            onStatusChange={setActiveStatus}
+            onlyMine={onlyMine}
+            onOnlyMineChange={setOnlyMine}
+            statusCounts={statusCounts}
+            showOnlyMineFilter={showOnlyMineFilter}
+          />
         </div>
-        <button onClick={loadTasks} disabled={loading}
-          className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-          <RefreshCw className={'w-3.5 h-3.5 mr-1.5 ' + (loading ? 'animate-spin' : '')} />Reimprospateaza
-        </button>
-      </div>
 
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
-      {updateSuccess && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" />{updateSuccess}</div>}
-
-      <div className="flex items-center space-x-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit overflow-x-auto">
-        {tabs.map(t => (
-          <button key={t.k} onClick={() => setFilter(t.k)}
-            className={'whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ' + (filter === t.k ? 'bg-hii-500 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900')}>
-            {t.l}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-3">
-        {loading ? (
-          <div className="flex items-center justify-center py-16 text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca task-urile...
+        {/* Loading Skeletons */}
+        {loading && !initialLoadDone && (
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-40 rounded-xl" />
+            ))}
           </div>
-        ) : myTasks.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-            <ClipboardCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-600">Niciun task</h3>
-            <p className="text-xs text-slate-400 mt-1">Nu ai task-uri atribuite in acest proiect.</p>
+        )}
+
+        {/* Empty State */}
+        {!loading && initialLoadDone && filteredTasks.length === 0 && (
+          <EmptyState
+            title={
+              searchQuery
+                ? t('task.empty_none')
+                : onlyMine
+                ? t('task.empty_mine')
+                : t('task.empty_none')
+            }
+            description={
+              searchQuery
+                ? t('task.empty_desc_filtered')
+                : onlyMine
+                ? ''
+                : userCanCreate && !selectedProject
+                ? t('task.select_project_first')
+                : userCanCreate && selectedProject
+                ? t('task.empty_desc_create')
+                : ''
+            }
+            icon={<Loader2 className="w-8 h-8 text-slate-400" />}
+            action={
+              userCanCreate && selectedProject
+                ? {
+                    label: t('task.create') || 'Create Task',
+                    onClick: () => setShowCreateModal(true),
+                  }
+                : undefined
+            }
+          />
+        )}
+
+        {/* Task List */}
+        {(!loading || initialLoadDone) && filteredTasks.length > 0 && (
+          <div className="space-y-4">
+            {filteredTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                currentUserId={user?.id}
+                canUpdateStatus={userCanUpdateStatus}
+                canUpdateQuantity={userCanUpdateQuantity}
+                canAssign={userCanAssign}
+                onStatusChange={(taskId, newStatus) =>
+                  handleStatusChange(taskId, newStatus)
+                }
+                onQuantityChange={(taskId, quantity) =>
+                  handleQuantityChange(taskId, quantity)
+                }
+                onAssignClick={setAssignModalTask}
+                updatingStatus={updatingStatusIds.has(task.id)}
+                updatingQuantity={updatingQuantityIds.has(task.id)}
+              />
+            ))}
           </div>
-        ) : (
-          myTasks.map((task) => {
-            const isExpanded = expandedId === task.id;
-            const isUpdating = updatingId === task.id;
-            const nextStatuses = getNextStatuses(task.status);
-            const canUpdate = user && (user.role?.toLowerCase() === 'admin' || user.role?.toLowerCase() === 'owner' || task.assigned_to_id === user.id);
-
-            return (
-              <div key={task.id}
-                className={'bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all ' + (isExpanded ? 'ring-1 ring-hii-200' : '')}>
-                <div className="p-4 flex items-start justify-between gap-3 cursor-pointer hover:bg-slate-50/50"
-                  onClick={() => setExpandedId(isExpanded ? null : task.id)}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={'px-2 py-0.5 rounded text-[10px] font-bold ' + (STATUS_COLORS[task.status] || 'bg-slate-100 text-slate-700')}>
-                        {STATUS_LABELS[task.status] || task.status}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400">{task.code}</span>
-                    </div>
-                    <h3 className="font-semibold text-slate-900 text-sm">{task.title}</h3>
-                    {task.project && <p className="text-xs text-slate-500 mt-0.5">{task.project.name} ({task.project.code})</p>}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {task.progress !== undefined && task.progress !== null && (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-hii-500 rounded-full transition-all" style={{ width: Math.min(100, Math.max(0, task.progress)) + '%' }} />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-600">{task.progress}%</span>
-                      </div>
-                    )}
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-slate-100 pt-3 space-y-3">
-                    {task.description && <p className="text-sm text-slate-600">{task.description}</p>}
-                    <div className="flex flex-wrap gap-4 text-xs text-slate-500">
-                      {task.due_date && (
-                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{t('task.deadline', locale)} {new Date(task.due_date).toLocaleDateString('ro-RO')}</span>
-                      )}
-                      {task.assigned_to && (
-                        <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{task.assigned_to.fullName || task.assigned_to.email}</span>
-                      )}
-                    </div>
-
-                    {canUpdate && nextStatuses.length > 0 && (
-                      <div className="pt-2 border-t border-slate-100">
-                        <p className="text-xs font-medium text-slate-600 mb-2">{t('task.update_status', locale)}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {nextStatuses.map(ns => (
-                            <button key={ns.status} onClick={() => handleUpdateProgress(task.id, ns.status)}
-                              disabled={isUpdating}
-                              className="inline-flex items-center px-3 py-1.5 bg-hii-50 hover:bg-hii-100 text-hii-700 font-semibold text-xs rounded-lg border border-hii-200 disabled:opacity-50 transition-colors">
-                              {isUpdating ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                              {ns.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {canUpdate && (
-                      <div className="pt-2 border-t border-slate-100">
-                        <p className="text-xs font-medium text-slate-600 mb-2">{t('task.progress', locale)}</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {PROGRESS_OPTIONS.map(pct => (
-                            <button key={pct} onClick={() => handleUpdateProgress(task.id, task.progress === 100 ? 'DONE' : task.status, pct)}
-                              disabled={isUpdating || task.progress === pct}
-                              className={'px-2 py-1 text-xs font-semibold rounded border transition-colors ' + (task.progress === pct ? 'bg-hii-500 text-white border-hii-500' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50') + ' disabled:opacity-50'}>
-                              {pct}%
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
         )}
       </div>
     </div>
   );
 }
-
-
-
 

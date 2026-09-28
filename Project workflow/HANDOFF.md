@@ -2,39 +2,44 @@
 
 > Primary continuation point for the next AI assistant.
 
-Last Updated: 2026-09-26 (Phase 12 — Worker Final Defect Pass COMPLETE; mojibake fixed, approval button hidden from Worker, checkout projectId added)
+Last Updated: 2026-09-28 (Phase 2 - Tasks Operational Experience COMPLETE: 8 components in web/src/features/tasks/components/ + /tasks page rewrite; all gates verified; ISSUE-042 opened for backend status-transition gap)
 
 ## Current Status
-**Status:** STABLE — **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; 25 suites / 202 tests, all quality gates PASS)
+**Status:** STABLE - **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; 25 suites / 202 tests, all quality gates PASS)
 
 ## Current Task
 
-**Phase 10 — Solar Configurator Integration COMPLETE.** origin/feature/solar-configurator merged into origin/master (73d78e8); full post-merge verification passed. See CURRENT_STATUS.md for full status.
-**Phase 11 — Team Leader Role Implementation COMPLETE — Mutation Acceptance Tests PASS.** See PROGRESS.md for full test matrix (22/22 tests: 14 grants + 8 denials).
-**Phase 12 — Worker Final Defect Pass COMPLETE.** Mojibake fixed in 4 source files; "Aproba Raport" button hidden from Worker; checkout `projectId` added to satisfy ProjectAccessGuard.
-**Next:** Proceed with R2.6 Audit per roadmap.
+**Phase 2 - Tasks Operational Experience COMPLETE (2026-09-28).**
+- 8 new components in web/src/features/tasks/components/ (+ barrel index.ts): TaskProgressBar, TaskDependencyChips, TaskStatusWorkflow, TaskQuantityEditor, TaskAssignModal, TaskFilters, TaskCreateModal, TaskCard.
+- web/src/app/tasks/page.tsx fully replaced: ProjectContext-driven fetch, role gates (canCreateTasks / canUpdateTaskStatus / canUpdateTaskQuantity / canAssignTask), workers+technicians default to only-mine, status Tabs with live counts, search, skeleton/empty/error states with retry, toasts on every mutation.
+- Data honesty kept: no delete/unassign/priority/due-date/percent UI; progress derives only from actual_quantity / planned_quantity.
+- i18n additions in shared/src/translations.ts: general.save, task.expand_details, task.collapse_details (fixed a hardcoded aria-label in TaskCard and a missing general.save key used by TaskQuantityEditor).
+- Verified: web tsc --noEmit exit 0; npm run build 25 routes / 0 errors (/tasks 9.25 kB); Gate E CDP browser run 21/21 checks + screenshots in task-screenshots/final-*.png (create PH2-VER-01 -> appears in list; PLANNED->READY transition; quantity save 'Realizat: 5'; cancel-confirm open+dismiss without mutation; error state via blocked /api/tasks + recovery after unblock; RO/EN toggle; 375px overflow 0; keyboard Enter toggles card).
+- **ISSUE-042 (OPEN, non-blocking):** backend TasksService.update() performs no status-transition validation - frontend TASK_WORKFLOW_NEXT is the sole guard. Do not fix inside frontend phases; fold into ISSUE-040 DTO work.
 
-> **?? ARCHITECTURE DECISION (2026-09-23) — read before continuing:** Legacy `legacy.*` dual-write is a **temporary compatibility artifact only**, NOT a required pattern. PostgreSQL/NestJS is authoritative; there is no live Supabase project/keys and no `legacy.*` schema in dev. **Do NOT add legacy dual-write to R2.3 Stock or any other module.** The existing R2.2/R2.4 legacy helpers were **REMOVED on 2026-09-23** (ahead of the R7 cut-over) after live-DB verification. The orphan `public.time_logs` table was **DROPPED on 2026-09-23** (D-012). The `supabase/` directory was **ARCHIVED on 2026-09-23** (D-015). R2.5 Notifications is **? E2E VERIFIED** as PostgreSQL-authoritative module. Next: R2.3 Stock + Avize as **PostgreSQL-authoritative** module (verify invariants + live E2E), with no legacy mirroring. See `PROGRESS.md` ? Architecture Decision and `IMPLEMENTATION_ROADMAP.md` Milestone R7.
+**Next:** Per IMPLEMENTATION_ROADMAP - D4 page-level adoption of design tokens/components for remaining pages, or R2.6 Audit resume. Backend: ISSUE-040 DTO validation (+ ISSUE-042 transition validation opportunity).
 
-> ? Superseded 2026-09-23: the dev database has **no `legacy` schema**, and the legacy field-mapping code has now been **deleted**, so that limitation is moot. ISSUE-012 (orphan `public.time_logs`) and ISSUE-015 (`supabase/` retention) are now **RESOLVED** — the table was dropped and the directory was archived. Remaining Supabase-removal follow-ups were tracked as ISSUE-013 (no server-side blob storage) and ISSUE-014 (`/api/upload` route missing) — both **IMPLEMENTED + VERIFIED**.
+> **?? ARCHITECTURE DECISION (2026-09-23) ï¿½ read before continuing:** Legacy `legacy.*` dual-write is a **temporary compatibility artifact only**, NOT a required pattern. PostgreSQL/NestJS is authoritative; there is no live Supabase project/keys and no `legacy.*` schema in dev. **Do NOT add legacy dual-write to R2.3 Stock or any other module.** The existing R2.2/R2.4 legacy helpers were **REMOVED on 2026-09-23** (ahead of the R7 cut-over) after live-DB verification. The orphan `public.time_logs` table was **DROPPED on 2026-09-23** (D-012). The `supabase/` directory was **ARCHIVED on 2026-09-23** (D-015). R2.5 Notifications is **? E2E VERIFIED** as PostgreSQL-authoritative module. Next: R2.3 Stock + Avize as **PostgreSQL-authoritative** module (verify invariants + live E2E), with no legacy mirroring. See `PROGRESS.md` ? Architecture Decision and `IMPLEMENTATION_ROADMAP.md` Milestone R7.
+
+> ? Superseded 2026-09-23: the dev database has **no `legacy` schema**, and the legacy field-mapping code has now been **deleted**, so that limitation is moot. ISSUE-012 (orphan `public.time_logs`) and ISSUE-015 (`supabase/` retention) are now **RESOLVED** ï¿½ the table was dropped and the directory was archived. Remaining Supabase-removal follow-ups were tracked as ISSUE-013 (no server-side blob storage) and ISSUE-014 (`/api/upload` route missing) ï¿½ both **IMPLEMENTED + VERIFIED**.
 >
-> ?? `hiieko-final/` (frozen legacy reference repo) was **moved out of the active tree** to `C:\Users\Lenovo\Desktop\HIIEKO_ARCHIVE\hiieko-final` — preserved intact, NOT deleted.
+> ?? `hiieko-final/` (frozen legacy reference repo) was **moved out of the active tree** to `C:\Users\Lenovo\Desktop\HIIEKO_ARCHIVE\hiieko-final` ï¿½ preserved intact, NOT deleted.
 
 # What Was Completed
-- [x] **?? Supabase Runtime Removal — Phases 1-6 COMPLETE (2026-09-23)**
+- [x] **?? Supabase Runtime Removal ï¿½ Phases 1-6 COMPLETE (2026-09-23)**
 # What Was Completed
 - [x] **?? D-012/D-015 Final Audit COMPLETE (2026-09-23)**
-- [x] **?? Phase 10 — Solar Configurator Integration COMPLETE (2026-09-26)**
+- [x] **?? Phase 10 ï¿½ Solar Configurator Integration COMPLETE (2026-09-26)**
   - origin/feature/solar-configurator merged into origin/master at 73d78e8
   - Integration branch integrate/solar-configuration created, conflicts resolved (Sidebar.tsx only genuine conflict)
   - Full verification: backend 25/202 tests, web 22 routes, all typechecks and builds PASS
   - Documentation updated in all workflow docs
-  - **Mobile:** `NotificationCenterScreen.tsx` -> `GET /api/notifications` + `POST /api/notifications/:id/read` + `POST /api/notifications/read-all`; `services/ocr.ts` -> `POST /api/ocr/process`; `services/expenseDocuments.ts` -> `POST /api/expenses` + `POST /api/ocr/jobs`; offline path -> SQLite `enqueueOperation('expense','create',…)`. Deleted `Mobile/src/services/supabase.ts` + `supabaseApiClient.ts`. Added `Mobile/src/services/expenseMapping.ts` (UI values -> Prisma enums). Added `markAllNotificationsRead()`, `processOcr()`, `createOcrJob()` to `NestMobileApiClient`.
+  - **Mobile:** `NotificationCenterScreen.tsx` -> `GET /api/notifications` + `POST /api/notifications/:id/read` + `POST /api/notifications/read-all`; `services/ocr.ts` -> `POST /api/ocr/process`; `services/expenseDocuments.ts` -> `POST /api/expenses` + `POST /api/ocr/jobs`; offline path -> SQLite `enqueueOperation('expense','create',ï¿½)`. Deleted `Mobile/src/services/supabase.ts` + `supabaseApiClient.ts`. Added `Mobile/src/services/expenseMapping.ts` (UI values -> Prisma enums). Added `markAllNotificationsRead()`, `processOcr()`, `createOcrJob()` to `NestMobileApiClient`.
   - **Web:** deleted `lib/supabase.ts`, `lib/supabase-api-client.ts`, `lib/useSupabaseQuery.ts`; removed `@supabase/supabase-js` (npm pruned 12 packages; lockfile has 0 Supabase refs); cleaned both web env files.
   - **Backend:** removed unused `supabaseToken` (LoginDto), Supabase-only `app_metadata` (JwtPayload), and the **Supabase token fallback in `JwtAuthGuard`** (unknown/inactive users now get 401).
   - **Edge Function:** deleted `supabase/functions/` (`ocr-extract`).
   - **Legacy shims:** removed `upsertLegacyTimeLog()` and `upsertLegacyDailyReport()` plus their shim-only support code (`attendance.service.ts` 405->268 lines, `daily-reports.service.ts` 410->173 lines).
-  - **Env:** root `.env.example` rewritten — zero Supabase variables remain in the active tree.
+  - **Env:** root `.env.example` rewritten ï¿½ zero Supabase variables remain in the active tree.
   - **?? Real bug fixed:** `POST /api/ocr/process` was returning HTTP 500 `form_data_1.default is not a constructor` (`import FormData from 'form-data'` without `esModuleInterop`). Changed to `import * as FormData from 'form-data'`. OCR was non-functional before this fix.
   - **Verification:** monorepo typecheck exit 0; `nest build` exit 0; web build exit 0 (16 routes); jest 9/9 suites + 35/35 tests; **live smoke test 10/10 PASS** (login, notifications, read-all, expense with mapped enums, OCR job link, OCR process error path, ghost-token 401, check-in, `time_logs` frozen 3->3, `attendance_records` 3->4).
 - [x] **NestJS Backend Foundation** in `backend/` workspace with modular domain modules, OpenAPI Swagger at `/api/docs`, JWT auth, RBAC, and Project Access guards.
@@ -64,15 +69,15 @@ Last Updated: 2026-09-26 (Phase 12 — Worker Final Defect Pass COMPLETE; mojibake
 - [x] Web build passing cleanly with 18 static-prerendered routes.
 - [x] All web pages migrated to real API calls with live PostgreSQL integration (14/14 endpoints verified HTTP 200).
 - [x] Dev seed user (ADMIN) created and authentication flow verified.
-- [x] **ISSUE-013 + ISSUE-014 IMPLEMENTED + VERIFIED (2026-09-23)** — server-side receipt/blob persistence and `/api/upload`:
-  - `backend/src/common/storage/` — `StorageService` abstraction + `LocalStorageService` (path-traversal-safe keys, MIME allowlist, 10 MB cap, SHA-256 checksum) + global `StorageModule` (`STORAGE_DRIVER`/`STORAGE_ROOT` env).
-  - `backend/src/modules/upload/` — `POST /api/upload` (JWT + expense ownership, multipart, MIME allowlist, 10 MB, `Document`+`DocumentVersion`+`Attachment`, structured `documentId` response, standard error envelope) and authenticated `GET /api/upload/:documentId` (StreamableFile; `@SkipEnvelope`).
+- [x] **ISSUE-013 + ISSUE-014 IMPLEMENTED + VERIFIED (2026-09-23)** ï¿½ server-side receipt/blob persistence and `/api/upload`:
+  - `backend/src/common/storage/` ï¿½ `StorageService` abstraction + `LocalStorageService` (path-traversal-safe keys, MIME allowlist, 10 MB cap, SHA-256 checksum) + global `StorageModule` (`STORAGE_DRIVER`/`STORAGE_ROOT` env).
+  - `backend/src/modules/upload/` ï¿½ `POST /api/upload` (JWT + expense ownership, multipart, MIME allowlist, 10 MB, `Document`+`DocumentVersion`+`Attachment`, structured `documentId` response, standard error envelope) and authenticated `GET /api/upload/:documentId` (StreamableFile; `@SkipEnvelope`).
   - `Mobile/src/services/apiClient.ts` `uploadFile()` extended; `Mobile/src/services/expenseDocuments.ts` `submitReceiptDraft` now uploads the receipt binary and links `OCRJob.document_id`.
   - Tests: backend **11 suites / 52 tests**, typecheck 0, build 0; Mobile typecheck 0; live E2E against PostgreSQL 18 (unauth 401, login, expense, upload 201, blob on disk, byte-identical retrieval, bad MIME 400).
 
 # What Remains
 - [ ] Apply the R0 milestone from `IMPLEMENTATION_ROADMAP.md` (stabilize): fix ISSUE-002 (mobile login), ISSUE-005 (real persistence + sync), ISSUE-003/004 (OCR cleanup), ISSUE-006/008/009 (hygiene).
-- [ ] Initialize git + CI (typecheck + tests + build) — no VCS exists in the checkout.
+- [ ] Initialize git + CI (typecheck + tests + build) ï¿½ no VCS exists in the checkout.
 - [ ] ~~Deploy OCR function to Supabase; obtain real Supabase project keys and apply `supabase/full_setup.sql`.~~ **SUPERSEDED (2026-09-23):** PostgreSQL/NestJS is authoritative; Supabase is a legacy compatibility artifact to be decommissioned at R7. OCR is handled by the backend `ocr` module + PaddleOCR service (see R5), not a Supabase Edge Function deploy.
 - [ ] Mobile app: wire real login flow, implement offline queue sync.
 - [ ] OCR pipeline: complete PaddleOCR service deployment, fix documentation drift (ISSUE-003/004).
@@ -84,7 +89,7 @@ Last Updated: 2026-09-26 (Phase 12 — Worker Final Defect Pass COMPLETE; mojibake
 # Last Known Working State
 - Verified working in this environment (2026-09-18/19): shared build + all unit suites, web production build (14 routes), root typecheck (0 errors), web dev server HTTP 200 on 14 routes.
 - The OCR chain (schema ? Edge Function ? OCR service) is internally consistent apart from documented drift (Google Vision leftovers, dead `extract.ts`).
-- Live project behavior (RLS, Edge Function, Storage, PaddleOCR inference) remains UNVERIFIED — no keys/deployment.
+- Live project behavior (RLS, Edge Function, Storage, PaddleOCR inference) remains UNVERIFIED ï¿½ no keys/deployment.
 
 # Verification
 | Check | Result | Notes |
@@ -122,17 +127,18 @@ Last Updated: 2026-09-26 (Phase 12 — Worker Final Defect Pass COMPLETE; mojibake
 - `web/src/app/notificari/page.tsx` (sample data fix)
 
 # Important Files To Continue With
-- `HOW_TO_RUN.md` — runbook.
-- `web/src/app/page.tsx` — dashboard (ISSUE-001).
-- ~~`supabase/functions/ocr-extract/index.ts` + `extract.ts` — OCR edge (ISSUE-003/004).~~ **DELETED 2026-09-23** — OCR now runs through `backend/src/modules/ocr/` (`POST /api/ocr/process` -> self-hosted PaddleOCR).
-- `Mobile/src/services/apiClient.ts`, `Mobile/src/services/ocr.ts`, `Mobile/src/services/expenseDocuments.ts`, `Mobile/src/services/expenseMapping.ts` — the migrated Mobile runtime paths.
-- `backend/src/modules/ocr/providers/paddleocr.provider.ts` — OCR provider client (FormData import fixed).
-- `Mobile/App.tsx`, `Mobile/src/screens/LoginScreen.tsx` — auth wiring (ISSUE-002).
-- `Mobile/src/screens/WorkerExpenseScreen.tsx`, `DeliveryIntakeScreen.tsx`, `Mobile/src/services/storage.ts` — offline queue (ISSUE-005).
-- `ocr-service/app/main.py` — OCR service entrypoint.
+- `Project workflow/DESIGN_SYSTEM.md` â€” tokens map, component inventory, shell/layout contract, a11y/i18n rules, 23-route adoption tracker, OCE pattern adoption log.
+- `web/src/config/navigation.ts` â€” single source of truth for sidebar navigation (groups, items, icons, roles, i18n keys).
+- `web/src/app/page.tsx` ï¿½ dashboard (ISSUE-001).
+- ~~`supabase/functions/ocr-extract/index.ts` + `extract.ts` ï¿½ OCR edge (ISSUE-003/004).~~ **DELETED 2026-09-23** ï¿½ OCR now runs through `backend/src/modules/ocr/` (`POST /api/ocr/process` -> self-hosted PaddleOCR).
+- `Mobile/src/services/apiClient.ts`, `Mobile/src/services/ocr.ts`, `Mobile/src/services/expenseDocuments.ts`, `Mobile/src/services/expenseMapping.ts` ï¿½ the migrated Mobile runtime paths.
+- `backend/src/modules/ocr/providers/paddleocr.provider.ts` ï¿½ OCR provider client (FormData import fixed).
+- `Mobile/App.tsx`, `Mobile/src/screens/LoginScreen.tsx` ï¿½ auth wiring (ISSUE-002).
+- `Mobile/src/screens/WorkerExpenseScreen.tsx`, `DeliveryIntakeScreen.tsx`, `Mobile/src/services/storage.ts` ï¿½ offline queue (ISSUE-005).
+- `ocr-service/app/main.py` ï¿½ OCR service entrypoint.
 
 # Important Decisions
-See DECISIONS.md. Key: monorepo workspaces, **NestJS + Prisma + PostgreSQL 18 backend (Supabase fully removed from runtime on 2026-09-23 — RLS-era Supabase is superseded)**, self-hosted PaddleOCR (supersedes Google Vision), Romanian-first i18n, offline queue, DB-enforced stock integrity, validation-first OCR review loop.
+See DECISIONS.md. Key: monorepo workspaces, **NestJS + Prisma + PostgreSQL 18 backend (Supabase fully removed from runtime on 2026-09-23 ï¿½ RLS-era Supabase is superseded)**, self-hosted PaddleOCR (supersedes Google Vision), Romanian-first i18n, offline queue, DB-enforced stock integrity, validation-first OCR review loop.
 
 # Assumptions
 - Web + mobile + OCR service are all maintained in this repo.
@@ -145,17 +151,17 @@ See DECISIONS.md. Key: monorepo workspaces, **NestJS + Prisma + PostgreSQL 18 ba
 
 # Next Action
 The next AI should:
-1. **Verify solar-configurator route** — confirm the route works in dev environment
-2. **Apply Prisma migration** —
+1. **Verify solar-configurator route** ï¿½ confirm the route works in dev environment
+2. **Apply Prisma migration** ï¿½
 px prisma migrate deploy to production
-3. **R2.6 Audit** — implement remaining audit recommendations (add tests for untested modules, fix missing routes, activate PermissionsGuard)
-2. **Phase 4: Authorization & project scoping** — ensure `actorId` propagated from auth context.
-3. **Phase 5: DTO validation** — add class-validator decorators to DTOs.
-4. **Phase 6: Read APIs** — add pagination/filters to `getMovements` and `listAllBalances`.
-5. **Phase 7: Web `/stocuri` rewrite** — handle new TRANSFER_IN/TRANSFER_OUT types.
-6. **Phase 8: Web `/avize` rewrite** — add create form using new `createAviz`.
-7. **Phase 9: Mobile delivery intake fixes** — verify mobile creates avize correctly.
-8. **Phase 10: Integration/E2E tests** — concurrent consume/transfer, aviz?stock flow.
+3. **R2.6 Audit** ï¿½ implement remaining audit recommendations (add tests for untested modules, fix missing routes, activate PermissionsGuard)
+2. **Phase 4: Authorization & project scoping** ï¿½ ensure `actorId` propagated from auth context.
+3. **Phase 5: DTO validation** ï¿½ add class-validator decorators to DTOs.
+4. **Phase 6: Read APIs** ï¿½ add pagination/filters to `getMovements` and `listAllBalances`.
+5. **Phase 7: Web `/stocuri` rewrite** ï¿½ handle new TRANSFER_IN/TRANSFER_OUT types.
+6. **Phase 8: Web `/avize` rewrite** ï¿½ add create form using new `createAviz`.
+7. **Phase 9: Mobile delivery intake fixes** ï¿½ verify mobile creates avize correctly.
+8. **Phase 10: Integration/E2E tests** ï¿½ concurrent consume/transfer, aviz?stock flow.
 - [x] Completed work documented
 - [x] Remaining work documented
 - [x] Blockers documented
