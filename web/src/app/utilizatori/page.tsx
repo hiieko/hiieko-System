@@ -10,7 +10,7 @@ import { Users, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, Mail, Shield }
 interface ProfileRow { id: string; email: string; full_name: string; role: string; phone_number?: string; is_active: boolean; created_at: string; }
 interface AppRow { id: string; first_name: string; last_name: string; email: string; phone?: string; requested_role: string; status: string; created_at: string; }
 const RC: Record<string, string> = { admin: 'bg-red-100 text-red-800', manager: 'bg-blue-100 text-blue-800', team_leader: 'bg-amber-100 text-amber-800', worker: 'bg-emerald-100 text-emerald-800' };
-const RL: Record<string, string> = { admin: 'Admin', manager: 'Manager', team_leader: 'Sef Santier', worker: 'Muncitor' };
+const RL: Record<string, string> = { admin: 'Admin', manager: 'Manager', team_leader: 'Șef Echipă', worker: 'Muncitor' };
 
 function UtilizatoriPageInner() {
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);

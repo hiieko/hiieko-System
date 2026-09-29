@@ -19,7 +19,6 @@ import type { ApiResponse } from '../../lib/api-client';
 import type {
   DailyPlan,
   CreatePlanDto,
-  MyPlanTasksPlan,
 } from './types';
 
 /**
@@ -106,7 +105,11 @@ export function updatePlanTaskProgress(
  * scope rule enforced by PATCH /api/daily-plans/tasks/:id/progress
  * (updateTaskProgress). Used as the backend membership signal for
  * PlanTaskRow editability (see collectEditablePlanTaskIds in types.ts).
+ *
+ * Response shape: the full DailyPlan row (`{...plan}`) with its plan tasks and
+ * slim project/team refs, so the field dashboards can read plan_date, status and
+ * tasks[].task without an extra request (see fieldWork.ts, UX-R1A C3).
  */
-export function getMyPlanTasks(date: string): Promise<ApiResponse<MyPlanTasksPlan[]>> {
-  return apiClient.get<MyPlanTasksPlan[]>('/api/daily-plans/my-tasks', { date });
+export function getMyPlanTasks(date: string): Promise<ApiResponse<DailyPlan[]>> {
+  return apiClient.get<DailyPlan[]>('/api/daily-plans/my-tasks', { date });
 }

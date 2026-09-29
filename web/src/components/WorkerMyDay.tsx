@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { t, useLocale } from '@solar/shared';
 import { useProject } from '../contexts/ProjectContext';
 import { apiClient } from '../lib/api-client';
-import * as attendanceApi from '../features/attendance/api';
-import type { AssignedTask } from '../features/attendance/types';
+import { getMyPlanTasks, selectMyWorkTasks, todayLocalIso } from '../features/planning';
+import type { FieldTaskRow } from '../features/planning';
 import { WorkerDayHeader } from './WorkerDayHeader';
 import { WorkerAttendanceCard } from './WorkerAttendanceCard';
 import { WorkerTodayTasks } from './WorkerTodayTasks';
@@ -29,8 +29,9 @@ export function WorkerMyDay() {
   const { locale } = useLocale();
   const { selectedProject } = useProject();
 
-  // Tasks state
-  const [tasks, setTasks] = useState<AssignedTask[] | null>(null);
+  // Tasks state — worker/technician source only (GET /api/daily-plans/my-tasks),
+  // so the panel no longer depends on the project selector.
+  const [tasks, setTasks] = useState<FieldTaskRow[] | null>(null);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
 
@@ -46,19 +47,18 @@ export function WorkerMyDay() {
 
   // Load tasks
   const loadTasks = useCallback(async () => {
-    if (!selectedProject) { setTasks(null); return; }
     setTasksLoading(true);
     setTasksError(null);
     try {
-      const res = await attendanceApi.getProjectTasks(selectedProject.id);
-      setTasks((res.data || []) as AssignedTask[]);
+      const res = await getMyPlanTasks(todayLocalIso());
+      setTasks(selectMyWorkTasks(res.data));
     } catch (err: unknown) {
       setTasksError(err instanceof Error ? err.message : t('worker.error_generic', locale));
       setTasks(null);
     } finally {
       setTasksLoading(false);
     }
-  }, [selectedProject, locale]);
+  }, [locale]);
 
   // Load issues
   const loadIssues = useCallback(async () => {
@@ -124,7 +124,7 @@ export function WorkerMyDay() {
 
       <div className="grid grid-cols-1 gap-4">
         <WorkerTodayTasks
-          tasks={tasks}
+          rows={tasks}
           loading={tasksLoading}
           error={tasksError}
           onRetry={loadTasks}

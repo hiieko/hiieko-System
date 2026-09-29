@@ -102,9 +102,9 @@ function StocuriPageInner() {
       <PageTutorial sectionId="stock" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Gestiune Stocuri & Mi?cari Materiale</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Gestiune Stocuri & Mișcări Materiale</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Controlul inventarului pe fiecare ?antier, calculat strict din intrarile de pe avize ?i ie?irile din rapoartele zilnice.
+            Controlul inventarului pe fiecare șantier, calculat strict din intrarile de pe avize și ieșirile din rapoartele zilnice.
           </p>
         </div>
       </div>
@@ -213,9 +213,9 @@ function StocuriPageInner() {
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
             <History className="w-4 h-4 text-amber-600" />
-            <span>Jurnal Imutabil Mi?cari de Stoc (Audit Trail)</span>
+            <span>Jurnal Imutabil Mișcări de Stoc (Audit Trail)</span>
           </div>
-          <span className="text-xs text-slate-500">Conformitate Regula 11: Fiecare mi?care are autor, timestamp ?i sursa</span>
+          <span className="text-xs text-slate-500">Conformitate Regula 11: Fiecare mișcare are autor, timestamp și sursa</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -223,18 +223,18 @@ function StocuriPageInner() {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
                 <th className="py-3 px-4">Data & Ora</th>
-                <th className="py-3 px-4">Tip Opera?iune</th>
+                <th className="py-3 px-4">Tip Operațiune</th>
                 <th className="py-3 px-4">Material</th>
                 <th className="py-3 px-4 text-right">Cantitate</th>
                 <th className="py-3 px-4">Executat De</th>
-                <th className="py-3 px-4">Referin?a Document</th>
+                <th className="py-3 px-4">Referința Document</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {stockMovements.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400 text-sm">
-                    Nu exista mi?cari de stoc âregistrate
+                    Nu exista mișcări de stoc înregistrate
                   </td>
                 </tr>
               ) : (

@@ -7,6 +7,36 @@ Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6
 ## Current Status
 **Status:** STABLE - **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; P4.4 daily-report finalization verified end-to-end; 31 suites / 320 tests, db:verify 71/71, all quality gates PASS)
 
+## UX-R1A checkpoints — latest: **C3 DONE** (2026-09-29)
+
+**C0-C3 are complete. C4 (terminology + role-label normalization, documentation corrections) and C5
+(consolidated evidence capture, CI wiring) are NOT started.** C3 changed the field task sources
+frontend-only: `worker` / `technician` → `GET /api/daily-plans/my-tasks?date=` (backend-computed
+personal scope, no project needed); `team_leader` / `foreman` / `site_manager` →
+`GET /api/daily-plans?projectId=&date=` (a project must be selected, exactly as the attendance actions
+already required). New pure module `web/src/features/planning/fieldWork.ts`
+(`taskSourceForRole`, `selectMyWorkTasks`, `selectPlannedTasks`); `WorkerTodayTasks` now takes
+`rows: FieldTaskRow[]` and renders canonical `TaskStatusEnum` labels with `ui/Badge` variants. The
+legacy panel contract (`GET /api/tasks` + `assigned_to_id` + `'DONE'`) is gone from those surfaces.
+
+- **Green on the final tree:** `npm run typecheck` 0 errors (all four workspaces), `web:typecheck` 0,
+  `web:build` exit 0 (25 static routes), `guards:check` PASS (194 files, 0 findings), `i18n:check`
+  PASS (975/975 keys), `npm test` **31 suites / 320 tests PASS**, `db:verify` **71/71 PASS**, compiled
+  selector harness **17/17**, headless-Chrome role sweep **68/68** (4 field roles × 375/768/1440 px ×
+  RO/EN, 0 console errors, 0 failed requests). Full detail: `VERIFICATION.md` → *UX-R1A C3*;
+  summary: `PROGRESS.md` → Recent Work 2026-09-29.
+- **Deliberately NOT done in C3:** no backend / Prisma / CI change, no new endpoint, no visual
+  redesign, `/pontaj` untouched — `WorkerAttendanceView.tsx` still reads the legacy project-task
+  source plus a client-side assignee filter → **ISSUE-055**; no `site_manager` / PM / manager / admin
+  browser pass (those dev-seed accounts do not exist, so it is not claimed).
+- **Environment notes for the next session:** the dev database is PostgreSQL on **port 5433** (PG14;
+  the PG18 instance on 5432 was stopped) — run `db:verify` with
+  `DATABASE_URL=postgresql://postgres:199877@localhost:5433/hiieko?schema=public`. Dev seed logins:
+  `wor1@hiieko.com` / `work3@hiieko.com` `worker123`, `tech1-3@hiieko.com` `tech123`,
+  `chef1-3@hiieko.com` `chef123`, `fore1-3@hiieko.com` `foreman123`. Heads-up: build with
+  `git status` clean of stray servers — `next build` and `next dev` must not share `web/.next`
+  (ISSUE-049).
+
 ## Current Task
 
 **P4.4 COMPLETE — Daily Report finalization (DRAFT → SUBMITTED) is E2E verified (2026-09-29):**

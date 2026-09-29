@@ -296,6 +296,43 @@ All quality gates verified as of 2026-09-25:
 
 ## Recent Work
 
+### 2026-09-29 - UX-R1A C3 field task sources, canonical task labels, translation cleanup (GREEN)
+
+**Role-correct task sources, frontend-only (no backend/Prisma/CI change):** `worker` and `technician`
+now read `GET /api/daily-plans/my-tasks?date=` (the backend-computed personal scope — no project
+needed); `team_leader`, `foreman` and `site_manager` read
+`GET /api/daily-plans?projectId=&date=` for the selected project's day plan. The legacy panel contract
+(`GET /api/tasks` + `t.assigned_to_id === user.id` + `status !== 'DONE'`, done client-side) is gone
+from those surfaces. New pure selector module `web/src/features/planning/fieldWork.ts`
+(`taskSourceForRole`, `selectMyWorkTasks`, `selectPlannedTasks`, canonical status label/Badge helpers)
+owns the filtering and ordering, and `WorkerTodayTasks` renders the canonical `TaskStatusEnum` label
+with an `ui/Badge` variant plus a role-correct footer link (`/tasks` for personal work, `/planning`
+for the project day plan).
+
+**Translation cleanup:** duplicate key definitions removed, 6 mojibake lines repaired,
+`expenses.project` / `planning.empty_no_open_tasks` / `planning.task_count_total` added,
+`role.team_leader` RO = `Șef de Echipă`, U+FFFD and lossy `?` diacritics repaired in
+`cheltuieli` / `rapoarte` / `stocuri`, Mobile receipt scan uses the `expenses.project` key, and the
+last two inline `locale === 'en'` labels in the task card are now `t()` calls.
+
+**Evidence (all re-run on the final tree):** `npm run typecheck` **0 errors**,
+`npm run web:typecheck` **0 errors**, `npm run web:build` **exit 0** (`Compiled successfully`,
+25 static routes), `npm run guards:check` **PASS** (194 files, G1/G2 findings 0),
+`npm run i18n:check` **PASS** (975 key definitions / 975 unique keys, 0 duplicates, 0 mojibake,
+0 lossy `?`, 0 undefined keys), `npm test` **31 suites / 320 tests PASS**,
+`npm run db:verify` **71/71 PASS**, a compiled-selector runtime harness **17/17**, and a headless-Chrome
+role sweep (real login + real API + real PostgreSQL, production build, 4 field roles × 375/768/1440 px
+× RO/EN) **68/68 checks, 0 console errors, 0 failed requests** — the sweep observed exactly one plan
+request family per role (`my-tasks` for worker/technician, `?projectId=&date=` for
+team_leader/foreman). Residual legacy task source on `/pontaj` recorded as **ISSUE-055**;
+`site_manager`/PM/manager/admin browser accounts do not exist in the dev seed and are therefore not
+claimed. See `VERIFICATION.md` → *UX-R1A C3*.
+
+Files: `web/src/features/planning/{fieldWork.ts (new),api.ts,index.ts}`,
+`web/src/components/{WorkerTodayTasks,WorkerMyDay,WorkerDashboard}.tsx`,
+`shared/src/translations.ts`, `web/src/app/{utilizatori,cheltuieli,rapoarte,stocuri}/page.tsx`,
+`Mobile/src/screens/ReceiptScanFlow.tsx`.
+
 ### 2026-09-29 - CI pipeline GREEN (GitHub Actions, commit `6bd45b7`)
 
 **Configuration-only fix - no product code changed** (`ci.yml` +9 lines, `package.json` 3 lines,

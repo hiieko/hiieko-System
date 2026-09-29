@@ -103,7 +103,7 @@ function RapoartePageInner() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Rapoarte Zilnice per Echipa</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Activita?i finalizate de ?efii de echipa, muncitori prezen?i, materiale consumate ?i fotografii de execu?ie.
+            Activități finalizate de șefii de echipa, muncitori prezenți, materiale consumate și fotografii de execuție.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -138,12 +138,12 @@ function RapoartePageInner() {
       ) : (
         <div className="space-y-6">
           {reports.map((report) => {
-            const siteName = report.project?.name || '?antier';
+            const siteName = report.project?.name || 'Șantier';
             const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
                              users.find(u => u.id === report.team_leader_id)?.full_name || 
                              'Necunoscut';
-            const notes = report.general_notes || report.blockages || 'Nu exista observa?ii';
+            const notes = report.general_notes || report.blockages || 'Nu exista observații';
             
             // Get present workers from workers array
             const presentWorkerIds = (report.workers || []).map(w => w.worker_id);
@@ -176,7 +176,7 @@ function RapoartePageInner() {
                     </span>
                     <span>•</span>
                     <span>
-                      ?ef Echipa: <strong className="text-slate-700">{leaderName}</strong>
+                      Șef Echipa: <strong className="text-slate-700">{leaderName}</strong>
                     </span>
                   </div>
                 </div>
@@ -229,12 +229,12 @@ function RapoartePageInner() {
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini âregistrate</p>
+                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini înregistrate</p>
                     )}
                   </div>
 
                   <div className="mt-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Observa?ii ?antier:</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Observații șantier:</h4>
                     <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
                       "{notes}"
                     </p>
@@ -282,7 +282,7 @@ function RapoartePageInner() {
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <ImageIcon className="w-4 h-4 mr-1.5 text-amber-600" />
-                    Fotografii Execu?ie ?antier
+                    Fotografii Execuție Șantier
                   </h3>
                   <div className="grid grid-cols-1 gap-3">
                     <p className="text-xs text-slate-400 italic py-3">

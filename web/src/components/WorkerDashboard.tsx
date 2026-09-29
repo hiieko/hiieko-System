@@ -8,6 +8,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { t, useLocale } from '@solar/shared';
 import { useProject } from '../contexts/ProjectContext';
 import { useGeoLocation } from '../hooks/useGeoLocation';
+import {
+  getDailyPlans,
+  getMyPlanTasks,
+  selectMyWorkTasks,
+  selectPlannedTasks,
+  taskSourceForRole,
+  todayLocalIso,
+} from '../features/planning';
+import type { FieldTaskRow } from '../features/planning';
+import { WorkerTodayTasks } from './WorkerTodayTasks';
 
 export function WorkerDashboard() {
   const { user } = useAuth();
@@ -19,8 +29,9 @@ export function WorkerDashboard() {
   const [attError, setAttError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionResult, setActionResult] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [taskRows, setTaskRows] = useState<FieldTaskRow[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksError, setTasksError] = useState<string | null>(null);
 
   const loadAttendance = useCallback(async () => {
     setAttLoading(true); setAttError(null);
@@ -37,16 +48,38 @@ export function WorkerDashboard() {
     finally { setAttLoading(false); }
   }, []);
 
+  /**
+   * Role-correct task source (UX-R1A C3), never unified:
+   *   technician                    → GET /api/daily-plans/my-tasks?date=
+   *   team_leader / foreman / site_manager → GET /api/daily-plans?projectId=&date=
+   * Supervisors therefore need a selected project; technician never does.
+   */
+  const taskSource = taskSourceForRole(user?.role);
+  const projectRequired = taskSource === 'project-plans';
+
   const loadTasks = useCallback(async () => {
+    const projectId = selectedProject?.id;
+    if (projectRequired && !projectId) {
+      setTaskRows([]); setTasksError(null); setTasksLoading(false); return;
+    }
     setTasksLoading(true);
+    setTasksError(null);
     try {
-      const r = await apiClient.getTasks();
-      const all = (r.data || []) as any[];
-      const mine = all.filter((t: any) => t.assigned_to_id === user?.id && t.status !== 'DONE');
-      setTasks(mine.slice(0, 5));
-    } catch { /* ignore */ }
-    finally { setTasksLoading(false); }
-  }, [user]);
+      const today = todayLocalIso();
+      if (taskSource === 'my-tasks') {
+        const res = await getMyPlanTasks(today);
+        setTaskRows(selectMyWorkTasks(res.data));
+      } else if (projectId) {
+        const res = await getDailyPlans(projectId, today);
+        setTaskRows(selectPlannedTasks(res.data));
+      }
+    } catch (err: unknown) {
+      setTasksError(err instanceof Error ? err.message : t('worker.error_generic', locale));
+      setTaskRows([]);
+    } finally {
+      setTasksLoading(false);
+    }
+  }, [projectRequired, taskSource, selectedProject, locale]);
 
   useEffect(() => { loadAttendance(); loadTasks(); }, [loadAttendance, loadTasks]);
 
@@ -179,34 +212,14 @@ export function WorkerDashboard() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-          <div className="flex items-center gap-2"><Briefcase className="w-5 h-5 text-hii-500" /><h2 className="font-bold text-slate-900">{t('worker.my_tasks', locale)}</h2></div>
-          <Link href="/tasks" className="text-xs font-semibold text-hii-600 hover:text-hii-700">{t('worker.view_all', locale)} &rarr;</Link>
-        </div>
-        {tasksLoading ? (
-          <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto text-slate-400" /></div>
-        ) : tasks.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-400">{t('worker.no_active_tasks', locale)}</div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {tasks.map((t: any) => (
-              <div key={t.id} className="p-4 flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">{t.title}</p>
-                  <p className="text-xs text-slate-500">{t.code}</p>
-                </div>
-                <div className="flex items-center gap-2 ml-3">
-                  {t.progress !== undefined && <span className="text-xs font-mono font-bold text-slate-600">{t.progress}%</span>}
-                  <span className={'px-2 py-0.5 rounded text-[10px] font-bold ' + (t.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' : t.status === 'TODO' ? 'bg-slate-100 text-slate-700' : t.status === 'BLOCKED' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700')}>
-                    {t.status === 'IN_PROGRESS' ? 'In lucru' : t.status === 'TODO' ? 'De facut' : t.status === 'BLOCKED' ? 'Blocat' : t.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <WorkerTodayTasks
+        rows={taskRows}
+        loading={tasksLoading}
+        error={tasksError}
+        onRetry={loadTasks}
+        maxItems={5}
+        projectRequired={projectRequired}
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Link href="/pontaj" className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 hover:border-hii-200 hover:shadow-md transition-all text-center">

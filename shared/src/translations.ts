@@ -28,9 +28,6 @@ const d: Record<string, { ro: string; en: string }> = {
 'nav.avize': { ro: 'Procurement / Avize', en: 'Procurement' },
 'nav.stocuri': { ro: 'Materiale & Stoc', en: 'Materials & Stock' },
 'nav.cheltuieli': { ro: 'Cheltuieli', en: 'Expenses' },
-'nav.projects': { ro: 'Proiecte', en: 'Projects' },
-'nav.teams': { ro: 'Echipe', en: 'Teams' },
-'nav.workforce': { ro: 'Forță de Muncă', en: 'Workforce' },
 'nav.santiere': { ro: 'Șantiere (GIS)', en: 'Sites (GIS)' },
 'nav.aprobare': { ro: 'Aprobări', en: 'Approvals' },
 'nav.statistici': { ro: 'Statistici', en: 'Statistics' },
@@ -99,6 +96,7 @@ const d: Record<string, { ro: string; en: string }> = {
 'expenses.all': { ro: 'Toate', en: 'All' },
 'expenses.category': { ro: 'Categorie', en: 'Category' },
 'expenses.site': { ro: 'Santier', en: 'Site' },
+'expenses.project': { ro: 'Proiect', en: 'Project' },
 'expenses.payment': { ro: 'Plata', en: 'Payment' },
 'expenses.amount': { ro: 'Suma', en: 'Amount' },
 'expenses.reimbursable': { ro: 'Rambursabil', en: 'Reimbursable' },
@@ -132,7 +130,6 @@ const d: Record<string, { ro: string; en: string }> = {
 'notif.mark_all': { ro: 'Citit tot', en: 'Read All' },
 'notif.empty': { ro: 'Fara notificari.', en: 'No notifications.' },
 'notif.unread': { ro: 'necitite', en: 'unread' },
-'users.title': { ro: 'Utilizatori', en: 'Users' },
 'users.pending': { ro: 'In Asteptare', en: 'Pending' },
 'users.approve': { ro: 'APROBA', en: 'APPROVE' },
 'stats.title': { ro: 'Statistici', en: 'Statistics' },
@@ -149,29 +146,21 @@ const d: Record<string, { ro: string; en: string }> = {
 'general.cancel': { ro: 'Anuleaza', en: 'Cancel' },
 'general.edit': { ro: 'Editeaza', en: 'Edit' },
 'general.search': { ro: 'Cauta...', en: 'Search...' },
-'general.loading': { ro: 'Se incarca...', en: 'Loading...' },
 'general.empty': { ro: 'Fara date.', en: 'No data.' },
 'general.success': { ro: 'Succes!', en: 'Success!' },
 'general.offline': { ro: 'OFFLINE', en: 'OFFLINE' },
-'general.all': { ro: 'Toate', en: 'All' },
 'general.view_all': { ro: 'Vezi tot', en: 'View all' },
 'general.filter': { ro: 'Filtreaza', en: 'Filter' },
-'general.yes': { ro: 'Da', en: 'Yes' },
-'general.no': { ro: 'Nu', en: 'No' },
-'general.retry': { ro: 'Incearca din nou', en: 'Retry' },
-'general.close': { ro: 'Inchide', en: 'Close' },
 'general.save_draft': { ro: 'Salveaza Ciorne', en: 'Save Draft' },
 'dash.title': { ro: 'Panou Manager', en: 'Dashboard' },
 'dash.active_workers': { ro: 'Prezenti', en: 'Present' },
 'dash.overtime': { ro: 'Ore Supl. Azi', en: 'OT Today' },
 'dash.low_stock': { ro: 'Stoc Redus', en: 'Low Stock' },
 'dash.active_sites': { ro: 'Santiere', en: 'Sites' },
-'profile.title': { ro: 'Profil', en: 'Profile' },
-'profile.language': { ro: 'Limba', en: 'Language' },
 'profile.save': { ro: 'Salveaza', en: 'Save' },
 'role.admin': { ro: 'Administrator', en: 'Administrator' },
 'role.manager': { ro: 'Manager', en: 'Manager' },
-'role.team_leader': { ro: 'Sef Santier', en: 'Supervisor' },
+'role.team_leader': { ro: 'Șef de Echipă', en: 'Team Leader' },
 'role.worker': { ro: 'Muncitor', en: 'Worker' },
 'status.draft': { ro: 'Ciorne', en: 'Draft' },
 'status.submitted': { ro: 'Transmis', en: 'Submitted' },
@@ -191,7 +180,7 @@ const d: Record<string, { ro: string; en: string }> = {
 };
 
 // ============================================================================
-// HIIEKO Camera/OCR + In-App Tutorials â€” extra keys (spec §§9-20)
+// HIIEKO Camera/OCR + In-App Tutorials — extra keys (spec §§9-20)
 // All tutorial copy is referenced here as translation keys (never hardcoded).
 // ============================================================================
 const T = (ro: string, en: string) => ({ ro, en });
@@ -234,7 +223,7 @@ Object.assign(d, {
   // --- Deliveries ---
   'tutorial.deliveries.title': T('Avize & Receptie', 'Deliveries'),
   'tutorial.deliveries.short': T('Recepția materialelor primite la șantier.', 'Receiving materials delivered to the site.'),
-  'tutorial.deliveries.purpose': T('Žnregistrezi avizul, furnizorul și materialele primite, cu document fotografic.', 'You record the delivery note, supplier and received materials, with photo documentation.'),
+  'tutorial.deliveries.purpose': T('Înregistrezi avizul, furnizorul și materialele primite, cu document fotografic.', 'You record the delivery note, supplier and received materials, with photo documentation.'),
   'tutorial.deliveries.step1': T('Introdu numărul avizului și furnizorul.', 'Enter the delivery note number and supplier.'),
   'tutorial.deliveries.step2': T('Adaugă materialele primite și cantitățile.', 'Add the received materials and quantities.'),
   'tutorial.deliveries.step3': T('Fotografiază documentul și confirmă recepția.', 'Photograph the document and confirm receipt.'),
@@ -269,7 +258,7 @@ Object.assign(d, {
   'tutorial.expenses.title': T('Cheltuieli Companie', 'Company Expenses'),
   'tutorial.expenses.short': T('Înregistrarea cheltuielilor companiei cu document fiscal.', 'Recording company expenses with a fiscal document.'),
   'tutorial.expenses.purpose': T('Fiecare angajat înregistrează cheltuielile sale cu bon/factură, categorie, șantier și scop, apoi urmează aprobarea și rambursarea.', 'Each employee records their expenses with receipt/invoice, category, site and purpose, then approval and reimbursement follow.'),
-  'tutorial.expenses.step1': T('Apasă CHELTUIALÄ‚ NOUÄ‚ și alege Scanează documentul.', 'Tap NEW EXPENSE and choose Scan document.'),
+  'tutorial.expenses.step1': T('Apasă CHELTUIALĂ NOUĂ și alege Scanează documentul.', 'Tap NEW EXPENSE and choose Scan document.'),
   'tutorial.expenses.step2': T('Fotografiază bonul/factura și verifică datele extrase prin OCR.', 'Photograph the receipt/invoice and check the OCR-extracted data.'),
   'tutorial.expenses.step3': T('Completează categoria, șantierul, scopul și suma.', 'Complete the category, site, purpose and amount.'),
   'tutorial.expenses.step4': T('Confirmă și trimite pentru aprobare.', 'Confirm and submit for approval.'),
@@ -391,7 +380,7 @@ Object.assign(d, {
 
   // --- Scan actions ---
   'scan.open': T('Scanează documentul', 'Scan document'),
-  'scan.capture': T('FOTOGRAFIAZÄ‚', 'CAPTURE'),
+  'scan.capture': T('FOTOGRAFIAZĂ', 'CAPTURE'),
   'scan.retake': T('Refă', 'Retake'),
   'scan.add_page': T('Adaugă pagină', 'Add page'),
   'scan.preview': T('Previzualizare', 'Preview'),
@@ -411,7 +400,7 @@ Object.assign(d, {
   'ocr.processing': T('Se procesează documentul...', 'Processing the document...'),
   'ocr.not_configured': T('Furnizorul OCR nu este configurat. Completează manual câmpurile cheltuielii.', 'The OCR provider is not configured. Fill in the expense fields manually.'),
   'ocr.no_data': T('Nu s-au găsit date în document. Completează manual.', 'No data found in the document. Fill in manually.'),
-  'ocr.low_confidence': T('Câmpuri cu încredere scăzută â€” verifică-le atent.', 'Low-confidence fields â€” check them carefully.'),
+  'ocr.low_confidence': T('Câmpuri cu încredere scăzută — verifică-le atent.', 'Low-confidence fields — check them carefully.'),
   'ocr.review_prompt': T('OCR-ul este un asistent. Verifică și corectează datele extrase înainte de trimitere.', 'OCR is an assistant. Review and correct the extracted data before submitting.'),
   'ocr.assistant_note': T('Datele extrase automat nu sunt adevăr contabil.', 'Automatically extracted data is not accounting truth.'),
   'ocr.field.merchant_name': T('Furnizor', 'Supplier'),
@@ -446,8 +435,8 @@ Object.assign(d, {
   'howItWorks': T('Cum funcționează?', 'How it works'),
   'general.error': T('Eroare', 'Error'),
   'general.something_wrong': T('Ceva nu a funcționat corect. Încearcă din nou.', 'Something went wrong. Please try again.'),
-  'general.retry': T('Žncearcă din nou', 'Retry'),
-  'status.saved_offline': T('Salvat local â€” se sincronizează mai târziu.', 'Saved locally â€” will sync later.'),
+  'general.retry': T('Încearcă din nou', 'Retry'),
+  'status.saved_offline': T('Salvat local — se sincronizează mai târziu.', 'Saved locally — will sync later.'),
 
   // --- Settings screen (language picker) ---
   'settings.title': T('Setări', 'Settings'),
@@ -614,7 +603,7 @@ Object.assign(d, {
   'general.confirm_delete': T('Ești sigur?', 'Are you sure?'),
   'general.yes': T('Da', 'Yes'),
   'general.no': T('Nu', 'No'),
-  'general.close': T('Žnchide', 'Close'),
+  'general.close': T('Închide', 'Close'),
   'general.all': T('Toate', 'All'),
 
   // --- Tutorial: Projects ---
@@ -837,7 +826,6 @@ Object.assign(d, {
 
 // Modal titles and form labels
 Object.assign(d, {
-  'planning.create_modal_title': T('Plan Nou', 'New Plan'),
   'planning.form_date': T('Dată plan', 'Plan date'),
   'planning.form_team': T('Echipă', 'Team'),
   'planning.form_notes': T('Note', 'Notes'),
@@ -888,6 +876,7 @@ Object.assign(d, {
   'planning.no_team': T('Fără echipă', 'No team'),
   'planning.created_by': T('Creat de', 'Created by'),
   'planning.task_count': T('{count} sarcini', '{count} tasks'),
+  'planning.task_count_total': T('{count} în total', '{count} in total'),
   'planning.expand_details': T('Extinde detaliile planului', 'Expand plan details'),
   'planning.collapse_details': T('Restrânge detaliile planului', 'Collapse plan details'),
 });
@@ -981,6 +970,7 @@ Object.assign(d, {
   'planning.my_work_hint': T('Sarcinile tale din planurile publicate pentru această zi.', 'Your tasks from the published plans for this day.'),
   'planning.my_work_empty_title': T('Nicio sarcină atribuită', 'No assigned work'),
   'planning.my_work_empty_message': T('Nu ai sarcini în planurile publicate pentru această zi.', 'You have no tasks in the published plans for this day.'),
+  'planning.empty_no_open_tasks': T('Nu există sarcini de executat pentru această zi în acest proiect.', 'No tasks to execute for this day in this project.'),
   // Empty state with date context
   'planning.empty_for_date_message': T('Nu există planuri pentru {date} în acest proiect.', 'No plans for {date} in this project.'),
   // Plan card metadata

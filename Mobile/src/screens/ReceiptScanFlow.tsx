@@ -356,7 +356,7 @@ export function ReceiptScanFlow({
         ))}
       </View>
 
-      <Text style={styles.sectionLabel}>{t('expenses.Project', locale)}</Text>
+      <Text style={styles.sectionLabel}>{t('expenses.project', locale)}</Text>
       <View style={styles.chips}>
         {projects.map((st) => (
           <TouchableOpacity key={st.id} style={[styles.chip, fields.projectId === st.id && styles.chipActive]}

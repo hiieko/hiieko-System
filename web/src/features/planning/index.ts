@@ -43,6 +43,17 @@ export {
 } from './summary';
 export type { DaySummary } from './summary';
 
+// --- Field-role day-work selectors (fieldWork.ts) ---
+export {
+  taskSourceForRole,
+  FIELD_TASK_ACTIVE_STATUSES,
+  fieldTaskStatusI18nKey,
+  fieldTaskStatusBadgeVariant,
+  selectMyWorkTasks,
+  selectPlannedTasks,
+} from './fieldWork';
+export type { FieldTaskSource, FieldTaskRow } from './fieldWork';
+
 // --- API ---
 export {
   getDailyPlans,

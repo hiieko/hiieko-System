@@ -2,87 +2,53 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ClipboardList, Loader2, RefreshCw, ArrowRight } from 'lucide-react';
+import { ClipboardList, RefreshCw, ArrowRight } from 'lucide-react';
 import { t, useLocale } from '@solar/shared';
 import { useProject } from '../contexts/ProjectContext';
-import { useAuth } from '../contexts/AuthContext';
+import { Badge } from './ui';
 import { Skeleton } from './ui/Skeleton';
-import { TASK_STATUS_LABELS } from '../features/attendance/types';
-import type { AssignedTask } from '../features/attendance/types';
+import {
+  fieldTaskStatusBadgeVariant,
+  fieldTaskStatusI18nKey,
+} from '../features/planning/fieldWork';
+import type { FieldTaskRow } from '../features/planning/fieldWork';
 
 export interface WorkerTodayTasksProps {
-  tasks: AssignedTask[] | null;
+  /**
+   * Rows from the role-correct source only:
+   *   worker / technician → selectMyWorkTasks(getMyPlanTasks(date))
+   *   supervisors         → selectPlannedTasks(getDailyPlans(projectId, date))
+   * Never the unfiltered task list, and never a client-side assignee filter.
+   */
+  rows: FieldTaskRow[] | null;
   loading: boolean;
   error: string | null;
   onRetry: () => void;
   maxItems?: number;
+  /** Supervisors read the day plan of the selected project, so one must be selected. */
+  projectRequired?: boolean;
 }
 
 export function WorkerTodayTasks({
-  tasks,
+  rows,
   loading,
   error,
   onRetry,
   maxItems = 5,
+  projectRequired = false,
 }: WorkerTodayTasksProps) {
   const { locale } = useLocale();
   const { selectedProject } = useProject();
-  const { user } = useAuth();
+  // Ordering/filtering already happened in the role-correct source
+  // selectors (fieldWork.ts) — this component only caps what it renders.
+  const taskRows = rows ?? [];
+  const displayedTasks = taskRows.slice(0, maxItems);
+  const hasMore = taskRows.length > maxItems;
+  const title = projectRequired
+    ? t('planning.summary_tasks', locale)
+    : t('worker.my_tasks', locale);
 
-  // Filter tasks: only show PLANNED, READY, IN_PROGRESS, BLOCKED
-  // Exclude COMPLETED, VERIFIED, CANCELLED
-  // Also filter to tasks assigned to current user
-  const filteredTasks = React.useMemo(() => {
-    if (!tasks) return [];
-    let filtered = tasks.filter(task =>
-      task.status !== 'COMPLETED' &&
-      task.status !== 'VERIFIED' &&
-      task.status !== 'CANCELLED'
-    );
-
-    // Filter to tasks assigned to current user
-    if (user) {
-      filtered = filtered.filter(task =>
-        (task.assignments || []).some(a => a.user_id === user.id)
-      );
-    }
-
-    // Sort: IN_PROGRESS → BLOCKED → READY → PLANNED
-    const statusOrder = {
-      'IN_PROGRESS': 0,
-      'BLOCKED': 1,
-      'READY': 2,
-      'PLANNED': 3,
-    };
-
-    filtered.sort((a, b) => {
-      const orderA = statusOrder[a.status as keyof typeof statusOrder] ?? 99;
-      const orderB = statusOrder[b.status as keyof typeof statusOrder] ?? 99;
-      return orderA - orderB;
-    });
-
-    return filtered;
-  }, [tasks, user]);
-
-  const displayedTasks = filteredTasks.slice(0, maxItems);
-  const hasMore = filteredTasks.length > maxItems;
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'IN_PROGRESS':
-        return 'bg-hii-100 text-hii-700';
-      case 'BLOCKED':
-        return 'bg-red-100 text-red-700';
-      case 'READY':
-        return 'bg-blue-100 text-blue-700';
-      case 'PLANNED':
-        return 'bg-slate-100 text-slate-600';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
-  };
-
-  if (!selectedProject) {
+  if (projectRequired && !selectedProject) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 sm:p-5">
@@ -91,7 +57,7 @@ export function WorkerTodayTasks({
               <ClipboardList className="w-4.5 h-4.5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">{t('worker.my_tasks', locale)}</h2>
+              <h2 className="text-base font-bold text-slate-900">{title}</h2>
             </div>
           </div>
           <p className="text-sm text-slate-500">{t('worker.select_project', locale)}</p>
@@ -109,17 +75,17 @@ export function WorkerTodayTasks({
               <ClipboardList className="w-4.5 h-4.5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">{t('worker.my_tasks', locale)}</h2>
-              {filteredTasks.length > 0 && (
+              <h2 className="text-base font-bold text-slate-900">{title}</h2>
+              {taskRows.length > 0 && (
                 <p className="text-xs text-slate-400">
-                  {filteredTasks.length} {locale === 'en' ? 'active tasks' : 'task-uri active'}
+                  {t('planning.task_count', locale).replace('{count}', String(taskRows.length))}
                 </p>
               )}
             </div>
           </div>
           <button onClick={onRetry} disabled={loading}
             className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
-            title={locale === 'en' ? 'Refresh' : 'Reimprospateaza'}>
+            title={t('planning.refresh', locale)}>
             <RefreshCw className={'w-4 h-4 ' + (loading ? 'animate-spin' : '')} />
           </button>
         </div>
@@ -139,7 +105,7 @@ export function WorkerTodayTasks({
               <p className="font-medium">{error}</p>
               <button onClick={onRetry}
                 className="mt-1 text-amber-700 underline-offset-2 hover:underline text-xs">
-                {locale === 'en' ? 'Try again' : 'Incearca din nou'}
+                {t('general.retry', locale)}
               </button>
             </div>
           </div>
@@ -147,36 +113,49 @@ export function WorkerTodayTasks({
 
         {!loading && !error && displayedTasks.length === 0 && (
           <p className="text-sm text-slate-400 text-center py-4">
-            {t('worker.no_active_tasks', locale)}
+            {projectRequired
+              ? t('planning.empty_no_open_tasks', locale)
+              : t('worker.no_active_tasks', locale)}
           </p>
         )}
 
         {!loading && !error && displayedTasks.length > 0 && (
           <div className="space-y-2">
-            {displayedTasks.map((task) => (
-              <div key={task.id} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-3 border border-slate-100">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{task.title}</p>
-                  <p className="text-xs text-slate-400 font-mono">{task.code}</p>
+            {displayedTasks.map((row) => {
+              const statusKey = fieldTaskStatusI18nKey(row.status);
+              const quantity =
+                row.targetQuantity > 0 ? row.actualQuantity + '/' + row.targetQuantity : null;
+              return (
+                <div key={row.planTaskId} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-3 border border-slate-100">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">{row.title || row.code}</p>
+                    <p className="text-xs text-slate-400 font-mono">{row.code}</p>
+                    {row.projectName && (
+                      <p className="text-xs text-slate-500 truncate">{row.projectName}</p>
+                    )}
+                  </div>
+                  {row.teamName && (
+                    <span className="text-xs text-slate-500 hidden sm:inline">{row.teamName}</span>
+                  )}
+                  {quantity && (
+                    <span className="text-xs font-mono font-semibold text-slate-600 whitespace-nowrap">{quantity}</span>
+                  )}
+                  <Badge variant={fieldTaskStatusBadgeVariant(row.status)} size="sm" className="whitespace-nowrap">
+                    {statusKey ? t(statusKey, locale) : row.status}
+                  </Badge>
                 </div>
-                {task.zone && (
-                  <span className="text-xs text-slate-500 hidden sm:inline">{task.zone.name}</span>
-                )}
-                <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${getStatusBadgeClass(task.status)}`}>
-                  {TASK_STATUS_LABELS[task.status] || task.status}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         <div className="mt-3 pt-3 border-t border-slate-100">
-          <Link href="/tasks"
+          <Link href={projectRequired ? '/planning' : '/tasks'}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-hii-700 underline-offset-2 hover:underline min-h-[44px]">
             {t('worker.view_all', locale)}
             {hasMore && (
               <span className="text-xs text-slate-400">
-                ({filteredTasks.length} {locale === 'en' ? 'total' : 'in total'})
+                ({t('planning.task_count_total', locale).replace('{count}', String(taskRows.length))})
               </span>
             )}
             <ArrowRight className="w-4 h-4" />

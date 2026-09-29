@@ -256,6 +256,131 @@ GET /                -> HTTP/1.1 200 OK
 Route/authorization divergences found while building the map are recorded as ISSUE-052, ISSUE-053 and
 ISSUE-054 — none of them was silently resolved in C2.
 
+## UX-R1A C3 - Role-correct field task sources, canonical task labels, translation cleanup (2026-09-29)
+
+Checkpoint C3 gives every field role the task source it is entitled to, removes the legacy task
+contract from those panels and repairs the translation defects recorded in the C1 baseline.
+**No backend/Prisma/CI file was changed**, **no endpoint was invented**, **no visual redesign was
+done**, and the `/` role split approved at C2 (`worker` → `WorkerMyDay`; `technician` /
+`team_leader` / `foreman` / `site_manager` → `WorkerDashboard`) is untouched.
+
+### Role → source matrix (deliberately NOT unified — Decision 2)
+
+| Role | Surface at `/` | Task source | Endpoint / selector |
+|---|---|---|---|
+| `worker` | `WorkerMyDay` | personal scope, project-independent | `GET /api/daily-plans/my-tasks?date=` → `selectMyWorkTasks` |
+| `technician` | `WorkerDashboard` | personal scope, project-independent | `GET /api/daily-plans/my-tasks?date=` → `selectMyWorkTasks` |
+| `team_leader`, `foreman`, `site_manager` | `WorkerDashboard` | selected project's day plan (project required) | `GET /api/daily-plans?projectId=&date=` → `selectPlannedTasks` |
+
+`getDailyPlans` was **not** made optional-project. Supervisors keep the project requirement they
+already had for the check-in/check-out actions (the card renders `worker.select_project` until a
+project is chosen in the header); what changed is *which endpoint* fills the panel. Pre-C3 both
+paths called `GET /api/tasks` and filtered client-side with
+`t.assigned_to_id === user.id && t.status !== 'DONE'` (C0 baseline of `WorkerDashboard.tsx`).
+
+### Files changed
+
+| Path | Change |
+|---|---|
+| `web/src/features/planning/fieldWork.ts` | **NEW** — pure selectors, no React/hooks/API calls: `taskSourceForRole`, `selectMyWorkTasks`, `selectPlannedTasks`, `FieldTaskRow`, `FIELD_TASK_ACTIVE_STATUSES`, `FIELD_TASK_URGENCY`, `fieldTaskStatusI18nKey`, `fieldTaskStatusBadgeVariant` |
+| `web/src/features/planning/api.ts` | `getMyPlanTasks` re-typed to `ApiResponse<DailyPlan[]>` (the endpoint returns full plan rows with plan tasks, project and team refs) |
+| `web/src/features/planning/index.ts` | re-exports the new module |
+| `web/src/components/WorkerTodayTasks.tsx` | props `tasks: AssignedTask[]` → `rows: FieldTaskRow[]`; canonical `TaskStatusEnum` label + `Badge` variant; footer link `/tasks` (personal) or `/planning` (project plan); project-required empty state; retry/total labels through `t()` (no inline locale ternary) |
+| `web/src/components/WorkerMyDay.tsx` | loads `selectMyWorkTasks(getMyPlanTasks(today))`; the panel no longer depends on the project selector |
+| `web/src/components/WorkerDashboard.tsx` | `taskSourceForRole(user.role)` selects the source; legacy `getTasks()` + `assigned_to_id` / `'DONE'` client filter removed |
+| `shared/src/translations.ts` | duplicate key definitions removed, 6 mojibake lines repaired, new `expenses.project`, `planning.empty_no_open_tasks`, `planning.task_count_total`; `role.team_leader` RO → `Șef de Echipă` |
+| `web/src/app/utilizatori/page.tsx` | `Șef Echipă` (was the lossy form) |
+| `web/src/app/{cheltuieli,rapoarte,stocuri}/page.tsx` | U+FFFD and lossy `?` diacritics repaired |
+| `Mobile/src/screens/ReceiptScanFlow.tsx` | uses `expenses.project` instead of a hardcoded label |
+
+### Evidence — checkpoint commands (final state, after every C3 edit)
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` (shared, web, Mobile, backend) | **exit 0**, 0 × `error TS` |
+| `npm run web:typecheck` | **exit 0**, 0 × `error TS` |
+| `npm run web:build` | **exit 0** — `Compiled successfully`, static routes **25**, `/` 11.5 kB / 162 kB first load |
+| `npm run guards:check` | **PASS** (194 source files) — G1/G2 findings **0**; report-only "legacy token outside task scope" = 2 (unchanged, non-task contexts) |
+| `npm run i18n:check` | **PASS** (194 source files, **975** key definitions, **975** unique keys) — 0 duplicates, 0 mojibake, 0 lossy `?`, 0 undefined keys |
+| `npm test` | **exit 0** — **31 suites / 320 tests PASS** |
+| `npm run db:verify --workspace=backend` | **71/71 PASS** (0 FAILED / 0 SKIPPED) against PostgreSQL `localhost:5433/hiieko` |
+| Compiled-selector runtime harness (temp file, not committed) | **17/17 checks PASS** |
+
+Runtime harness detail (node against the `tsc`-compiled `fieldWork.ts`, fixture plans): role→source
+for `worker`/`technician` = `my-tasks` and for `team_leader`/`foreman`/`site_manager`/nullish =
+`project-plans`; my-work urgency order `IN_PROGRESS → BLOCKED → READY → PLANNED` with day-plan order
+inside a status; `COMPLETED`/`VERIFIED`/`CANCELLED` rows, `planTask.completed` rows and values outside
+`TaskStatusEnum` are all dropped; planned order by date → plan → plan-task; inputs are not mutated;
+nullish input → `[]`; row mapping (`projectName`/`projectCode`/`teamName`/quantities/code) correct;
+`actualQuantity` defaults to `0`; i18n key `null` and Badge variant `neutral` for non-canonical values.
+
+### Evidence — targeted static checks (13, measured on the final tree)
+
+| # | Check | Result |
+|---|---|---|
+| 1 | `assigned_to_id` in `web/src` + `Mobile/src` + `shared/src` (194 files) | **0** (1 at C0) |
+| 2 | `'TODO'` / `'DONE'` used as a task status | **0** (the 5 case-insensitive hits are the Mobile receipt OCR step / `OcrDraftStatus` value `'done'`, unrelated to tasks) |
+| 3 | Files wiring the role-safe selectors | **5** (`fieldWork.ts`, `planning/index.ts`, `WorkerMyDay`, `WorkerDashboard`, `WorkerTodayTasks`) |
+| 4 | `WorkerTodayTasks` references to the legacy `AssignedTask` shape | **0**; `rows: FieldTaskRow[]` present |
+| 5 | `getMyPlanTasks` + `getDailyPlans` typed `Promise<ApiResponse<DailyPlan[]>>` | **2 / 2** |
+| 6 | Hardcoded `TaskStatusEnum` literals in `WorkerTodayTasks` / `WorkerMyDay` | **0** |
+| 7 | Canonical label/variant helper used by the task card | **4 hits** |
+| 8 | `expenses.project` defined in `translations.ts` / used by Mobile `ReceiptScanFlow` | **1 / 1** |
+| 9 | `planning.empty_no_open_tasks` defined / used by the project-plan empty state | **1 / 1** |
+| 10 | Inline locale ternaries left in `WorkerTodayTasks` | **0** (2 removed) |
+| 11 | U+FFFD / mojibake in the 12 C3-touched files | **0** |
+| 12 | Protected paths modified (`backend/**`, `database/**`, `prisma/**`, `.github/**`, `ControlTowerSurface.tsx`, `app/page.tsx`, `control-tower/page.tsx`, `route-roles.ts`, `navigation.ts`, `WorkerAttendanceView.tsx`) | **none** — only the pre-existing untracked `database/archive/pre_migration_backup_20260929_093849.sql` appears in `git status` |
+| 13 | `TASK_STATUS_I18N` / `TASK_STATUS_BADGE` / `TASK_WORKFLOW_NEXT` cover the 7 `TaskStatusEnum` values | **7 × 3 = 21 entries** |
+
+### Evidence — browser role sweep on the production build (headless Chrome CDP, 68/68 PASS)
+
+`next start -p 3001` on the C3 build + the real Nest API on `:4000` + the real dev PostgreSQL; one
+fresh browser context per role, the real `/login` form, dev-seed credentials. Gate script
+`gate-c3-role-sweep.js` and evidence `gate-c3-role-sweep.out.json` live in `%TEMP%\hiieko-c3\` and are
+**not committed** (the repository has no committed CDP gate harness — the earlier gates were run the
+same way).
+
+| Role (account) | Card title RO / EN | Observed plan requests | 375 / 768 / 1440 | Locale |
+|---|---|---|---|---|
+| `worker` (`wor1@hiieko.com`) | Task-urile mele / My Tasks | `GET /api/daily-plans/my-tasks?date=2026-09-29` ×2, **0** project-plan requests | 375/375, 768/768, 1440/1440 — no overflow | RO, then persisted EN (`document.lang` `ro` → `en`) |
+| `technician` (`tech1@hiieko.com`) | Task-urile mele / My Tasks | `GET /api/daily-plans/my-tasks?date=2026-09-29` ×2, **0** project-plan requests | no overflow | RO → EN |
+| `team_leader` (`chef1@hiieko.com`) | Sarcini planificate / Planned tasks | `worker.select_project` hint first (no request), then `GET /api/daily-plans?projectId=<AR-001 id>&date=2026-09-29` ×2 after selecting "Parc Solar Arad (AR-001)" in the header; **0** my-tasks requests | no overflow | RO → EN |
+| `foreman` (`fore1@hiieko.com`) | Sarcini planificate / Planned tasks | same as `team_leader` (project selected through the header control) | no overflow | RO → EN |
+
+Every role also asserted: no `TODO` / `DONE` / `assigned_to_id` text in the rendered DOM, no U+FFFD or
+mojibake in rendered text (RO and EN), the panel footer link resolves to `/tasks` (worker /
+technician) or `/planning` (supervisors), **0 console errors** and **0 failed HTTP responses**. The
+only console entry separated out is the pre-existing `GET /favicon.ico` → 404 (per role: worker 1,
+others 0); it is not a C3 artefact and not a failed API request.
+
+### Behaviour changes worth knowing (deliberate, documented)
+
+- **A supervisor now needs a project selected to see day work.** Before C3 `WorkerDashboard` filled the
+  panel from the unscoped `GET /api/tasks` with a client-side assignee filter, so rows appeared with no
+  project chosen. After C3 the panel reads the selected project's day plan and shows
+  `worker.select_project` until one is chosen — the same gate the attendance actions already had. This
+  is the direct consequence of the approved role→source split, not a regression; the browser sweep
+  proves the project-plan request fires as soon as the project is selected.
+- The panel can show fewer rows than before for the same user because the source is now the
+  backend-scoped personal scope / day plan (PUBLISHED plans only) instead of every task in the project.
+
+### Not verified at C3
+
+- **No `site_manager`, `PM`, `manager` or `admin` browser account exists in the dev seed**, so the
+  sweep covers the accounts that do exist (`worker`, `technician`, `team_leader`, `foreman`).
+  `site_manager` shares the `project-plans` branch of `WorkerDashboard` (same code path as
+  `team_leader`/`foreman`, proven by the compiled-selector harness), but a real `site_manager` browser
+  pass is **not** claimed.
+- **`/pontaj` was deliberately not touched.** `WorkerAttendanceView.tsx` still uses the project task
+  list plus a client-side assignee filter — now recorded as **ISSUE-055** for the later
+  task/workspace pass instead of being silently changed inside a checkpoint that does not own it.
+- Romanian strings that are merely missing diacritics (e.g. `worker.select_project` =
+  "Selecteaza un proiect din bara de top") were **not** hand-patched; R1A.3 terminology normalization
+  (C4) owns that sweep.
+- `npm run lint` was not run (not part of the C3 acceptance list), no CI file was touched and no
+  evidence capture beyond this section was done — **C5** still owns the CI wiring and the consolidated
+  evidence/PROGRESS/HANDOFF pass.
+
 ## Current Verification Status
 | Check | Status | Last Run | Notes |
 |---|---|---|---|

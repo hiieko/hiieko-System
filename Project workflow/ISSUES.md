@@ -613,6 +613,38 @@ documented divergence) during the authorization phase.
 
 ---
 
+## ISSUE-055 — `WorkerAttendanceView` (`/pontaj`) still reads the legacy project-task source with a client-side assignee filter
+**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C3; deliberately **not** changed in C3)
+
+### Description
+C3 moved the field task panels rendered at `/` onto the role-correct daily-plan contract. The
+attendance screen `web/src/components/WorkerAttendanceView.tsx` (rendered by `/pontaj`,
+`ROUTE_ROLES['/pontaj']`) still uses the pre-C3 pattern:
+
+- `attendanceApi.getProjectTasks(projectId)` (line 49) — the project-wide task list, **not** the
+  backend-computed personal scope;
+- the current user's rows are then selected **client-side** with
+  `(task.assignments || []).some((a) => a.user_id === user.id)` (lines 51-53);
+- terminal work is filtered client-side with three literal status strings
+  (`COMPLETED` / `VERIFIED` / `CANCELLED`, line 67);
+- the panel only loads when a project is selected (`selectedProject` gate, lines 63-65).
+
+### Impact
+- Two different "my tasks" truths remain in the field product: `/` (daily-plan scope, correct after
+  C3) and `/pontaj` (project task list + client assignee filter, legacy). A task that reaches the
+  worker through the day plan but not through `TaskAssignment` — or the reverse — is counted
+  differently by the two screens.
+- The legacy path is limited by the task-list API's own ordering/pagination, so a worker with many
+  project tasks can lose rows that the daily-plan source would have returned.
+
+### Required Action
+Reconcile `/pontaj` onto the same source contract (`GET /api/daily-plans/my-tasks?date=`) during the
+dedicated task/workspace pass (UX-R1B or later), leaving the attendance/shift logic untouched. Do not
+solve it by adding another client-side filter — the backend scope stays the single source of truth.
+C3 deliberately left `WorkerAttendanceView.tsx` unmodified (outside the C3 file set).
+
+---
+
 # Known Limitations (not blocking)
 
 - **Mobile `WorkerAttendanceScreen.tsx`** — The `TimeLog` type in `shared/src/types.ts` and the local AsyncStorage-based `activeTimeLog` mechanism are the mobile app's offline attendance state tracking (not the PostgreSQL table, which is now dropped). This is correct and stays.
