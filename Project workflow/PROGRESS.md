@@ -3,6 +3,9 @@
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
+**UX-R1A foundation: C0-C5 COMPLETE (2026-09-29). R1B PENDING. Visual redesign PENDING.** See
+`VERIFICATION.md` → *UX-R1A C5* for the close-out evidence and `ISSUES.md` for the carried-forward items.
+
 **Last Updated:** 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅ - `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED is verified end-to-end: `POST /api/daily-reports/:id/submit` on the web plus the status-less Mobile one-call contract, exactly ONE immutable revision per report, exactly ONE consumption movement per material (balance 6 -> 4, restored afterwards), exactly ONE `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`, so the action means exactly one thing), idempotent replays, PATCH-after-submit 400, insufficient stock refused with the report left a clean DRAFT, and `/rapoarte` + `/rapoarte/form` read-only after submit at 375px; browser gate `gate-p44-finalize.js` **25/25 PASS / 0 console errors**, backend **31 suites / 320 tests**, `db:verify` **71/71**, backend/shared/web typecheck 0 errors; ISSUE-051 opened for the Mobile daily-report screen - free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column, separate from `general_notes`)
 
 ---
@@ -295,6 +298,25 @@ All quality gates verified as of 2026-09-25:
 ---
 
 ## Recent Work
+
+### 2026-09-29 - UX-R1A C5 final foundation verification, real-browser sweep and CI guardrails (GREEN)
+
+Close-out checkpoint: no product behaviour changed, no redesign, no backend / Prisma / database change.
+The only source file C5 touched is `.github/workflows/ci.yml`.
+
+| Change | Detail |
+|--------|--------|
+| **CI guardrails (closes the C1 deviation)** | `.github/workflows/ci.yml`, existing `test` job: `npm run i18n:check` + `npm run guards:check` added after the shared build and before `npm run test` - the already-existing scripts, no new job, nothing weakened. YAML validated statically (`yaml.safe_load`), job list unchanged (`typecheck`, `test`, `build`). **Not pushed**, so remote CI execution is not claimed |
+| **Real-browser sweep** | real headless Chrome (`Chrome/154.0.8037.58`) over the **Chrome DevTools Protocol**, against the C5 production build served by `next start` (`:3100`) plus the real API (`:4000`) and DB (`:5433`). **130 records** = 4 roles x {375, 768, 1440} px x {RO, EN} -> **93 PASS / 37 FAIL**, every failure itemised in `VERIFICATION.md` |
+| **Accounts** | all four are real rows in the live DB and all four authenticated through the real login form (`mode=ui-form`): `dev@hiieko.local` (admin), `ion.munteanu@hiieko.local` (team_leader), `fore1@hiieko.com` (foreman), `wor1@hiieko.com` (worker) |
+| **Verified correct** | `documentElement.lang` equals the active locale 130/130; RO -> EN through the real switcher + reload keeps `lang="en"` / `solar:locale="en"` and renders `Tasks`; **0** sidebar-label mismatches, **0** routes advertised that the role may not use, **0** permitted routes missing; `Turn de Control` / `Control Tower` correct on all 38 pages whose role may use it; `Task-uri`, `Forță de Muncă`, `Șef de Echipă` correct and distinct from `Șef de Șantier`; 0 mojibake, 0 legacy misspellings, 0 console errors attributable to C4; the mobile drawer opens through the real header button with 12-20 visible links |
+| **Findings (open, neither a C4 nor a C5 regression)** | **F1** raw `tutorial.planning/teams/workforce.*` keys on `/planning`, `/teams`, `/workforce` (19 records, RO + EN, already absent at C3) -> **ISSUE-057**; **F2** 375 px `main` overflow on the Control Tower surfaces (`main` 429 vs 375) -> **ISSUE-058**; **F3** one non-reproducible environment transient (a refused API connection during the auth bootstrap ended the session for 10 records; the isolated foreman re-run was clean at 26/32, 6 fails being F1) -> recorded as transient, not a product defect; **F4** 13 x pre-existing `403 /api/users` console entries on field/supervisor pages (ISSUE-039 / ISSUE-053, contained: no exception, no visible error) |
+| **Automated verification (C5 tree)** | `i18n:check` PASS (988/988 keys), `guards:check` PASS, `typecheck` exit 0 (4 workspaces), `web:typecheck` exit 0, `web:build` exit 0 (25/25 static pages), `npm test` 31 suites / 320 tests PASS, root `npm run db:verify` **41/41** (`database/scripts/verify_migration.ts`), `npm run db:verify --workspace=backend` **71/71** (`backend/scripts/db-verify.ts`) - two scripts, two inventories, both green |
+| **Issue re-confirmed** | ISSUE-049: after the C4 `next build`, all 10 `/_next/static/*` assets referenced by `/` on the `:3000` dev server returned HTTP 404. The clobbered dev server was stopped for the sweep and restarted afterwards |
+| **Not claimed** | no `site_manager` / PM / manager / owner browser pass (those accounts do not exist in this database), no visual/design review, no remote CI run. The browser harness and its JSON evidence are temp-only (`%TEMP%`) and deliberately not committed |
+
+**UX-R1A status: COMPLETE (C0-C5). R1B PENDING. Visual redesign PENDING.** Full detail:
+`VERIFICATION.md` -> *UX-R1A C5*.
 
 ### 2026-09-29 - UX-R1A C4 terminology normalization: one vocabulary, one role set, `nav.control_tower` (GREEN)
 

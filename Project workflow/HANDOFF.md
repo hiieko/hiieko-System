@@ -7,11 +7,12 @@ Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6
 ## Current Status
 **Status:** STABLE - **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; P4.4 daily-report finalization verified end-to-end; 31 suites / 320 tests, db:verify 71/71 (`--workspace=backend` → `backend/scripts/db-verify.ts`; the root `npm run db:verify` runs `database/scripts/verify_migration.ts` = 41/41 - two scripts, both PASS: `VERIFICATION.md` → *db:verify denominators*), all quality gates PASS)
 
-## UX-R1A checkpoints — latest: **C3 DONE** (2026-09-29)
+## UX-R1A checkpoints — latest: **C5 DONE - UX-R1A COMPLETE** (2026-09-29)
 
-**UPDATE 2026-09-29 (UX-R1A C4 done): the C4 checkpoint described as "NOT started" below is now
-COMPLETE - see the C4 block at the end of this section. The current UX-R1A checkpoint is C4; C5
-(consolidated evidence capture, CI wiring) is still not started.**
+**UPDATE 2026-09-29 (UX-R1A C5 done): C0-C5 are COMPLETE. The C5 close-out block is at the end of this
+section (browser sweep results, CI wiring, remaining deferred items). R1B (full RO prose/translation
+pass) and the visual redesign are PENDING. The older "C4 is current" / "C5 not started" notes below are
+kept as history.**
 
 **C0-C3 are complete. C4 (terminology + role-label normalization, documentation corrections) and C5
 (consolidated evidence capture, CI wiring) are NOT started.** C3 changed the field task sources
@@ -80,6 +81,53 @@ renamed and `Task-uri` was NOT rewritten to `Sarcini`).
   account exists, so that coverage is not claimed.
   **Statement of record:** *C4 automated/static verification complete; browser RO/EN content sweep
   deferred to C5.*
+
+### UX-R1A C5 - final verification, browser sweep, CI guardrails (DONE 2026-09-29) - **UX-R1A COMPLETE**
+
+Verification / close-out only: no product behaviour, no redesign, no backend / Prisma / database change.
+The single source file changed is `.github/workflows/ci.yml` - two steps in the existing `test` job
+(`npm run i18n:check`, `npm run guards:check`) placed after the shared build and before `npm run test`,
+which closes the C1 deliberate deviation. YAML validated with `yaml.safe_load`; the job list is
+unchanged; **not pushed, so no GitHub Actions run is claimed**.
+
+- **Real browser, real accounts, real backend:** headless Chrome `Chrome/154.0.8037.58` over the
+  **Chrome DevTools Protocol** (raw websocket, no new dependency), driving the C5 production build
+  (`next start` on `:3100`), the real NestJS API (`:4000`) and PostgreSQL (`:5433`). **130 records** =
+  4 roles x {375, 768, 1440} px x {RO, EN} -> **93 PASS / 37 FAIL**, all failures itemised. Every
+  account authenticated through the **real login form** (`mode=ui-form`): `dev@hiieko.local` (admin),
+  `ion.munteanu@hiieko.local` (team_leader), `fore1@hiieko.com` (foreman), `wor1@hiieko.com` (worker).
+- **Verified correct:** locale ↔ `documentElement.lang` 130/130; **RO → EN through the real switcher
+  followed by a real reload** keeps `lang="en"`, `solar:locale="en"` and renders `Tasks`; 0 sidebar
+  label mismatches; the sidebar never advertises a route the role may not use and never hides a
+  permitted one (C2 contract); `Turn de Control` / `Control Tower` correct on all 38 pages whose role
+  may use it; `Task-uri`, `Forță de Muncă`, and `Șef de Echipă` (Team Leader, distinct from
+  `Șef de Șantier` / Site Manager) vocabulary; 0 mojibake, 0 legacy misspellings, 0 C4-attributable
+  console errors; the mobile drawer opens via the real header button (12-20 visible links at 375/768).
+- **New open items found (neither a C4 nor a C5 regression):** **ISSUE-057** - `/planning`, `/teams` and
+  `/workforce` render raw `tutorial.<section>.title` / `.short` keys in RO and EN (19 records; those
+  keys were never defined in `shared/src/translations.ts` and were already missing at C3, and the shared
+  `tutorials.test.ts` that would catch it is dormant - it cannot even be loaded by plain `node --test`);
+  **ISSUE-058** - 375 px `main` overflow on the Control Tower surfaces (`main` 429 vs 375, suspect
+  `ControlTowerRedFlagsCard.tsx` and its `whitespace-nowrap` table). One earlier transient (a refused
+  API connection during the auth bootstrap ended the session for 10 records) did **not** reproduce on
+  an isolated re-run and is recorded as an environment transient, not a defect. The 13 pre-existing
+  `403 /api/users` console entries on field/supervisor pages belong to ISSUE-039 / ISSUE-053.
+- **Green on the C5 tree:** `i18n:check` PASS (988/988 keys), `guards:check` PASS, `typecheck` exit 0
+  (all four workspaces), `web:typecheck` exit 0, `web:build` exit 0 (25/25 static pages), `npm test`
+  31 suites / 320 tests PASS, root `npm run db:verify` **41/41**
+  (`database/scripts/verify_migration.ts`), `npm run db:verify --workspace=backend` **71/71**
+  (`backend/scripts/db-verify.ts`) - two scripts, two inventories, both green and both explained in
+  `VERIFICATION.md` → C4 *db:verify denominators*. Full detail: `VERIFICATION.md` → *UX-R1A C5*.
+- **Environment after C5:** `next dev` is running on `:3000` again (`npm run web:dev`; HTTP 200 and all
+  10 dev assets referenced by `/login` resolve again) and the temporary `next start -p 3100` server used
+  for the sweep was stopped, so exactly one process writes `web/.next` (ISSUE-049 was re-confirmed live:
+  before the restart, all 10 dev assets referenced by `/` returned 404 after the C4 build). The browser
+  harness (`%TEMP%\c5_sweep.cjs`) and its result JSON are temp-only by design and are not committed.
+- **NOT claimed:** no `site_manager` / PM / manager / owner browser coverage (no such account exists in
+  this database), no visual/design review, no remote CI execution.
+- **Next:** R1B first (ISSUE-057 keys, ISSUE-056 copy debt and the full RO prose sweep), then the
+  visual redesign. ISSUE-055, ISSUE-058 and the authorization reconciliation (ISSUE-052/053/054) stay
+  open.
 
 ## Current Task
 

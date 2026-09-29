@@ -381,6 +381,239 @@ others 0); it is not a C3 artefact and not a failed API request.
   evidence capture beyond this section was done — **C5** still owns the CI wiring and the consolidated
   evidence/PROGRESS/HANDOFF pass.
 
+## UX-R1A C5 - Final foundation verification, browser sweep and CI guardrails (2026-09-29)
+
+### Scope
+
+Close-out checkpoint of the UX-R1A foundation. C5 adds **no product behaviour**: it is verification,
+CI guardrails and documentation. The only source change is `.github/workflows/ci.yml`.
+
+**Statement of record:** C0-C5 complete. Automated/static verification is green on the final tree, the
+browser sweep was executed with a real browser against the production build, and every executed check
+is recorded below with its command. No check is claimed that was not actually run.
+
+### Environment and method (real browser, real accounts, real backend)
+
+| Item | Value |
+|---|---|
+| Browser | real Google Chrome, `Chrome/154.0.8037.58` (headless), driven over the **Chrome DevTools Protocol** (raw websocket; no new dependency - Node's global `WebSocket` + `fetch`) |
+| Web under test | the C5 **production build** (`npm run web:build` exit 0, 25/25 static pages) served by `next start` on `http://localhost:3100` |
+| API | NestJS on `http://localhost:4000`; PostgreSQL `localhost:5433/hiieko` |
+| Harness | `%TEMP%\c5_sweep.cjs` (temp-only, **not committed** - the C5 file scope is CI plus the four workflow documents). Run log: `%TEMP%\c5_sweep3.log`; result JSON: `%TEMP%\c5_browser_sweep_full_run_3.out.json`; foreman re-run JSON: `%TEMP%\c5_browser_sweep_foreman_rerun.out.json` |
+| Locale switch | the real header switcher (`[data-locale=ro]` / `[data-locale=en]`), not a storage write |
+| Login | the **real login form** - all four accounts report `mode=ui-form` (inputs filled through native value setters, submit clicked, then `localStorage.api_token` required to appear) |
+
+The `:3000` dev server was **not** used: the C4 `next build` had clobbered its `.next` (ISSUE-049,
+proven below), so the sweep ran against the production build on `:3100`.
+
+Accounts - all four are **real rows in the live database** and all four authenticated through the UI:
+
+| Role | Email | Source |
+|---|---|---|
+| `admin` | `dev@hiieko.local` | `backend/prisma/seed.ts` (ADMIN) |
+| `team_leader` | `ion.munteanu@hiieko.local` | `backend/prisma/seed.ts` (TEAM_LEADER) |
+| `foreman` | `fore1@hiieko.com` | `backend/scripts/seed-hiieko-teams.ts` |
+| `worker` | `wor1@hiieko.com` | `backend/scripts/seed-hiieko-teams.ts` |
+
+**Not claimed:** `site_manager`, `pm`, `manager`, `owner` browser coverage. Those roles have **no
+account at all** in this database (the `users` table holds ADMIN 1, TEAM_LEADER 5, FOREMAN 3,
+TECHNICIAN 3, WORKER 8 = 21 rows), so no such result is asserted.
+
+### Sweep matrix and result
+
+130 page records = 4 roles x {375, 768, 1440} px x {RO, EN}, over each role's permitted routes
+(`ROUTE_ROLES` in `web/src/config/route-roles.ts`):
+
+| Role | Routes swept | Records | PASS | FAIL |
+|---|---|---|---|---|
+| `admin` | 15 (`/`, `/control-tower`, `/tasks`, `/planning`, `/pontaj`, `/rapoarte`, `/issues`, `/notificari`, `/profil`, `/teams`, `/workforce`, `/stocuri`, `/cheltuieli`, `/santiere`, `/utilizatori`) | 38 | 30 | 8 |
+| `team_leader` | 12 (`/`, `/tasks`, `/planning`, `/pontaj`, `/rapoarte`, `/issues`, `/notificari`, `/profil`, `/teams`, `/stocuri`, `/cheltuieli`, `/projects`) | 32 | 26 | 6 |
+| `foreman` | 12 (as `team_leader`, plus `/solar-configurator`) | 32 | 13 | 19 |
+| `worker` | 10 (`/` + the operational budget routes + `/notificari` + `/profil`) | 28 | 24 | 4 |
+| **Total** | | **130** | **93** | **37** |
+
+The 37 failures are: **19** raw-translation-key records (F1) + **2** overflow records (F2) + **10**
+records belonging to one non-reproducible environment transient (F3) + **6** records of the same
+raw-key items in the foreman re-run (F1). Every failure is itemised in the findings below; **no
+failure is attributed to C4**.
+
+### What the browser verified as correct
+
+| Check | Result |
+|---|---|
+| `document.documentElement.lang` equals the active locale on every page | PASS - 130/130 records |
+| Persisted locale: RO -> EN through the real switcher, then a real reload | PASS - after reload `documentElement.lang = "en"`, `<html lang="en">`, `solar:locale = "en"`, and the `/tasks` sidebar label is `Tasks` (`localePersistence` in the result JSON) |
+| Sidebar label equals the canonical dictionary value, per route and locale | PASS - **0** mismatches in 130 records (asserted against `shared/src/translations.ts`) |
+| Sidebar advertises only routes the role may use (`ROUTE_ROLES`) | PASS - **0** unexpected hrefs, **0** missing permitted hrefs in 130 records |
+| Control Tower is `Turn de Control` (RO) / `Control Tower` (EN) | PASS - `/control-tower` is advertised on all 38 pages whose role may use it, with the correct label on all 38 |
+| `/tasks` is `Task-uri` (RO) / `Tasks` (EN); `/workforce` is `Forță de Muncă` (RO) / `Workforce` (EN) | PASS (admin sees both; the field roles see `Task-uri`) |
+| Team Leader is not Site Manager | PASS - `role.team_leader` renders `Șef de Echipă` / `Team Leader` (present on 9 RO records); `role.site_manager` (`Șef de Șantier` / `Site Manager`) appears **0** times, and the two labels are distinct in the dictionary |
+| Raw translation keys outside the deferred set (F1) | PASS - 0 |
+| Mojibake / `U+FFFD` | PASS - 0 records |
+| Visible legacy misspellings (`Sarcini`, `Selecteaza`, `Reimprospateaza`, `Distanta`, `Notificari`, `Statistici`, `Se incarca`, ...) | PASS - 0 records (the aggregate is empty) |
+| Horizontal overflow at 768 px | PASS - 0 records |
+| Horizontal overflow at 375 px | **F2** - 2 records (`/` and `/control-tower` for `admin`) |
+| Mobile drawer: the real header menu button opens and links become visible | PASS - opened with 12-20 visible links at 375/768 on every record except the F3 transient |
+| Console errors attributable to C4 | PASS - 0. The only console entries are 13 x `403 /api/users` (F4) and 1 x `net::ERR_CONNECTION_REFUSED /api/auth/me` (F3) |
+
+### Findings
+
+#### F1 - Raw translation keys on `/planning`, `/teams`, `/workforce` (RO + EN) - pre-existing, not C4
+
+19 of the 130 records show literal translation **keys** in visible copy. DOM evidence from the
+harness probe mode (`/planning`, RO, 1440 px):
+
+```
+<section class="bg-slate-900 text-white ..." aria-label="tutorial.planning.title">
+  <h2 class="text-amber-400 font-bold text-sm uppercase ...">tutorial.planning.title</h2>
+  ...
+  <p class="text-slate-300 text-sm mt-1">tutorial.planning.short</p>
+```
+
+- Affected sections: `tutorial.planning.*`, `tutorial.teams.*`, `tutorial.workforce.*` are **absent
+  from the dictionary entirely** (`shared/src/translations.ts` has 0 occurrences of `tutorial.planning`,
+  `tutorial.teams`, `tutorial.workforce`), and `t()` returns the key when the entry is missing
+  (`shared/src/translations.ts` -> `const e = d[key]; if (!e) return key;`).
+- Where it is rendered: `web/src/components/PageTutorial.tsx` renders `t(content.titleKey)` in the
+  visible `<h2>` (line 41) and in the section `aria-label` (line 37), and `t(content.shortKey)` in the
+  summary line (line 52); the expanded panel would additionally show `purpose` / `steps` / role notes.
+  (The heading is CSS-uppercased, which is why a case-sensitive text scan alone misses the `.title`
+  key - the harness had to scan case-insensitively, and the `aria-label` confirmed it.)
+- Pre-existing: `git show 876c312:shared/src/translations.ts` (the C3 tree) also contains no such keys,
+  so this is **not** a C4 regression, and C4 did not edit those sections.
+- Why the static gates are blind to it: `shared/src/tutorials.ts` builds these keys through a template
+  literal (`const K = (id) => tutorial.${id}`), so `i18n:check`'s "undefined static keys" rule cannot
+  resolve them; `shared/src/tutorials.test.ts` asserts exactly this property, but **no npm script or CI
+  job runs the shared tests** (`shared/package.json` has no `test` script, nothing runs `node --test`),
+  and a plain `node --test shared/src/tutorials.test.ts` cannot even load today
+  (`ERR_MODULE_NOT_FOUND` - extensionless relative import), so wiring them needs a loader decision.
+- Tracked as **ISSUE-057** (the highest-value R1B item). Not fixed in C5: C5 is verification /
+  close-out, and adding ~40 keys is R1B copy work.
+
+#### F2 - 375 px horizontal overflow inside `<main>` on the Control Tower surfaces
+
+`admin` (the only role with `/control-tower`) at 375 px, on `/` and `/control-tower`:
+`document.documentElement.scrollWidth` = 375 (so no page-level scrollbar - the shell is
+`overflow-hidden`), but `main.scrollWidth` = **429** vs `main.clientWidth` = **375**: 54 px of content
+wider than the phone viewport inside the main scroll container. Both routes render the same surface
+(`/` is the role home and renders `ControlTowerSurface`). The measuring probe points at a wide
+min-content table: `web/src/components/ControlTowerRedFlagsCard.tsx` renders a table whose cells carry
+`whitespace-nowrap` (lines 156-192). Tracked as **ISSUE-058**. C4 changed copy only and C5 changed
+CI/docs only, so no C4/C5 surface introduced it.
+
+#### F3 - One non-reproducible environment transient (session ended mid-sweep)
+
+In the first full run, starting at `foreman` EN `/rapoarte`, 10 consecutive records were captured on
+`/login` with `localStorage.api_token` **absent** (`path=/login`, `token=absent`, 0 nav links) - the
+session had ended mid-sweep. The console entry captured on the transition record is
+`net::ERR_CONNECTION_REFUSED http://localhost:4000/api/auth/me`, and `.hiiEko\run\backend.log` shows
+repeated Nest bootstraps in that window (last: 01:08:30, PID 12800), i.e. the API was momentarily not
+accepting connections while the auth bootstrap ran.
+
+**Not reproducible:** re-running only the `foreman` block (`C5_ROLES=foreman`) produced 32 records,
+26 PASS / 6 FAIL - all six being F1 raw keys, with no session loss, no nav failure and no console
+error. The 10 records are therefore recorded as an **environment transient, not a product defect**.
+The observed behaviour (a refused connection during the auth bootstrap ends the session instead of
+retrying) is noted as an observation only: the mechanism was not proven, the API logged no 401, and
+**no code was changed in C5**.
+
+#### F4 - Pre-existing `403 /api/users` console noise on field/supervisor pages (already documented)
+
+13 of the 14 captured console entries are `403 (Forbidden) http://localhost:4000/api/users`, raised for
+`team_leader` / `foreman` / `worker` on `/rapoarte`, `/teams`, `/stocuri` (RO and EN). This is the
+already-recorded navigation-vs-`@Roles` divergence (`GET /api/users` and `GET /api/employees` are
+ADMIN/MANAGER/PM-only - see the `ROUTE_ROLES` comments, ISSUE-039, ISSUE-053): the pages render
+correctly, the failure is contained (no exception, no visible error state, sidebar and labels intact),
+and no C4 surface is involved. Recorded here as browser evidence for those existing issues - **no new
+issue opened**.
+
+### Final automated verification (executed on the C5 tree)
+
+Every row below was executed in this session. The two database commands are named in full because they
+are two different scripts with two different denominators.
+
+| Command | Result |
+|---|---|
+| `npm run i18n:check` | PASS - 988 keys / 988 unique, 0 fail |
+| `npm run guards:check` | PASS - stale-task-contract checks clean; terminology rows report-only |
+| `npm run typecheck` | exit 0 - all four workspaces (shared, web, Mobile, backend) |
+| `npm run web:typecheck` | exit 0 |
+| `npm run web:build` | exit 0 - "Compiled successfully", 25/25 static pages |
+| `npm test` | PASS - 31 suites / 320 tests |
+| `npm run db:verify` (root -> `database/scripts/verify_migration.ts`, raw `pg`) | **41/41 PASS** - "41/41 checks passed.", `target tables present: 24/24`, `legacy parity: SKIP` (no `legacy` schema) |
+| `npm run db:verify --workspace=backend` (`backend/scripts/db-verify.ts`, Prisma) | **PASSED 71 / FAILED 0 / SKIPPED 0 / TOTAL 71** |
+
+No database was modified to obtain these results. The two inventories are explained in the C4 section
+below (*db:verify denominators - 41 (root) vs 71 (backend workspace)*); both remain true and both are
+green on the C5 tree.
+
+### CI wiring (closes the C1 deliberate deviation)
+
+`.github/workflows/ci.yml` is the **only** source file changed by C5. Two steps were added to the
+existing `test` job, using the scripts that already exist - no new job, no script weakened:
+
+```
+      - name: Translation integrity check (i18n:check)
+        run: npm run i18n:check
+
+      - name: Frontend guardrails check (guards:check)
+        run: npm run guards:check
+```
+
+They run after the shared build and before `npm run test` (fail fast). Both scripts were green locally
+immediately before the edit, and the workflow was validated statically: `yaml.safe_load` parses it, the
+job list is unchanged (`typecheck`, `test`, `build`), and the `test` job's steps are now
+`[checkout, Setup Node.js, Install dependencies, Generate Prisma Client, Build shared package,
+Translation integrity check, Frontend guardrails check, Run backend tests]`.
+**Remote CI execution is NOT claimed:** C5 is not pushed, so no GitHub Actions run exists for it.
+
+### Static integrity checks (the C5 checklist)
+
+| Check | Result |
+|---|---|
+| `assigned_to_id` in active task code (`web/src`, `Mobile/src`, `shared/src`, `backend/src`) | 0 occurrences |
+| `'TODO'` / `'DONE'` legacy task status in active task code (`web/src`, `shared/src`) | 0 occurrences |
+| i18n duplicate keys / undefined *static* keys | 0 / 0 (`i18n:check` PASS) |
+| Mojibake / `U+FFFD` failures in the translation table | 0 (`i18n:check` PASS) |
+| `nav.statistici` code references | 0 - only its dictionary definition (kept by decision) and two comments |
+| `nav.control_tower` exists and is the active Control Tower nav key | yes - `shared/src/translations.ts` + the `/control-tower` item in `web/src/config/navigation.ts` |
+| `ROLE_LABELS` / local role maps reintroduced | 0 hits for `ROLE_LABELS`, `ROLE_MAP`, `roleLabels`, `ROLE_DISPLAY` |
+| C2 route architecture intact | `ROUTE_ROLES` is still the single source; browser sweep: 0 unexpected and 0 missing advertised routes; `/control-tower` present; `/statistici` exists only as a redirect |
+| C3 role-scoped task sources intact | `web/src/features/planning/fieldWork.ts` untouched by C5; the stale-task-contract guard rows are green |
+| ISSUE-055 still deferred | `guards:check` still reports `WorkerAttendanceView.tsx` (4 rows) + `WorkerDashboard.tsx:101/151` (2 rows); no fix is claimed |
+| `backend/**`, `database/**`, `prisma/**` changes | none - C5 touched `.github/workflows/ci.yml` + the four workflow documents only |
+| Untracked local tools/artifacts staged | none - the harness and all JSON evidence live in `%TEMP%`; `.hiiEko/`, `BonFis/`, `Start-HIIEKO.ps1`, `Stop-HIIEKO.ps1` and the archived SQL backup stay untracked and unstaged |
+
+### ISSUE-049 re-confirmed (and the environment consequence)
+
+After the C4 `next build`, the live `next dev` server on `:3000` served HTML that referenced its own dev
+chunks: a direct HTTP check of the 10 `/_next/static/*` assets named by `/` returned **404 for all 10**
+(`layout.css`, `webpack.js`, `main-app.js`, `app-pages-internals.js`, `app/page.js`, `app/layout.js`,
+`app/error.js`, `app/not-found.js`, `polyfills.js`). That is ISSUE-049's exact signature, and it is why
+C5 verified the production build on `:3100` instead of the dev server. The clobbered dev server was
+stopped for the sweep and **restarted afterwards** (`npm run web:dev`, `:3000` answers HTTP 200 and its
+dev assets resolve again); the temporary `next start -p 3100` server used for the sweep was stopped at
+the same time, so exactly one process writes `web/.next` again (ISSUE-049).
+
+### Limitations - what C5 does not claim
+
+- No `site_manager`, `pm`, `manager` or `owner` browser pass: no such account exists in this database.
+- No visual/design review: C5 checked labels, language, overflow, console output and navigation
+  contracts - not pixel fidelity (the visual redesign is a separate, pending phase).
+- The harness and its JSON evidence are temp-only by design (so the C5 commit contains exactly CI + the
+  four workflow documents); every result is transcribed in this section.
+- The shared-package unit tests stay dormant (see F1). C5 does not wire them into CI: that needs a
+  loader decision and they would currently fail on the F1 keys.
+
+### Final status of UX-R1A
+
+| Item | Status |
+|---|---|
+| UX-R1A C0-C5 | **COMPLETE** |
+| R1B (full RO prose pass, F1 tutorial keys, ISSUE-056 copy debt) | **PENDING** |
+| Visual redesign | **PENDING** |
+| Deferred items carried forward | ISSUE-055 (`WorkerAttendanceView` task source + client-side assignee filter; `WorkerDashboard:101/151` action-result string/colour coupling), ISSUE-056 (ControlTower copy, Mobile `SettingsScreen.formatRole()`, inline locale ternaries, orphan keys), **ISSUE-057** (raw tutorial keys on `/planning`, `/teams`, `/workforce`), **ISSUE-058** (375 px Control Tower overflow), workspace/project/team context work, and the future authorization reconciliation (ISSUE-052/053/054) |
+
 ## UX-R1A C4 - Terminology normalization: one RO/EN vocabulary, one role vocabulary, one Control Tower key (2026-09-29)
 
 ### Scope

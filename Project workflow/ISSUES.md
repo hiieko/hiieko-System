@@ -682,6 +682,69 @@ Close 1 and 2 in the C5/UX-R1B pass (same file sets that need their own refactor
 
 ---
 
+## ISSUE-057 — `/planning`, `/teams`, `/workforce` render raw `tutorial.*` translation keys (RO + EN)
+**Status:** 🔍 `OPEN` (found 2026-09-29 by the UX-R1A C5 browser sweep)
+
+### Description
+`shared/src/tutorials.ts` defines the sections `planning`, `teams` and `workforce` with keys built from a
+template literal (`const K = (id) => tutorial.${id}`), i.e. `tutorial.planning.title`, `.short`,
+`.purpose`, `.step1/2` and `.role_*`. `shared/src/translations.ts` defines **no** key for those three
+prefixes (0 occurrences of `tutorial.planning`, `tutorial.teams`, `tutorial.workforce`), and `t()`
+returns the key when an entry is missing (`const e = d[key]; if (!e) return key;`).
+
+Consequence in a real browser (C5 sweep, RO and EN): `PageTutorial` prints the raw key in the visible
+`<h2>` (`tutorial.<section>.title`, CSS-uppercased), in the summary line (`tutorial.<section>.short`) and
+in the section `aria-label`; expanding "How it works" would additionally show the missing
+`purpose` / `steps` / role-note keys.
+
+### Impact
+User-visible raw keys on three pages in both locales. Copy/translation defect only — no crash, no data or
+authorization impact. The static gates cannot see it: the keys are dynamic, so `i18n:check`'s
+"undefined static keys" rule reports nothing, and `shared/src/tutorials.test.ts` (which asserts that
+every tutorial key resolves in both locales) is not executed by any script.
+
+### Evidence
+- Browser (C5): 19 of 130 swept records — routes `/planning`, `/teams`, `/workforce`, locales RO + EN,
+  roles admin / team_leader / foreman / worker; DOM dump in `VERIFICATION.md` → *UX-R1A C5* → F1.
+- Pre-existing: `git show 876c312:shared/src/translations.ts` (C3 tree) has the same missing keys, so it
+  is not a C4 regression.
+- Dormant test: `shared/package.json` has no `test` script and nothing runs `node --test`; a plain
+  `node --test shared/src/tutorials.test.ts` fails with `ERR_MODULE_NOT_FOUND` (extensionless import).
+
+### Required Action
+1. Add the `tutorial.planning.*`, `tutorial.teams.*` and `tutorial.workforce.*` keys (RO + EN) to
+   `shared/src/translations.ts` — R1B copy work (~20 keys per section).
+2. Decide how to run `shared/src/*.test.ts` (loader or extension-complete imports) and wire it to CI so
+   this class of defect cannot recur silently.
+
+---
+
+## ISSUE-058 — 375 px horizontal overflow inside `<main>` on the Control Tower surfaces
+**Status:** 🔍 `OPEN` (found 2026-09-29 by the UX-R1A C5 browser sweep)
+
+### Description
+At 375 px, `admin` gets `main.scrollWidth = 429` against `main.clientWidth = 375` (54 px wider than the
+viewport) on `/` and `/control-tower` — both render `ControlTowerSurface`. The page itself does not
+overflow (`documentElement.scrollWidth = 375`; the shell is `overflow-hidden`), so the excess is clipped
+inside the main scroll container instead of producing a page-level scrollbar.
+
+### Impact
+Clipped / cramped rendering of the Control Tower surface on phones. No functional or data impact, and the
+other three swept roles show no overflow at 375 px (0 records).
+
+### Evidence
+- C5 sweep: 2 of 130 records (`admin`, RO, 375 px, `/` and `/control-tower`), `main 429/375`
+  (`VERIFICATION.md` → *UX-R1A C5* → F2).
+- Suspect: `web/src/components/ControlTowerRedFlagsCard.tsx` — table cells carry `whitespace-nowrap`
+  (lines 156-192), which sets a min-content width wider than 375 px.
+
+### Required Action
+Make the Control Tower red-flags table responsive (horizontal scroll wrapper or a stacked mobile layout)
+in the phase that owns Control Tower layout work — the same phase as the ISSUE-056 `ControlTowerSurface`
+copy cleanup. Not a C4/C5 regression.
+
+---
+
 # Known Limitations (not blocking)
 
 - **Mobile `WorkerAttendanceScreen.tsx`** — The `TimeLog` type in `shared/src/types.ts` and the local AsyncStorage-based `activeTimeLog` mechanism are the mobile app's offline attendance state tracking (not the PostgreSQL table, which is now dropped). This is correct and stays.
