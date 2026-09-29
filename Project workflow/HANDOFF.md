@@ -2,7 +2,7 @@
 
 > Primary continuation point for the next AI assistant.
 
-Last Updated: 2026-09-29 (P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
+Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
 ## Current Status
 **Status:** STABLE - **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; P4.4 daily-report finalization verified end-to-end; 31 suites / 320 tests, db:verify 71/71, all quality gates PASS)
@@ -131,7 +131,7 @@ Last Updated: 2026-09-29 (P4.4 COMPLETE - Daily Report finalization DRAFT -> SUB
 
 # What Remains
 - [ ] Apply the R0 milestone from `IMPLEMENTATION_ROADMAP.md` (stabilize): fix ISSUE-002 (mobile login), ISSUE-005 (real persistence + sync), ISSUE-003/004 (OCR cleanup), ISSUE-006/008/009 (hygiene).
-- [ ] Initialize git + CI (typecheck + tests + build) � no VCS exists in the checkout.
+- [x] **DONE (2026-09-29):** git + CI exist and are green - GitHub Actions `ci.yml` (install + typecheck + tests + build) passed on commit `6bd45b7` (run 36606409946: Tests ✅ / Typecheck ✅ / Build ✅). Kept for history: the 2026-09-18 note "no VCS exists in the checkout".
 - [ ] ~~Deploy OCR function to Supabase; obtain real Supabase project keys and apply `supabase/full_setup.sql`.~~ **SUPERSEDED (2026-09-23):** PostgreSQL/NestJS is authoritative; Supabase is a legacy compatibility artifact to be decommissioned at R7. OCR is handled by the backend `ocr` module + PaddleOCR service (see R5), not a Supabase Edge Function deploy.
 - [ ] Mobile app: wire real login flow, implement offline queue sync.
 - [ ] OCR pipeline: complete PaddleOCR service deployment, fix documentation drift (ISSUE-003/004).
@@ -148,6 +148,7 @@ Last Updated: 2026-09-29 (P4.4 COMPLETE - Daily Report finalization DRAFT -> SUB
 # Verification
 | Check | Result | Notes |
 |---|---|---|
+| CI (GitHub Actions) | PASS | 2026-09-29 - run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅ (3/3 jobs, every step success) |
 | Build | PASS | shared + web (14 routes), 2026-09-18/19 |
 | Unit tests | PASS | shared suites + Edge `extract.test.ts` (36) + OCR `pytest` (6) |
 | Integration tests | NOT RUN | requires live Supabase project |

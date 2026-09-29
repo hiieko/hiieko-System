@@ -3,7 +3,7 @@
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
-**Last Updated:** 2026-09-29 (P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED is verified end-to-end: `POST /api/daily-reports/:id/submit` on the web plus the status-less Mobile one-call contract, exactly ONE immutable revision per report, exactly ONE consumption movement per material (balance 6 -> 4, restored afterwards), exactly ONE `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`, so the action means exactly one thing), idempotent replays, PATCH-after-submit 400, insufficient stock refused with the report left a clean DRAFT, and `/rapoarte` + `/rapoarte/form` read-only after submit at 375px; browser gate `gate-p44-finalize.js` **25/25 PASS / 0 console errors**, backend **31 suites / 320 tests**, `db:verify` **71/71**, backend/shared/web typecheck 0 errors; ISSUE-051 opened for the Mobile daily-report screen - free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column, separate from `general_notes`)
+**Last Updated:** 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅ - `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED is verified end-to-end: `POST /api/daily-reports/:id/submit` on the web plus the status-less Mobile one-call contract, exactly ONE immutable revision per report, exactly ONE consumption movement per material (balance 6 -> 4, restored afterwards), exactly ONE `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`, so the action means exactly one thing), idempotent replays, PATCH-after-submit 400, insufficient stock refused with the report left a clean DRAFT, and `/rapoarte` + `/rapoarte/form` read-only after submit at 375px; browser gate `gate-p44-finalize.js` **25/25 PASS / 0 console errors**, backend **31 suites / 320 tests**, `db:verify` **71/71**, backend/shared/web typecheck 0 errors; ISSUE-051 opened for the Mobile daily-report screen - free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column, separate from `general_notes`)
 
 ---
 
@@ -272,7 +272,7 @@ See [ISSUES.md](ISSUES.md) for the complete list with resolution details.
 - **`GET /api/procurement/avize/:id` route missing** — The procurement controller lacks this single-aviz retrieval endpoint. Documented in HANDOFF.md.
 - **Historical docs reference Supabase** — `HOW_TO_RUN.md`, `CONFIGURATION.md`, and other pre-2026-09-23 documents may still describe Supabase as current runtime. These are harmless historical artifacts.
 - **OCR is frozen/deferred** — OCR is not a current workstream. Deferred per project roadmap.
-- **No production CI/CD** — No staging/production deployment pipeline configured.
+- **No deployment pipeline (CD)** — CI exists and is green: GitHub Actions `ci.yml` (install + typecheck + tests + build on push to `master`) passed on commit `6bd45b7` (run 36606409946: Tests ✅ / Typecheck ✅ / Build ✅). No staging/production deployment pipeline is configured.
 
 ---
 
@@ -295,6 +295,25 @@ All quality gates verified as of 2026-09-25:
 ---
 
 ## Recent Work
+
+### 2026-09-29 - CI pipeline GREEN (GitHub Actions, commit `6bd45b7`)
+
+**Configuration-only fix - no product code changed** (`ci.yml` +9 lines, `package.json` 3 lines,
+`package-lock.json` 12 case-only key lines). Two defects: (1) `typecheck` and `test` ran before
+`@solar/shared` was built, and `shared/dist` is gitignored, so a clean Linux checkout could not
+resolve the package - both jobs now run `npm run build --workspace=shared` first (the typecheck
+job also runs `prisma generate`, which the backend `tsc` needs); (2) the root workspace and the
+mobile scripts used the casing `mobile` while the directory is `Mobile`, which npm cannot resolve
+on a case-sensitive filesystem - the workspace declaration, both scripts, the `package-lock.json`
+workspace keys and the workspace link target now all use `Mobile`.
+
+**Evidence:** GitHub Actions run **36606409946** on commit **`6bd45b7`** (`event=push`,
+`conclusion=success`, 162 s) - **Tests ✅ / Typecheck ✅ / Build ✅**, every step success; the
+Build job previously never ran. The only annotations are the pre-existing environment notices
+(Node 20 deprecation, `ubuntu-latest` → Ubuntu 26). Local pre-push, in CI order: `npm ci` 0,
+`prisma generate` 0, shared build 0, `npm run typecheck` 0 (all four workspaces incl.
+`@solar/mobile`), **31 suites / 320 tests PASS**, `npm run build` 0 (web 26/26 static pages), root
+`db:verify` 41/41 PASS. See `VERIFICATION.md` -> CI (end of file).
 
 ### 2026-09-29 - Phase 4.4 Daily Report Finalization (DRAFT -> SUBMITTED) GREEN
 

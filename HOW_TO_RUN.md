@@ -14,7 +14,7 @@ Open PowerShell in the project folder and run:
 npm install
 ```
 
-This installs dependencies for the root project and all workspaces (`shared`, `web`, `mobile`, `backend`).
+This installs dependencies for the root project and all workspaces (`shared`, `web`, `Mobile`, `backend`).
 
 ## Configure the environment
 
