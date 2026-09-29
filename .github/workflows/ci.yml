@@ -27,6 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Generate Prisma Client (for backend typecheck)
+        run: npm run prisma:generate --workspace=backend
+      
+      - name: Build shared package (for @solar/shared type resolution)
+        run: npm run build --workspace=shared
+      
       - name: Run typecheck
         run: npm run typecheck
 
@@ -49,6 +55,9 @@ jobs:
       
       - name: Generate Prisma Client (for backend tests)
         run: npm run prisma:generate --workspace=backend
+      
+      - name: Build shared package (for @solar/shared resolution)
+        run: npm run build --workspace=shared
       
       - name: Run backend tests
         run: npm run test
