@@ -6,6 +6,7 @@ import { apiClient } from '../../lib/api-client';
 import { useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import { 
   Boxes, 
   AlertTriangle, 
@@ -296,7 +297,7 @@ function StocuriPageInner() {
 
 export default function StocuriPage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/stocuri']}>
       <StocuriPageInner />
     </RoleGuard>
   );

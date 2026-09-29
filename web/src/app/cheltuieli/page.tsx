@@ -1,6 +1,7 @@
 'use client';
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import { FieldHelp } from '../../components/FieldHelp';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -359,7 +360,7 @@ function CheltuieliPageInner() {
 }
 export default function CheltuieliPage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/cheltuieli']}>
       <CheltuieliPageInner />
     </RoleGuard>
   );

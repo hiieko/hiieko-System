@@ -19,17 +19,19 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const userRole = user?.role?.toLowerCase() || 'worker';
   const { locale } = useLocale();
 
+  // `/` is only exact-matched: the canonical Control Tower route now owns its
+  // own navigation entry (`/control-tower`), so `/` must not claim it as active.
   const isActive = useCallback(
     (href: string) =>
-      href === '/'
-        ? pathname === '/' || pathname === '/control-tower'
-        : pathname === href || pathname.startsWith(href + '/'),
+      href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/'),
     [pathname],
   );
 
+  // Item roles come from the canonical `ROUTE_ROLES` map (config/navigation.ts).
+  // No roles (or an empty list) means "every authenticated role".
   const canSee = useCallback(
     (item: NavItem | NavGroup): boolean => {
-      const roles = 'items' in item ? item.roles : item.roles;
+      const roles = item.roles;
       return !roles || roles.length === 0 || roles.includes(userRole);
     },
     [userRole],

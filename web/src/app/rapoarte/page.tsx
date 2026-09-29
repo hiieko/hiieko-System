@@ -2,6 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../../lib/api-client';
 import { t, useLocale, type DailyReport } from '@solar/shared';
@@ -314,7 +315,7 @@ function RapoartePageInner() {
 
 export default function RapoartePage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/rapoarte']}>
       <RapoartePageInner />
     </RoleGuard>
   );

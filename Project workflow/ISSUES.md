@@ -541,6 +541,78 @@ Two defects in `Mobile/src/screens/TeamLeaderDailyReportScreen.tsx` `handleSubmi
 
 ---
 
+## ISSUE-052 — Control Tower API has no `@Roles` at all (the UI is the only boundary)
+**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C2; deliberately **not** changed in C2)
+
+### Description
+`backend/src/modules/control-tower/control-tower.controller.ts` guards the controller with
+`@UseGuards(JwtAuthGuard, RolesGuard, ProjectAccessGuard)` (line 27) but declares **no** `@Roles(...)`
+on `overview` (line 32), `drilldown` (line 57) or `red-flags` (line 108). With no role metadata the
+`RolesGuard` admits every authenticated role, so `GET /api/control-tower/overview` returns the full
+financial/KPI aggregate to a `worker` token as well.
+
+### Impact
+- The "management only" Control Tower contract exists **only** in the frontend
+  (`ROUTE_ROLES['/control-tower']` + the `/` role router). Any authenticated client bypasses it.
+- Frontend sets in force after C2: `/control-tower` (and `/` for the same roles) is allowed for the
+  11 non-field roles; `worker` → `WorkerMyDay`; `technician` / `team_leader` / `foreman` /
+  `site_manager` → `WorkerDashboard`.
+
+### Required Action
+Decide the intended Control Tower role set, then add `@Roles(...)` to the three endpoints in one
+reviewed authorization change and re-align the frontend list against it. C2 must not change backend
+authorization.
+
+---
+
+## ISSUE-053 — Navigation vs backend `@Roles` mismatches (front-end kept safe, backend unchanged)
+**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C2)
+
+### Description
+The C2 canonical map (`web/src/config/route-roles.ts`) records the **front-end** contract. Backend
+`@Roles` decorators are not proof of the intended organisational model, so wherever they disagree C2
+kept the currently safe (no-403) behaviour and did not touch `@Roles`. Measured on this tree:
+
+| Route | Canonical front-end roles (C2) | Backend contract | Divergence kept |
+|---|---|---|---|
+| `/workforce` | admin, owner, manager, pm | `GET /api/employees` → `@Roles(ADMIN, MANAGER, PM, FINANCE)` (`employees.controller.ts:19`) | `site_manager` / `foreman` / `team_leader` used to see the link and get **403** — the sidebar no longer advertises it. `owner` passes the page guard but is not in the backend list (403). `finance` may call the API but has no navigation entry. |
+| `/aprobare` | admin, owner, manager, pm | `POST /api/expenses/:id/approve` → `@Roles(ADMIN, MANAGER, PM, FINANCE)` (`expenses.controller.ts:61`); `GET /api/expenses` carries no `@Roles` | `owner` can list but gets **403** on approve; `finance` can approve but is outside the page guard. `procurement` access was **not** invented (unverified). |
+| `/avize` | operational 9 | `POST /api/procurement/avize` → `@Roles(ADMIN, PROCUREMENT, SITE_MANAGER, TEAM_LEADER)` (`procurement.controller.ts:76`) | The page is named "Procurement / Avize" yet the guard denies `procurement` (and `finance`); the sidebar now mirrors the guard instead of advertising a denied link. |
+| `/cheltuieli` | operational 9 | `POST /api/expenses` unrestricted; approve restricted as above | `finance` has no access to the expense page despite owning the financial approval step. |
+| `/solar-configurator` | admin, owner, manager, pm, site_manager, foreman, technician | `solar.controller.ts:53…` → `@Roles(ADMIN, OWNER, PM, SITE_MANAGER)` on the write endpoints | Aligned to the advertised navigation contract: `worker` (previously allowed by the page guard but never offered the link) can no longer enter by direct URL. |
+
+### Required Action
+Resolve each row as an authorization decision (backend `@Roles` + `ROUTE_ROLES` + business matrix) in
+a dedicated authorization change, not inside a navigation checkpoint.
+
+---
+
+## ISSUE-054 — `RoleGuard` admin/owner superset, unguarded routes and sub-route role gaps
+**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C2)
+
+### Description
+1. **`/utilizatori` owner bypass.** Navigation and page guard are both `['admin']`, but `RoleGuard`
+   short-circuits `admin` / `owner` before evaluating `allowedRoles`
+   (`web/src/lib/auth-guard.tsx:69`), so an `owner` can still open the page by direct URL. C2 kept
+   admin-only in the canonical map and did **not** create owner access; the pre-existing superset is
+   now documented instead of implied.
+2. **`/tasks` is unguarded.** `ROUTE_ROLES['/tasks']` is the advertised 9-role list, while the page
+   computes its own capability matrix (which includes `qa_qc`). Other roles can therefore reach it by
+   direct URL by design of the page code; adding a guard would remove working access, so C2 left it
+   unguarded and records the divergence.
+3. **`/rapoarte/form` role gap.** Guarded with 8 roles (no `worker`) while `/rapoarte` allows 9, so a
+   `worker` can open `/rapoarte` from the sidebar and is then denied the form. Unchanged in C2 (it is
+   a sub-route with no navigation entry, outside the C2 scope).
+4. **Unknown/legacy role strings.** Any role outside the 16 values of `shared/src/types.ts` `UserRole`
+   has no field home and lands on the `RoleGuard` "Acces Interzis" panel at `/`. Every role in the
+   shared enum is mapped to a home surface.
+
+### Required Action
+Decide the intended behaviour for each item (guard the route, extend the role list or accept the
+documented divergence) during the authorization phase.
+
+---
+
 # Known Limitations (not blocking)
 
 - **Mobile `WorkerAttendanceScreen.tsx`** — The `TimeLog` type in `shared/src/types.ts` and the local AsyncStorage-based `activeTimeLog` mechanism are the mobile app's offline attendance state tracking (not the PostgreSQL table, which is now dropped). This is correct and stays.
@@ -549,7 +621,7 @@ Two defects in `Mobile/src/screens/TeamLeaderDailyReportScreen.tsx` `handleSubmi
 - **`ocr-service/README.md`** — References Supabase as part of the historical architecture description. This is a standalone OCR service, not an active runtime dependency.
 - **`PermissionsGuard` not activated** — The `PermissionsGuard` exists but is not wired into any controller. Permission tables are unseeded. Deferred from P5.
 - **`GET /api/procurement/avize/:id` route missing** — The procurement controller lacks this single-aviz retrieval endpoint. Documented in HANDOFF.md.
-- **RoleGuard on 12 pages** — Client-side route guard blocks direct URL access for unauthorized roles on: projects, project detail, teams, workforce, santiere, statistici, aprobare, utilizatori, avize, cheltuieli, pontaj, rapoarte pages.
+- **RoleGuard on 15 pages (16 with `/rapoarte/form`)** — Client-side route guard blocks direct URL access for unauthorized roles. Since UX-R1A C2 every guard reads its role list from `web/src/config/route-roles.ts` (`ROUTE_ROLES`), i.e. the same source the sidebar uses, so the advertised link set and the guard can no longer drift. `/statistici` no longer exists as a page (307 redirect to `/control-tower`), and `/control-tower` redirects unauthorized roles to `/` instead of rendering them a denial panel.
 - **ISSUE-033/034/035 FIXED** — Project-scope query filtering, registration role whitelist, and tasks controller @Roles all resolved during Phase 3.2.
 - **Santiere page**: "Modifica Parametri" button now opens functional edit modal (FIXED 2026-09-26).
 - **Profil page**: Language selector now functional, name/phone editable (FIXED 2026-09-26).

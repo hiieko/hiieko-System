@@ -2,6 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { MapPin, ShieldCheck, Navigation, Sliders, Loader2, RefreshCw, X, Save } from 'lucide-react';
@@ -199,7 +200,7 @@ function SantierePageInner() {
 
 export default function SantierePage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/santiere']}>
       <SantierePageInner />
     </RoleGuard>
   );

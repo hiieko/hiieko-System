@@ -35,6 +35,16 @@ export function LocaleProviderClient({ children }: { children: React.ReactNode }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Mirror the active locale onto the root <html lang="..."> attribute.
+  // SSR always renders the default (Romanian) and the persisted choice only
+  // becomes known after hydration, so this effect is what makes the attribute
+  // correct again after a reload with a persisted non-default locale.
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+    }
+  }, [locale]);
+
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
     try {
@@ -42,8 +52,8 @@ export function LocaleProviderClient({ children }: { children: React.ReactNode }
     } catch {
       // ignore
     }
-    // Reflect the chosen language on the root <html lang="..."> attribute
-    // so screen readers and search engines see the right value too.
+    // Reflect the choice immediately (the effect above keeps it in sync on any
+    // other path, e.g. hydrate-from-storage).
     if (typeof document !== 'undefined') {
       document.documentElement.lang = next;
     }

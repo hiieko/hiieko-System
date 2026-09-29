@@ -2,6 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Euro, User, MapPin, Calendar,
@@ -246,7 +247,7 @@ function AprobarePageInner() {
 
 export default function AprobarePage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/aprobare']}>
       <AprobarePageInner />
     </RoleGuard>
   );

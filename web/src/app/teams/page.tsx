@@ -2,6 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useAuth } from '../../contexts/AuthContext';
@@ -467,7 +468,7 @@ function TeamsPageInner() {
 
 export default function TeamsPage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/teams']}>
       <TeamsPageInner />
     </RoleGuard>
   );

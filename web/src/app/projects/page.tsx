@@ -1,6 +1,7 @@
 'use client';
 
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type {
   Project,
@@ -570,7 +571,7 @@ function ProjectsPageInner() {
 
 export default function ProjectsPage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/projects']}>
       <ProjectsPageInner />
     </RoleGuard>
   );

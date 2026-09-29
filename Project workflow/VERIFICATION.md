@@ -163,6 +163,99 @@ word if CI should be wired immediately instead.
 - The scripts are Node 20 `.mjs` with zero dependencies, so they run unchanged in the existing
   Linux CI job; they were executed here on Windows/Node with the same results.
 
+## UX-R1A C2 - Role router, Control Tower route, canonical role map (2026-09-29)
+
+Checkpoint C2 implements the navigation/route foundation of the approved plan: root hook-order
+correction, `ControlTowerSurface` extraction, `/control-tower` as the canonical Control Tower route,
+`/statistici` → `/control-tower`, one canonical route-role source shared by the sidebar and
+`RoleGuard`, the persisted-locale `html lang` correction and the directly related `Sidebar` cleanup.
+**No translation was modified** (C3), **no worker surface was modified** (C3), **no backend
+authorization was modified** and **CI was not wired** (C5).
+
+### Files changed
+
+| Path | Change |
+|---|---|
+| `web/src/config/route-roles.ts` | **NEW** — canonical `ROUTE_ROLES` map (+ role groups). Single source for the sidebar, `RoleGuard`, the `/` router and the `/control-tower` gate. |
+| `web/src/components/ControlTowerSurface.tsx` | **NEW** — the Control Tower body extracted from `app/page.tsx` (767 lines). Only the component name and three relative import paths differ; no JSX, API call, KPI semantic, drill-down, red-flag, filter or project-selection logic touched. |
+| `web/src/app/page.tsx` | Rewritten as the role router (729 → 54 lines). `useAuth` is the only hook; the role branches are rendering decisions taken **after** it. |
+| `web/src/app/control-tower/page.tsx` | Renders `ControlTowerSurface`; roles outside `ROUTE_ROLES['/control-tower']` are sent to `/` with `router.replace`. Never renders `WorkerMyDay` / `WorkerDashboard`. |
+| `web/src/app/statistici/page.tsx` | **DELETED** — the duplicated KPI panel is gone. |
+| `web/next.config.js` | `redirects()`: `/statistici` → `/control-tower`, `permanent: false` (307, reversible, query string preserved). |
+| `web/src/config/navigation.ts` | Groups no longer carry roles; every item is `roles: ROUTE_ROLES['<href>']`; the `/statistici` slot is retargeted to `/control-tower` (reusing the existing `nav.statistici` key — no translation change). |
+| `web/src/components/Sidebar.tsx` | Dead identical ternary in `canSee` removed; `isActive('/')` is now exact-match so `/control-tower` is not double-highlighted. |
+| `web/src/components/LocaleProviderClient.tsx` | New effect mirrors the active locale onto `document.documentElement.lang` (fixes reload with a persisted EN); `layout.tsx` still renders `lang="ro"` (SSR default preserved). |
+| 15 × `web/src/app/**/page.tsx` | Guards now use `allowedRoles={ROUTE_ROLES['<route>']}`. |
+
+### Canonical route/role matrix (navigation == page guard)
+
+| Route | `ROUTE_ROLES[...]` = sidebar = `RoleGuard` | Before C2 (nav / guard) |
+|---|---|---|
+| `/` | `null` — every authenticated role (role router) | everyone / no guard, but hooks sat **after** the early returns |
+| `/control-tower` | 11 non-field roles | not a destination (re-export of `/`) |
+| `/solar-configurator` | 7 | nav 7 / guard 8 (`worker` extra) |
+| `/tasks`, `/planning`, `/issues`, `/pontaj`, `/rapoarte`, `/avize`, `/stocuri`, `/cheltuieli` | operational 9 | `/tasks`, `/planning`, `/issues`: nav 9 / guard 9 or none; `/pontaj`…`/cheltuieli`: nav **everyone** / guard 9 |
+| `/projects`, `/projects/[id]`, `/teams` | 7 | nav 7 / guard 7 |
+| `/workforce` | 4 | nav 7 (group) / guard 4 |
+| `/santiere` | 5 | nav 7 (group) / guard 5 |
+| `/aprobare` | 4 | nav 7 (group) / guard 4 |
+| `/utilizatori` | 1 (`admin`) | nav 1 / guard 1 |
+| `/notificari`, `/profil` | `null` | everyone / no guard |
+
+### Evidence — checkpoint commands
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` (shared, web, Mobile, backend) | **exit 0** |
+| `npm run web:typecheck` | **exit 0** |
+| `npm run web:build` | **exit 0** — `Compiled successfully`, static pages **25/25** (was 26; `/statistici` removed) |
+| `npm run guards:check` | **exit 1 — expected RED** (C1 debt untouched): G1 ×1 + G2 ×3, all in `WorkerDashboard.tsx` |
+| `npm run i18n:check` | **exit 1 — expected RED** (C1 debt untouched): 13 duplicates, 10 mojibake, 15 lossy `?`, 1 undefined key |
+
+Both RED checks report **exactly the same findings as at C1** (no count moved, same rows). The scans
+now cover **193** files (`+ControlTowerSurface.tsx`, `+route-roles.ts`, `−statistici/page.tsx`).
+
+Two failures were hit and resolved while executing the checkpoint (recorded for honesty):
+1. the scripted guard rewrite first appended `import { RoleGuard } … from '…/config/route-roles'`
+   → 15 × `TS2305/TS2304`; corrected to `{ ROUTE_ROLES }` before the green run;
+2. `.next/types/app/statistici/page.ts` still existed from the previous build and failed typecheck
+   until `next build` regenerated the route types (stale build artifact, not source).
+
+### Evidence — targeted static checks (scripted, all PASS)
+
+| Check | Result |
+|---|---|
+| `/` hook order: `useAuth()` at line 31 precedes the first return at line 36, and **0** hook calls follow it | PASS |
+| `ControlTowerSurface`: last hook (line 93) precedes the first return (line 123) — one stable path | PASS |
+| `/control-tower` + `ControlTowerSurface`: no executable `WorkerMyDay` / `WorkerDashboard` reference (the single textual hit is prose in the route comment) | PASS |
+| `navigation.ts`: 19 items, **0** without a `ROUTE_ROLES[...]` role source; no `/statistici` href; `/control-tower` present | PASS |
+| `web/src/app/**`: 17 `RoleGuard` usages, one literal list left (`/rapoarte/form`, documented in ISSUE-054) | PASS (1 documented exception) |
+| `LocaleProviderClient`: `document.documentElement.lang = locale` in a `[locale]` effect; `layout.tsx` keeps `<html lang="ro">` | PASS |
+
+### Evidence — `/statistici` redirect at runtime (production server)
+
+`npx next start -p 3999` against the build above, `curl -i` without following redirects:
+
+```text
+GET /statistici      -> HTTP/1.1 307 Temporary Redirect   location: /control-tower
+GET /statistici?x=1  -> HTTP/1.1 307 Temporary Redirect   location: /control-tower?x=1
+GET /control-tower   -> HTTP/1.1 200 OK
+GET /                -> HTTP/1.1 200 OK
+```
+
+### Not verified at C2
+
+- **No browser role sweep.** The `/` role router, the `/control-tower` redirect and the
+  persisted-EN `<html lang>` behaviour are verified by code path + typecheck + static checks, not in a
+  browser: no authenticated browser run was performed. A role/locale sweep belongs to the C5 evidence
+  set (or an immediate spot check on request).
+- No `db:verify` and no backend test run: C2 changes no schema, no API contract and no backend file.
+- `npm run lint` was not run; the C2 acceptance list is typecheck / `web:typecheck` / `web:build` /
+  `guards:check` / `i18n:check`.
+
+Route/authorization divergences found while building the map are recorded as ISSUE-052, ISSUE-053 and
+ISSUE-054 — none of them was silently resolved in C2.
+
 ## Current Verification Status
 | Check | Status | Last Run | Notes |
 |---|---|---|---|

@@ -2,6 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { Users, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, Mail, Shield } from 'lucide-react';
@@ -124,7 +125,7 @@ function UtilizatoriPageInner() {
 
 export default function UtilizatoriPage() {
   return (
-    <RoleGuard allowedRoles={['admin']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/utilizatori']}>
       <UtilizatoriPageInner />
     </RoleGuard>
   );

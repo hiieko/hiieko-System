@@ -2,6 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useLocale } from '@solar/shared';
@@ -217,7 +218,7 @@ function AvizePageInner() {
 
 export default function AvizePage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/avize']}>
       <AvizePageInner />
     </RoleGuard>
   );
