@@ -21,7 +21,8 @@
                     "test:cov":  "jest --coverage",
                     "test:e2e:stock":  "node e2e/stock-avize.js",
                     "test:e2e:access":  "node e2e/project-access.js",
-                    "db:verify":  "ts-node --transpile-only scripts/db-verify.ts"
+                    "db:verify":  "ts-node --transpile-only scripts/db-verify.ts",
+                    "seed:teams":  "ts-node --transpile-only scripts/seed-hiieko-teams.ts"
                 },
     "dependencies":  {
                          "@nestjs/common":  "^10.3.8",

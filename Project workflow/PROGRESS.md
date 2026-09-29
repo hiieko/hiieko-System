@@ -1,9 +1,9 @@
-﻿# Project Progress
+﻿﻿﻿﻿# Project Progress
 
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
-**Last Updated:** 2026-09-28 (Phase 2 Tasks Experience COMPLETE: 8 components + /tasks page rewrite, Gate A–E verified — typecheck 0, build 25 routes/0 errors, browser verification 21/21 + 9 screenshots; ISSUE-042 opened for backend status-transition gap)
+**Last Updated:** 2026-09-29 (P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED is verified end-to-end: `POST /api/daily-reports/:id/submit` on the web plus the status-less Mobile one-call contract, exactly ONE immutable revision per report, exactly ONE consumption movement per material (balance 6 -> 4, restored afterwards), exactly ONE `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`, so the action means exactly one thing), idempotent replays, PATCH-after-submit 400, insufficient stock refused with the report left a clean DRAFT, and `/rapoarte` + `/rapoarte/form` read-only after submit at 375px; browser gate `gate-p44-finalize.js` **25/25 PASS / 0 console errors**, backend **31 suites / 320 tests**, `db:verify` **71/71**, backend/shared/web typecheck 0 errors; ISSUE-051 opened for the Mobile daily-report screen - free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column, separate from `general_notes`)
 
 ---
 
@@ -11,11 +11,15 @@
 
 | Check | Status | Notes |
 |-------|--------|-------|
+| **P4.4 - Daily Report finalization (DRAFT -> SUBMITTED)** | ✅ **COMPLETE + E2E VERIFIED** | One trusted finalization core (`DailyReportsService.finalizeWithin()`) is shared by `POST /api/daily-reports/:id/submit` (web DRAFT -> SUBMITTED) and by `create()` when the persisted status is already `SUBMITTED` (Mobile's status-less POST + `Idempotency-Key`), so the offline queue needed no second endpoint. In ONE transaction: status `SUBMITTED`, `revision_number` 1, one immutable revision (`schema: 'daily-report-revision@1'`, snapshot `report`/`schema`/`submittedAt`/`submittedById`/`revisionNumber`/`stockReference`/`stockConsumption`), one `CONSUMPTION` stock movement per reported material with the deterministic key `daily_report:<reportId>:rev<N>:material:<materialId>` (`stock_movements.reference_type = 'daily_report'`), and the `DAILY_REPORT_SUBMITTED` audit row. A DRAFT create consumes nothing (no stock, no revision). **Verified:** browser gate `gate-p44-finalize.js` **25/25 PASS / 0 console errors** at 375px - confirmation dialog on the list (nothing sent on the first click, nothing on cancel), exactly ONE `POST .../submit` on confirm, toast, list stops offering Submit, `SUBMITTED` + revision 1, exactly one revision, exactly one movement, balance 6 -> 4, exactly ONE finalization audit row + exactly ONE `DAILY_REPORT_CREATED` row, frozen form (0 write controls, submitted banner, revision badge), read-only Review section showing "Revision: 1", idempotent replay (no second revision/consumption, `DAILY_REPORT_SUBMIT_REPLAYED` audited), PATCH on SUBMITTED -> 400, Mobile one-call contract 201 + replay creates no second report, insufficient stock -> aggregated 400 with the report left a clean DRAFT, fixtures removed and the balance restored; backend **31 suites / 320 tests PASS**, `db:verify` **71/71 PASS**, backend + shared + web typecheck 0 errors. **Audit vocabulary corrected:** the DRAFT create no longer writes `DAILY_REPORT_SUBMITTED` (it wrote the finalization action for a draft), so the action now matches exactly one event. Mobile app E2E NOT run - see ISSUE-051. |
+| **ISSUE-048 — Daily Report "Proposed Work" vs "General Notes" (two persisted fields)** | ✅ **COMPLETE** | The Work section's "Proposed Work" and the Execution section's "General Notes" were both written to the single `general_notes` column, and the form never read Proposed Work back, so save → reload looked like data loss (the textarea came back empty while the text showed up under General Notes). New dedicated, nullable column `daily_reports.proposed_work` — migration `20260929170000_add_daily_report_proposed_work` (`ALTER TABLE "daily_reports" ADD COLUMN "proposed_work" TEXT;`), additive and non-destructive, no other Daily Report field touched. Backend: `proposedWork` accepted by create/PATCH (service interface + both DTO classes, decorated so the global `whitelist` ValidationPipe cannot strip it); `update()` writes each of the two text fields only when the client sends it, so editing one can never clear the other and an omitted field preserves its stored value (`''` normalises to NULL, like `start_time`); list + `GET /:id` return both. Shared: `DailyReport.proposed_work`. Web: `formStateFromReport()` reads `report.proposed_work` (it was hard-coded `''`), `toCreateDto()` / `toUpdateDto()` send the two texts separately — the `state.proposedWork &#124;&#124; state.generalNotes` fallback is gone. Data compatibility: no historical text moved or guessed — the 6 dev rows keep their `general_notes` and get `proposed_work = NULL` (their 2 non-null note values are scratch/test text, not Proposed Work). Verified: `prisma validate` exit 0, `prisma generate` exit 0 (dev server stopped, no DLL lock), `migrate deploy` + `migrate status` clean (12 migrations), shared/backend/web typecheck 0 errors, backend **30 suites / 295 tests** PASS, `db:verify` **66/66** PASS (new check 8j), web build 26 routes exit 0, browser gate `gate-issue048-browser.js` **23/23** at 375px in RO + EN with 0 console errors — reload keeps each text in its own field, and independent per-field PATCH is proven at API + database level. No status workflow / stock / approval / revision / notification change; Mobile contract unchanged. Resolves ISSUE-048 — STOP here, P4.4 not started. |
+| **Dev Team Accounts / Teams / Projects / Tasks (seeded as real DB rows)** | ✅ **COMPLETE** | 12 development accounts (3 x TEAM_LEADER `chef1-3`, 3 x FOREMAN `fore1-3`, 3 x WORKER `wor1`/`wor2`/`work3`, 3 x TECHNICIAN `tech1-3`) + `UserProfile` + `Employee` + 12 `ProjectMember` + 3 teams (leadership + foreman + worker + technician, `leader_id` set, roster = `TeamMember`) + 9 `ProjectStage` / 9 `WorkPackage` + 3 `LocationZone` + 12 tasks / 24 `TaskAssignment` + 3 `PUBLISHED` `DailyPlan` (today) / 12 `DailyPlanTask` — written directly into PostgreSQL through `backend/scripts/seed-hiieko-teams.ts` (`npm run seed:teams --workspace=backend`), idempotent (2nd run produced identical counters). Applied to the 3 **existing** projects (AR-001 Parc Solar Arad, TM-002 Parc Solar Timisoara, CJ-003 Parc Solar Cluj) matched by code — no duplicate projects, no JSON/mock data, no schema/migration/API change. Verified: `db:verify` **65/65 PASS**; per-account API scoping for 8 logins (each worker/technician sees only their own assignments); `chef1` daily-plans for today → 1 PUBLISHED plan with 4 tasks; browser gate `gate-seed-teams.js` **8/8 page checks / 0 console errors** (real `/login` form → `/teams` team card + 4 members, `/tasks` AR-001-T01..T04 with status counts, `/projects/<id>` Etape + Membri tabs, worker RoleGuard + only-mine filtering, per-project isolation), evidence `gate-seed-teams.out.json`. Known leftovers: the 4 pre-existing verification fixtures (`SMOKE-40926`, `PH2-VER-01`, `P3-GATE-T1/T2` on CJ-003) were deliberately kept (ISSUE-050). |
+| **Phase 4.3.1 — Daily Report Persistence: Start/End Time + OHS/SSM Checklist** | ✅ **COMPLETE** | `DailyReport.start_time` / `end_time` (nullable `HH:mm` TEXT — a draft may be incomplete) + enum `OhsRiskType` (7 controlled categories: ppe, adverse_weather, procedures, electrical, tools_machinery, fall_height, other_risks) + child model `DailyReportOhsItem` (risk_type, notes, cascade FK); migration `20260929105838_add_daily_report_time_and_ohs`, already applied (`prisma migrate status` → "Database schema is up to date", 11 migrations). API: POST/PATCH accept `startTime`/`endTime`/`ohsItems[]`, `GET /:id` and the list include `ohs_items`; PATCH replaces the OHS collection atomically when provided, preserves it when omitted, never duplicates rows on repeated saves; `''` normalises to NULL. Controlled-vocabulary guard (riskType → 400) + `HH:mm` guard (400 service / 422 VALIDATION_ERROR DTO) replace the raw Prisma 500. Web: the form's time inputs + OHS checklist/notes map both ways so a reopen shows what was saved, and a created draft keeps its id in the URL so a reload reopens the same draft. Verified: typecheck shared 0 / backend 0 / web 0 errors, 29 suites / 279 tests, db:verify 65/65, web build exit 0, HTTP gate 23/23, browser gate 24/24 (375px, RO+EN, 0 console errors). No stock consumption, no approval/rejection, no revision snapshot, no notification; Mobile contract unchanged (status-less POST still `SUBMITTED`); report stays `DRAFT`. |
 | **Phase D — Design System Foundation** | ✅ **COMPLETE** | D0 docs (DEC-011, DESIGN_SYSTEM.md), D3.1 ToastProvider P0 fix, D1 tokens (tailwind.config.js, globals.css), D3.2–D3.6 shell redesign (Sidebar, Header, DropdownMenu, Breadcrumbs, hooks) |
 | **Vertical Slice — Projects** | ✅ **COMPLETE** | `/projects` list + create wizard (validation per step) + `/projects/[id]` overview/members/settings/stages — all wired to real NestJS controllers via `features/projects` |
 | **Phase 3.2 Authorization Hardening** | ✅ **COMPLETE** | ISSUE-033/034/035 resolved; RoleGuard wired on 8 pages; OWNER management sidebar; project scoping on 13 controllers |
-| **Backend Tests** | ✅ **PASS** | 27 suites / 232 tests |
-| **db:verify** | ✅ **PASS** | 60/60 checks |
+| **Backend Tests** | ✅ **PASS** | 31 suites / 320 tests |
+| **db:verify** | ✅ **PASS** | 71/71 checks |
 | **Backend Typecheck** | ✅ **PASS** | 0 errors |
 | **Shared Typecheck** | ✅ **PASS** | 0 errors |
 | **Web Typecheck** | ✅ **PASS** | 0 errors (design system shell refactor) |
@@ -28,6 +32,13 @@
 | **PostgreSQL 18** | ✅ **Canonical** | `localhost:5432` is the canonical development database |
 | **Phase 3 Gate F follow-up — Planning progress permission parity** | ✅ **COMPLETE** | Frontend mirrors full backend verdict (role + PUBLISHED + assignment/team scope via existing `my-tasks` endpoint); 11/11 browser checks on production build; ISSUE-041 FIXED |
 | **Phase 2 — Tasks Operational Experience (8 components + page rewrite)** | ✅ **COMPLETE** | `features/tasks/components/`: TaskCard (semantic `<article>`, aria-expanded/controls expand-collapse, cancel ConfirmDialog), TaskProgressBar (actual/planned only — no percent field), TaskDependencyChips (prereq/successor), TaskStatusWorkflow (TASK_WORKFLOW_NEXT-driven buttons), TaskQuantityEditor (Enter/blur save, rollback, disabled for VERIFIED/CANCELLED), TaskAssignModal (getProjectMembers + assignTask, no unassign UI), TaskCreateModal (only the 10 verified CreateTaskDto fields), TaskFilters (search + status Tabs with counts + only-mine); `/tasks` page: ProjectContext-driven fetch, role gates (CAN_CREATE/CAN_ASSIGN without TECHNICIAN/WORKER/QA_QC), workers default to only-mine. i18n: added `general.save`, `task.expand_details`, `task.collapse_details`. Gate E: 21/21 browser checks + 9 screenshots; typecheck 0; build 25 routes (9.25 kB /tasks) |
+| **Phase 3 planning gates (P3-G / P3-H)** | ✅ **GREEN** | CDP browser verification on dev build (2026-09-29): P3-G 7/7 (worker/TL/admin role matrix + RO/EN labels), P3-H 10/10 (a11y/keyboard, 44px targets incl. date bar `Ieri/Azi/Mâine`, local-date month/leap boundaries, day-summary-vs-API parity, empty-state date humanization RO+EN, 375/390px overflow); 0 console + 0 network errors. Harness-only fixes — no product code changed |
+| **Phase 4.1 — Domain + Database Foundation** | ✅ **COMPLETE** | Schema: `DailyReportApproval` (action/comment/reviewer audit) + `DailyReportRevision` (immutable JSON snapshot per submission) models; `DailyReport` extended with `reviewed_by`, `reviewed_at`, `revision_number`; `User` extended with `reviewed_reports`, `report_approvals`, `report_revisions` relations. Migration `20260929073840_add_daily_report_approval_revision`. Prisma generate OK. db:verify 62/62 PASS (0 fail, 0 skip). Typecheck PASS (0 errors). |
+| **Phase 4.2 — Shared Types / API Contract Alignment** | ✅ **COMPLETE** | `ReportStatus` aligned to UPPERCASE (`DRAFT`/`SUBMITTED`/`APPROVED`/`REJECTED`/`CANCELLED`); added `DailyReportApprovalAction`. `DailyReport` interface rewritten to match actual API response (snake_case, weather_notes/blockages/revision_number, Prisma relations). `DailyReportTask` and `DailyReportMaterialUsage` fixed to match backend models. Added `DailyReportApproval`, `DailyReportRevision`, `DailyReportWorker`, `ProductionEntry` shared types. Web `rapoarte/page.tsx` uses shared `DailyReport` type. Mobile `IMobileApiClient.createDailyReport` aligned with backend DTO. Mobile `TeamLeaderDailyReportScreen` uses local form types. All typechecks PASS (backend/shared/web 0 errors). Shared dist rebuilt. |
+| **Phase 4.3 — Backend Draft Update (PATCH)** | ✅ **COMPLETE** | Added `PATCH /api/daily-reports/:id` — DRAFT-only, owner-or-ADMIN authorization, atomic child-collection replacement (deleteMany+create), cross-project task validation. `UpdateDailyReportDto` (all fields optional). `DailyReportsService.update()` with full security checks. 9 new tests (15/15 total pass). Typecheck 0 errors. No migration, no stock deduction, no approval, no revision creation. |
+| **Phase 4.3 — Frontend Daily Report Form** | ✅ **COMPLETE** | Multi-section mobile-first Team Leader field form at `/rapoarte/form`. 7 sections: Work, OHS/SSM, Personnel, Materials, Tasks, Execution, Review. Draft create via POST, draft edit via PATCH. Save confirmation, unsaved-change guard, previous-date warning, draft indicator, review summary. RO/EN i18n (50+ keys). `DailyReportForm` + 7 section components + `useDailyReportForm` hook. 26 routes web build OK. No stock deduction, no approval, no revision creation. |
+| **Phase 4.3.1 — Daily Report Status Contract + PATCH Body Integrity** | ✅ **COMPLETE** | Contract: `POST` keeps the `SUBMITTED` DB default when `status` is omitted (Mobile/offline queue unchanged), accepts explicit `DRAFT`/`SUBMITTED`, and rejects anything else with 400; web `toCreateDto()` now sends `status: 'DRAFT'` so the documented draft create → PATCH edit flow actually works. `UpdateDailyReportDto` is decorated (+ nested entry classes) so the global `whitelist: true` ValidationPipe no longer strips the PATCH body. 10 new tests (4 service + 6 HTTP); backend 28 suites/259 tests PASS; live HTTP smoke 15/15 PASS against real PostgreSQL (DRAFT persisted after PATCH, Mobile-style POST → SUBMITTED, PATCH on SUBMITTED → 400); db:verify 64/64 PASS; web build exit 0. Resolves ISSUE-045 + ISSUE-046. No migration, no Prisma enum, no CHECK constraint, no approval workflow, no stock/revisions/notifications. |
+| **Dev / LAN access — Tablet & phone on the same Wi-Fi** | ✅ **COMPLETE** | Web was unusable from any device other than the laptop: `web/src/lib/api-client.ts` baked `NEXT_PUBLIC_API_URL` (`http://localhost:4000`) into the browser bundle, so a tablet at `http://<laptop-ip>:3000` called *itself* (`Failed to fetch`, login included). New `resolveApiBaseUrl()` derives the API host at runtime from the page hostname when the configured value is loopback (local dev and explicit remote URLs unchanged). Backend already listened on `0.0.0.0:4000` with `origin: '*'` CORS — no backend/proxy/CORS change, no new dependency. Verified with CDP `gate-lan-tablet.js` (loopback API blocked in-browser to simulate the tablet): before → `localhost:4000` blocked + `Failed to fetch`; after → 13/13 API calls to `192.168.1.130:4000` (login 200, `/api/auth/me` 200, `/api/projects` 200, `/api/control-tower/overview` 200), login token stored, 0 console errors, PASS; localhost regression run PASS. Web typecheck 0 errors. Resolves ISSUE-047. Documented in `HOW_TO_RUN.md` (+ firewall check). |
 
 ---
 
@@ -284,6 +295,50 @@ All quality gates verified as of 2026-09-25:
 ---
 
 ## Recent Work
+
+### 2026-09-29 - Phase 4.4 Daily Report Finalization (DRAFT -> SUBMITTED) GREEN
+
+**Verified end-to-end (browser + API + DB), no new product code was needed for the phase itself:**
+- `POST /api/daily-reports/:id/submit` finalizes a DRAFT exactly once. The confirmation dialog guards
+  it on both entry points (`/rapoarte` row action and the form's Review section): the first click only
+  asks, cancel sends nothing, confirm sends exactly one request.
+- Finalization writes, in one transaction: status `SUBMITTED` + `revision_number`, one immutable
+  revision snapshot, one consumption movement per material, and one audit row. A DRAFT create
+  consumes nothing.
+- After finalization the UI is read-only: the form freezes (disabled fieldset, no Save/Submit, banner
+  + revision badge) and the Review section shows the frozen state with its revision at 375px.
+- Replays are idempotent (web + Mobile), PATCH on a SUBMITTED report is refused with 400, and
+  insufficient stock is refused with an aggregated 400 that leaves the report a clean DRAFT.
+
+**Service change made during this verification (audit vocabulary):** `create()` audited a **DRAFT
+create** under `DAILY_REPORT_SUBMITTED` - the same action the finalization writes - so a draft plus
+its later submission produced two identical action rows for two different events. The DRAFT-create
+audit is now `DAILY_REPORT_CREATED` (rename + comment at the call site); `DAILY_REPORT_SUBMITTED` now
+means exactly one thing: DRAFT -> SUBMITTED. The backend suite was re-run after the rename.
+
+**Harness fixes (gate only, no product change):** the `submitCalls` counter no longer counts CORS
+pre-flights (they are OPTIONS), the revision-snapshot assertion now reads the real key names
+(`stockConsumption`, not `consumption`), and the Review-tab check matches the rendered
+`Revision: 1` label. The gate is repeatable: it provisions its own `(project, material)` stock fixture
+through the real APIs and deletes every report/audit/movement it created, restoring the balance.
+
+**Evidence:** verified during the Phase 4.4 browser/API/DB gate plus the supporting backend test,
+`db:verify` and typecheck runs (31 suites / 320 tests, `db:verify` 71/71, typecheck exit 0). The gate
+output, the 375px screenshots, the Jest / db-verify results and the three typecheck logs are local,
+git-ignored artifacts and are not part of the repository; the evidence is summarized here and in
+`VERIFICATION.md` -> Phase 4.4 (end of file).
+
+### 2026-09-29 — Phase 3 Planning Gates P3-G / P3-H GREEN
+
+**Completed (harness-only fixes — no product code changed):**
+- `gate-p3-lib.js` — `EX_EMPTY_STATE` made null-safe (guards `document.body` + try/catch) and its regex rewritten with `^….*/m`: the old `[^\n]*` inside a JS string literal became a real newline at runtime → `SyntaxError: Invalid regular expression: missing /` in the browser.
+- `gate-p3-lib.js` — `EX_DATE_BTNS` regex now matches the RO `Azi` label (`planning.today` = `"Azi"`, not `"Astăzi"`), so the date bar is fully counted.
+- `gate-p3-lib.js` — new `evalSettle(client, expr, predicate)` retry helper exported (guards mid-navigation transient CDP states; returns last value so a check FAILs instead of crashing the gate).
+- `gate-p3-h.js` — H08 clicks the `Azi` button (was `Astăzi`); H05/H07/H09 use `evalSettle`; H07/H09 re-select the project after `Page.navigate` so the for-date empty state renders.
+
+**Verification:**
+- `gate-p3-h.js` → 10/10 PASS (H05 44px date bar incl. `Azi`=64px; H07 `Nu există planuri pentru 15 ianuarie 2020…`; H08 `Azi` = local today; H09 `No plans for January 15, 2020…`), consoleErrors=0, networkErrors=0.
+- `gate-p3-g.js` → 7/7 PASS (worker/TL/admin matrix + RO/EN), consoleErrors=0, networkErrors=0.
 
 ### 2026-09-25 — Phase 3.2 Authorization Hardening
 
@@ -569,5 +624,10 @@ Files: `web/src/features/planning/{types,api,index}.ts`, `components/PlanTaskRow
 5. Authorization refinements — `actorId` propagation from auth context; deeper per-action UI gating for SITE_MANAGER/FOREMAN
 6. DTO validation — class-validator decorators (e.g. `PATCH /api/tasks/:id` returns 500 instead of 400 for a non-numeric `actualQuantity`)
 7. Resolve ISSUE-038 (attendance corrections endpoint) and ISSUE-039 (field-supervisor user directory)
+8. **ISSUE-051 - Mobile daily report screen** - `taskId` is sent as free text (a truncated task
+   description) so the API answers 404 "Task ... not found" for any report that has a task, and the
+   AsyncStorage draft is deleted *before* the API/queue call, so a failed submit loses the draft.
+   The Mobile app was not part of the P4.4 browser verification - fix both before calling the Mobile
+   daily report verified.
 
 See [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) and [HANDOFF.md](HANDOFF.md) for detailed planning.

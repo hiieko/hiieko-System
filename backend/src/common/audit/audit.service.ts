@@ -2,6 +2,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditRecordParams, AuditQueryFilter } from './audit.interface';
 
+/**
+ * Minimal surface needed to write one audit row.
+ *
+ * Satisfied both by `PrismaService` and by the client handed to
+ * `prisma.$transaction(async (tx) => ...)` (P4.4), so a caller that is already inside a
+ * business transaction can write its audit row through the SAME transaction instead of
+ * through the global client. That is what makes the P4.4 daily-report finalization atomic:
+ * the audit row commits (or rolls back) together with the report status + revision + stock.
+ */
+export interface AuditWriteClient {
+  auditLog: { create(args: { data: any }): Promise<any> };
+}
+
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
@@ -10,8 +23,14 @@ export class AuditService {
 
   /**
    * Records a structured audit event for high-value business actions.
+   *
+   * @param client Optional transaction client (P4.4). When provided, the row is written
+   *   through that client so it participates in the caller's transaction. Audit failures stay
+   *   non-fatal either way (the existing best-effort contract is unchanged) — but a ROLLBACK
+   *   of the caller's transaction also removes the audit row, so no audit entry can ever
+   *   describe a change that did not commit.
    */
-  async record(params: AuditRecordParams): Promise<any> {
+  async record(params: AuditRecordParams, client?: AuditWriteClient): Promise<any> {
     const {
       organizationId,
       actorId,
@@ -30,7 +49,8 @@ export class AuditService {
     );
 
     try {
-      return await this.prisma.auditLog.create({
+      const db: AuditWriteClient = client ?? this.prisma;
+      return await db.auditLog.create({
         data: {
           organization_id: organizationId,
           actor_id: actorId,

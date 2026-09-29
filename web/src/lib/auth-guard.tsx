@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { useLocale } from '@solar/shared';
 
 /**
  * AuthGuard — wraps pages that require authentication.
@@ -13,7 +14,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!loading && !user) {
       router.replace('/login');
     }
@@ -42,6 +43,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
  * Shows a "not authorized" message instead of rendering children
  * when the current user's role is not in the allowed list.
  * This prevents direct URL access to unauthorized pages.
+ *
+ * IMPORTANT: All React hooks must be called BEFORE any conditional returns.
  */
 export function RoleGuard({
   children,
@@ -53,21 +56,20 @@ export function RoleGuard({
   fallback?: React.ReactNode;
 }) {
   const { user } = useAuth();
+  const { locale } = useLocale();
   const router = useRouter();
 
+  // All hooks called unconditionally at the top (Rules of Hooks compliance)
+  const userRole = user?.role?.toLowerCase();
+
+  // Guard: no user → nothing to render
+  if (!user || !userRole) return null;
+
   // ADMIN and OWNER always pass (superset access)
-  if (!user) return null;
-  const userRole = user.role?.toLowerCase();
   if (userRole === 'admin' || userRole === 'owner') return <>{children}</>;
-  if (allowedRoles.includes(userRole!)) return <>{children}</>;
+  if (allowedRoles.includes(userRole)) return <>{children}</>;
 
-  // Not authorized — show fallback or redirect
-  useEffect(() => {
-    if (!allowedRoles.includes(userRole!)) {
-      // No redirect, just show fallback UI
-    }
-  }, []);
-
+  // Not authorized — show fallback
   return (
     <>
       {fallback ?? (
@@ -76,16 +78,19 @@ export function RoleGuard({
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🔒</span>
             </div>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Access Denied</h2>
+            <h2 className="text-lg font-bold text-slate-900 mb-2">
+              {locale === 'en' ? 'Access Denied' : 'Acces Interzis'}
+            </h2>
             <p className="text-sm text-slate-500 mb-4">
-              You do not have the required permissions to access this page.
-              Your current role ({userRole}) does not have access.
+              {locale === 'en'
+                ? `Your current role (${userRole}) does not have access to this page.`
+                : `Rolul curent (${userRole}) nu are permisiunea de a accesa această pagină.`}
             </p>
             <button
               onClick={() => router.back()}
               className="px-4 py-2 text-sm font-medium text-hii-600 hover:text-hii-700"
             >
-              ← Go Back
+              ← {locale === 'en' ? 'Go Back' : 'Înapoi'}
             </button>
           </div>
         </div>

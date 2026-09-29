@@ -124,16 +124,35 @@ export interface IMobileApiClient {
     notes?: string;
   }): Promise<ApiResponse<any>>;
 
-  // Daily Reports
+  // Daily Reports (P4.2 aligned with backend CreateDailyReportDto)
   createDailyReport(data: {
     projectId: string;
+    teamId?: string;
     reportDate: string;
-    weather?: string;
-    numberOfWorkers?: number;
-    workPerformed?: string;
-    materialsUsed?: string;
-    incidents?: string;
+    weatherNotes?: string;
+    blockages?: string;
+    generalNotes?: string;
     idempotencyKey?: string;
+    workers: Array<{
+      workerId: string;
+      hoursWorked: number;
+      overtimeHours?: number;
+      notes?: string;
+    }>;
+    tasks: Array<{
+      taskId: string;
+      quantityDone: number;
+      notes?: string;
+    }>;
+    materials: Array<{
+      materialId: string;
+      quantityUsed: number;
+    }>;
+    production?: Array<{
+      metricName: string;
+      quantity: number;
+      unit: string;
+    }>;
   }, idempotencyKey: string): Promise<ApiResponse<any>>;
 
   // Expenses

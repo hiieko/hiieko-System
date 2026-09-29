@@ -1,6 +1,6 @@
 # Issues
 
-Last Updated: 2026-09-27 (Operational Vertical Slices: Projects + Pontaj + Tasks; ISSUE-040 added for the missing DTO validation found during the Tasks live smoke test)
+Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column (migration `20260929170000_add_daily_report_proposed_work`), independent of `general_notes`; backend + shared + web changes and a 375px EN/RO browser gate are green. Earlier the same day: dev field-team data seeded and browser-verified (12 accounts / 3 teams / 12 tasks / 3 published daily plans), ISSUE-049 opened OPEN (two concurrent `next dev` servers corrupting web/.next), P4.3.1 daily report PERSISTENCE VERIFIED, ISSUE-047 RESOLVED)
 
 ## Status Legend
 - `OPEN`
@@ -10,6 +10,192 @@ Last Updated: 2026-09-27 (Operational Vertical Slices: Projects + Pontaj + Tasks
 - `WONT FIX`
 
 # Open Issues
+
+## ISSUE-044 — Backend missing PATCH endpoint for draft daily report editing
+**Status:** ✅ `RESOLVED` (2026-09-29 — P4.3 backend slice)
+
+### Description
+The backend had only `GET /api/daily-reports`, `GET /api/daily-reports/:id`, and `POST /api/daily-reports`. There was no way to update an existing `DRAFT` report — each `POST` always created a new report. Draft editing was impossible without this endpoint.
+
+### Resolution
+Added `PATCH /api/daily-reports/:id` with:
+- `UpdateDailyReportDto` (all fields optional)
+- `DailyReportsService.update()` — DRAFT-only, owner-or-ADMIN authorization, cross-project task integrity validation, atomic delete+create for child collections
+- Controller endpoint with `@RequireEntityProjectAccess` and `@Roles` (same as POST)
+- 9 new tests (15/15 pass); typecheck 0 errors; no migration required
+
+### Security
+- Only DRAFT reports can be updated
+- Only report owner (team_leader_id) or ADMIN/OWNER can edit
+- Project access enforced via `RequireEntityProjectAccess`
+- Cross-project task integrity validated
+- No stock deduction, no approval, no revision creation
+
+### Files Changed
+- `backend/src/modules/daily-reports/dto/update-daily-report.dto.ts` (NEW)
+- `backend/src/modules/daily-reports/daily-reports.service.ts` (+ import, + update() method)
+- `backend/src/modules/daily-reports/daily-reports.controller.ts` (+ import, + Patch endpoint)
+- `backend/test/daily-reports.service.spec.ts` (+ import, + 9 tests)
+
+---
+
+---
+
+## ISSUE-045 — Daily report status contract drift: web draft create produced SUBMITTED (hence uneditable)
+**Status:** ✅ `RESOLVED` (2026-09-29 — P4.3.1 status contract)
+
+### Description
+`daily_reports.status` is a plain `TEXT NOT NULL DEFAULT 'SUBMITTED'` column (init migration `20260922102428`, line 358) — there is no enum type and no CHECK constraint. The 5-value set (`DRAFT | SUBMITTED | APPROVED | REJECTED | CANCELLED`) exists only in `shared/src/types.ts`, `backend/scripts/db-verify.ts` and the workflow docs.
+`POST /api/daily-reports` therefore always produced `SUBMITTED` (web `toCreateDto()` and Mobile both omitted `status`), while `PATCH /api/daily-reports/:id` is DRAFT-only — so the documented "draft create via POST, draft edit via PATCH" flow (PROGRESS.md — Phase 4.3 Frontend Daily Report Form) could not work end to end: the first save produced a locked report.
+Verified live before the fix: allowed vocabulary actually used in dev DB was `SUBMITTED` only.
+
+### Resolution
+- Create contract: `status` stays optional — omitted ⇒ DB default `SUBMITTED` (Mobile + offline queue unchanged); explicit `'DRAFT'` or `'SUBMITTED'` accepted; anything else ⇒ 400 `status must be one of ['DRAFT', 'SUBMITTED']`.
+- `DailyReportsService.create()` enforces that whitelist at runtime (POST is not covered by the global ValidationPipe because the controller's body type is a TypeScript interface → metatype `Object`) and now writes `status: dto.status`.
+- `dto/create-daily-report.dto.ts` mirrors the optional field for Swagger/contract parity.
+- Web `web/src/features/daily-reports/helpers.ts` → `toCreateDto()` sends `status: 'DRAFT'`, so create → edit works.
+- Approval/rejection statuses are NOT transitionable yet — they belong to the later review workflow. No submit/approve/reject endpoint, no stock, no revisions, no notifications.
+- No Prisma schema change, no migration, no enum, no CHECK constraint.
+
+### Files Changed
+- `backend/src/modules/daily-reports/daily-reports.service.ts` (status whitelist in `create()`, `status: dto.status`)
+- `backend/src/modules/daily-reports/dto/create-daily-report.dto.ts` (mirrored optional `status`)
+- `web/src/features/daily-reports/helpers.ts` (`toCreateDto()` → `status: 'DRAFT'`)
+- `backend/test/daily-reports.status-contract.spec.ts` (NEW — 4 service tests)
+
+---
+
+## ISSUE-046 — Global ValidationPipe silently emptied the daily report PATCH body (draft edits persisted nothing)
+**Status:** ✅ `RESOLVED` (2026-09-29 — P4.3.1)
+
+### Description
+`backend/src/main.ts` registers `new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: false, ... })` globally, and Nest 10.4.22 forces `forbidUnknownValues: false`. `UpdateDailyReportDto` was a decorator-less class, and `whitelist: true` deletes every property that carries no validation decorator — nested array-element properties included. Every `PATCH /api/daily-reports/:id` therefore reached the service as an empty object: the DRAFT/owner gates ran, no field was ever persisted, yet an audit row was still written. The 15 existing unit tests call the service directly and bypass the HTTP pipe, so the endpoint looked green while being effectively a no-op.
+Live proof (throwaway Nest app, the real DTO + the exact `main.ts` pipe options): `@Body() dto: UpdateDailyReportDto` ⇒ `HTTP 201 {"keys":[],"dto":{}}`; an interface-typed body (the POST case) ⇒ body preserved because the pipe is skipped for metatype `Object`.
+
+### Resolution
+- `UpdateDailyReportDto` now carries `class-validator`/`class-transformer` decorators on every field, plus dedicated nested entry classes (`DailyReportWorkerEntryDto`, `DailyReportTaskEntryDto`, `DailyReportMaterialEntryDto`, `DailyReportProductionEntryDto`, `DailyReportOhsItemEntryDto`) using `@IsArray() @ValidateNested({ each: true }) @Type(...)`.
+- `status` is deliberately absent from the PATCH DTO — PATCH is DRAFT-only and never transitions status.
+- Guarded by a new HTTP-level suite that mounts the real controller with `main.ts`'s exact pipe configuration.
+
+### Files Changed
+- `backend/src/modules/daily-reports/dto/update-daily-report.dto.ts` (decorators + nested entry classes)
+- `backend/test/daily-reports.status-contract.spec.ts` (NEW — 6 HTTP tests)
+
+---
+
+## ISSUE-047 — Web app opened from a tablet/phone on the LAN rendered but every API call failed (`localhost:4000` baked into the bundle)
+**Status:** ✅ `RESOLVED` (2026-09-29 — dev/LAN access)
+
+### Description
+`web/src/lib/api-client.ts` built its base URL as
+`process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'`. Next.js inlines
+`NEXT_PUBLIC_*` values into the client bundle at build time, and `web/.env.local`
+ships `NEXT_PUBLIC_API_URL=http://localhost:4000`, so every browser session — no
+matter which device opened the page — called `http://localhost:4000/api/...`.
+On a tablet opened at `http://<laptop-ip>:3000` that resolves to the tablet
+itself: the shell rendered (the page comes from the laptop), while every API call
+failed with `Failed to fetch` (login included). It looked like "the frontend works
+but the backend is down".
+
+The backend was never the problem: `backend/src/main.ts` already listens on
+`0.0.0.0:4000` with `origin: '*'` CORS, and the Next.js dev server already binds
+all interfaces — verified live (`http://192.168.1.130:4000/api/docs` → 200).
+Only the client-side URL was wrong.
+
+### Resolution
+- `resolveApiBaseUrl()` added next to the export in `web/src/lib/api-client.ts`:
+  server-side render and loopback-hosted pages keep the configured value (local
+  development unchanged); a page served from another host (LAN IP) with a
+  loopback-configured API reuses that configured port on the page's hostname
+  (`http://192.168.1.130:4000`); an explicitly remote configured URL is always
+  respected; relative/same-origin configuration is returned untouched.
+- `web/.env.local` is deliberately unchanged (still `http://localhost:4000`), so
+  nothing has to be edited when the laptop's DHCP address changes.
+- Documented in `HOW_TO_RUN.md` (new "Run the dev stack on a tablet / phone"
+  section incl. the firewall check) and in `web/.env.example` / `.env.example`.
+- No backend change, no new dependency, no CORS/proxy layer. Mobile still needs
+  `EXPO_PUBLIC_API_URL` set to the LAN IP explicitly (React Native has no `window`).
+
+### Verification
+CDP gate `gate-lan-tablet.js` (Chrome, real login form, loopback API blocked
+in-browser to simulate the tablet): before → page at `http://192.168.1.130:3000`
+called `localhost:4000`, blocked, `Failed to fetch`; after → all 13 API requests
+to `192.168.1.130:4000` (`/api/auth/login` 200, `/api/auth/me` 200,
+`/api/projects` 200, `/api/control-tower/overview` 200), 0 loopback calls,
+0 console errors, login token stored and redirect to `/` (PASS). Localhost
+regression run unchanged (all calls to `localhost:4000` → 200, PASS). Web
+typecheck 0 errors. Evidence: `gate-lan-tablet.out.json`.
+
+### Files Changed
+- `web/src/lib/api-client.ts` (`resolveApiBaseUrl()` + `API_BASE_URL`)
+- `HOW_TO_RUN.md` (LAN section), `web/.env.example`, `.env.example` (comments)
+- `gate-lan-tablet.js` (NEW — verification harness; git-ignored like the other gates)
+
+---
+
+## ISSUE-048 — "Proposed Work" and "General notes" both write to the single `general_notes` column
+**Status:** ✅ `RESOLVED` (2026-09-29 — ISSUE-048 fix: dedicated `daily_reports.proposed_work` column; verified by `gate-issue048-browser.js` 23/23 at 375px in RO + EN)
+
+### Description
+The P4.3 daily report form exposes two text fields that persist to the same backend column:
+- `DailyReportWorkSection` → "Proposed Work" (`daily_report.section_work`) → `form.proposedWork`
+- `DailyReportExecutionSection` → "General notes" (`daily_report.general_notes`) → `form.generalNotes`
+
+Both are written by `toCreateDto()` / `toUpdateDto()` as
+`generalNotes: state.proposedWork || state.generalNotes || undefined`, while
+`formStateFromReport()` only populates `generalNotes` (leaving `proposedWork` empty).
+
+### Impact
+- After a reload/reopen, the "Proposed Work" textarea is empty even though its text was stored — the value only shows under "General notes" in the Execution section and the review summary. It looks like data loss during the required create → save → reopen → reload cycle.
+- If the Team Leader edits "General notes" in the Execution section while the (empty-on-reload) Proposed Work field is untouched, the PATCH sends an empty/`undefined` `proposedWork` fallback, so the edited general notes can be silently dropped.
+- No schema/API change is required to fix it — this is a frontend state-modelling defect over an existing single column.
+
+### Required Action
+Decide the intended model first (one field for the whole report vs. two distinct persisted values with a real second column), then map it 1:1 in `formStateFromReport()`/`toCreateDto()`/`toUpdateDto()`. Do not fix by silently duplicating text into both fields — that recreates the overwrite path. Out of scope for the P4.3.1 persistence slice (which was scoped to start/end time + OHS/SSM).
+
+---
+
+### Resolution
+`daily_reports.proposed_work` (nullable `TEXT`) is now the dedicated column for Proposed Work — migration `20260929170000_add_daily_report_proposed_work` (`ALTER TABLE "daily_reports" ADD COLUMN "proposed_work" TEXT;`), additive and non-destructive; no other Daily Report field was touched.
+
+- **Backend:** `CreateDailyReportDto` (service interface + mirrored DTO class) and `UpdateDailyReportDto` accept `proposedWork`; `create()` writes `proposed_work` (`''` normalises to NULL, like `start_time`); `update()` writes `proposed_work` and `general_notes` **independently** (`if (dto.x !== undefined)`), so a PATCH carrying one field can never clear the other and an omitted field keeps its stored value. `GET` (list + `/:id`) already returns every scalar column, so both fields come back side by side.
+- **Shared:** `shared/src/types.ts` exposes `DailyReport.proposed_work?: string | null` next to `general_notes` (shared dist rebuilt) — no frontend-only adapter hides the API distinction.
+- **Web:** `formStateFromReport()` populates `proposedWork` from `report.proposed_work` (it was hard-coded `''` → the visible "data loss"); `toCreateDto()` / `toUpdateDto()` map the Work section textarea to `proposedWork` and the Execution section textarea to `generalNotes`; the `state.proposedWork || state.generalNotes` fallback is gone.
+- **Data compatibility (STEP 6):** nothing was migrated or guessed. The 6 rows in the dev DB keep their `general_notes` values and get `proposed_work = NULL`; 5 had `general_notes = NULL` and the 2 non-null values (`smoke-mobile-submit`, `Nader guesmi`) are scratch/test text, not Proposed Work, so no historical content is redistributed automatically.
+- **Deliberately unchanged:** status workflow, stock consumption, approval/rejection, revisions, notifications, Mobile (its `generalNotes` payload still writes `general_notes`).
+
+### Verification
+- `prisma validate` exit 0; `prisma generate` **exit 0** (run with the dev server stopped, avoiding the Windows DLL lock); `prisma migrate deploy` applied `20260929170000_add_daily_report_proposed_work`; `prisma migrate status` → "Database schema is up to date" (12 migrations).
+- shared build + shared/backend/web typecheck → 0 errors; backend tests **30 suites / 295 tests PASS** (new `backend/test/daily-reports.proposed-work.spec.ts`, 16 tests); `db:verify` **66/66 PASS** (new check 8j: `daily_reports.proposed_work` exists, distinct from `general_notes`); web build exit 0 (26 routes).
+- Browser gate `gate-issue048-browser.js` **23/23 PASS, 0 console errors** (headless Chrome, 375x812, EN then RO; real form + real API + real PostgreSQL): create → save → reload keeps "Install mounting structures" in the Proposed Work textarea and "Access road muddy after rain" in the Execution General Notes field (previously the textarea came back empty); the DB shows the two texts in two columns; an API `PATCH { proposedWork }` alone leaves `general_notes` untouched and vice versa; editing Proposed Work only and then General Notes only leaves the other field unchanged after reload; RO renders Lucrari Propuse / Observatii Generale with the same values; 0 failed API requests; no horizontal overflow. Evidence: `gate-issue048-browser.out.json`.
+
+### Files Changed
+- `backend/prisma/schema.prisma` (`DailyReport.proposed_work String?`)
+- `backend/prisma/migrations/20260929170000_add_daily_report_proposed_work/migration.sql` (NEW)
+- `backend/src/modules/daily-reports/daily-reports.service.ts` (create + update + DTO interface + contract doc)
+- `backend/src/modules/daily-reports/dto/create-daily-report.dto.ts`, `dto/update-daily-report.dto.ts` (`proposedWork`)
+- `shared/src/types.ts` (`DailyReport.proposed_work`)
+- `web/src/features/daily-reports/helpers.ts` (read + write mapping, no aliasing)
+- `backend/test/daily-reports.proposed-work.spec.ts` (NEW — 16 tests)
+- `backend/scripts/db-verify.ts` (+ check 8j)
+- `gate-issue048-browser.js` (NEW verification harness; git-ignored like the other gates)
+
+## ISSUE-043 — P4.1 migration dropped 8 manually-created indexes (idx_aviz_items_*, idx_stock_balances_*, idx_stock_movements_*)
+**Status:** 🔍 `OPEN` (2026-09-29 — recorded during P4.1 verification)
+
+### Description
+During P4.1 migration `20260929073840_add_daily_report_approval_revision`, Prisma dropped 8 manually-created indexes that were not declared in `schema.prisma`:
+- `idx_aviz_items_*`
+- `idx_stock_balances_*`
+- `idx_stock_movements_*`
+
+These indexes were created outside Prisma (likely via raw SQL) and are not part of the Prisma-managed schema.
+
+### Impact
+Unknown. May degrade query performance on aviz items, stock balances, and stock movements if these indexes were actually used by query paths.
+
+### Required Action
+A focused performance/index review must inspect whether these indexes are still required by actual query paths. If needed, they should be declared in `schema.prisma` via `@@index([...])` so Prisma manages them. Do NOT randomly recreate them — verify query plans first.
 
 ---
 
@@ -276,6 +462,82 @@ Day untouched; no new backend endpoint):
 
 ### Resolution
 Not started — backend change, out of Phase 2 scope. Add transition validation in `TasksService.update()` (reject illegal `current → next` pairs with 400/409) or a dedicated state-machine guard, plus unit tests. Frontend must remain the UX-level guard regardless.
+
+---
+
+## ISSUE-049 — Two concurrent `next dev` servers share `web/.next` and corrupt the dev build (every route 404)
+**Status:** 🔍 `OPEN` (found 2026-09-29 while verifying the seeded team data; mitigated locally, root cause not yet guarded)
+
+### Description
+Two `next dev` process chains were running from the repo root at the same time (started 16:13 and 16:33 — every `npm run web:dev` leaves an npm → cmd → next → next-server chain, and Next silently takes port 3001 when 3000 is busy). Both compile into the single `web/.next` directory of this monorepo.
+
+Symptom: after a period of normal use the dev server began returning 404 for **everything** — `/login` 404, `/teams` 404, and every `/_next/static/...` chunk 404 — while the process stayed alive and `/` still briefly answered 200. The dev log showed the cause:
+`<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat 'C:\Users\...\web\.next\server\app\rapoarte\form\page.js'`
+followed by `Compiled /_error` and permanent 404s.
+
+### Impact
+- The web app looks broken (blank/404 pages, no CSS/JS) although no source file changed — it is build/cache state, not application code.
+- Browser verification gates report a false negative ("login form never rendered") because `/login` itself 404s.
+- Same failure class as the earlier "stale dev servers + a production `.next`" incident in the 2026-09-29 LAN/handoff notes; it can burn a full debugging cycle if the 404s are misread as an app bug.
+
+### Resolution
+Operational fix applied and verified: killed both chains, `Remove-Item web\.next -Recurse -Force`, started exactly ONE `npm run web:dev` (single listener on `:3000`) → `/login` 200 immediately; the seed verification gate then ran green (`gate-seed-teams.js` 8/8, 0 console errors).
+
+Remaining (optional guardrail): make `web:dev` fail fast when 3000/3001 is already served or detect a second dev server, and document "one dev server only" in `HOW_TO_RUN.md`. Do **not** "fix" this in application code — no source change is involved.
+
+---
+
+## ISSUE-050 — Pre-existing verification fixture tasks appear in the CJ-003 task list next to the seeded field work
+**Status:** 🔍 `OPEN` (recorded 2026-09-29 during the team seed; needs a dev-DB/product decision)
+
+### Description
+Project CJ-003 (Parc Solar Cluj) still contains 4 tasks created by earlier verification gates and never cleaned up: `SMOKE-40926` ("Smoke Task (Tasks slice)", `IN_PROGRESS`), `PH2-VER-01` ("Phase2 Verify Task", `READY`), `P3-GATE-T1` ("P3 gate task one", `PLANNED`) and `P3-GATE-T2` ("P3 gate task two", `BLOCKED`). None of them has a `task_assignment` or a `daily_plan_task` row.
+
+The team seed added the real Cluj work (`CJ-003-T01..T04`) beside them, so `/tasks` for Cluj shows 8 tasks (4 real + 4 fixtures) while Arad and Timisoara show 4.
+
+### Impact
+- Demo/QA noise: a Cluj team leader sees four test items that look like real work orders.
+- They are also **documented evidence**: `VERIFICATION.md` and `HANDOFF.md` reference `SMOKE-40926` (task create-contract evidence, `id=a2df4f25-…`) and `PH2-VER-01` (Phase 2 Tasks gate E browser run: create → transition `PLANNED→READY` → quantity save), so deleting them silently would invalidate those references.
+
+### Required Action
+Pick one and stay consistent: (a) keep them and distinguish them as fixtures in the dataset/UI, or (b) delete them **and** annotate the affected `VERIFICATION.md` rows so the evidence trail stays honest. `backend/scripts/seed-hiieko-teams.ts` deliberately does not touch them; if cleanup is chosen, do it as a separate reviewed step (deleting a task cascades to its assignments/plan tasks — there are none here).
+
+---
+
+# ISSUE-051 — Mobile daily report screen sends a free-text `taskId` and deletes its draft before a successful submit
+**Status:** 🔍 `OPEN` (found 2026-09-29 while verifying P4.4; the web + API finalization path is verified, the Mobile screen is not)
+
+### Description
+Two defects in `Mobile/src/screens/TeamLeaderDailyReportScreen.tsx` `handleSubmit()`:
+
+1. **`taskId` is free text, not a task UUID.** The payload maps each entered task to
+   `{ taskId: <first 50 chars of the task description>, quantityDone, notes }` (a `task_<index>`
+   fallback when the description is empty). `taskId` is the primary key of `Task`, and the backend
+   resolves every referenced task before writing: `DailyReportsService.create()` collects
+   `dto.tasks[].taskId`, looks the ids up in `task` and throws `NotFoundException`
+   (`Task <value> not found`) for anything that is not a task of the same project (the R3.1
+   cross-project task validation, `daily-reports.service.ts`). The screen already refuses to submit
+   with zero tasks (alert "Adaugă cel puțin o sarcină executată"), so **every** Mobile report that
+   passes that guard carries at least one non-UUID `taskId` and is refused with HTTP 404.
+2. **The local draft is deleted before the network call.** `await AsyncStorage.removeItem(DRAFT_KEY)`
+   runs *before* the offline branch (`enqueueOperation('daily_report', 'create', ...)`) and before
+   `apiClient.createDailyReport(...)`; the `catch` only shows an `Alert`. A failed submit (the 404
+   above, no connectivity, a 5xx) therefore destroys the draft the user was working from — exactly the
+   data loss the draft exists to prevent.
+
+### Impact
+- Mobile daily-report submission is dead-ended as soon as a task is added (404), while the web flow
+  and the Mobile *HTTP contract* are verified green (see `VERIFICATION.md` → Phase 4.4).
+- On failure, the entered work is unrecoverable on the device: no draft left and no queue entry.
+- Neither defect is exercised by the P4.4 gate (which drives the browser and calls the Mobile
+  contract over HTTP), so the P4.4 report must not be read as "Mobile verified".
+
+### Required Action
+- Send the real task id: choose a `Task` for the selected project (e.g. from `/api/tasks`) instead of
+  the description, and keep the description in `notes`.
+- Remove the draft only after the API call succeeded or after the payload is durably queued by
+  `enqueueOperation()` — the offline branch is the intended "saved on the phone" path.
+- Re-run the P4.4 gate plus a device/emulator pass before the Mobile daily report is called verified.
 
 ---
 

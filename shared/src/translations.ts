@@ -958,6 +958,40 @@ Object.assign(d, {
   'planning.submit_creating': T('Se creează...', 'Creating...'),
 });
 
+// Phase 3 — Daily Planning operational experience (additive keys only)
+Object.assign(d, {
+  // Day summary
+  'planning.summary_title': T('Rezumatul zilei', 'Day summary'),
+  'planning.summary_plans': T('Planuri', 'Plans'),
+  'planning.summary_my_plans': T('Planurile mele', 'My plans'),
+  'planning.summary_tasks': T('Sarcini planificate', 'Planned tasks'),
+  'planning.summary_my_tasks': T('Sarcinile mele', 'My tasks'),
+  'planning.summary_completed': T('Finalizate', 'Completed'),
+  'planning.summary_blocked': T('Blocate', 'Blocked'),
+  'planning.summary_teams': T('Echipe', 'Teams'),
+  'planning.summary_teams_empty': T('Fără echipă', 'No team'),
+  // Status filter chips
+  'planning.status_filter_label': T('Filtrează planurile după status', 'Filter plans by status'),
+  'planning.status.all': T('Toate', 'All'),
+  // Plans / My work view toggle
+  'planning.view_toggle_label': T('Comută între planurile proiectului și munca ta', 'Switch between project plans and your work'),
+  'planning.view_plans': T('Planuri', 'Plans'),
+  'planning.view_my_work': T('Munca mea', 'My work'),
+  // My work (worker / technician)
+  'planning.my_work_hint': T('Sarcinile tale din planurile publicate pentru această zi.', 'Your tasks from the published plans for this day.'),
+  'planning.my_work_empty_title': T('Nicio sarcină atribuită', 'No assigned work'),
+  'planning.my_work_empty_message': T('Nu ai sarcini în planurile publicate pentru această zi.', 'You have no tasks in the published plans for this day.'),
+  // Empty state with date context
+  'planning.empty_for_date_message': T('Nu există planuri pentru {date} în acest proiect.', 'No plans for {date} in this project.'),
+  // Plan card metadata
+  'planning.updated_at': T('Actualizat', 'Updated'),
+  // Task groups inside expanded plan
+  'planning.group_pending': T('De executat', 'To do'),
+  'planning.group_completed': T('Finalizate', 'Completed'),
+  // Task status chip on plan task rows
+  'planning.task_status_label': T('Status sarcină', 'Task status'),
+});
+
 // ============================================================================
 // Issues & Blockers (Phase 4) — /issues
 // All page copy, labels and tutorial content as translation keys (ro + en).
@@ -1052,6 +1086,94 @@ Object.assign(d, {
   'tutorial.issues.step2': T('Raportează probleme noi cu butonul „Raportează problemă" și deschide „Detalii" pentru descrierea completă și NCR-urile legate.', 'Report new issues with the "Report Issue" button and open "Details" for the full description and linked NCRs.'),
   'tutorial.issues.role_foreman': T('Raportează imediat problemele din teren și verifică zilnic blocajele active.', 'Immediately report field issues and check active blockers daily.'),
   'tutorial.issues.role_site_manager': T('Prioritizează blocajele critice și asigură acțiuni corective pentru fiecare problemă activă.', 'Prioritise critical blockers and make sure every active issue gets a corrective action.'),
+
+  // --- Daily Report Form (P4.3) ---
+  'daily_report.title_new': T('Raport Zilnic Nou', 'New Daily Report'),
+  'daily_report.title_edit': T('Editează Raport Zilnic', 'Edit Daily Report'),
+  'daily_report.create': T('Raport Nou', 'New Report'),
+  'daily_report.section_work': T('Lucrări Propuse', 'Proposed Work'),
+  'daily_report.section_ohs': T('Briefing SSM / Identificare Riscuri', 'OHS Briefing / Risk Identification'),
+  'daily_report.section_personnel': T('Personal Participant', 'Participating Personnel'),
+  'daily_report.section_materials': T('Materiale', 'Materials'),
+  'daily_report.section_tasks': T('Sarcini Executate', 'Completed Tasks'),
+  'daily_report.section_execution': T('Detalii Execuție', 'Execution Details'),
+  'daily_report.section_review': T('Revizuire', 'Review'),
+  'daily_report.team_leader': T('Șef Echipă', 'Team Leader'),
+  'daily_report.project': T('Proiect', 'Project'),
+  'daily_report.report_date': T('Data Raportului', 'Report Date'),
+  'daily_report.start_time': T('Ora Începere', 'Start Time'),
+  'daily_report.end_time': T('Ora Încheiere', 'End Time'),
+  'daily_report.proposed_work': T('Lucrări Propuse', 'Proposed Work'),
+  'daily_report.proposed_work_placeholder': T('Descrie lucrările propuse pentru ziua respectivă...', 'Describe the proposed work for the day...'),
+  'daily_report.ppe': T('EIP (Echipament Individual de Protecție)', 'PPE (Personal Protective Equipment)'),
+  'daily_report.adverse_weather': T('Vreme nefavorabilă / Mediu ostil', 'Adverse weather / Hostile environment'),
+  'daily_report.procedures': T('Proceduri / Flux tehnologic', 'Procedures / Technological flow'),
+  'daily_report.electrical': T('Electrocutare / Electricitate', 'Electrical / Electrocution'),
+  'daily_report.tools_machinery': T('Unelte / Utilaje / Manipulare materiale', 'Tools / Machinery / Material handling'),
+  'daily_report.fall_height': T('Cădere de la înălțime / Surpare teren', 'Fall from height / Ground collapse'),
+  'daily_report.other_risks': T('Alte riscuri identificate', 'Other identified risks'),
+  'daily_report.ohs_confirmed': T('Am verificat și confirm măsurile SSM', 'I have checked and confirm OHS measures'),
+  'daily_report.worker_name': T('Nume Prenume', 'Full Name'),
+  'daily_report.worker_duties': T('Atribuții principale', 'Main Duties'),
+  'daily_report.worker_ohs': T('Confirmare SSM', 'OHS Confirmation'),
+  'daily_report.add_worker': T('Adaugă Persoană', 'Add Person'),
+  'daily_report.remove_worker': T('Elimină', 'Remove'),
+  'daily_report.no_workers': T('Nicio persoană adăugată', 'No personnel added'),
+  'daily_report.material': T('Material', 'Material'),
+  'daily_report.quantity': T('Cantitate', 'Quantity'),
+  'daily_report.remarks': T('Observații', 'Remarks'),
+  'daily_report.add_material': T('Adaugă Material', 'Add Material'),
+  'daily_report.remove_material': T('Elimină', 'Remove'),
+  'daily_report.no_materials': T('Niciun material adăugat', 'No materials added'),
+  'daily_report.task': T('Sarcină', 'Task'),
+  'daily_report.quantity_done': T('Cantitate Realizată', 'Quantity Done'),
+  'daily_report.add_task': T('Adaugă Sarcină', 'Add Task'),
+  'daily_report.remove_task': T('Elimină', 'Remove'),
+  'daily_report.no_tasks': T('Nicio sarcină adăugată', 'No tasks added'),
+  'daily_report.weather_notes': T('Observații Meteo', 'Weather Notes'),
+  'daily_report.weather_notes_placeholder': T('Condiții meteo, temperatură, vânt...', 'Weather conditions, temperature, wind...'),
+  'daily_report.blockages': T('Blocaje', 'Blockages'),
+  'daily_report.blockages_placeholder': T('Blocaje întâmpinate în timpul execuției...', 'Blockages encountered during execution...'),
+  'daily_report.general_notes': T('Observații Generale', 'General Notes'),
+  'daily_report.general_notes_placeholder': T('Alte observații relevante...', 'Other relevant notes...'),
+  'daily_report.draft_saved': T('Ciornă salvată', 'Draft saved'),
+  'daily_report.draft_saving': T('Se salvează...', 'Saving...'),
+  'daily_report.save_failed': T('Eroare la salvare', 'Save failed'),
+  'daily_report.unsaved_changes': T('Aveți modificări nesalvate. Doriți să părăsiți pagina?', 'You have unsaved changes. Leave the page?'),
+  'daily_report.previous_date_warning': T('Raportați pentru o dată anterioară.', 'You are reporting for a previous date.'),
+  'daily_report.select_project': T('Selectează proiect', 'Select project'),
+  'daily_report.select_worker': T('Selectează persoana', 'Select person'),
+  'daily_report.select_material': T('Selectează material', 'Select material'),
+  'daily_report.select_task': T('Selectează sarcină', 'Select task'),
+  'daily_report.incomplete_section': T('Secțiune incompletă', 'Incomplete section'),
+  'daily_report.draft': T('Ciornă', 'Draft'),
+  'daily_report.back': T('Înapoi', 'Back'),
+  'daily_report.next': T('Înainte', 'Next'),
+  'daily_report.save_draft': T('Salvează Ciorna', 'Save Draft'),
+  'daily_report.review_title': T('Revizuire Raport', 'Report Review'),
+  'daily_report.ready_to_save': T('Raportul este gata de salvare.', 'Report is ready to save.'),
+
+  // ---- P4.4 finalization (DRAFT -> SUBMITTED) -----------------------------
+  'daily_report.submitted': T('Transmis spre Aprobare', 'Submitted for approval'),
+  'daily_report.submit_report': T('Trimite spre Aprobare', 'Submit for approval'),
+  'daily_report.submitting': T('Se trimite...', 'Submitting...'),
+  'daily_report.submit_confirm_title': T('Trimiți raportul spre aprobare?', 'Submit this report for approval?'),
+  'daily_report.submit_confirm_message': T(
+    'La trimitere raportul devine read-only, materialele raportate se scad o singură dată din stocul proiectului și se creează o revizie imutabilă. Acțiunea nu poate fi anulată.',
+    'On submission the report becomes read-only, the reported materials are deducted from project stock exactly once and an immutable revision is created. This action cannot be undone.',
+  ),
+  'daily_report.confirm_submit': T('Trimite', 'Submit'),
+  'daily_report.cancel': T('Anulează', 'Cancel'),
+  'daily_report.submit_success': T('Raport trimis spre aprobare', 'Report submitted for approval'),
+  'daily_report.submit_failed': T('Trimiterea raportului a eșuat', 'Submitting the report failed'),
+  'daily_report.submitted_locked': T('Raport transmis — nu mai poate fi editat.', 'Report submitted — it can no longer be edited.'),
+  'daily_report.revision_label': T('Revizia', 'Revision'),
+  'daily_report.submit_warnings_title': T('Verifică înainte de trimitere (nu blochează trimiterea):', 'Check before submitting (does not block submission):'),
+  'daily_report.submit_warning_proposed_work': T('Lucrările propuse sunt goale.', 'Proposed Work is empty.'),
+  'daily_report.submit_warning_ohs': T('Niciun risc SSM nu este bifat.', 'No OHS risk is checked.'),
+  'daily_report.submit_warning_time_range': T('Ora de încheiere nu este după ora de începere.', 'The end time is not after the start time.'),
+  'daily_report.submit_stock_note': T('Materialele listate se scad din stocul proiectului la trimitere.', 'The listed materials are deducted from project stock on submission.'),
+  'daily_report.back_to_list': T('Înapoi la listă', 'Back to list'),
 });
 
 export function t(key: string, locale: Locale = 'ro'): string {

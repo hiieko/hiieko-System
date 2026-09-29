@@ -10,12 +10,27 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DailyReport, DailyReportTask, DailyReportMaterialUsage, Material, Project } from '@solar/shared';
+import { Material, Project } from '@solar/shared';
 import { enqueueOperation, generateIdempotencyKey } from '../services/syncQueue';
 import { apiClient } from '../services/apiClient';
 import { PageIntro } from '../components/PageIntro';
 
 const DRAFT_KEY = '@solar:daily_report_draft';
+
+// Local form types for the team leader daily report screen (P4.2: separated from API types)
+interface FormTask {
+  description: string;
+  quantity: number;
+  unit: string;
+}
+
+interface FormMaterial {
+  material_id: string;
+  material_code: string;
+  material_name: string;
+  quantity: number;
+  unit: string;
+}
 
 interface Props {
   leader: { id: string; full_name: string };
@@ -35,14 +50,14 @@ export function TeamLeaderDailyReportScreen({
   locale = 'ro',
 }: Props) {
   const [presentWorkerIds, setPresentWorkerIds] = useState<string[]>(teamWorkers.map(w => w.id));
-  const [tasks, setTasks] = useState<DailyReportTask[]>([
+  const [tasks, setTasks] = useState<FormTask[]>([
     { description: 'Montat panouri fotovoltaice', quantity: 3, unit: 'buc' },
     { description: 'Montat cabluri (stringuri)', quantity: 7, unit: 'cabluri' },
   ]);
   const [newTaskDesc, setNewTaskDesc] = useState('');
   const [newTaskQty, setNewTaskQty] = useState('');
   
-  const [materialsUsed, setMaterialsUsed] = useState<DailyReportMaterialUsage[]>([
+  const [materialsUsed, setMaterialsUsed] = useState<FormMaterial[]>([
     { material_id: materialsCatalog[0]?.id || 'm1', material_code: 'PAN-550W', material_name: 'Panou 550W', quantity: 3, unit: 'buc' }
   ]);
   const [notes, setNotes] = useState('');

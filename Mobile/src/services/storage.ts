@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OfflineSyncQueueItem, TimeLog, DailyReport, DeliveryNote } from '@solar/shared';
+import { OfflineSyncQueueItem, TimeLog, DeliveryNote } from '@solar/shared';
 
 const STORAGE_KEYS = {
   OFFLINE_QUEUE: '@solar:offline_queue',

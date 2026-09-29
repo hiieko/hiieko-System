@@ -13,6 +13,9 @@ import {
 import { useAuth } from '../../../contexts/AuthContext';
 import { canCreateProjects } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
+import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { ProjectSettingsPanel } from './ProjectSettingsPanel';
+import { ProjectStagesPanel } from './ProjectStagesPanel';
 
 interface ProjectMember {
   id: string; project_id: string; user_id: string; role: string;
@@ -47,7 +50,7 @@ const MEMBER_ROLE_LABELS: Record<string, string> = {
   MAINTENANCE_DIRECTOR:'Director Intretinere', TECHNICAL_DIRECTOR:'Director Tehnic',
 };
 
-type TabKey = 'overview' | 'members' | 'teams' | 'activity';
+type TabKey = 'overview' | 'members' | 'settings' | 'stages';
 
 function ProjectDetailPageInner() {
   const params = useParams();
@@ -63,13 +66,14 @@ function ProjectDetailPageInner() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>('overview');
   const [showAddMember, setShowAddMember] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState('');
-  const [selectedRole, setSelectedRole] = useState('WORKER');
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedRole, setSelectedRole] = useState("WORKER");
   const [addingMember, setAddingMember] = useState(false);
   const [memberError, setMemberError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
-
+  const [removingMember, setRemovingMember] = useState(false);
   const canManage = user ? canCreateProjects(user.role as any) : false;
+  const editEnabled = user && (user.role === "admin" || user.role === "owner");
 
   const showSuccess = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(null), 3000); };
 
@@ -108,9 +112,23 @@ function ProjectDetailPageInner() {
     catch (err) { if (err instanceof ApiError) setMemberError(err.message); }
   };
 
+  const handleUpdate = async (updates: any) => {
+    if (!project) return;
+    try {
+      const res = await apiClient.patch(`/api/projects/${project.id}`, updates);
+      setProject(res.data);
+      setSuccessMsg('Proiect actualizat cu succes');
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : 'Eroare la actualizare';
+      setError(msg);
+    }
+  };
+
   const handleRemoveMember = async (userId: string) => {
+    setRemovingMember(true);
     try { await apiClient.removeProjectMember(id, userId); setConfirmRemove(null); showSuccess('Membru eliminat'); await loadMembers(); }
     catch (err) { if (err instanceof ApiError) setMemberError(err.message); }
+    finally { setRemovingMember(false); }
   };
 
 
@@ -191,13 +209,13 @@ function ProjectDetailPageInner() {
       </div>
 
       <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit">
-        {(['overview', 'members', 'teams', 'activity'] as TabKey[]).map((t) => (
+        {(['overview', 'members', 'settings', 'stages'] as TabKey[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
             {t === 'overview' && 'Prezentare Generala'}
             {t === 'members' && 'Membri'}
-            {t === 'teams' && 'Echipe'}
-            {t === 'activity' && 'Activitate'}
+            {t === 'settings' && 'Setari'}
+            {t === 'stages' && 'Etape'}
           </button>
         ))}
       </div>
@@ -310,16 +328,20 @@ function ProjectDetailPageInner() {
                       )}
                       {canManage && (
                         <>
-                          {confirmRemove === m.user_id ? (
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => handleRemoveMember(m.user_id)} className="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200"><Check className="w-4 h-4" /></button>
-                              <button onClick={() => setConfirmRemove(null)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X className="w-4 h-4" /></button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setConfirmRemove(m.user_id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600" title="Elimina membru">
+                          <button onClick={() => setConfirmRemove(m.user_id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600" title="Elimina membru">
                               <Trash2 className="w-4 h-4" />
                             </button>
-                          )}
+                          <ConfirmDialog
+                            open={confirmRemove === m.user_id}
+                            onConfirm={() => handleRemoveMember(m.user_id)}
+                            loading={removingMember}
+                            onCancel={() => setConfirmRemove(null)}
+                            title="Elimina membru"
+                            message={"Sigur doresti sa elimini pe " + displayName(m.user) + " din proiect?"}
+                            confirmLabel="Elimina"
+                            cancelLabel="Anuleaza"
+                            variant="danger"
+                          />
                         </>
                       )}
                     </div>
@@ -332,20 +354,12 @@ function ProjectDetailPageInner() {
       )}
 
 
-      {tab === 'teams' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 text-center">
-          <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">Echipe</h3>
-          <p className="text-xs text-slate-400 mt-1">Disponibil in modulul urmator</p>
-        </div>
+      {tab === 'settings' && project && (
+        <ProjectSettingsPanel project={project} onUpdate={(updates) => handleUpdate(updates)} />
       )}
 
-      {tab === 'activity' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 text-center">
-          <Activity className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">Activitate</h3>
-          <p className="text-xs text-slate-400 mt-1">Disponibil in modulul urmator</p>
-        </div>
+      {tab === 'stages' && project && (
+        <ProjectStagesPanel projectId={project.id} />
       )}
     </div>
   );
@@ -353,8 +367,11 @@ function ProjectDetailPageInner() {
 
 export default function ProjectDetailPage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm']}>
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader']}>
       <ProjectDetailPageInner />
     </RoleGuard>
   );
 }
+
+
+

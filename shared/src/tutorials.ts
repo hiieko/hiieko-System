@@ -31,7 +31,9 @@ export type TutorialSectionId =
   | 'projects'
   | 'project-detail'
   | 'workforce'
-  | 'teams';
+  | 'teams'
+  | 'planning'
+  | 'issues';
 
 export interface TutorialRoleNote {
   role: UserRole;
@@ -374,6 +376,34 @@ export const TUTORIALS: Record<TutorialSectionId, TutorialContent> = {
     roles: [
       { role: 'admin', noteKey: `${K('teams')}.role_admin` },
       { role: 'manager', noteKey: `${K('teams')}.role_manager` },
+    ],
+  },
+  planning: {
+    id: 'planning',
+    titleKey: `${K('planning')}.title`,
+    shortKey: `${K('planning')}.short`,
+    purposeKey: `${K('planning')}.purpose`,
+    steps: [
+      `${K('planning')}.step1`,
+      `${K('planning')}.step2`,
+    ],
+    roles: [
+      { role: 'foreman', noteKey: `${K('planning')}.role_foreman` },
+      { role: 'site_manager', noteKey: `${K('planning')}.role_site_manager` },
+    ],
+  },
+  issues: {
+    id: 'issues',
+    titleKey: `${K('issues')}.title`,
+    shortKey: `${K('issues')}.short`,
+    purposeKey: `${K('issues')}.purpose`,
+    steps: [
+      `${K('issues')}.step1`,
+      `${K('issues')}.step2`,
+    ],
+    roles: [
+      { role: 'foreman', noteKey: `${K('issues')}.role_foreman` },
+      { role: 'site_manager', noteKey: `${K('issues')}.role_site_manager` },
     ],
   },
 };

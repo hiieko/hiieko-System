@@ -4,7 +4,7 @@ import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { MapPin, ShieldCheck, Navigation, Sliders, Loader2, RefreshCw } from 'lucide-react';
+import { MapPin, ShieldCheck, Navigation, Sliders, Loader2, RefreshCw, X, Save } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -22,6 +22,12 @@ function SantierePageInner() {
   const [sites, setSites] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editSite, setEditSite] = useState<Project | null>(null);
+  const [editLat, setEditLat] = useState('');
+  const [editLng, setEditLng] = useState('');
+  const [editRadius, setEditRadius] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -45,6 +51,43 @@ function SantierePageInner() {
   useEffect(() => {
     load();
   }, []);
+
+  const openEditParams = (site: Project) => {
+    setEditSite(site);
+    setEditLat(String(Number(site.latitude).toFixed(6)));
+    setEditLng(String(Number(site.longitude).toFixed(6)));
+    setEditRadius(String(site.geofence_radius_meters));
+    setEditError(null);
+  };
+
+  const closeEditParams = () => {
+    setEditSite(null);
+    setEditError(null);
+  };
+
+  const handleSaveParams = async () => {
+    if (!editSite) return;
+    const lat = parseFloat(editLat);
+    const lng = parseFloat(editLng);
+    const radius = parseInt(editRadius, 10);
+    if (isNaN(lat) || isNaN(lng)) { setEditError('Coordonatele GPS trebuie sa fie numere valide.'); return; }
+    if (isNaN(radius) || radius < 1) { setEditError('Raza geofence trebuie sa fie un numar pozitiv.'); return; }
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      await apiClient.updateProject(editSite.id, {
+        latitude: lat,
+        longitude: lng,
+        geofenceRadiusMeters: radius,
+      });
+      setSites(prev => prev.map(s => s.id === editSite.id ? { ...s, latitude: lat, longitude: lng, geofence_radius_meters: radius } : s));
+      closeEditParams();
+    } catch (err: any) {
+      setEditError(err?.message || 'Eroare la salvarea parametrilor.');
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -106,10 +149,48 @@ function SantierePageInner() {
               </div>
               <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <span>Stare: <strong>{site.is_active ? 'Activ' : 'Inactiv'}</strong></span>
-                <button type="button" className="text-amber-600 hover:text-amber-700 font-semibold">Modifica Parametri</button>
+                <button type="button" onClick={() => openEditParams(site)} className="text-amber-600 hover:text-amber-700 font-semibold">Modifica Parametri</button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Edit Params Modal */}
+      {editSite && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm" onClick={closeEditParams}>
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">Modifica Parametri — {editSite.name}</h3>
+              <button onClick={closeEditParams} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
+            </div>
+            {editError && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{editError}</div>}
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Latitudine</label>
+                <input type="number" step="any" value={editLat} onChange={e => setEditLat(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none font-mono" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Longitudine</label>
+                <input type="number" step="any" value={editLng} onChange={e => setEditLng(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none font-mono" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Raza Geofence (metri)</label>
+                <input type="number" min="1" value={editRadius} onChange={e => setEditRadius(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none font-mono" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={closeEditParams}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+              <button onClick={handleSaveParams} disabled={editSaving}
+                className="inline-flex items-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
+                <Save className="w-4 h-4 mr-1.5" />{editSaving ? 'Se salveaza...' : 'Salveaza'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -118,7 +199,7 @@ function SantierePageInner() {
 
 export default function SantierePage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm']}>
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager']}>
       <SantierePageInner />
     </RoleGuard>
   );

@@ -22,6 +22,11 @@
 import {
   PrismaClient,
   UserRoleEnum,
+  ProjectStatusEnum,
+  DailyPlanStatusEnum,
+  TaskStatusEnum,
+  IssueSeverityEnum,
+  IssueStatusEnum,
   SolarProductTypeEnum,
   SolarCatalogStatusEnum,
 } from '@prisma/client';
@@ -246,7 +251,7 @@ main()
     }
 
     // Create team leaders
-    console.log('[4/4] Creating Team Leaders...');
+    console.log('[4/8] Creating Team Leaders...');
     const teamLeaders = [];
     const teamLeadersData = [
       { email: 'ion.munteanu@hiieko.local', fullName: 'Ion Munteanu' },
@@ -285,7 +290,7 @@ main()
 
     // Create workers
     console.log();
-    console.log('[5/5] Creating Workers...');
+    console.log('[5/8] Creating Workers...');
     const workers = [];
     const workersData = [
       { email: 'costin.dumitrescu@hiieko.local', fullName: 'Costin Dumitrescu', teamLeaderId: teamLeaders[0].id },
@@ -327,8 +332,7 @@ main()
     await seedSolarDemoCatalog();
 
     console.log();
-    console.log('========================================');
-    console.log('COMPLETE SEED CREATED successfully');
+    console.log('[6/8] Creating Site Manager...');
     console.log('========================================');
     console.log();
     console.log('Organization:', organization.name);

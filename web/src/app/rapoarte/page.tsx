@@ -1,10 +1,15 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
-import React, { useState, useEffect } from 'react';
+import { RoleGuard } from '../../lib/auth-guard';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale, type DailyReport } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProject } from '../../contexts/ProjectContext';
+import { ConfirmDialog, useToast } from '../../components/ui';
+import { submitDailyReport } from '../../features/daily-reports';
+import { useRouter } from 'next/navigation';
 import { 
   FileText, 
   CheckCircle2, 
@@ -16,59 +21,79 @@ import {
   Check, 
   X,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  RefreshCw,
+  Plus,
+  Edit3,
+  Send
 } from 'lucide-react';
 
-// Backend DailyReport interface
-interface DailyReport {
-  id: string;
-  project_id: string;
-  team_leader_id: string;
-  report_date: string | Date;
-  status?: string;
-  general_notes?: string;
-  weather_notes?: string;
-  blockages?: string;
-  team_leader?: { profile?: { full_name: string } };
-  project?: { name: string; code: string };
-  workers?: Array<{ worker_id: string; hours_worked: number; notes?: string }>;
-  materials?: Array<{ material_id: string; quantity_used: number; material?: { code: string; name: string; unit: string } }>;
-  tasks?: Array<any>;
-}
-
-export default function RapoartePage() {
+function RapoartePageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reports, setReports] = useState<DailyReport[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  // P4.4 â€” submitting a DRAFT from the list goes through the same confirmation gate as the form.
+  const [submitTarget, setSubmitTarget] = useState<DailyReport | null>(null);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
   const { user } = useAuth();
+  const { selectedProjectId } = useProject();
+  const { locale } = useLocale();
+  const { success: toastSuccess, error: toastError } = useToast();
+  const router = useRouter();
   const userRole = user?.role?.toLowerCase();
   const isWorker = userRole === 'worker';
+  const canCreate = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician'].includes(userRole || '');
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: any = {};
+      if (selectedProjectId) params.projectId = selectedProjectId;
+      const reportsResponse = await apiClient.getDailyReports(Object.keys(params).length ? params : undefined);
+      setReports((reportsResponse.data || []) as DailyReport[]);
+
+      let usersData: any[] = [];
+      try {
+        const usersResponse = await apiClient.getUsers();
+        usersData = (usersResponse.data || []) as any[];
+      } catch { /* skip for restricted roles */ }
+      setUsers(usersData);
+    } catch (err: any) {
+      console.error('Failed to load reports:', err);
+      setError(err.message || 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedProjectId]);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const reportsResponse = await apiClient.getDailyReports();
-        setReports((reportsResponse.data || []) as DailyReport[]);
-
-        let usersData: any[] = [];
-        try {
-          const usersResponse = await apiClient.getUsers();
-          usersData = (usersResponse.data || []) as any[];
-        } catch { /* skip for restricted roles */ }
-        setUsers(usersData);
-      } catch (err: any) {
-        console.error('Failed to load reports:', err);
-        setError(err.message || 'Failed to load data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
-  }, []);
+  }, [loadData]);
+
+  /**
+   * P4.4 â€” finalize the selected DRAFT (DRAFT -> SUBMITTED).
+   *
+   * The user only ever reaches this after confirming: the dialog is opened by the row button,
+   * `submittingId` disables that button while the call runs, and the endpoint itself is idempotent
+   * by state, so a duplicated request returns the existing revision and charges no stock twice.
+   */
+  const confirmSubmit = useCallback(async () => {
+    const target = submitTarget;
+    if (!target || submittingId) return;
+    setSubmittingId(target.id);
+    try {
+      await submitDailyReport(target.id);
+      toastSuccess(t('daily_report.submit_success', locale));
+      await loadData();
+    } catch (err: any) {
+      toastError(err?.message || t('daily_report.submit_failed', locale));
+    } finally {
+      setSubmittingId(null);
+      setSubmitTarget(null);
+    }
+  }, [submitTarget, submittingId, locale, toastSuccess, toastError, loadData]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -80,12 +105,24 @@ export default function RapoartePage() {
             Activita?i finalizate de ?efii de echipa, muncitori prezen?i, materiale consumate ?i fotografii de execu?ie.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          {canCreate && (
+            <button onClick={() => router.push('/rapoarte/form')}
+              className="inline-flex items-center px-3 py-2 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
+              <Plus className="w-3.5 h-3.5 mr-1.5" />Raport Nou
+            </button>
+          )}
+          <button onClick={loadData} disabled={loading}
+            className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reimprospateaza
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <div className="py-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">Încarcând rapoartele zilnice...</p>
+          <p className="mt-2 text-sm text-slate-500">ÃŽcarcÄƒd rapoartele zilnice...</p>
         </div>
       ) : error ? (
         <div className="py-12 text-center">
@@ -144,10 +181,33 @@ export default function RapoartePage() {
                 </div>
 
                 <div className="flex items-center space-x-3">
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                    Transmis spre Aprobare
-                  </span>
-                  {isWorker ? null : (<button type="button" className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors"><Check className="w-3.5 h-3.5 mr-1" />Aproba Raport</button>)}
+                  {report.status === 'DRAFT' ? (
+                    <>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                        Ciorna
+                      </span>
+                      <button type="button" onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
+                        className="inline-flex items-center px-3 py-1.5 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
+                        <Edit3 className="w-3.5 h-3.5 mr-1" />Editeaza
+                      </button>
+                      {/* P4.4 â€” one-click finalization for a DRAFT; confirms first, then submits. */}
+                      <button type="button"
+                        data-testid={`submit-report-${report.id}`}
+                        disabled={submittingId === report.id}
+                        onClick={() => setSubmitTarget(report)}
+                        className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <Send className="w-3.5 h-3.5 mr-1" />
+                        {submittingId === report.id ? t('daily_report.submitting', locale) : t('daily_report.submit_report', locale)}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                        Transmis spre Aprobare
+                      </span>
+                      {isWorker ? null : (<button type="button" className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors"><Check className="w-3.5 h-3.5 mr-1" />Aproba Raport</button>)}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -162,13 +222,13 @@ export default function RapoartePage() {
                   <div className="space-y-2">
                     {((report.tasks || []) as any[]).length > 0 ? (report.tasks as any[]).map((t: any, idx: number) => (
                       <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
-                        <span className="text-sm font-medium text-slate-800">{t.task?.name || t.description || 'Sarcina'}</span>
+                        <span className="text-sm font-medium text-slate-800">{t.task?.title || t.notes || 'Sarcina'}</span>
                         <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded">
                           {t.quantity_done || t.quantity || 0} {t.unit || 'buc'}
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini înregistrate</p>
+                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini Ã¢registrate</p>
                     )}
                   </div>
 
@@ -225,7 +285,7 @@ export default function RapoartePage() {
                   </h3>
                   <div className="grid grid-cols-1 gap-3">
                     <p className="text-xs text-slate-400 italic py-3">
-                      Fotografiile nu sunt înca disponibile în aceasta versiune
+                      Fotografiile nu sunt disponibile in aceasta versiune.
                     </p>
                   </div>
                 </div>
@@ -235,6 +295,28 @@ export default function RapoartePage() {
         })}
       </div>
       )}
+
+      {/* P4.4 â€” confirmation gate for list-level submission (never submits on the first click). */}
+      <ConfirmDialog
+        open={!!submitTarget}
+        variant="warning"
+        title={t('daily_report.submit_confirm_title', locale)}
+        message={t('daily_report.submit_confirm_message', locale)}
+        confirmLabel={t('daily_report.confirm_submit', locale)}
+        cancelLabel={t('daily_report.cancel', locale)}
+        loading={!!submittingId}
+        onConfirm={confirmSubmit}
+        onCancel={() => { if (!submittingId) setSubmitTarget(null); }}
+      />
     </div>
   );
 }
+
+export default function RapoartePage() {
+  return (
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
+      <RapoartePageInner />
+    </RoleGuard>
+  );
+}
+

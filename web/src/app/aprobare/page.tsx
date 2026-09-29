@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Expense } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
+import { useProject } from '../../contexts/ProjectContext';
 import { formatDecimal, enumLabel, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_COLORS, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/formatters';
 
 // STATUS_MAP and CAT_MAP replaced by shared formatters (EXPENSE_STATUS_LABELS, EXPENSE_CATEGORY_LABELS)
@@ -23,6 +24,7 @@ function AprobarePageInner() {
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { selectedProjectId } = useProject();
 
   const loadExpenses = useCallback(async () => {
     setLoading(true);
@@ -30,7 +32,9 @@ function AprobarePageInner() {
     try {
       // Use apiClient to get expenses
       // For pending filter: get all and filter client-side since API doesn't support multi-status filtering
-      const response = await apiClient.getExpenses();
+      const params: any = {};
+      if (selectedProjectId) params.projectId = selectedProjectId;
+      const response = await apiClient.getExpenses(Object.keys(params).length ? params : undefined);
       let data = (response.data || []) as Expense[];
       
       // Filter by status
@@ -62,7 +66,7 @@ function AprobarePageInner() {
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, selectedProjectId]);
 
   useEffect(() => { loadExpenses(); }, [loadExpenses]);
 

@@ -14,7 +14,10 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type, Accept, Authorization',
+    // P4.4 (D2): Mobile's offline queue sends its replay key as the `Idempotency-Key` header
+    // (Mobile/src/services/apiClient.ts). A browser pre-flight would otherwise reject it, so
+    // the header is part of the allowed CORS contract from now on.
+    allowedHeaders: 'Content-Type, Accept, Authorization, Idempotency-Key',
   });
 
   // Global validation pipe
@@ -43,7 +46,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
+  await app.listen(port,'0.0.0.0');
   logger.log(`HIIEKO Backend API running on http://localhost:${port}`);
   logger.log(`Swagger OpenAPI docs available at http://localhost:${port}/api/docs`);
 }

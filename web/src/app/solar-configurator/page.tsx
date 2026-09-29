@@ -24,6 +24,7 @@ import {
   zoomViewportAt,
 } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
+import { RoleGuard } from '../../lib/auth-guard';
 import * as solarApi from '../../features/solar-configurator/api/solar';
 import {
   ProjectOption,
@@ -65,7 +66,7 @@ interface LayoutResult {
   totalPowerWp: number;
 }
 
-export default function SolarConfiguratorPage() {
+function SolarConfiguratorPageInner() {
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [projectId, setProjectId] = useState('');
   const [designs, setDesigns] = useState<Array<{ id: string; name: string }>>([]);
@@ -654,5 +655,13 @@ export default function SolarConfiguratorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SolarConfiguratorPage() {
+  return (
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'technician', 'worker']}>
+      <SolarConfiguratorPageInner />
+    </RoleGuard>
   );
 }

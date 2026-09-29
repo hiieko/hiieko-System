@@ -1,8 +1,22 @@
 /**
- * HIIEKO API Client - Typed HTTP client for NestJS backend
- * 
+ * HIIEKO API Client — Typed HTTP client for NestJS backend
+ *
+ * Architecture:
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │                       IApiClient interface                      │
+ * │  (full method contracts for all backend endpoints)              │
+ * ├─────────────────────────────────────────────────────────────────┤
+ * │                      NestApiClient class                        │
+ * │  (generic request<T> with interceptors, token mgmt, logging)    │
+ * ├─────────────────────────────────────────────────────────────────┤
+ * │                 Per-domain API modules (lib/api/)               │
+ * │  projectsApi, attendanceApi, tasksApi, etc. (typed, composable) │
+ * ├─────────────────────────────────────────────────────────────────┤
+ * │              apiClient singleton (backward compat)              │
+ * └─────────────────────────────────────────────────────────────────┘
+ *
  * Standardized envelope format (R1.5 Error Envelope):
- * 
+ *
  * Success responses: { statusCode: number, data: T }
  * Error responses:   { success: false, statusCode: 401|403|404|422|500,
  *                      code: "UNAUTHORIZED"|"FORBIDDEN"|"NOT_FOUND"|
@@ -11,7 +25,58 @@
  *                      timestamp: string, path: string, method: string }
  */
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import type { Issue, CreateIssueDto } from '../features/issues/types';
+
+/**
+ * Resolve the backend base URL for the current runtime.
+ *
+ * `NEXT_PUBLIC_API_URL` is inlined into the browser bundle at build/dev time, so
+ * a value baked as `http://localhost:4000` literally means "port 4000 on the
+ * device that runs the browser". That is right on this laptop (and on the
+ * server side), but wrong on a tablet or phone that opens the dev server over
+ * the LAN: there `localhost` is the tablet itself, so the UI renders while every
+ * API call fails with "Failed to fetch".
+ *
+ * Rules:
+ * 1. Server-side render (no `window`)          → the configured value as-is.
+ * 2. Page opened on a loopback host            → the configured value as-is
+ *    (local development unchanged).
+ * 3. Page opened from another host (LAN IP)    → if the configured value points
+ *    at loopback, reuse its port on the hostname that served the page; an
+ *    explicitly remote configured value (a real deployed API host) is always
+ *    respected.
+ */
+export function resolveApiBaseUrl(
+  configuredUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL,
+  pageLocation?: { protocol: string; hostname: string }
+): string {
+  const DEFAULT_API_PORT = '4000';
+  const LOOPBACK_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]', '::1', ''];
+  const fallback = `http://localhost:${DEFAULT_API_PORT}`;
+
+  const page =
+    pageLocation ?? (typeof window !== 'undefined' ? window.location : undefined);
+
+  if (!page) return configuredUrl || fallback;
+  if (LOOPBACK_HOSTNAMES.includes(page.hostname)) return configuredUrl || fallback;
+  if (!configuredUrl) return `${page.protocol}//${page.hostname}:${DEFAULT_API_PORT}`;
+
+  let apiHostname = '';
+  let apiPort = DEFAULT_API_PORT;
+  try {
+    const parsed = new URL(configuredUrl);
+    apiHostname = parsed.hostname;
+    apiPort = parsed.port || DEFAULT_API_PORT;
+  } catch {
+    // Relative / same-origin configuration (e.g. behind a reverse proxy).
+    return configuredUrl;
+  }
+
+  if (!LOOPBACK_HOSTNAMES.includes(apiHostname)) return configuredUrl;
+  return `${page.protocol}//${page.hostname}:${apiPort}`;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 // ====================
 // ENVELOPE TYPES (R1.5 CONTRACT)
@@ -261,6 +326,63 @@ export class NestApiClient {
         undefined
       );
     }
+  }
+
+  // ============================================================================
+  // TYPED GENERIC HELPERS (Interceptors + Convenience Methods)
+  // ============================================================================
+
+  /** Generic GET request with typed response */
+  async get<T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>): Promise<ApiResponse<T>> {
+    let url = endpoint;
+    if (params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          searchParams.set(key, String(value));
+        }
+      });
+      const qs = searchParams.toString();
+      if (qs) url = `${url}?${qs}`;
+    }
+    return this.request<ApiResponse<T>>(url);
+  }
+
+  /** Generic POST request with typed response */
+  async post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<ApiResponse<T>>(endpoint, {
+      method: 'POST',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  /** Generic PATCH request with typed response */
+  async patch<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<ApiResponse<T>>(endpoint, {
+      method: 'PATCH',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  /** Generic PUT request with typed response */
+  async put<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<ApiResponse<T>>(endpoint, {
+      method: 'PUT',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  /** Generic DELETE request with typed response */
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<ApiResponse<T>>(endpoint, { method: 'DELETE' });
+  }
+
+  /** Generic paginated GET request */
+  async getPaginated<T>(
+    endpoint: string,
+    params?: { page?: number; pageSize?: number; [key: string]: string | number | boolean | undefined }
+  ): Promise<ApiResponse<PaginatedResponse<T>>> {
+    return this.get<PaginatedResponse<T>>(endpoint, params as Record<string, string | number | boolean | undefined>);
   }
 
   // ============================================================================
@@ -657,10 +779,47 @@ export class NestApiClient {
     );
   }
 
-  async createDailyReport(data: any): Promise<ApiResponse<any>> {
+  /**
+   * POST /api/daily-reports.
+   *
+   * P4.4 — when the caller passes an `idempotencyKey` it travels as the `Idempotency-Key` HEADER,
+   * the same channel Mobile's offline queue uses (Mobile/src/services/apiClient.ts). The backend
+   * maps that header onto its existing `idempotency_key` field, so a retried submission (offline
+   * replay, double click, network retry) resolves to the very same report instead of creating a
+   * second one — and, because a status-SUBMITTED create is also what finalizes the report,
+   * instead of consuming the reported project stock twice.
+   */
+  async createDailyReport(data: any, idempotencyKey?: string): Promise<ApiResponse<any>> {
     return this.request<ApiResponse<any>>('/api/daily-reports', {
       method: 'POST',
       body: JSON.stringify(data),
+      ...(idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : {}),
+    });
+  }
+
+  async getDailyReport(id: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/daily-reports/${id}`);
+  }
+
+  async updateDailyReport(id: string, data: any): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/daily-reports/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * POST /api/daily-reports/:id/submit — P4.4 finalization of a DRAFT report.
+   *
+   * The backend decides the DRAFT → SUBMITTED transition under a `FOR UPDATE` lock, writes the
+   * immutable revision, consumes the reported project stock and audits — all in one transaction.
+   * No `Idempotency-Key` is needed here: the call is idempotent by STATE (a replay of an already
+   * SUBMITTED report returns its existing revision and consumes nothing), which also protects
+   * against a duplicated request at the network layer.
+   */
+  async submitDailyReport(id: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/daily-reports/${id}/submit`, {
+      method: 'POST',
     });
   }
 
@@ -702,6 +861,95 @@ export class NestApiClient {
     return this.request<ApiResponse<any[]>>(
       `/api/inventory/movements${queryString ? `?${queryString}` : ''}`
     );
+  }
+
+  // ============================================================================
+  // INVENTORY MUTATIONS (Receive / Consume / Transfer)
+  // ============================================================================
+
+  async receiveStock(data: {
+    projectId?: string;
+    warehouseId?: string;
+    materialId: string;
+    quantity: number;
+    unitPrice?: number;
+    notes?: string;
+    idempotencyKey?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/inventory/receive', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async consumeStock(data: {
+    projectId: string;
+    materialId: string;
+    quantity: number;
+    notes?: string;
+    idempotencyKey?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/inventory/consume', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async transferStock(data: {
+    sourceProjectId: string;
+    targetProjectId: string;
+    materialId: string;
+    quantity: number;
+    notes?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/inventory/transfer', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ============================================================================
+  // PURCHASE ORDERS
+  // ============================================================================
+
+  async getPurchaseOrders(params?: {
+    projectId?: string;
+  }): Promise<ApiResponse<any[]>> {
+    const query = new URLSearchParams();
+    if (params?.projectId) query.set('projectId', params.projectId);
+    const queryString = query.toString();
+    return this.request<ApiResponse<any[]>>(
+      `/api/procurement/purchase-orders${queryString ? `?${queryString}` : ''}`
+    );
+  }
+
+  // ============================================================================
+  // QA/QC INSPECTIONS
+  // ============================================================================
+
+  async getInspections(params?: {
+    projectId?: string;
+  }): Promise<ApiResponse<any[]>> {
+    const query = new URLSearchParams();
+    if (params?.projectId) query.set('projectId', params.projectId);
+    const queryString = query.toString();
+    return this.request<ApiResponse<any[]>>(
+      `/api/qa-qc/inspections${queryString ? `?${queryString}` : ''}`
+    );
+  }
+
+  async createInspection(data: {
+    projectId: string;
+    title: string;
+    description?: string;
+    inspectionType?: string;
+    result?: string;
+    performedById?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/qa-qc/inspections', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   // ============================================================================
@@ -893,6 +1141,24 @@ export class NestApiClient {
   }
 
   // ============================================================================
+  // ISSUES & BLOCKERS
+  // ============================================================================
+
+  async getIssues(params?: {
+    projectId?: string;
+  }): Promise<ApiResponse<Issue[]>> {
+    const query = params?.projectId ? `?projectId=${encodeURIComponent(params.projectId)}` : '';
+    return this.request<ApiResponse<Issue[]>>(`/api/issues${query}`);
+  }
+
+  async createIssue(data: CreateIssueDto): Promise<ApiResponse<Issue>> {
+    return this.request<ApiResponse<Issue>>('/api/issues', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ============================================================================
   // CONTROL TOWER (Management Turn de Control)
   // ============================================================================
 
@@ -995,7 +1261,10 @@ export interface IApiClient {
     startDate?: string;
     endDate?: string;
   }): Promise<ApiResponse<any[]>>;
-  createDailyReport(data: any): Promise<ApiResponse<any>>;
+  createDailyReport(data: any, idempotencyKey?: string): Promise<ApiResponse<any>>;
+  getDailyReport(id: string): Promise<ApiResponse<any>>;
+  updateDailyReport(id: string, data: any): Promise<ApiResponse<any>>;
+  submitDailyReport(id: string): Promise<ApiResponse<any>>;
 
   // Materials & Stock (Stocuri)
   getMaterials(): Promise<ApiResponse<any[]>>;
@@ -1009,6 +1278,49 @@ export interface IApiClient {
     startDate?: string;
     endDate?: string;
   }): Promise<ApiResponse<any[]>>;
+
+  // Inventory Mutations
+  receiveStock(data: {
+    projectId?: string;
+    warehouseId?: string;
+    materialId: string;
+    quantity: number;
+    unitPrice?: number;
+    notes?: string;
+    idempotencyKey?: string;
+  }): Promise<ApiResponse<any>>;
+  consumeStock(data: {
+    projectId: string;
+    materialId: string;
+    quantity: number;
+    notes?: string;
+    idempotencyKey?: string;
+  }): Promise<ApiResponse<any>>;
+  transferStock(data: {
+    sourceProjectId: string;
+    targetProjectId: string;
+    materialId: string;
+    quantity: number;
+    notes?: string;
+  }): Promise<ApiResponse<any>>;
+
+  // Purchase Orders
+  getPurchaseOrders(params?: {
+    projectId?: string;
+  }): Promise<ApiResponse<any[]>>;
+
+  // QA/QC Inspections
+  getInspections(params?: {
+    projectId?: string;
+  }): Promise<ApiResponse<any[]>>;
+  createInspection(data: {
+    projectId: string;
+    title: string;
+    description?: string;
+    inspectionType?: string;
+    result?: string;
+    performedById?: string;
+  }): Promise<ApiResponse<any>>;
 
   // Delivery Notes (Avize)
   getAvize(params?: {
@@ -1114,6 +1426,10 @@ export interface IApiClient {
   }): Promise<ApiResponse<any>>;
   deleteTaskDependency(id: string): Promise<ApiResponse<any>>;
   checkPrerequisites(taskId: string): Promise<ApiResponse<{ canStart: boolean; pendingTasks: any[] }>>;
+
+  // Issues & Blockers
+  getIssues(params?: { projectId?: string }): Promise<ApiResponse<Issue[]>>;
+  createIssue(data: CreateIssueDto): Promise<ApiResponse<Issue>>;
 
   // OCR
   processOcrDocument(

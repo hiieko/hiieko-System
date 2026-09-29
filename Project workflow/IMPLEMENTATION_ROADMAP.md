@@ -33,7 +33,7 @@ Effort: ~2 weeks · Depends: R0.
 | R2.1 | Sites/teams/assignments → `projects`/`project_members` (DB map §A.2) with dual-write + drift-checker | ✅ **P6 CLOSURE (2026-09-24)** — All 6 phases complete. P1–P5: shared contracts, mobile/web migration, authorization, backfill. P6: documentation reconciliation. |
 | R2.2 | Attendance module (clock-in/out, shared calc server-side, geofence verdict) | time_logs written by API; web matrix live |
 | R2.3 | Stock module (balances/movements/avize; DB invariants intact) | ✅ **E2E VERIFIED** — 30/30 live tests; four-layer defense; per-project aviz; atomic posting |
-| R2.4 | Daily reports module (header+items+approvals table) | report submit & approve E2E |
+| R2.4 | Daily reports module (header+items+approvals table) | ⚙️ **FINALIZATION E2E VERIFIED (P4.4, 2026-09-29)** — DRAFT → SUBMITTED via `POST /api/daily-reports/:id/submit` (+ the Mobile one-call contract): one immutable revision, one stock consumption, audit + idempotent replay, read-only UI after submit, `gate-p44-finalize.js` 25/25. Approval/rejection + notifications still open. |
 | R2.5 | Notifications module (read/mark; later channels) + audit writes | center feeds from API |
 
 Effort: ~3 weeks · Depends: R1.

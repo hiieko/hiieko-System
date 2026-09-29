@@ -46,6 +46,9 @@ model User {
   team_members        TeamMember[]
   created_daily_plans DailyPlan[]              @relation("DailyPlanCreator")
   profile             UserProfile?
+  reviewed_reports    DailyReport[]            @relation("ReportReviewer")
+  report_approvals    DailyReportApproval[]    @relation("ReportApprover")
+  report_revisions    DailyReportRevision[]    @relation("RevisionSubmitter")
   organization        Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
@@ -392,23 +395,61 @@ model DailyReport {
   team_id         String?
   team_leader_id  String
   report_date     DateTime              @db.Date
+  start_time      String?               // HH:mm (nullable — draft may be incomplete)
+  end_time        String?               // HH:mm (nullable — draft may be incomplete)
   weather_notes   String?
   blockages       String?
+  proposed_work   String?               // "Proposed Work" (Lucrari Propuse) - ISSUE-048: distinct from general_notes (execution notes)
   general_notes   String?
   status          String                @default("SUBMITTED")
   idempotency_key String?               @unique
+  reviewed_by     String?
+  reviewed_at     DateTime?
+  revision_number Int                   @default(1)
   created_at      DateTime              @default(now())
   updated_at      DateTime              @updatedAt
   materials       DailyReportMaterial[]
   tasks           DailyReportTask[]
   workers         DailyReportWorker[]
+  ohs_items       DailyReportOhsItem[]
   project         Project               @relation(fields: [project_id], references: [id], onDelete: Cascade)
   team            Team?                 @relation(fields: [team_id], references: [id])
   team_leader     User                  @relation("ReportLeader", fields: [team_leader_id], references: [id], onDelete: Cascade)
+  reviewer        User?                 @relation("ReportReviewer", fields: [reviewed_by], references: [id], onDelete: SetNull)
+  approvals       DailyReportApproval[]
+  revisions       DailyReportRevision[]
   production      ProductionEntry[]
 
   @@index([project_id, report_date])
   @@map("daily_reports")
+}
+
+model DailyReportApproval {
+  id              String      @id @default(uuid())
+  daily_report_id String
+  reviewer_id     String
+  action          String      // APPROVED | REJECTED | CANCELLED
+  comment         String?
+  created_at      DateTime    @default(now())
+  daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
+  reviewer        User        @relation("ReportApprover", fields: [reviewer_id], references: [id], onDelete: Restrict)
+
+  @@index([daily_report_id])
+  @@map("daily_report_approvals")
+}
+
+model DailyReportRevision {
+  id              String      @id @default(uuid())
+  daily_report_id String
+  revision_number Int
+  snapshot        Json
+  submitted_by_id String
+  submitted_at    DateTime    @default(now())
+  daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
+  submitted_by    User        @relation("RevisionSubmitter", fields: [submitted_by_id], references: [id], onDelete: Restrict)
+
+  @@unique([daily_report_id, revision_number])
+  @@map("daily_report_revisions")
 }
 
 model DailyReportWorker {
@@ -455,6 +496,28 @@ model ProductionEntry {
   daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
 
   @@map("production_entries")
+}
+
+// HIIEKO — controlled OHS/SSM risk checklist categories (P4.3.1).
+// Values are enforced at the database level so risk_type is never free text.
+enum OhsRiskType {
+  ppe
+  adverse_weather
+  procedures
+  electrical
+  tools_machinery
+  fall_height
+  other_risks
+}
+
+model DailyReportOhsItem {
+  id              String      @id @default(uuid())
+  daily_report_id String
+  risk_type       OhsRiskType
+  notes           String?
+  daily_report    DailyReport @relation(fields: [daily_report_id], references: [id], onDelete: Cascade)
+
+  @@map("daily_report_ohs_items")
 }
 
 model Material {

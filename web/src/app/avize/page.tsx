@@ -1,9 +1,11 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
+import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useLocale } from '@solar/shared';
+import { useProject } from '../../contexts/ProjectContext';
 import { 
   Truck, FileText, Calendar, MapPin, User, Boxes, CheckCircle2, 
   Loader2, RefreshCw
@@ -18,20 +20,21 @@ interface DNItem {
   material_id: string; material_code: string; material_name: string; unit: string; quantity: number;
 }
 
-export default function AvizePage() {
+function AvizePageInner() {
   const [deliveries, setDeliveries] = useState<(DNRow & { items: DNItem[] })[]>([]);
   const [siteNames, setSiteNames] = useState<Record<string, string>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { locale } = useLocale();
+  const { selectedProjectId } = useProject();
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
       // Use apiClient to get avize from NestJS backend
-      const response = await apiClient.getAvize();
+      const response = await apiClient.getAvize({ projectId: selectedProjectId || undefined });
       const data = (response.data || []) as any[];
       
       // Map from NestJS aviz model to legacy DNRow format
@@ -86,7 +89,7 @@ export default function AvizePage() {
       setLoading(false);
     }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [selectedProjectId]);
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="deliveries" />
@@ -209,5 +212,13 @@ export default function AvizePage() {
       </div>
       )}
     </div>
+  );
+}
+
+export default function AvizePage() {
+  return (
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
+      <AvizePageInner />
+    </RoleGuard>
   );
 }

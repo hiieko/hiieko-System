@@ -30,7 +30,11 @@ export type AttendanceStatus =
   | 'sick_leave'    // Concediu medical
   | 'vacation';     // Concediu de odihna
 
-export type ReportStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
+// Aligned with backend/database daily_reports.status values (P4.2)
+export type ReportStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+// Aligned with backend daily_report_approvals.action values (P4.2)
+export type DailyReportApprovalAction = 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export interface UserProfile {
   id: string;
@@ -159,38 +163,187 @@ export interface DeliveryNote {
   updated_at: string;
 }
 
+// ── Daily Reports (P4.2 aligned with backend Prisma model + API response) ────────
+
+/** Task entry in a daily report — matches backend daily_report_tasks + task relation */
 export interface DailyReportTask {
-  description: string;
-  quantity: number;
-  unit: string;
+  id: string;
+  daily_report_id: string;
+  task_id: string;
+  quantity_done: number;
+  notes?: string;
+  /** Inlined from the related Task when API includes the relation */
+  task?: {
+    id: string;
+    title?: string;
+    name?: string;
+    code?: string;
+    unit_of_measure?: string;
+    status?: string;
+  };
 }
 
+/** Material consumption entry — matches backend daily_report_materials + material relation */
 export interface DailyReportMaterialUsage {
+  id: string;
+  daily_report_id: string;
   material_id: string;
-  material_code: string;
-  material_name: string;
+  quantity_used: number;
+  /** Inlined from the related Material when API includes the relation */
+  material?: {
+    id: string;
+    code: string;
+    name: string;
+    unit: string;
+  };
+}
+
+/** Production metric entry — matches backend production_entries */
+export interface ProductionEntry {
+  id: string;
+  daily_report_id: string;
+  metric_name: string;
   quantity: number;
   unit: string;
 }
 
+/** DailyReport worker entry — matches backend daily_report_workers */
+export interface DailyReportWorker {
+  id: string;
+  daily_report_id: string;
+  worker_id: string;
+  hours_worked: number;
+  overtime_hours: number;
+  notes?: string;
+}
+
+/**
+ * Full Daily Report as returned by GET /api/daily-reports and GET /api/daily-reports/:id.
+ * Field naming follows the Prisma model (snake_case) which is what the API returns.
+ */
 export interface DailyReport {
   id: string;
   project_id: string;
-  team_id?: string;
+  team_id?: string | null;
   team_leader_id: string;
-  report_date: string; // YYYY-MM-DD
-  present_worker_ids: string[];
-  tasks: DailyReportTask[];
-  materials_used: DailyReportMaterialUsage[];
-  photos: string[];
-  notes?: string;
+  report_date: string;          // YYYY-MM-DD
+  start_time?: string | null;   // HH:mm
+  end_time?: string | null;     // HH:mm
+  weather_notes?: string | null;
+  blockages?: string | null;
+  /** "Proposed Work" (Lucrari Propuse) — ISSUE-048: persisted separately from general_notes. */
+  proposed_work?: string | null;
+  general_notes?: string | null;
   status: ReportStatus;
-  reviewed_by?: string;
-  reviewed_at?: string;
-  is_offline_created?: boolean;
-  idempotency_key?: string;
-  created_at: string;
-  updated_at: string;
+  idempotency_key?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;   // ISO 8601
+  revision_number: number;
+  created_at: string;            // ISO 8601
+  updated_at: string;            // ISO 8601
+
+  // Relations (included when API responds with include)
+  project?: { id: string; name: string; code: string };
+  team?: { id: string; name: string } | null;
+  team_leader?: {
+    id: string;
+    profile?: { full_name: string };
+  };
+  reviewer?: {
+    id: string;
+    profile?: { full_name: string };
+  } | null;
+  workers?: DailyReportWorker[];
+  tasks?: DailyReportTask[];
+  materials?: DailyReportMaterialUsage[];
+  production?: ProductionEntry[];
+  ohs_items?: DailyReportOhsItem[];
+  approvals?: DailyReportApproval[];
+  revisions?: DailyReportRevision[];
+}
+
+/** OHS/SSM risk checklist category — enforced values (matches Prisma enum OhsRiskType) */
+export type DailyReportOhsRiskType =
+  | 'ppe'
+  | 'adverse_weather'
+  | 'procedures'
+  | 'electrical'
+  | 'tools_machinery'
+  | 'fall_height'
+  | 'other_risks';
+
+/** OHS/SSM risk checklist item — matches backend daily_report_ohs_items */
+export interface DailyReportOhsItem {
+  id: string;
+  daily_report_id: string;
+  risk_type: DailyReportOhsRiskType;
+  notes?: string | null;
+}
+
+// ============================================================================
+// Daily Report Approval & Revision Audit Trail (P4.2)
+// ============================================================================
+
+/** Audit trail entry for a reviewer action on a daily report */
+export interface DailyReportApproval {
+  id: string;
+  daily_report_id: string;
+  reviewer_id: string;
+  action: DailyReportApprovalAction;
+  comment?: string | null;
+  created_at: string;            // ISO 8601
+  /** Inlined when API includes the reviewer relation */
+  reviewer?: {
+    id: string;
+    profile?: { full_name: string };
+  };
+}
+
+/** Immutable JSON snapshot of a daily report submission/revision */
+export interface DailyReportRevision {
+  id: string;
+  daily_report_id: string;
+  revision_number: number;
+  /** Full snapshot of the report at submission time (JSON — type-safe access not guaranteed) */
+  snapshot: Record<string, unknown>;
+  submitted_by_id: string;
+  submitted_at: string;          // ISO 8601
+  /** Inlined when API includes the submitter relation */
+  submitted_by?: {
+    id: string;
+    profile?: { full_name: string };
+  };
+}
+
+// ============================================================================
+// Daily Report Finalization (P4.4 — DRAFT -> SUBMITTED)
+// ============================================================================
+
+/** One material line deducted from project stock by a finalization. */
+export interface DailyReportConsumptionEntry {
+  materialId: string;
+  quantity: number;
+  /** Stock movement created (or replayed) for this line. */
+  movementId: string;
+  /** Balance left after the atomic decrement (null when the movement was a replay). */
+  balanceAfter: number | null;
+  /** true when the movement already existed for this revision's idempotency key. */
+  replayed: boolean;
+}
+
+/**
+ * Response of POST /api/daily-reports/:id/submit — and of a create() whose persisted status is
+ * already SUBMITTED (the status-less Mobile POST finalizes through the same core).
+ *
+ * `alreadySubmitted: true` means the call was an idempotent replay: the returned revision is the
+ * existing one and nothing was consumed a second time. A legacy report that was SUBMITTED before
+ * P4.4 has no revision and is reported as a conflict instead (never retro-consumed).
+ */
+export interface DailyReportSubmitResult {
+  report: DailyReport;
+  revision?: DailyReportRevision | null;
+  consumed?: DailyReportConsumptionEntry[];
+  alreadySubmitted: boolean;
 }
 
 // ============================================================================

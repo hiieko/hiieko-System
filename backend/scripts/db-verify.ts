@@ -690,6 +690,117 @@ async function main() {
     else fail('Purchase order status values', `${count} purchase orders have unexpected status values`);
   } catch (e: any) { skip('Purchase order status values', `Query error: ${e.message}`); }
 
+  // 8e. Check daily_report_approvals action values
+  try {
+    const badApprovalAction = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      'SELECT COUNT(*)::bigint as count FROM daily_report_approvals WHERE action NOT IN (\'APPROVED\', \'REJECTED\', \'CANCELLED\')'
+    );
+    const count = Number(badApprovalAction[0]?.count || 0);
+    if (count === 0) pass('Daily report approval action values', 'All approval actions are valid');
+    else fail('Daily report approval action values', `${count} approvals have unexpected action values`);
+  } catch (e: any) { skip('Daily report approval action values', `Query error: ${e.message}`); }
+
+  // 8f. Check daily_report_revisions table exists and data integrity
+  try {
+    const revCount = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      'SELECT COUNT(*)::bigint as count FROM daily_report_revisions'
+    );
+    pass('Daily report revisions table', 'daily_report_revisions table accessible');
+  } catch (e: any) { fail('Daily report revisions table', `Table missing or inaccessible: ${e.message}`); }
+
+  // 8g. P4.3.1 — daily_report_ohs_items FK integrity (no orphans)
+  try {
+    const orphanOhs = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      'SELECT COUNT(*)::bigint as count FROM daily_report_ohs_items o WHERE NOT EXISTS (SELECT 1 FROM daily_reports dr WHERE dr.id = o.daily_report_id)'
+    );
+    const count = Number(orphanOhs[0]?.count || 0);
+    if (count === 0) pass('FK: daily_report_ohs_items.daily_report_id', 'No orphan OHS checklist references');
+    else fail('FK: daily_report_ohs_items.daily_report_id', `${count} orphan OHS checklist references`);
+  } catch (e: any) { skip('FK: daily_report_ohs_items.daily_report_id', `Query error: ${e.message}`); }
+
+  // 8h. P4.3.1 — daily_report_ohs_items risk_type controlled values
+  try {
+    const badOhsRisk = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM daily_report_ohs_items WHERE risk_type NOT IN ('ppe', 'adverse_weather', 'procedures', 'electrical', 'tools_machinery', 'fall_height', 'other_risks')`
+    );
+    const count = Number(badOhsRisk[0]?.count || 0);
+    if (count === 0) pass('Daily report OHS risk_type values', 'All OHS risk_type values are valid');
+    else fail('Daily report OHS risk_type values', `${count} OHS items have unexpected risk_type values`);
+  } catch (e: any) { skip('Daily report OHS risk_type values', `Query error: ${e.message}`); }
+
+  // 8i. P4.3.1 — daily_reports start_time/end_time controlled format (HH:mm or NULL)
+  // Drafts may legitimately have both columns NULL until the Team Leader fills them in.
+  try {
+    const badTimeFormat = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM daily_reports WHERE (start_time IS NOT NULL AND start_time !~ '^([01]?[0-9]|2[0-3]):[0-5][0-9]$') OR (end_time IS NOT NULL AND end_time !~ '^([01]?[0-9]|2[0-3]):[0-5][0-9]$')`
+    );
+    const count = Number(badTimeFormat[0]?.count || 0);
+    if (count === 0) pass('Daily report start_time/end_time format', 'All start_time/end_time values are HH:mm or NULL');
+    else fail('Daily report start_time/end_time format', `${count} daily reports have a malformed start_time/end_time`);
+  } catch (e: any) { skip('Daily report start_time/end_time format', `Query error: ${e.message}`); }
+
+  // 8j. ISSUE-048 — daily_reports.proposed_work ("Proposed Work") is its own column,
+  // separate from general_notes ("Execution / General Notes"). Additive and nullable:
+  // reports created before the migration legitimately keep proposed_work = NULL.
+  try {
+    const proposedWorkColumn = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM information_schema.columns WHERE table_name = 'daily_reports' AND column_name = 'proposed_work'`
+    );
+    const count = Number(proposedWorkColumn[0]?.count || 0);
+    if (count === 1) pass('Daily report proposed_work column', 'daily_reports.proposed_work exists (distinct from general_notes)');
+    else fail('Daily report proposed_work column', 'daily_reports.proposed_work is missing — ISSUE-048 migration not applied');
+  } catch (e: any) { skip('Daily report proposed_work column', `Query error: ${e.message}`); }
+
+   // 8k. P4.4 — daily_report_revisions: one row per (report, revision number).
+   try {
+     const dupRevisions = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+       `SELECT COUNT(*)::bigint as count FROM (SELECT daily_report_id, revision_number FROM daily_report_revisions GROUP BY daily_report_id, revision_number HAVING COUNT(*) > 1) dup`
+     );
+     const count = Number(dupRevisions[0]?.count || 0);
+     if (count === 0) pass('Daily report revision numbering', 'No duplicate (report, revision_number) pairs');
+     else fail('Daily report revision numbering', `${count} (report, revision_number) pairs are duplicated`);
+   } catch (e: any) { skip('Daily report revision numbering', `Query error: ${e.message}`); }
+
+   // 8l. P4.4 — daily_report_revisions FK integrity (no orphans).
+   try {
+     const orphanRevisions = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+       `SELECT COUNT(*)::bigint as count FROM daily_report_revisions r WHERE NOT EXISTS (SELECT 1 FROM daily_reports dr WHERE dr.id = r.daily_report_id)`
+     );
+     const count = Number(orphanRevisions[0]?.count || 0);
+     if (count === 0) pass('FK: daily_report_revisions.daily_report_id', 'No orphan revision references');
+     else fail('FK: daily_report_revisions.daily_report_id', `${count} orphan revision references`);
+   } catch (e: any) { skip('FK: daily_report_revisions.daily_report_id', `Query error: ${e.message}`); }
+
+   // 8m. P4.4 — a DRAFT report must be neither revised nor charged (drafts consume nothing).
+   try {
+     const draftsTouchedByFinalization = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+       `SELECT COUNT(*)::bigint as count FROM daily_reports dr WHERE dr.status = 'DRAFT' AND (EXISTS (SELECT 1 FROM daily_report_revisions r WHERE r.daily_report_id = dr.id) OR EXISTS (SELECT 1 FROM stock_movements sm WHERE sm.reference_type = 'daily_report' AND sm.reference_id = dr.id))`
+     );
+     const count = Number(draftsTouchedByFinalization[0]?.count || 0);
+     if (count === 0) pass('DRAFT daily reports are uncharged', 'No DRAFT report has a revision or a consumption movement');
+     else fail('DRAFT daily reports are uncharged', `${count} DRAFT reports have a revision or a consumption movement`);
+   } catch (e: any) { skip('DRAFT daily reports are uncharged', `Query error: ${e.message}`); }
+
+   // 8n. P4.4 — no stock can be charged to a report without its immutable revision.
+   try {
+     const chargedWithoutRevision = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+       `SELECT COUNT(*)::bigint as count FROM stock_movements sm WHERE sm.reference_type = 'daily_report' AND sm.reference_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM daily_report_revisions r WHERE r.daily_report_id = sm.reference_id)`
+     );
+     const count = Number(chargedWithoutRevision[0]?.count || 0);
+     if (count === 0) pass('Daily report consumption has a revision', 'Every daily_report stock movement has an immutable revision');
+     else fail('Daily report consumption has a revision', `${count} daily_report movements have no revision`);
+   } catch (e: any) { skip('Daily report consumption has a revision', `Query error: ${e.message}`); }
+
+   // 8o. P4.4 — a finalization consumption movement must be traceable to its report.
+   try {
+     const untraceableConsumption = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+       `SELECT COUNT(*)::bigint as count FROM stock_movements WHERE reference_type = 'daily_report' AND (reference_id IS NULL OR idempotency_key IS NULL)`
+     );
+     const count = Number(untraceableConsumption[0]?.count || 0);
+     if (count === 0) pass('Daily report movement traceability', 'Every daily_report movement has reference_id + idempotency_key');
+     else fail('Daily report movement traceability', `${count} daily_report movements lack reference_id or idempotency_key`);
+   } catch (e: any) { skip('Daily report movement traceability', `Query error: ${e.message}`); }
+
   // =====================================================================
   // SECTION 9: Summary & Exit Code
   // =====================================================================

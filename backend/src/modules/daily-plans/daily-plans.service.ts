@@ -250,6 +250,12 @@ export class DailyPlansService {
               status: pt.task.status,
               unit_of_measure: pt.task.unit_of_measure,
               planned_quantity: pt.task.planned_quantity,
+              // The slim task payload must keep the (already user-filtered)
+              // assignments so the frontend worker/technician parity check
+              // (canUpdateTaskProgress: task.assignments.some(user_id)) works.
+              // Without this, a worker's OWN assigned task renders read-only
+              // even though PATCH /progress accepts the write (403-parity bug).
+              assignments: pt.task.assignments,
             },
             target_quantity: pt.target_quantity,
             actual_quantity: pt.actual_quantity,

@@ -75,3 +75,38 @@ _*.txt
 
 # ---- Cline / AI tools ---------------------------------------------
 .clinerules/
+
+# ---- Local verification artifacts (NOT source) ----------------------
+# These are disposable: every headless-Chrome gate re-creates them.
+# Root-anchored (leading "/") so application source can never match.
+#
+# CDP browser profiles written by the gates (.cdp-chrome-profile,
+# .cdp-lan-profile, .cdp-p431-profile, .cdp-seed-profile,
+# .cdp-issue048-profile, .cdp-p44-profile, ...)
+/.cdp-*/
+# Gate screenshots
+/task-screenshots/
+/planning-screenshots/
+# Gate harnesses (browser / CDP checks)
+/gate-*.js
+/gate-*.out.json
+/cdp-*.js
+/quick-test.js
+/final-test.js
+/verify-parity.js
+# Gate evidence, typecheck and test logs written to the repo root
+/ot-*.js
+/ot-*.ps1
+/ot-*.cmd
+/ot-*.done
+/ot-*.txt
+/ot-*.json
+/ot-*.out
+/ot-*.ts
+/ot-*.tsx
+/tsc-*.txt
+/web-tsc.txt
+/shared-tsc.txt
+/jest-*.txt
+/dbverify*.txt
+/web/tsc_*.txt

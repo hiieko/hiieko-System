@@ -222,6 +222,41 @@ Every scan needs at least a confirmation step.
 ## Affected Areas
 `ocr-service/app/*`, Edge Function, `/cheltuieli` review flow.
 
+# DEC-011 — OpenConstructionERP as UI/UX pattern reference only
+**Date:** 2026-09-27
+**Status:** ACCEPTED
+
+## Context
+The HIIEKO UI needs design-system cohesion. The project `datadrivenconstruction/OpenConstructionERP` (AGPL-3.0) has been cited as a visual/structure reference in earlier work (ConfirmDialog, Modal, Button patterns). We must adopt its interaction and layout patterns without importing its AGPL-3.0 code.
+
+## Decision
+Use OpenConstructionERP as a **pattern reference only**:
+- Visual language, component APIs, interaction/a11y patterns, shell layout (sidebar + header + page shell) may be **re-implemented in HIIEKO-owned components**.
+- **No source files from OpenConstructionERP may be copied verbatim** into the HIIEKO tree.
+- AGPL-3.0 does not contaminate patterns / APIs / layouts re-implemented independently — these are not derivative works of the original.
+
+## Reason
+Pattern re-implementation is the only legally safe path without a commercial licence. HIIEKO's brand (`hii-*` green palette, Inter font, `@solar/shared` i18n) is already distinct and must be preserved per the roadmap.
+
+## Alternatives Considered
+- Buy commercial licence from OpenConstructionERP — rejected: no procurement process in place; also unnecessary if we only re-implement patterns.
+- In-house-only design — rejected: OCE provides a battle-tested reference that reduces design churn.
+
+## Consequences
+### Positive
+- Legally safe; brand stays HIIEKO.
+- Re-implemented components are smaller, simpler, and match our stack (Next.js App Router vs Vite + react-router).
+- `DESIGN_SYSTEM.md` captures the mapping so the team knows what is "inspired by OCE" vs "HIIEKO-original".
+
+### Negative
+- No direct CSS or component copy-paste from OCE — each pattern costs 10–60 minutes to re-implement.
+- Some OCE design patterns (ag-Grid, Three.js maps) are out of scope for HIIEKO's stack.
+
+## Affected Areas
+`web/src/components/ui/*`, `web/tailwind.config.js`, `web/src/app/globals.css`, `Project workflow/DESIGN_SYSTEM.md`.
+
+---
+
 # Superseded Decisions
 Never silently delete old decisions. Mark them SUPERSEDED.
 

@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, MapPin, Euro, FileText, AlertTriangle, TrendingUp } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { t } from '@solar/shared';
+import { useProject } from '../../contexts/ProjectContext';
 
 interface Stats { employees: number; active_sites: number; expenses_month: number; pending_expenses: number; reports: number; }
 const empty: Stats = { employees:0, active_sites:0, expenses_month:0, pending_expenses:0, reports:0 };
@@ -13,6 +14,7 @@ function StatisticiPageInner() {
   const [stats, setStats] = useState<Stats>(empty);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { selectedProjectId } = useProject();
 
   useEffect(() => {
     async function load() {
@@ -20,7 +22,7 @@ function StatisticiPageInner() {
       setError(null);
       try {
         // Use control tower overview for statistics
-        const overview = await apiClient.getControlTowerOverview();
+        const overview = await apiClient.getControlTowerOverview(selectedProjectId || undefined);
         const data = overview.data;
         
         if (data) {
@@ -40,7 +42,7 @@ function StatisticiPageInner() {
       }
     }
     load();
-  }, []);
+  }, [selectedProjectId]);
 
   const cards = [
     { label: t('stats.employees'), value: String(stats.employees), icon: Users, color: 'text-emerald-600 bg-emerald-50' },

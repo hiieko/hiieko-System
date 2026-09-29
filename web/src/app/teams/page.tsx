@@ -5,6 +5,7 @@ import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProject } from '../../contexts/ProjectContext';
 import {
   Users, Loader2, RefreshCw, Search, X, Plus, Check,
   AlertTriangle, User, ArrowLeft, ChevronRight, UserPlus,
@@ -31,6 +32,7 @@ interface AppUser {
 
 function TeamsPageInner() {
   const { user } = useAuth();
+  const { selectedProjectId } = useProject();
   const userRole = user?.role?.toLowerCase() || 'worker';
   const canManageTeam = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman'].includes(userRole);
   const canManageMembers = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'].includes(userRole);
@@ -62,14 +64,14 @@ function TeamsPageInner() {
 
   const load = async () => {
     setLoading(true); setError(null);
-    try { const r = await apiClient.getTeams(); setTeams((r.data || []) as Team[]); }
+    try { const r = await apiClient.getTeams(selectedProjectId || undefined); setTeams((r.data || []) as Team[]); }
     catch (err) { if (err instanceof ApiError) setError(err.message); else setError('Eroare la incarcarea echipelor'); }
     finally { setLoading(false); }
   };
   const loadUsers = async () => {
     try { const r = await apiClient.getUsers(); setUsers((r.data || []) as AppUser[]); } catch {}
   };
-  useEffect(() => { load(); loadUsers(); }, []);
+  useEffect(() => { load(); loadUsers(); }, [selectedProjectId]);
 
   const handleCreate = async () => {
     if (!formName.trim() || !formCode.trim()) { setFormError('Numele si codul sunt obligatorii'); return; }
