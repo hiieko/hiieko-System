@@ -50,6 +50,119 @@ source, not copied from the audit prose in the plan document.
 | C4 | Terminology + role-label normalization, documentation corrections. |
 | C5 | Capture verification evidence, update `PROGRESS.md` / `VERIFICATION.md` / `ISSUES.md` / `HANDOFF.md`. |
 
+## UX-R1A C1 - Guardrail scripts (2026-09-29)
+
+Checkpoint C1 adds the two validation scripts and the four root npm scripts from the approved
+plan. **No product source file was changed** - both scripts only read source text.
+
+### Added
+
+| Path | Purpose |
+|---|---|
+| `scripts/check-i18n.mjs` | translation integrity: key table parse, duplicates, mojibake/U+FFFD, lossy `?`, unsupported locale literals, referenced-but-undefined keys. Also reports orphans, inline locale ternaries and dynamic `t()` calls. |
+| `scripts/check-frontend-guards.mjs` | stale task contract: G1 `assigned_to_id`, G2 a status literal that belongs to no current status contract (scoped to task/workflow code), R1 `progress` reads on task objects. |
+| root `package.json` | `i18n:check`, `guards:check`, plus the `web:typecheck` and `web:build` proxies the acceptance criteria call for. |
+
+### Check contract
+
+`npm run i18n:check` **fails** on: translation-table parse collapse (guards the parser itself,
+`MIN_EXPECTED_KEYS = 950`), duplicate keys, mojibake / U+FFFD in a non-comment line, a lossy `?`
+in UI text, a `t(key, '<locale>')` literal outside `{ro, en}`, and any statically referenced key
+that is not defined.
+
+`npm run i18n:check` **reports only** (never fails CI): orphan keys, inline `locale === '...'`
+ternaries, dynamic `t(<expression>)` calls, and mojibake that only appears inside a comment.
+
+`npm run guards:check` **fails** on `assigned_to_id` anywhere in `web/src` / `Mobile/src` /
+`shared/src` (G1), and on a status literal outside the union of the repository's real status
+enums inside the task/workflow scope only (G2). `'TODO'` and `'DONE'` are named as legacy;
+`'ON_HOLD'` and `'REVIEW'` pass because they are real members of `ProjectStatusEnum` /
+`SolarDesignStatusEnum`. `'REVIEW'` / `'ON_HOLD'` are **not** blanket-forbidden, and every
+occurrence outside the task scope is reported instead of failed.
+
+### Evidence - the checks must fail on this tree (guardrail-first requirement)
+
+`npm run i18n:check` -> **exit 1**
+
+```text
+check-i18n: FAIL (192 source files, 985 key definitions, 972 unique keys)
+FAIL - duplicate translation keys (13)
+FAIL - mojibake in source text (10)
+FAIL - lossy '?' replacing a Romanian diacritic (15)
+FAIL - referenced but undefined translation keys (1)
+```
+
+`npm run guards:check` -> **exit 1**
+
+```text
+check-frontend-guards: FAIL (192 source files scanned)
+FAIL - G1 removed task field 'assigned_to_id' (1)
+FAIL - G2 status outside every current status contract (3)
+```
+
+Exact rows (this is the C3 fix list):
+
+- duplicates (13): `general.all` 156/618, `general.close` 162/617, `general.loading` 152/612,
+  `general.no` 160/616, `general.retry` 161/449, `general.yes` 159/615, `nav.projects` 31/471,
+  `nav.teams` 32/472, `nav.workforce` 33/473, `planning.create_modal_title` 840/950,
+  `profile.language` 170/805, `profile.title` 169/800, `users.title` 135/592.
+- mojibake (10): `cheltuieli/page.tsx` 70, 206, 215, 220, 229 (U+FFFD) and
+  `shared/src/translations.ts` 237, 449, 617 (U+017D) + 414, 450 (U+00E2 U+20AC).
+  `translations.ts:194` is mojibake inside a comment and is reported only.
+- lossy `?` in UI text (15 lines): `cheltuieli/page.tsx` 204, 212; `rapoarte/page.tsx` 105, 140,
+  145, 178, 236, 284; `stocuri/page.tsx` 104, 106, 215, 217, 225, 229, 236.
+- undefined key (1): `Mobile/src/screens/ReceiptScanFlow.tsx:359` -> `expenses.Project`.
+- G1 (1): `web/src/components/WorkerDashboard.tsx:45`.
+- G2 (3): `WorkerDashboard.tsx:45` (`'DONE'`), `:201` and `:202` (`'TODO'`).
+
+Report-only findings recorded for later phases: **623 orphan keys** (matches the audit), **213
+inline locale ternaries across 24 files**, 40+ dynamic `t()` calls, 2 allow-listed `'ON_HOLD'`
+project-status rows and 1 `t.progress` task read.
+
+### Evidence - the checks can go green (isolated fixtures)
+
+Both scripts were proven to return **0** on a clean tree and **1** on a dirty tree, using
+throwaway fixtures under `%TEMP%` (nothing inside the repository was touched):
+
+| Fixture | Command | Exit |
+|---|---|---|
+| `i18n-sandbox` - 1000 clean keys + one clean `t('fixture.key1')` consumer | `node scripts/check-i18n.mjs` (copy) | **0** (PASS) |
+| `guards-sandbox` - clean task file (`'IN_PROGRESS'`, `'ALL'`, `'ON_HOLD'`) | `node scripts/check-frontend-guards.mjs` (copy) | **0** (PASS) |
+| `guards-sandbox` + one file with `assigned_to_id` / `'DONE'` | same | **1** (FAIL, G1 + G2) |
+
+The clean-run also confirms the allow-list works: `'INVESTIGATING'` / `'CORRECTIVE_ACTION_PROPOSED'`
+(`IssueStatusEnum`) and the `'ALL'` filter sentinel no longer trip G2, while `'DONE'` does.
+
+### Controls re-run at C1 (must stay green)
+
+| Command | Result |
+|---|---|
+| `npm run typecheck` (shared, web, Mobile, backend) | **exit 0** - no errors |
+| `npm run web:typecheck` | **exit 0** - no errors |
+| `npm run web:build` | **exit 0** - `Compiled successfully`, static pages **26/26** |
+
+### Correction to the plan's audit prose
+
+The plan document records "126 inline locale ternaries". Re-measured across `web/src` **and**
+`Mobile/src`, the real figure is **213 in 24 files** (the 126 figure covered `web/src/app/**`
+only). The orphan count (623), duplicate count (13) and lossy-`?` line count (15) from the audit
+are confirmed. Recorded here rather than editing the reviewed plan text.
+
+### Deliberate deviation, please confirm
+
+The approved C1 table in this file also listed a `.github/workflows/ci.yml` step. It was **not**
+added at C1: wiring the two checks into CI now would declare a build that is red until C3/C4 fix
+the debt above, and C1's own acceptance wording is "add the two validation scripts and package
+scripts". The step is scheduled for **C5**, once the tree is clean, so CI never goes red. Say the
+word if CI should be wired immediately instead.
+
+### Not verified / out of scope at C1
+
+- No browser role sweep, no runtime smoke test: C1 changes no runtime behaviour (scripts only).
+- No `db:verify` run: no schema/database change at C1 (scheduled with the C5 evidence set).
+- The scripts are Node 20 `.mjs` with zero dependencies, so they run unchanged in the existing
+  Linux CI job; they were executed here on Windows/Node with the same results.
+
 ## Current Verification Status
 | Check | Status | Last Run | Notes |
 |---|---|---|---|
