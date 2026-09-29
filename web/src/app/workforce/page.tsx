@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { Users, Loader2, RefreshCw, Search, X, AlertTriangle, Edit3, Trash2, Check, Plus, Save } from 'lucide-react';
 import { displayName } from '../../lib/formatters';
+import { getRoleLabel, t, useLocale } from '@solar/shared';
 
 interface Employee {
   id: string; first_name: string; last_name: string;
@@ -14,12 +15,8 @@ interface Employee {
   user?: { id: string; email: string; role: string };
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN:'Admin',MANAGER:'Manager',TEAM_LEADER:'Sef Echipa',WORKER:'Muncitor',
-  PM:'Project Manager',SITE_MANAGER:'Sef Santier',VIEWER:'Vizualizare',
-};
-
 function WorkforcePageInner() {
+  const { locale } = useLocale();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -114,7 +111,7 @@ function WorkforcePageInner() {
   };
 
   const handleCreate = async () => {
-    if (!createFirstName.trim() || !createLastName.trim()) { setError('Prenumele si numele sunt obligatorii'); return; }
+    if (!createFirstName.trim() || !createLastName.trim()) { setError('Prenumele și numele sunt obligatorii'); return; }
     setCreateSaving(true);
     try {
       await apiClient.createEmployee({
@@ -152,7 +149,7 @@ function WorkforcePageInner() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-hii-500" />Forța de Muncă
+            <Users className="w-6 h-6 text-hii-500" />{t('workforce.title', locale)}
           </h1>
           <p className="text-sm text-slate-500 mt-1">Angajați și personal activ</p>
         </div>
@@ -169,17 +166,17 @@ function WorkforcePageInner() {
       </div>
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" placeholder="Cauta angajati..." value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" placeholder={locale === 'en' ? 'Search employees...' : 'Caută angajați...'} value={search} onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
         {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
       </div>
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{error}</div>}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500"><Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca...</div>
+        <div className="flex items-center justify-center py-16 text-slate-500"><Loader2 className="w-6 h-6 animate-spin mr-2" />{t('general.loading', locale)}</div>
       ) : filtered.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">{search ? 'Niciun rezultat' : 'Niciun angajat'}</h3>
+          <h3 className="text-base font-semibold text-slate-600">{search ? (locale === 'en' ? 'No results' : 'Niciun rezultat') : t('workforce.no_employees', locale)}</h3>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -188,11 +185,11 @@ function WorkforcePageInner() {
               <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
                 <th className="py-3 px-4">Nume</th>
                 <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Pozitie</th>
+                <th className="py-3 px-4">Poziție</th>
                 <th className="py-3 px-4">Rol</th>
                 <th className="py-3 px-4 text-right">Tarif</th>
                 <th className="py-3 px-4 text-center">Stare</th>
-                <th className="py-3 px-4 text-center">Actiuni</th>
+                <th className="py-3 px-4 text-center">Acțiuni</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -201,20 +198,20 @@ function WorkforcePageInner() {
                   <td className="py-3 px-4 font-medium">{e.first_name} {e.last_name}</td>
                   <td className="py-3 px-4 text-xs text-slate-600">{e.user?.email || '—'}</td>
                   <td className="py-3 px-4 text-xs text-slate-700">{e.position || '—'}</td>
-                  <td className="py-3 px-4"><span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{ROLE_LABELS[e.user?.role || ''] || e.user?.role || '—'}</span></td>
+                  <td className="py-3 px-4"><span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{getRoleLabel(e.user?.role, locale) || '—'}</span></td>
                   <td className="py-3 px-4 text-right text-xs">{e.hourly_rate ? Number(e.hourly_rate).toFixed(2) + ' RON' : '—'}</td>
                   <td className="py-3 px-4 text-center text-xs font-semibold">{e.is_active !== false ? <span className="text-emerald-700">Activ</span> : <span className="text-slate-500">Inactiv</span>}</td>
                   <td className="py-3 px-4 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <button onClick={() => openEdit(e)}
                         className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-hii-600 transition-colors"
-                        title="Editeaza">
+                        title={t('general.edit', locale)}>
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       {e.is_active !== false && (
                         <button onClick={() => setConfirmDelete(e.id)}
                           className="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors"
-                          title="Arhiveaza">
+                          title={locale === 'en' ? 'Archive' : 'Arhivează'}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
@@ -232,7 +229,7 @@ function WorkforcePageInner() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Editeaza Angajat</h3>
+              <h3 className="text-base font-bold text-slate-900">{locale === 'en' ? 'Edit Employee' : 'Editează Angajat'}</h3>
               <button onClick={() => setShowEdit(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
@@ -246,7 +243,7 @@ function WorkforcePageInner() {
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
                 </div>
               </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Pozitie</label>
+              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Poziție</label>
                 <input value={editPosition} onChange={(e) => setEditPosition(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
               </div>
@@ -257,7 +254,7 @@ function WorkforcePageInner() {
               <div><label className="text-xs font-semibold text-slate-700 block mb-1">Utilizator asociat</label>
                 <select value={editUserId} onChange={(e) => setEditUserId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fara cont</option>
+                  <option value="">{locale === 'en' ? 'No account' : 'Fără cont'}</option>
                   {users.filter((u: any) => u.is_active !== false).map((u: any) => (
                     <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
                   ))}
@@ -266,10 +263,10 @@ function WorkforcePageInner() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowEdit(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">{t('general.cancel', locale)}</button>
               <button onClick={handleEditSave} disabled={editSaving || !editFirstName.trim() || !editLastName.trim()}
                 className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {editSaving ? 'Se salveaza...' : <><Save className="w-4 h-4 inline mr-1" />Salveaza</>}
+                {editSaving ? (locale === 'en' ? 'Saving...' : 'Se salvează...') : <><Save className="w-4 h-4 inline mr-1" />{t('general.save', locale)}</>}
               </button>
             </div>
           </div>
@@ -285,16 +282,16 @@ function WorkforcePageInner() {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Arhiveaza angajat</h3>
-                <p className="text-sm text-slate-500">Angajatul va fi marcat ca inactiv si nu va mai aparea in listele active.</p>
+                <h3 className="text-base font-bold text-slate-900">{locale === 'en' ? 'Archive employee' : 'Arhivează angajat'}</h3>
+                <p className="text-sm text-slate-500">{locale === 'en' ? 'The employee will be marked as inactive and will no longer appear in active lists.' : 'Angajatul va fi marcat ca inactiv și nu va mai apărea în listele active.'}</p>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">{t('general.cancel', locale)}</button>
               <button onClick={() => handleDeleteEmployee(confirmDelete)} disabled={deleting}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {deleting ? 'Se arhiveaza...' : 'Arhiveaza'}
+                {deleting ? (locale === 'en' ? 'Archiving...' : 'Se arhivează...') : (locale === 'en' ? 'Archive' : 'Arhivează')}
               </button>
             </div>
           </div>
@@ -306,7 +303,7 @@ function WorkforcePageInner() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Angajat Nou</h3>
+              <h3 className="text-base font-bold text-slate-900">{t('workforce.new', locale)}</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
@@ -320,7 +317,7 @@ function WorkforcePageInner() {
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
                 </div>
               </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Pozitie</label>
+              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Poziție</label>
                 <input value={createPosition} onChange={(e) => setCreatePosition(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
               </div>
@@ -331,7 +328,7 @@ function WorkforcePageInner() {
               <div><label className="text-xs font-semibold text-slate-700 block mb-1">Utilizator asociat</label>
                 <select value={createUserId} onChange={(e) => setCreateUserId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fara cont</option>
+                  <option value="">{locale === 'en' ? 'No account' : 'Fără cont'}</option>
                   {users.filter((u: any) => u.is_active !== false).map((u: any) => (
                     <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
                   ))}
@@ -340,10 +337,10 @@ function WorkforcePageInner() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">{t('general.cancel', locale)}</button>
               <button onClick={handleCreate} disabled={createSaving || !createFirstName.trim() || !createLastName.trim()}
                 className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {createSaving ? 'Se salveaza...' : <><Plus className="w-4 h-4 inline mr-1" />Creeaza</>}
+                {createSaving ? (locale === 'en' ? 'Saving...' : 'Se salvează...') : <><Plus className="w-4 h-4 inline mr-1" />{locale === 'en' ? 'Create' : 'Creează'}</>}
               </button>
             </div>
           </div>

@@ -643,6 +643,43 @@ dedicated task/workspace pass (UX-R1B or later), leaving the attendance/shift lo
 solve it by adding another client-side filter — the backend scope stays the single source of truth.
 C3 deliberately left `WorkerAttendanceView.tsx` unmodified (outside the C3 file set).
 
+### C4 note (2026-09-29)
+UX-R1A C4 left this file's four remaining terminology rows untouched on purpose
+(`WorkerAttendanceView.tsx:93` `Reimprospateaza`, `:167`/`:217` `Distanta GPS`, `:249` `santier`), and
+also left `WorkerDashboard.tsx` lines 101 + 151 alone: `:101` sets
+`'Selecteaza un proiect mai intai.'` and `:151` picks the banner colour with
+`actionResult.includes('Selecteaza')`, so correcting the spelling without the result-kind refactor
+would break the colour logic. Both move with this issue.
+
+---
+
+## ISSUE-056 — Remaining RO copy / role-map debt outside the UX-R1A C4 scope (report-only)
+**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C4)
+
+### Description
+C4 normalised the shared vocabulary (nav/page titles, the 16-role `role.*` set, 175 diacritic defects).
+The following user-visible copy is deliberately still inconsistent and is now *measured* by the
+report-only guard row *"Romanian copy missing diacritics"* in `scripts/check-frontend-guards.mjs`:
+
+1. `web/src/components/ControlTowerSurface.tsx` + `ControlTowerDrilldownDrawer.tsx` (20 rows) — the
+   Control Tower surface was out of scope in C4 and still uses ASCII-only RO copy (`Sarcini`,
+   `Realizat`, `Astazi`…).
+2. `Mobile/src/screens/SettingsScreen.tsx` `formatRole()` (lines 185-193) — the last duplicate role
+   map (`'Sef Echipa'`, `'Vizualizare'`); it should call `getRoleLabel()` like web does.
+3. Full RO prose (long tutorial sentences in `shared/src/translations.ts`, remaining
+   `locale === 'en' ? … : …` literals as an artefact of the same copy) — the R1B translation pass.
+4. `ROLE_VISIBILITY_MATRIX.md` still stores some labels as literal `\uXXXX` escapes and shows
+   mojibake for the legend emoji (encoding debt); the two rows C4 corrected now read as real text.
+
+### Impact
+No functional impact (report-only, no CI failure). It is a consistency/translation debt: two surfaces
+still look different from the rest of the product, and a future term change could re-introduce a second
+role vocabulary on Mobile.
+
+### Required Action
+Close 1 and 2 in the C5/UX-R1B pass (same file sets that need their own refactor), and re-encode
+`ROLE_VISIBILITY_MATRIX.md` when it is next edited.
+
 ---
 
 # Known Limitations (not blocking)

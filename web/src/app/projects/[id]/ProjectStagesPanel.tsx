@@ -93,7 +93,7 @@ export function ProjectStagesPanel({ projectId }: Props) {
         </h3>
         {canCreate && (
           <Button variant="outline" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setShowCreate(true)}>
-            {locale === 'en' ? 'Add Stage' : 'Adauga Etapa'}
+            {locale === 'en' ? 'Add Stage' : 'Adaugă etapă'}
           </Button>
         )}
       </div>
@@ -101,25 +101,25 @@ export function ProjectStagesPanel({ projectId }: Props) {
       {showCreate && (
         <div className="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
           <div>
-            <label className={labelCls}>{locale === 'en' ? 'Stage Name *' : 'Nume Etapa *'}</label>
-            <input className={inputCls} placeholder={locale === 'en' ? 'e.g. Foundation' : 'ex. Fundatie'} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            <label className={labelCls}>{locale === 'en' ? 'Stage Name *' : 'Nume etapă *'}</label>
+            <input className={inputCls} placeholder={locale === 'en' ? 'e.g. Foundation' : 'ex. Fundație'} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data Inceput'}</label>
+        <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data început'}</label>
               <input className={inputCls} type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
             </div>
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'End Date' : 'Data Sfarsit'}</label>
+              <label className={labelCls}>{locale === 'en' ? 'End Date' : 'Data sfârșit'}</label>
               <input className={inputCls} type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
             </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => { setShowCreate(false); setForm({ name: '', startDate: '', endDate: '' }); }}>
-              {locale === 'en' ? 'Cancel' : 'Anuleaza'}
+          {locale === 'en' ? 'Cancel' : 'Anulează'}
             </Button>
             <Button variant="primary" size="sm" icon={<Save className="w-4 h-4" />} onClick={handleCreate} loading={saving} disabled={saving || !form.name.trim()}>
-              {locale === 'en' ? 'Create' : 'Creaza'}
+              {locale === 'en' ? 'Create' : 'Creează'}
             </Button>
           </div>
         </div>

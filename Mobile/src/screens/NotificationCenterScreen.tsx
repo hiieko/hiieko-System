@@ -73,7 +73,7 @@ export function NotificationCenter({ locale = 'ro' }: Props) {
     <View style={s.container}>
       <PageIntro sectionId="notifications" locale={locale} role="manager" />
       <View style={s.header}>
-        <Text style={s.title}>{locale === 'ro' ? 'Notificari' : 'Notifications'}</Text>
+        <Text style={s.title}>{locale === 'ro' ? 'Notificări' : 'Notifications'}</Text>
         <View style={s.headerRight}>
           {unreadCount > 0 && <Text style={s.badge}>{unreadCount}</Text>}
           <TouchableOpacity onPress={markAllRead}><Text style={s.markAll}>{locale === 'ro' ? 'Citit tot' : 'Read all'}</Text></TouchableOpacity>
@@ -83,7 +83,7 @@ export function NotificationCenter({ locale = 'ro' }: Props) {
       {loading ? (
         <View style={s.loadingContainer}><ActivityIndicator size="large" color="#f59e0b" /><Text style={s.loadingText}>Se incarca...</Text></View>
       ) : notifs.length === 0 ? (
-        <View style={s.empty}><Text style={s.emptyText}>{locale === 'ro' ? 'Fara notificari.' : 'No notifications.'}</Text></View>
+        <View style={s.empty}><Text style={s.emptyText}>{locale === 'ro' ? 'Fără notificări.' : 'No notifications.'}</Text></View>
       ) : (
         <FlatList
           data={notifs} keyExtractor={n => n.id}

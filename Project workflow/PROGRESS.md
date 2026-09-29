@@ -19,7 +19,7 @@
 | **Vertical Slice — Projects** | ✅ **COMPLETE** | `/projects` list + create wizard (validation per step) + `/projects/[id]` overview/members/settings/stages — all wired to real NestJS controllers via `features/projects` |
 | **Phase 3.2 Authorization Hardening** | ✅ **COMPLETE** | ISSUE-033/034/035 resolved; RoleGuard wired on 8 pages; OWNER management sidebar; project scoping on 13 controllers |
 | **Backend Tests** | ✅ **PASS** | 31 suites / 320 tests |
-| **db:verify** | ✅ **PASS** | 71/71 checks |
+| **db:verify** | ✅ **PASS** | 71/71 checks via `npm run db:verify --workspace=backend` → `backend/scripts/db-verify.ts`. The root `npm run db:verify` runs a **different** verifier, `database/scripts/verify_migration.ts`, and reports 41/41; both PASS on the same database (`localhost:5433/hiieko`) — see `VERIFICATION.md` → *db:verify denominators - 41 (root) vs 71 (backend workspace)* |
 | **Backend Typecheck** | ✅ **PASS** | 0 errors |
 | **Shared Typecheck** | ✅ **PASS** | 0 errors |
 | **Web Typecheck** | ✅ **PASS** | 0 errors (design system shell refactor) |
@@ -295,6 +295,37 @@ All quality gates verified as of 2026-09-25:
 ---
 
 ## Recent Work
+
+### 2026-09-29 - UX-R1A C4 terminology normalization: one vocabulary, one role set, `nav.control_tower` (GREEN)
+
+Copy/vocabulary checkpoint - no redesign, no semantic or logic change, no backend / Prisma / database /
+CI / route-architecture change, no new endpoint, no dependency.
+
+**Approved RO wording (user decision):** Task → `Task-uri`, Workforce → `Forță de Muncă`, Control
+Tower → `Turn de Control`. `Task-uri` / `Task-urile mele` from C3 stay (no `Sarcini` rewrite), the
+`Personal` sidebar group keeps its name, and only inconsistent/incorrect labels were normalised.
+
+| Change | Detail |
+|--------|--------|
+| **Control Tower nav key** | `nav.control_tower` (`Turn de Control` / `Control Tower`) replaces the temporary `nav.statistici` on the `/control-tower` item - `/statistici` has been a C2 redirect since, so the old label named a route that no longer exists. `nav.statistici` is now referenced nowhere (key kept, by decision) |
+| **One role vocabulary** | `shared/src/translations.ts` `role.*` = the complete 16-role set; `getRoleLabel()` (`shared/src/permissions.ts`) resolves it via `tPrefix('role.', …)` and accepts any casing. Deleted the four hardcoded maps that carried `'Maistru'`, `'Sef Echipa'`, `'Sef Santier'`, `'Vizualizare'`, `'Admin'`, `'Director Intretinere'` (`workforce`, `utilizatori`, `projects/[id]`) |
+| **Vocabulary fixes** | `nav.avize` `Procurement / Avize` → `Livrări & Avize`; `reports.tasks`/`planning.*` label-level `Sarcini` → `Task-uri`; `daily_report.team_leader` → `Șef de Echipă`; legacy keys `nav.attendance`/`nav.notifications` on worker surfaces → `nav.pontaj`/`nav.notificari` |
+| **Diacritics** | 175 of 181 measured RO copy defects corrected across 24 files (shared vocabulary + page/component copy: `Șantier`, `Salvează`, `Adaugă`, `Selectează`, `Încearcă`, `În Așteptare`, `Distanță`, `Acțiune`, `Întârziere`, `Notificări`, `Setări`, `Mișcare`, `Ieșire`…) |
+| **Page titles** | `/workforce`, `/utilizatori`, `/notificari`, `/pontaj`, `/issues` now render through their existing keys, so EN users stop seeing RO titles |
+| **New guard row (report-only)** | `scripts/check-frontend-guards.mjs` → *Romanian copy missing diacritics* (`RO_DIACRITIC_DEBT`); tokens are ignored inside comments, paths and identifiers. It never fails CI |
+
+**Verification (see `VERIFICATION.md` → UX-R1A C4 for the full evidence):** `i18n:check` PASS
+(988/988 keys), `guards:check` PASS (terminology row 181 → 6), `typecheck` exit 0 (4 workspaces),
+`web:build` exit 0 (25 routes), `npm test` 31 suites / 320 tests PASS, `db:verify` 41/41 PASS
+(root script `database/scripts/verify_migration.ts`; the backend workspace verifier
+`backend/scripts/db-verify.ts` reports 71/71 on the same database - two scripts, two inventories, both
+PASS: `VERIFICATION.md` → C4 *db:verify denominators*),
+static greps (`nav.statistici` 0 code refs, no `ROLE_LABELS`, no `Maistru`/`Vizualizare`),
+`getRoleLabel` runtime smoke test, and `Turn de Control` present in the built chunks.
+
+**Deliberately left (with reasons):** `WorkerAttendanceView.tsx` + `WorkerDashboard.tsx:101/151`
+(ISSUE-055 coupling), `ControlTowerSurface` copy, Mobile `SettingsScreen.formatRole()`, established
+copy (`Materiale & Stoc`, `Cheltuieli Companie`, prose `sarcini`), and the R1B prose sweep.
 
 ### 2026-09-29 - UX-R1A C3 field task sources, canonical task labels, translation cleanup (GREEN)
 

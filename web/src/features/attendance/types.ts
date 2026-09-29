@@ -122,7 +122,7 @@ export interface AssignedTask {
 export const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
   PRESENT: 'Prezent',
   ABSENT: 'Absent',
-  LATE: 'Intarziere',
+  LATE: 'Întârziere',
   LEFT_EARLY: 'Plecare devreme',
 };
 

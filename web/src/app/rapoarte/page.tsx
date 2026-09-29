@@ -115,7 +115,7 @@ function RapoartePageInner() {
           )}
           <button onClick={loadData} disabled={loading}
             className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reimprospateaza
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('general.refresh', locale)}
           </button>
         </div>
       </div>
@@ -176,7 +176,7 @@ function RapoartePageInner() {
                     </span>
                     <span>•</span>
                     <span>
-                      Șef Echipa: <strong className="text-slate-700">{leaderName}</strong>
+                      Șef de Echipă: <strong className="text-slate-700">{leaderName}</strong>
                     </span>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ function RapoartePageInner() {
                       </span>
                       <button type="button" onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
                         className="inline-flex items-center px-3 py-1.5 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
-                        <Edit3 className="w-3.5 h-3.5 mr-1" />Editeaza
+                        <Edit3 className="w-3.5 h-3.5 mr-1" />{t('general.edit', locale)}
                       </button>
                       {/* P4.4 — one-click finalization for a DRAFT; confirms first, then submits. */}
                       <button type="button"
@@ -229,7 +229,7 @@ function RapoartePageInner() {
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini înregistrate</p>
+                      <p className="text-xs text-slate-400 italic py-3">Nu există task-uri înregistrate</p>
                     )}
                   </div>
 
@@ -245,7 +245,7 @@ function RapoartePageInner() {
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <Boxes className="w-4 h-4 mr-1.5 text-amber-600" />
-                    Materiale Consumate (Scazute din Stoc)
+                    Materiale Consumate (Scăzute din Stoc)
                   </h3>
                   <div className="space-y-2">
                     {materialsUsed.length > 0 ? materialsUsed.map((m, idx) => (
@@ -259,14 +259,14 @@ function RapoartePageInner() {
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu exista materiale consumate</p>
+                      <p className="text-xs text-slate-400 italic py-3">Nu există materiale consumate</p>
                     )}
                   </div>
 
                   <div className="mt-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center">
                       <Users className="w-3.5 h-3.5 mr-1" />
-                      Echipa Prezenta ({presentWorkers.length}):
+                      Echipa Prezentă ({presentWorkers.length}):
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {presentWorkers.map(w => (
@@ -286,7 +286,7 @@ function RapoartePageInner() {
                   </h3>
                   <div className="grid grid-cols-1 gap-3">
                     <p className="text-xs text-slate-400 italic py-3">
-                      Fotografiile nu sunt disponibile in aceasta versiune.
+                      Fotografiile nu sunt disponibile în această versiune.
                     </p>
                   </div>
                 </div>

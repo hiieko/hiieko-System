@@ -97,7 +97,7 @@ export function WorkerNotifications({
               <Bell className="w-4.5 h-4.5 text-violet-600" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">{t('nav.notifications', locale)}</h2>
+              <h2 className="text-base font-bold text-slate-900">{t('nav.notificari', locale)}</h2>
               {notifications && notifications.length > 0 && (
                 <p className="text-xs text-slate-400">
                   {notifications.length} {locale === 'en' ? 'unread' : 'necitite'}
@@ -107,7 +107,7 @@ export function WorkerNotifications({
           </div>
           <button onClick={onRetry} disabled={loading}
             className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
-            title={locale === 'en' ? 'Refresh' : 'Reimprospateaza'}>
+            title={t('general.refresh', locale)}>
             <RefreshCw className={'w-4 h-4 ' + (loading ? 'animate-spin' : '')} />
           </button>
         </div>
@@ -132,7 +132,7 @@ export function WorkerNotifications({
               <p className="font-medium">{error}</p>
               <button onClick={onRetry}
                 className="mt-1 text-amber-700 underline-offset-2 hover:underline text-xs">
-                {locale === 'en' ? 'Try again' : 'Incearca din nou'}
+                {t('general.retry', locale)}
               </button>
             </div>
           </div>

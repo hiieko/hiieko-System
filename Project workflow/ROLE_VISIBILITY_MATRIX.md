@@ -1,7 +1,7 @@
 ﻿# Role / Sidebar / Action Visibility Matrix
 
 > Source of truth: comprehensive backend (31 controllers) + frontend (21 routes + Sidebar.tsx + AppShell.tsx) audit.
-> Last Updated: 2026-09-26
+> Last Updated: 2026-09-29 (UX-R1A C4 corrected two rows: `/control-tower` is the `Turn de Control` destination - `/statistici` is a C2 redirect and no longer a page - and `/avize` reads `Livrări & Avize`. See the notes below the table.)
 
 ---
 
@@ -35,7 +35,7 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 | Dashboard | / | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
 | Pontaj & Ore | /pontaj | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
 | Rapoarte Zilnice | /rapoarte | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
-| Procurement / Avize | /avize | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
+| Livrări & Avize | /avize | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
 | Materiale & Stoc | /stocuri | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
 | Cheltuieli | /cheltuieli | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… |
 | **Management** | | | | | | | | | | | | | | | | | |
@@ -44,12 +44,24 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 | For\u021b\u0103 de Munc\u0103 | /workforce | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
 | \u0218antiere (GIS) | /santiere | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
 | Aprob\u0103ri | /aprobare | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| Statistici | /statistici | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
+| Turn de Control | /control-tower | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
 | **Administrare** | | | | | | | | | | | | | | | | | |
 | Utilizatori | /utilizatori | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
 | **Personal** | | | | | | | | | | | | | | | | | |
 | Notific\u0103ri | /notificari | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
 | Profil | /profil | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
+
+### C4 notes (2026-09-29)
+- **Row corrected:** `Statistici | /statistici` → `Turn de Control | /control-tower`. The sidebar item
+  has pointed at `/control-tower` since UX-R1A C2 (the `/statistici` page was replaced by a 307
+  redirect) and now carries its own `nav.control_tower` key instead of the temporary `nav.statistici`.
+- **Row corrected:** `Procurement / Avize` → `Livrări & Avize` (the RO column is Romanian; the EN
+  label is `Deliveries`).
+- **Encoding debt (not fixed here):** this file still stores several labels as literal `\uXXXX`
+  escapes (`For\u021b\u0103 de Munc\u0103`, `\u0218antiere (GIS)`, `Aprob\u0103ri`,
+  `Notific\u0103ri`, `Opera\u021biuni`) and the legend emoji render as mojibake. The two rows above
+  now contain real characters; a full re-encode should happen when this document is next revised
+  (ISSUE-056).
 
 ### Sidebar Group Visibility Rules
 - **Opera\u021biuni**: All authenticated users (no role filter)

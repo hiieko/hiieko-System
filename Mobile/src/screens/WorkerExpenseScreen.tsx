@@ -95,7 +95,7 @@ export function WorkerExpenseScreen({ user, projects, isOffline, locale = 'ro' }
           </TouchableOpacity>))}</View>
       </View>
       <View style={s.card}>
-        <Text style={s.ct}>SANTIER</Text>
+        <Text style={s.ct}>ȘANTIER</Text>
         <View style={s.chips}>{projects.map(st => (
           <TouchableOpacity key={st.id} style={[s.chip, projectId===st.id && s.chipA]} onPress={() => setProjectId(st.id)}>
             <Text style={[s.chipT, projectId===st.id && s.chipTA]}>{st.name}</Text>

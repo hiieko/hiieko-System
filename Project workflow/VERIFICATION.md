@@ -381,6 +381,146 @@ others 0); it is not a C3 artefact and not a failed API request.
   evidence capture beyond this section was done — **C5** still owns the CI wiring and the consolidated
   evidence/PROGRESS/HANDOFF pass.
 
+## UX-R1A C4 - Terminology normalization: one RO/EN vocabulary, one role vocabulary, one Control Tower key (2026-09-29)
+
+### Scope
+Copy / vocabulary checkpoint only: **no redesign, no semantic or logic change, no backend, Prisma,
+database, CI or route-architecture change, no new endpoint, no new dependency**. The checkpoint
+normalises user-visible terminology, removes the second (temporary) Control Tower navigation key and
+collapses five duplicated role-label maps onto one authoritative vocabulary.
+
+**Approved RO wording (user decision, quoted):** Task → `Task-uri`; Workforce → `Forță de Muncă`;
+Control Tower → `Turn de Control`. Therefore: `Task-uri` / `Task-urile mele` from C3 stay (no
+`Sarcini` rewrite), the `Personal` sidebar group keeps its name, `nav.control_tower` replaces the
+temporary `nav.statistici` key on the `/control-tower` item, and only *inconsistent or incorrect*
+labels around those concepts were normalised - no semantic vocabulary rewrite.
+
+### Canonical vocabulary now in force
+
+| Concept | RO | EN | Single source |
+|---|---|---|---|
+| Control Tower | Turn de Control | Control Tower | `nav.control_tower` (`shared/src/translations.ts`) |
+| Tasks (concept) | Task-uri | Tasks | `nav.tasks`, `nav.my_tasks`, `task.page_title`, `reports.tasks`, `planning.*` |
+| Workforce | Forță de Muncă | Workforce | `nav.workforce`, `workforce.title` |
+| Deliveries | Livrări & Avize | Deliveries | `nav.avize` |
+| Roles (16) | e.g. `Șef de Echipă`, `Șef de Șantier`, `Cap de Șantier`, `Vizualizator`, `Proprietar` | `Team Leader`, `Site Manager`, `Foreman`, `Viewer`, `Owner` | `role.*` keys + `getRoleLabel()` |
+
+### Defects found and fixed
+
+| # | Defect (before) | Fix | Surfaces |
+|---|---|---|---|
+| 1 | `/statistici` nav slot reused `nav.statistici` ("Statistici") although C2 made `/statistici` a redirect - the label named a route that no longer exists | new `nav.control_tower` ("Turn de Control" / "Control Tower"); `nav.statistici` is no longer referenced anywhere | `shared/src/translations.ts`, `web/src/config/navigation.ts` |
+| 2 | Role vocabulary duplicated in **5** places, only one complete; `'Maistru'`, `'Sef Echipa'`, `'Sef Santier'`, `'Vizualizare'`, `'Admin'`, `'Director Intretinere'` | `role.*` = the single authoritative set (16 roles); `getRoleLabel()` resolves it through `tPrefix('role.', …)` and accepts any casing (`'TEAM_LEADER'` / `'team_leader'`); the four hardcoded maps were deleted | `shared/src/permissions.ts`, `shared/src/translations.ts`, `web/src/app/workforce/page.tsx`, `web/src/app/utilizatori/page.tsx`, `web/src/app/projects/[id]/page.tsx` |
+| 3 | Mixed-language nav label `Procurement / Avize` in the RO column | `Livrări & Avize` (EN `Deliveries`) | `shared/src/translations.ts`, `web/src/config/navigation.ts` |
+| 4 | 181 Romanian copy rows missing diacritics (measured by the new R2 guard row) | 175 corrected; 6 deliberately left (see below) | 24 source files (list below) |
+| 5 | Legacy key reuse on worker surfaces: `nav.attendance` ("Pontaj & Ore"), `nav.notifications` ("Notificari" before this checkpoint) | `nav.pontaj` / `nav.notificari` (the route-era keys for `/pontaj` and `/notificari`) | `web/src/components/WorkerDashboard.tsx`, `web/src/components/WorkerNotifications.tsx` |
+| 6 | Page titles hardcoded RO on 4 routes even though an identical key existed (`Echipe`, `Forța de Muncă`, `Utilizatori`, `Notificări`) plus `/pontaj` and `/issues` | titles now resolve through their existing keys, so EN users no longer see RO titles and the nav/page names cannot drift | `web/src/app/{workforce,utilizatori,notificari,pontaj,issues}/page.tsx` |
+| 7 | Duplicated RO geo/GPS error copy in `WorkerDashboard` | reuses `worker.gps_*` / `worker.checkin_success` / `worker.checkout_success` keys | `web/src/components/WorkerDashboard.tsx` |
+
+### Guard change (report-only, no CI behaviour change)
+`scripts/check-frontend-guards.mjs` gained a third, **report-only** section: *Romanian copy missing
+diacritics* (`RO_DIACRITIC_DEBT`). A token counts only on a non-comment line and only when it is not
+glued to a path or identifier (`/santiere`, `SantierePage`), which is why the report can be read as a
+work list. It reports the remaining debt; it never fails the check.
+
+### Evidence - checkpoint commands (final tree)
+
+| Command | Result |
+|---|---|
+| `npm run i18n:check` | **PASS** - 194 source files, **988 key definitions, 988 unique keys** (975 + 12 new `role.*` + `nav.control_tower`), 0 failures; reports unchanged (orphans / inline ternaries / dynamic `t()`) |
+| `npm run guards:check` | **PASS** (194 files) - legacy rows unchanged (2 `ON_HOLD`); new terminology row **181 → 6** |
+| `npm run typecheck` | **exit 0** - all four workspaces (`shared`, `web`, `Mobile`, `backend`) |
+| `npm run web:build` | **exit 0** - `✓ Compiled successfully`, `Generating static pages (25/25)`, 25 routes, 0 errors |
+| `npm test` | **31 suites / 320 tests PASS** (backend) |
+| `npm run db:verify` (root → `database/scripts/verify_migration.ts`, PostgreSQL 5433) | **41/41 checks passed**, 24/24 tables present, FK/orphans 0 |
+| `npm run db:verify --workspace=backend` (→ `backend/scripts/db-verify.ts`, **same database**) | **PASSED: 71 / FAILED: 0 / SKIPPED: 0 / TOTAL: 71** - re-run during the C4 review to prove that the 41-vs-71 difference is *two different scripts*, not a regression (see *db:verify denominators* below) |
+| Static acceptance greps | `nav.statistici`: **0 code references** (key remains defined, unreferenced, by decision); `nav.control_tower`: present in `translations.ts` + `navigation.ts`; `ROLE_LABELS` / `const RL` in `web`+`Mobile`: **0**; `Maistru` / `'Vizualizare'`: **0** |
+| `getRoleLabel()` runtime smoke test | built `shared/dist` + `node`: `TEAM_LEADER/ro → Șef de Echipă`, `worker/ro → Muncitor`, `viewer/en → Viewer`, `site_manager/ro → Șef de Șantier`, `foreman/en → Foreman`, `owner/ro → Proprietar`, `ADMIN/ro → Administrator`, `undefined → ''`, unknown role → echoed unchanged |
+| Built client bundle | `Turn de Control` is present in the production chunks (`web/.next/static/chunks/2381-*.js`, `3373-*.js`) - the new nav label really ships |
+
+**Files changed (30, all frontend/shared or a guard script):**
+`shared/src/translations.ts`, `shared/src/permissions.ts`, `web/src/config/navigation.ts`,
+`web/src/app/{aprobare,avize,cheltuieli,issues,notificari,pontaj,profil,projects,rapoarte,santiere,stocuri,teams,utilizatori,workforce}/page.tsx`,
+`web/src/app/projects/[id]/{page,ProjectSettingsPanel,ProjectStagesPanel}.tsx`,
+`web/src/components/{WorkerAttendanceCard,WorkerBlockers,WorkerDashboard,WorkerNotifications}.tsx`,
+`web/src/components/ui/ConfirmDialog.tsx`, `web/src/features/attendance/types.ts`,
+`web/src/hooks/useGeoLocation.ts`, `Mobile/src/screens/{NotificationCenterScreen,WorkerExpenseScreen}.tsx`,
+`scripts/check-frontend-guards.mjs` (+400 / -347 lines).
+
+### Deliberately NOT changed
+1. **`WorkerAttendanceView.tsx`** (4 terminology rows) - ISSUE-055 surface; the panel still reads the
+   legacy project-task source, so its copy is moved together with that refactor.
+2. **`WorkerDashboard.tsx` lines 101 + 151** (`'Selecteaza un proiect mai intai.'` and the
+   `actionResult.includes('Selecteaza')` banner-colour sniff): fixing the spelling alone would change
+   the substring the colour logic matches on, so it waits for the result-kind refactor (C5 /
+   ISSUE-055). The other result strings were switched to keys.
+3. **`ControlTowerSurface.tsx` / `ControlTowerDrilldownDrawer.tsx` RO copy** - Control Tower copy is a
+   separate surface (20 diacritic hits, all inside it) and stays untouched in C4.
+4. **Mobile `SettingsScreen.tsx` `formatRole()`** - the last duplicate role map; deferred to the
+   Mobile pass (the Mobile diacritic copy in `NotificationCenterScreen` / `WorkerExpenseScreen` was
+   fixed).
+5. **Established copy kept on purpose:** `Materiale & Stoc` / `Gestiune Stocuri & Mișcări Materiale`,
+   `Cheltuieli Companie`, `Pontaj & Ore Suplimentare`, `Rapoarte Zilnice per Echipa`, `Proiecte`,
+   `Echipe`, `Avize de Însoțire a Mărfii & Recepții`, `Sarcini` inside prose sentences (only
+   label-level `Sarcini` became `Task-uri`), legacy orphan `nav.*` keys, `nav.statistici` definition.
+6. **No backend / Prisma / database / CI / route-roles / nav href / nav role change**; no C3 task
+   semantics or task data source touched.
+
+### Not verified at C4
+- **No browser pass.** This environment has no headless browser driver and the previously used role
+  sweep needs the dev-seed logins; the C4 surface is copy only, and the evidence above is static
+  (guards, greps, build, prerender of all 25 routes, bundle content, `getRoleLabel` smoke test).
+  A visual RO/EN sweep of the touched pages stays on the C5 list.
+- **No `site_manager` / PM / manager / admin browser coverage** - those dev-seed accounts do not
+  exist in this environment, so it is not claimed (unchanged from C3).
+- The remaining RO copy debt (full prose, e.g. long tutorial sentences) is **R1B**, is reported by
+  the new guard row, and is not part of C4.
+
+**Statement of record:** **C4 automated/static verification complete; browser RO/EN content sweep
+deferred to C5.**
+
+### `db:verify` denominators - 41 (root) vs 71 (backend workspace) - explained
+
+The C4 review flagged that C3 recorded `db:verify` **71/71** while C4 recorded **41/41**. Investigated
+on the real tree: **both numbers are correct, because they belong to two different scripts.**
+
+| Command | Script | Check inventory | Result (2026-09-29, same target `localhost:5433/hiieko`) |
+|---|---|---|---|
+| `npm run db:verify` (root `package.json`) | `database/scripts/verify_migration.ts` (raw `pg`) | 1 `target tables present` + 24 `rows:<entity>` + 11 `fk:<ref> orphans` + 4 business invariants + 1 `legacy parity` (SKIP when schema `legacy` is absent, 9 parity rows when present) = **41** | **41/41 PASS** - `target tables present: PASS 24/24`, no FAIL/SKIP row |
+| `npm run db:verify --workspace=backend` | `backend/scripts/db-verify.ts` (Prisma) | **71** `pass()` call sites over 8 sections (FK orphans, duplicate memberships/business identifiers, cross-project mismatches, invalid statuses & numeric values, task dependencies, dangling documents/attachments, active vs archived, free-string status fields) | **PASSED: 71 / FAILED: 0 / SKIPPED: 0 / TOTAL: 71** |
+
+Answers to the three review questions:
+
+* **A - the check inventory legitimately changed outside C4: YES, this is the root cause.** The two
+  verifiers are independent; neither is derived from the other. The **root** script has emitted 41 rows
+  since commit `1ae33ca` (2026-09-23) - `results.push()` sites are unchanged (6 sites, the row total is
+  produced by its loops), which is also why `README.md` ("Database integrity checks (41 checks)") and
+  the CI evidence row in this file ("root `npm run db:verify` -> 41/41 PASS") both say 41. The
+  **backend** script is the one that grew with the phases: 60 `pass()` sites at `ed3355e` (2026-09-26,
+  recorded as `db:verify` 60/60 in `PROGRESS.md`) -> **71** at `4570f87` (2026-09-29, the P4.4
+  checkpoint that added the last checks, recorded as 71/71). `71` has never been a number the root
+  script produced.
+* **B - a different database/verification target: NO.** Both commands were re-run in this session
+  against the same target, PostgreSQL `localhost:5433/hiieko`: the root script reported `24/24` target
+  tables present with 0 orphan FKs, and the backend script logged
+  `Database: postgresql://***@localhost:5433/hiieko?schema=public`.
+* **C - evidence/documentation inconsistency: PARTIAL, and only in short-form labelling.** C3's own
+  evidence row (C3 section above) names its command explicitly -
+  `npm run db:verify --workspace=backend` -> 71/71 - and C4's evidence named the root
+  `npm run db:verify` -> 41/41, so neither checkpoint misreported its own command. The ambiguity came
+  from the short form "`db:verify` 71/71" in status lines; `PROGRESS.md` and `HANDOFF.md` now name the
+  script. **No C3 result is revoked and no C3 evidence was rewritten** - both numbers were and are true
+  for their own command.
+
+**Regression check (explicit): no regression exists, so nothing was "restored".** Neither verifier was
+modified by C4 (`git diff --name-only` at C4 contains only frontend/shared files,
+`scripts/check-frontend-guards.mjs` and workflow docs - no `backend/**`, `database/**` or `prisma/**`);
+the last commits touching them are `1ae33ca` (root) and `4570f87` (backend). No `db:verify` source was
+changed, no CI file was changed, and **the database was not modified to influence the result** - the
+review only re-ran both commands read-only and recorded their output.
+
+---
+
 ## Current Verification Status
 | Check | Status | Last Run | Notes |
 |---|---|---|---|

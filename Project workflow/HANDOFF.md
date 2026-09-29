@@ -5,9 +5,13 @@
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
 ## Current Status
-**Status:** STABLE - **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; P4.4 daily-report finalization verified end-to-end; 31 suites / 320 tests, db:verify 71/71, all quality gates PASS)
+**Status:** STABLE - **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; P4.4 daily-report finalization verified end-to-end; 31 suites / 320 tests, db:verify 71/71 (`--workspace=backend` → `backend/scripts/db-verify.ts`; the root `npm run db:verify` runs `database/scripts/verify_migration.ts` = 41/41 - two scripts, both PASS: `VERIFICATION.md` → *db:verify denominators*), all quality gates PASS)
 
 ## UX-R1A checkpoints — latest: **C3 DONE** (2026-09-29)
+
+**UPDATE 2026-09-29 (UX-R1A C4 done): the C4 checkpoint described as "NOT started" below is now
+COMPLETE - see the C4 block at the end of this section. The current UX-R1A checkpoint is C4; C5
+(consolidated evidence capture, CI wiring) is still not started.**
 
 **C0-C3 are complete. C4 (terminology + role-label normalization, documentation corrections) and C5
 (consolidated evidence capture, CI wiring) are NOT started.** C3 changed the field task sources
@@ -36,6 +40,46 @@ legacy panel contract (`GET /api/tasks` + `assigned_to_id` + `'DONE'`) is gone f
   `chef1-3@hiieko.com` `chef123`, `fore1-3@hiieko.com` `foreman123`. Heads-up: build with
   `git status` clean of stray servers — `next build` and `next dev` must not share `web/.next`
   (ISSUE-049).
+
+### UX-R1A C4 - terminology normalization (DONE 2026-09-29) - **current checkpoint**
+
+Copy/vocabulary only: no redesign, no semantic or logic change, no backend / Prisma / database / CI /
+route-architecture change, no new endpoint, no dependency. Approved RO wording: Task → `Task-uri`,
+Workforce → `Forță de Muncă`, Control Tower → `Turn de Control` (the `Personal` sidebar group was NOT
+renamed and `Task-uri` was NOT rewritten to `Sarcini`).
+
+- **Control Tower key:** `nav.control_tower` (`Turn de Control` / `Control Tower`) replaces the
+  temporary `nav.statistici` on the `/control-tower` sidebar item; `nav.statistici` is referenced
+  nowhere now (definition kept on purpose). Zero code references verified by grep.
+- **One role vocabulary:** `role.*` in `shared/src/translations.ts` is the complete 16-role set;
+  `getRoleLabel()` in `shared/src/permissions.ts` resolves it with `tPrefix('role.', …)` and accepts
+  any casing. The four duplicated maps (`workforce`, `utilizatori`, `projects/[id]`) were deleted -
+  they carried `'Maistru'`, `'Sef Echipa'`, `'Sef Santier'`, `'Vizualizare'`, `'Admin'`,
+  `'Director Intretinere'`.
+- **Vocabulary + copy:** `Procurement / Avize` → `Livrări & Avize`; label-level `Sarcini` →
+  `Task-uri`; legacy `nav.attendance` / `nav.notifications` on worker surfaces → `nav.pontaj` /
+  `nav.notificari`; 175 of 181 measured RO diacritic defects fixed across 24 files; `/workforce`,
+  `/utilizatori`, `/notificari`, `/pontaj`, `/issues` titles now resolve through their keys so EN
+  users stop seeing RO titles.
+- **New report-only guard row:** `scripts/check-frontend-guards.mjs` → *Romanian copy missing
+  diacritics* (`RO_DIACRITIC_DEBT`); ignores comments/paths/identifiers and never fails CI. After C4 it
+  reports **6** rows, all deliberately deferred: `WorkerAttendanceView.tsx` (4, ISSUE-055) and
+  `WorkerDashboard.tsx:101/151` (2, the `includes('Selecteaza')` banner-colour coupling).
+- **Green on the final tree:** `i18n:check` PASS (988/988 keys), `guards:check` PASS, `typecheck` exit 0
+  (4 workspaces), `web:build` exit 0 (25 routes), `npm test` 31 suites / 320 tests PASS, `db:verify`
+  41/41 PASS (**root** `database/scripts/verify_migration.ts`; the C4 review re-ran
+  `npm run db:verify --workspace=backend` → `backend/scripts/db-verify.ts` on the same database and got
+  **71 PASS / 0 FAIL**. The two denominators are two different scripts, not a regression - explained in
+  `VERIFICATION.md` → C4 *db:verify denominators - 41 (root) vs 71 (backend workspace)*),
+  `getRoleLabel` runtime smoke test PASS, `Turn de Control` present in the built chunks.
+  Full detail: `VERIFICATION.md` → *UX-R1A C4*; summary: `PROGRESS.md` → Recent Work 2026-09-29.
+- **Deliberately NOT done in C4:** `WorkerAttendanceView.tsx` and `WorkerDashboard.tsx:101/151`
+  (ISSUE-055), `ControlTowerSurface` copy, Mobile `SettingsScreen.formatRole()`, established copy
+  (`Materiale & Stoc`, `Cheltuieli Companie`, prose `sarcini`), and the R1B prose sweep → **ISSUE-056**.
+  No browser pass was run (no driver in this environment) and no `site_manager` / PM / manager / admin
+  account exists, so that coverage is not claimed.
+  **Statement of record:** *C4 automated/static verification complete; browser RO/EN content sweep
+  deferred to C5.*
 
 ## Current Task
 

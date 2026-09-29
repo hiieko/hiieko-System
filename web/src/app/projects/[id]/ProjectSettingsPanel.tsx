@@ -62,7 +62,7 @@ export function ProjectSettingsPanel({ project, onUpdate }: Props) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
       <h3 className="text-base font-semibold text-slate-900 mb-4">
-        {locale === 'en' ? 'Project Settings' : 'Setari Proiect'}
+          {locale === 'en' ? 'Project Settings' : 'Setări Proiect'}
       </h3>
       <div className="space-y-4 max-w-lg">
         <div>
@@ -77,7 +77,7 @@ export function ProjectSettingsPanel({ project, onUpdate }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data Inceput'}</label>
+        <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data început'}</label>
             <input className={inputCls} type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
           </div>
           <div>
@@ -110,7 +110,7 @@ export function ProjectSettingsPanel({ project, onUpdate }: Props) {
           </div>
         )}
         <Button variant="primary" size="sm" icon={<Save className="w-4 h-4" />} onClick={handleSave} loading={saving} disabled={saving}>
-          {saving ? (locale === 'en' ? 'Saving...' : 'Se salveaza...') : (locale === 'en' ? 'Save Settings' : 'Salveaza Setari')}
+          {saving ? (locale === 'en' ? 'Saving...' : 'Se salvează...') : (locale === 'en' ? 'Save Settings' : 'Salvează setări')}
         </Button>
       </div>
     </div>

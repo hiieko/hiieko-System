@@ -86,10 +86,10 @@ export function WorkerDashboard() {
   const getLocationOrWarn = async (): Promise<{ latitude: number; longitude: number } | null> => {
     const loc = await requestLocation();
     if (!loc) {
-      const errMsg = geoStatus.state === 'denied' ? 'Activeaza accesul la locatie in setarile browser-ului.' :
-                     geoStatus.state === 'timeout' ? 'Cererea de locatie a expirat. Incearca din nou.' :
-                     geoStatus.state === 'unavailable' ? 'Locația nu este disponibila. Verifica semnalul GPS.' :
-                     'Nu s-a putut obtine locatia. Verifica setarile GPS.';
+      const errMsg = geoStatus.state === 'denied' ? t('worker.gps_denied', locale) :
+                     geoStatus.state === 'timeout' ? t('worker.gps_timeout', locale) :
+                     geoStatus.state === 'unavailable' ? t('worker.gps_unavailable', locale) :
+                     t('worker.gps_error', locale);
       setActionResult(errMsg); setTimeout(() => setActionResult(null), 4000);
       return null;
     }
@@ -105,7 +105,7 @@ export function WorkerDashboard() {
       const loc = await getLocationOrWarn();
       if (!loc) { setActionLoading(false); return; }
       await apiClient.checkInAttendance({ projectId: selectedProject.id, latitude: loc.latitude, longitude: loc.longitude });
-      setActionResult('Pontaj de intrare inregistrat!'); setTimeout(() => setActionResult(null), 3000);
+      setActionResult(t('worker.checkin_success', locale)); setTimeout(() => setActionResult(null), 3000);
       loadAttendance();
     } catch (err: any) { setActionResult(err.message || 'Eroare'); setTimeout(() => setActionResult(null), 3000); }
     finally { setActionLoading(false); }
@@ -117,7 +117,7 @@ export function WorkerDashboard() {
       const loc = await getLocationOrWarn();
       if (!loc) { setActionLoading(false); return; }
       await apiClient.checkOutAttendance({ projectId: selectedProject?.id || '', latitude: loc.latitude, longitude: loc.longitude });
-      setActionResult('Pontaj de iesire inregistrat!'); setTimeout(() => setActionResult(null), 3000);
+      setActionResult(t('worker.checkout_success', locale)); setTimeout(() => setActionResult(null), 3000);
       loadAttendance();
     } catch (err: any) { setActionResult(err.message || 'Eroare'); setTimeout(() => setActionResult(null), 3000); }
     finally { setActionLoading(false); }

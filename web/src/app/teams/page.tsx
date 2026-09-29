@@ -75,12 +75,12 @@ function TeamsPageInner() {
   useEffect(() => { load(); loadUsers(); }, [selectedProjectId]);
 
   const handleCreate = async () => {
-    if (!formName.trim() || !formCode.trim()) { setFormError('Numele si codul sunt obligatorii'); return; }
+    if (!formName.trim() || !formCode.trim()) { setFormError('Numele și codul sunt obligatorii'); return; }
     setSaving(true); setFormError(null);
     try {
       await apiClient.createTeam({ name: formName.trim(), code: formCode.trim(), leaderId: formLeaderId || undefined });
       setFormName(''); setFormCode(''); setFormLeaderId(''); setShowCreate(false);
-      showSuccess('Echipa creata cu succes'); await load();
+      showSuccess('Echipă creată cu succes'); await load();
     } catch (err) {
       if (err instanceof ApiError) setFormError(err.message);
       else setFormError('Eroare la crearea echipei');
@@ -92,7 +92,7 @@ function TeamsPageInner() {
     setAddingMember(true);
     try {
       await apiClient.addTeamMember(teamId, addMemberUserId);
-      setAddMemberUserId(''); showSuccess('Membru adaugat'); await load();
+      setAddMemberUserId(''); showSuccess('Membru adăugat'); await load();
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
     } finally { setAddingMember(false); }
@@ -107,7 +107,7 @@ function TeamsPageInner() {
 
   const handleEditSave = async () => {
     if (!selectedTeam) return;
-    if (!editName.trim() || !editCode.trim()) { setError('Numele si codul sunt obligatorii'); return; }
+    if (!editName.trim() || !editCode.trim()) { setError('Numele și codul sunt obligatorii'); return; }
     setEditSaving(true);
     try {
       await apiClient.updateTeam(selectedTeam.id, {
@@ -116,7 +116,7 @@ function TeamsPageInner() {
         leaderId: editLeaderId || undefined,
       });
       setShowEdit(false);
-      showSuccess('Echipa actualizata');
+      showSuccess('Echipă actualizată');
       await load();
       // Re-select the team to refresh detail view
       const updated = teams.find(t => t.id === selectedTeam.id);
@@ -133,7 +133,7 @@ function TeamsPageInner() {
       await apiClient.deleteTeam(teamId);
       setConfirmDelete(null);
       setSelectedTeam(null);
-      showSuccess('Echipa arhivata');
+      showSuccess('Echipă arhivată');
       await load();
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
@@ -181,12 +181,12 @@ function TeamsPageInner() {
               <>
                 <button onClick={() => openEdit(t)}
                   className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-hii-600 transition-colors"
-                  title="Editeaza echipa">
+                  title="Editează echipa">
                   <Edit3 className="w-4 h-4" />
                 </button>
                 <button onClick={() => setConfirmDelete(t.id)}
                   className="p-2 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-600 transition-colors"
-                  title="Arhiveaza echipa">
+                  title="Arhivează echipa">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </>
@@ -195,12 +195,12 @@ function TeamsPageInner() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Informatii Echipa</h3>
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Informații Echipă</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><label className="text-xs text-slate-500 block">Nume</label><p className="text-sm font-medium text-slate-900">{t.name}</p></div>
             <div><label className="text-xs text-slate-500 block">Cod</label><p className="text-sm font-mono text-slate-900">{t.code}</p></div>
             <div><label className="text-xs text-slate-500 block">Lider</label><p className="text-sm text-slate-900">{leader ? displayName(leader.user) : '—'}</p></div>
-            <div><label className="text-xs text-slate-500 block">Data crearii</label><p className="text-sm text-slate-900">{formatDate(t.created_at)}</p></div>
+            <div><label className="text-xs text-slate-500 block">Data creării</label><p className="text-sm text-slate-900">{formatDate(t.created_at)}</p></div>
           </div>
         </div>
 
@@ -211,12 +211,12 @@ function TeamsPageInner() {
               <div className="flex items-center gap-2">
                 <select value={addMemberUserId} onChange={(e) => setAddMemberUserId(e.target.value)}
                   className="px-2 py-1 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Selecteaza...</option>
+                  <option value="">Selectează...</option>
                   {availableUsers.map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
                 </select>
                 <button onClick={() => handleAddMember(t.id)} disabled={!addMemberUserId || addingMember}
                   className="px-3 py-1.5 bg-hii-500 hover:bg-hii-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">
-                  <UserPlus className="w-3.5 h-3.5 inline mr-1" />Adauga
+                  <UserPlus className="w-3.5 h-3.5 inline mr-1" />Adaugă
                 </button>
               </div>
             )}
@@ -273,7 +273,7 @@ function TeamsPageInner() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Editeaza Echipa</h3>
+              <h3 className="text-base font-bold text-slate-900">Editează Echipă</h3>
               <button onClick={() => setShowEdit(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-3">
@@ -285,20 +285,20 @@ function TeamsPageInner() {
                 <input value={editCode} onChange={(e) => setEditCode(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
               </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Lider (optional)</label>
+              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Lider (opțional)</label>
                 <select value={editLeaderId} onChange={(e) => setEditLeaderId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fara lider</option>
+                  <option value="">Fără lider</option>
                   {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
                 </select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowEdit(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
               <button onClick={handleEditSave} disabled={editSaving || !editName.trim() || !editCode.trim()}
                 className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {editSaving ? 'Se salveaza...' : <><Save className="w-4 h-4 inline mr-1" />Salveaza</>}
+                {editSaving ? 'Se salvează...' : <><Save className="w-4 h-4 inline mr-1" />Salvează</>}
               </button>
             </div>
           </div>
@@ -314,16 +314,16 @@ function TeamsPageInner() {
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Arhiveaza echipa</h3>
-                <p className="text-sm text-slate-500">Aceasta actiune va marca echipa ca inactiva. Membrii nu vor fi afectati.</p>
+                <h3 className="text-base font-bold text-slate-900">Arhivează echipa</h3>
+                <p className="text-sm text-slate-500">Această acțiune va marca echipa ca inactivă. Membrii nu vor fi afectați.</p>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
               <button onClick={() => handleDeleteTeam(confirmDelete)} disabled={deleting}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {deleting ? 'Se arhiveaza...' : 'Arhiveaza'}
+                {deleting ? 'Se arhivează...' : 'Arhivează'}
               </button>
             </div>
           </div>
@@ -345,7 +345,7 @@ function TeamsPageInner() {
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setConfirmRemoveMember(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
               <button onClick={() => handleRemoveMember(confirmRemoveMember.teamId, confirmRemoveMember.userId)}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg">
                 Elimina
@@ -385,7 +385,7 @@ function TeamsPageInner() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Echipa Noua</h3>
+              <h3 className="text-base font-bold text-slate-900">Echipă nouă</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
             </div>
             {formError && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formError}</div>}
@@ -398,20 +398,20 @@ function TeamsPageInner() {
                 <input value={formCode} onChange={(e) => setFormCode(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
               </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Lider (optional)</label>
+              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Lider (opțional)</label>
                 <select value={formLeaderId} onChange={(e) => setFormLeaderId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fara lider</option>
+                  <option value="">Fără lider</option>
                   {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
                 </select>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
               <button onClick={handleCreate} disabled={saving || !formName.trim() || !formCode.trim()}
                 className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {saving ? 'Se salveaza...' : 'Creeaza Echipa'}
+                {saving ? 'Se salvează...' : 'Creează echipă'}
               </button>
             </div>
           </div>
@@ -420,7 +420,7 @@ function TeamsPageInner() {
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" placeholder="Cauta echipe..." value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" placeholder="Caută echipe..." value={search} onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
         {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
       </div>
@@ -433,9 +433,9 @@ function TeamsPageInner() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
           <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-semibold text-slate-600">{search ? 'Niciun rezultat' : 'Nicio echipa'}</h3>
-          {search && <p className="text-sm text-slate-400 mt-1">Incearca alt termen de cautare</p>}
+          {search && <p className="text-sm text-slate-400 mt-1">Încearcă alt termen de căutare</p>}
           {!search && canManageTeam && <button onClick={() => { setShowCreate(true); setFormError(null); }}
-            className="mt-4 px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg"><Plus className="w-4 h-4 inline mr-1" />Creeaza prima echipa</button>}
+            className="mt-4 px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg"><Plus className="w-4 h-4 inline mr-1" />Creează prima echipă</button>}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -452,7 +452,7 @@ function TeamsPageInner() {
                   <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 mt-1" />
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <User className="w-3.5 h-3.5" /><span>{leader ? displayName(leader.user) : 'Fara lider'}</span>
+                  <User className="w-3.5 h-3.5" /><span>{leader ? displayName(leader.user) : 'Fără lider'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                   <Users className="w-3.5 h-3.5" /><span>{t.members?.length || 0} membri</span>

@@ -201,33 +201,33 @@ function CheltuieliPageInner() {
             <div role="dialog" aria-modal="true" aria-labelledby="new-expense-title" className="w-full max-w-lg rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-200 p-5">
                 <div>
-                  <h2 id="new-expense-title" className="text-lg font-bold text-slate-900">{locale === 'ro' ? 'Cheltuiala Noua' : 'New Expense'}</h2>
+                  <h2 id="new-expense-title" className="text-lg font-bold text-slate-900">{locale === 'ro' ? 'Cheltuiala nouă' : 'New Expense'}</h2>
                   <p className="text-xs text-slate-500 mt-1">{locale === 'ro' ? 'Completeaza detaliile și trimite spre aprobare.' : 'Fill in the details and submit for approval.'}</p>
                 </div>
                 <button type="button" onClick={() => setShowNew(false)} aria-label="Închide" className="p-2 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
               </div>
               <div className="space-y-4 p-5">
-                {!user && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Trebuie sa te autentifici pentru a trimite o cheltuiala. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
+                {!user && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Trebuie să te autentifici pentru a trimite o cheltuială. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
                 {/* --- OCR Upload Section --- */}
                 <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                  <p className="text-xs font-semibold text-slate-600 mb-2">{locale === 'ro' ? 'Scanare document (opționala)' : 'Document scan (optional)'}</p>
+                  <p className="text-xs font-semibold text-slate-600 mb-2">{locale === 'ro' ? 'Scanare document (opțională)' : 'Document scan (optional)'}</p>
                   <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50 px-4 text-center hover:bg-amber-50">
                     <Upload className="mb-2 h-6 w-6 text-amber-600" />
-                    <span className="text-sm font-semibold text-slate-800">{receipt ? receipt.name : (locale === 'ro' ? 'Încarca bonul fiscal sau factura' : 'Upload receipt or invoice')}</span>
+                    <span className="text-sm font-semibold text-slate-800">{receipt ? receipt.name : (locale === 'ro' ? 'Încarcă bonul fiscal sau factura' : 'Upload receipt or invoice')}</span>
                     <span className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP sau PDF</span>
                     <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" className="sr-only"
                       onChange={e => setReceipt(e.target.files?.[0] || null)} />
                   </label>
-                  {receipt && !ocrResult && <p className="text-xs text-emerald-700 mt-2">{locale === 'ro' ? 'Document selectat. Apasa "Proceseaza documentul" pentru OCR.' : 'Document selected. Press \"Process document\" for OCR.'}</p>}
+                  {receipt && !ocrResult && <p className="text-xs text-emerald-700 mt-2">{locale === 'ro' ? 'Document selectat. Apasă "Procesează documentul" pentru OCR.' : 'Document selected. Press \"Process document\" for OCR.'}</p>}
                   {receipt && (
                     <button type="button" disabled={processing} onClick={() => void processReceipt()} className="mt-2 w-full rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50">
-                      {processing ? (locale === 'ro' ? 'Se proceseaza...' : 'Processing...') : (locale === 'ro' ? 'Proceseaza documentul' : 'Process document')}
+                      {processing ? (locale === 'ro' ? 'Se procesează...' : 'Processing...') : (locale === 'ro' ? 'Procesează documentul' : 'Process document')}
                     </button>
                   )}
                   {scanError && <p className="text-sm text-red-700 mt-2">{scanError}</p>}
                   {ocrResult && (
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm mt-2">
-                      <p className="font-semibold text-emerald-900 text-xs">{locale === 'ro' ? 'Date extrase — verifica înainte de trimitere' : 'Extracted data — verify before submitting'}</p>
+                      <p className="font-semibold text-emerald-900 text-xs">{locale === 'ro' ? 'Date extrase — verifică înainte de trimitere' : 'Extracted data — verify before submitting'}</p>
                       <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
                         {([
                           [locale === 'ro' ? 'Furnizor' : 'Merchant', ocrResult.merchant_name],
@@ -299,7 +299,7 @@ function CheltuieliPageInner() {
                 </div>
                 {submitError && <p className="text-sm text-red-700">{submitError}</p>}
                 <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
-                  <button type="button" onClick={() => setShowNew(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">{locale === 'ro' ? 'Anuleaza' : 'Cancel'}</button>
+                  <button type="button" onClick={() => setShowNew(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">{locale === 'ro' ? 'Anulează' : 'Cancel'}</button>
                   <button type="button" disabled={submitting || !formAmount || Number(formAmount) <= 0} onClick={() => void handleCreateExpense()}
                     className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
                     {submitting ? (locale === 'ro' ? 'Se trimite...' : 'Submitting...') : (locale === 'ro' ? 'Trimite spre aprobare' : 'Submit for approval')}

@@ -136,7 +136,7 @@ export default function ProfilPage() {
           </p>
           <button onClick={handleSave} disabled={saving}
             className="inline-flex items-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-            <Save className="w-4 h-4 mr-1.5" />{saving ? 'Se salveaza...' : 'Salveaza Profil'}
+            <Save className="w-4 h-4 mr-1.5" />{saving ? 'Se salvează...' : 'Salvează profil'}
           </button>
         </div>
       </div>

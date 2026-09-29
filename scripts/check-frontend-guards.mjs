@@ -23,6 +23,13 @@
  *             `progress` reads on a task object (Prisma `Task` exposes actual_quantity /
  *             planned_quantity, not `progress`).
  *
+ * R2 (REPORT) - Romanian copy that is missing its diacritics (UX-R1A C4). Deliberately
+ *             report-only: C4 normalised the vocabulary in the surfaces it touched, and this
+ *             list keeps the remaining debt visible (R1B backlog) without blocking CI.
+ *             A token counts only on a non-comment line and only when it is not glued to a
+ *             path (`/santiere`), an identifier (`SantierePage`) or another word, so route
+ *             literals and component names are never reported.
+ *
  * Known limitation, accepted on purpose: `'ON_HOLD'` and `'REVIEW'` pass G2 inside task scope
  * because they are real members of ProjectStatusEnum / SolarDesignStatusEnum. G2's job is to
  * catch the removed task contract (`TODO`, `DONE`) and invented statuses, not to re-litigate
@@ -69,9 +76,28 @@ const TASK_SCOPE = [
 
 const MAX_REPORT_ROWS = 40;
 
+/**
+ * R2 tokens: Romanian words that are user-visible copy and must carry their diacritics.
+ * Matching is case-insensitive; the lookarounds keep path segments (`/santiere`) and
+ * identifiers (`SantierePage`, `ROLE_ADAUGAT`) out of the report.
+ */
+const RO_DIACRITIC_DEBT = new RegExp(
+  '(?<![/\\w.])(?:' +
+    [
+      'Stantier', 'Santiere', 'Santier', 'Salveaza', 'Adauga', 'Selecteaza', 'Anuleaza',
+      'Editeaza', 'Creeaza', 'Cauta', 'Incearca', 'Fara', 'Informatii', 'Notificari',
+      'Setari', 'Distanta', 'Actiune', 'Intarziere', 'Reimprospateaza', 'Asteptare',
+      'Prezenta', 'Iesire', 'Miscare', 'Sef', 'Inceput',
+    ].join('|') +
+    ')(?![/\\w])',
+  'gi',
+);
+
 const rel = (absPath) => absPath.slice(REPO_ROOT.length).replace(/\\/g, '/').replace(/^\/+/, '');
 const inTaskScope = (displayPath) =>
   TASK_SCOPE.some((entry) => displayPath === entry || displayPath.startsWith(entry));
+const isCommentLine = (trimmed) =>
+  trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
 
 /** G1 pattern. */
 const LEGACY_TASK_FIELD = /\bassigned_to_id\b/;
@@ -141,6 +167,7 @@ const legacyFieldRows = [];
 const legacyStatusRows = [];
 const legacyTokenOutsideScope = [];
 const progressRows = [];
+const terminologyRows = [];
 
 const remember = (list, row) => {
   if (!list.includes(row)) list.push(row);
@@ -165,6 +192,15 @@ for (const file of files) {
 
     if (LEGACY_TASK_FIELD.test(line)) {
       remember(legacyFieldRows, `${display}:${lineNumber}  ::  ${trimmed.slice(0, 110)}`);
+    }
+
+    if (!isCommentLine(trimmed)) {
+      for (const match of line.matchAll(RO_DIACRITIC_DEBT)) {
+        remember(
+          terminologyRows,
+          `${display}:${lineNumber}  ${match[0]}  ::  ${trimmed.slice(0, 90)}`,
+        );
+      }
     }
 
     if (!scoped) {
@@ -227,6 +263,15 @@ if (progressRows.length > 0) {
     rows: [
       'Prisma `Task` exposes actual_quantity / planned_quantity, not progress',
       ...progressRows.slice(0, MAX_REPORT_ROWS),
+    ],
+  });
+}
+if (terminologyRows.length > 0) {
+  reports.push({
+    title: `Romanian copy missing diacritics - report only (${terminologyRows.length})`,
+    rows: [
+      'UX-R1A C4 normalised this vocabulary where it was touched; the rows below are the rest (R1B)',
+      ...terminologyRows.slice(0, MAX_REPORT_ROWS),
     ],
   });
 }

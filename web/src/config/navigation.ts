@@ -46,7 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle, roles: ROUTE_ROLES['/issues'] },
       { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock, roles: ROUTE_ROLES['/pontaj'] },
       { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText, roles: ROUTE_ROLES['/rapoarte'] },
-      { href: '/avize', i18nKey: 'nav.avize', label: 'Procurement / Avize', icon: Truck, roles: ROUTE_ROLES['/avize'] },
+      { href: '/avize', i18nKey: 'nav.avize', label: 'Livrări & Avize', icon: Truck, roles: ROUTE_ROLES['/avize'] },
       { href: '/stocuri', i18nKey: 'nav.stocuri', label: 'Materiale & Stoc', icon: Boxes, roles: ROUTE_ROLES['/stocuri'] },
       { href: '/cheltuieli', i18nKey: 'nav.cheltuieli', label: 'Cheltuieli', icon: Euro, roles: ROUTE_ROLES['/cheltuieli'] },
     ],
@@ -60,9 +60,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User, roles: ROUTE_ROLES['/workforce'] },
       { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin, roles: ROUTE_ROLES['/santiere'] },
       { href: '/aprobare', i18nKey: 'nav.aprobare', label: 'Aprobări', icon: ClipboardCheck, roles: ROUTE_ROLES['/aprobare'] },
-      // `/statistici` is no longer a destination (it redirects to the canonical
-      // Control Tower route), so this slot points at `/control-tower`.
-      { href: '/control-tower', i18nKey: 'nav.statistici', label: 'Statistici', icon: BarChart3, roles: ROUTE_ROLES['/control-tower'] },
+      // `/statistici` is no longer a destination (it redirects to the canonical Control Tower
+      // route), so this slot points at `/control-tower` and carries its own `nav.control_tower`
+      // key — the legacy `nav.statistici` label would name a route that no longer exists.
+      { href: '/control-tower', i18nKey: 'nav.control_tower', label: 'Turn de Control', icon: BarChart3, roles: ROUTE_ROLES['/control-tower'] },
     ],
   },
   {

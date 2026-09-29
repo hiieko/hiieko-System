@@ -137,6 +137,40 @@
 - Shell nav items, header strings, and breadcrumbs must use `@solar/shared` i18n keys (not hardcoded RO).
 - Component labels (aria-label, placeholder, loading text) should accept a prop or use locale context; inline RO strings are allowed as a temporary default but must have a corresponding `t()` path.
 
+### Canonical business vocabulary (UX-R1A C4, RO / EN)
+
+One term per concept, in `shared/src/translations.ts`. Use these labels (or their `t()` key) on every
+surface; do not invent a second name for the same route or role.
+
+| Concept | RO | EN | Key(s) |
+|---|---|---|---|
+| Control Tower | Turn de Control | Control Tower | `nav.control_tower` (never `nav.statistici` — `/statistici` is a C2 redirect) |
+| Tasks (concept) | Task-uri | Tasks | `nav.tasks`, `nav.my_tasks`, `task.page_title`, `reports.tasks`, `planning.form_tasks` |
+| Daily Plan | Plan Zilnic | Daily Plan | `nav.planning`, `planning.page_title` |
+| Attendance | Pontaj & Ore | Attendance | `nav.pontaj`, `attendance.title` |
+| Daily Reports | Rapoarte Zilnice | Daily Reports | `nav.rapoarte` |
+| Deliveries | Livrări & Avize | Deliveries | `nav.avize` |
+| Stock | Materiale & Stoc | Materials & Stock | `nav.stocuri` |
+| Expenses | Cheltuieli | Expenses | `nav.cheltuieli` (page title `expenses.title` stays `Cheltuieli Companie`) |
+| Approvals | Aprobări | Approvals | `nav.aprobare` |
+| Projects | Proiecte | Projects | `nav.projects`, `projects.title` |
+| Teams | Echipe | Teams | `nav.teams`, `teams.title` |
+| Workforce | Forță de Muncă | Workforce | `nav.workforce`, `workforce.title` (the `Personal` group name is unrelated and unchanged) |
+| Issues | Probleme & Blocaje | Issues & Blockers | `nav.issues`, `issues.title` |
+| Notifications | Notificări | Notifications | `nav.notificari`, `notifications.title` |
+| Users | Utilizatori | Users | `nav.utilizatori`, `users.title` |
+| Profile | Profil | Profile | `nav.profil` |
+
+**Roles are vocabulary too (C4):** `role.admin|owner|manager|pm|site_manager|team_leader|foreman|technician|procurement|finance|qa_qc|worker|viewer|site_logistics|maintenance_director|technical_director`
+are the only role labels in the repository. Never hardcode a role map in a page/component — call
+`getRoleLabel(role, locale)` from `@solar/shared` (it resolves `role.*` through `tPrefix('role.', …)`
+and accepts `'TEAM_LEADER'` or `'team_leader'`). Canonical RO examples: `Șef de Echipă`,
+`Șef de Șantier`, `Cap de Șantier`, `Vizualizator`, `Proprietar`.
+
+**Diacritics are part of the vocabulary.** `npm run guards:check` reports (report-only) Romanian copy
+that is missing them; the list is the R1B work queue. Tokens inside comments, paths and identifiers are
+ignored by design.
+
 ---
 
 ## 7. Do-Not List

@@ -104,7 +104,7 @@ function StocuriPageInner() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Gestiune Stocuri & Mișcări Materiale</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Controlul inventarului pe fiecare șantier, calculat strict din intrarile de pe avize și ieșirile din rapoartele zilnice.
+            Controlul inventarului pe fiecare șantier, calculat strict din intrările de pe avize și ieșirile din rapoartele zilnice.
           </p>
         </div>
       </div>
@@ -198,7 +198,7 @@ function StocuriPageInner() {
                       0 <span className="text-xs font-normal text-slate-500">{material.unit}</span>
                     </td>
                     <td className="py-3.5 px-4 text-center">
-                      <span className="text-xs text-slate-400">Fara stoc</span>
+          <span className="text-xs text-slate-400">Fără stoc</span>
                     </td>
                   </tr>
                 ))
@@ -251,10 +251,10 @@ function StocuriPageInner() {
                                     (movType === 'ADJUSTMENT' && qty >= 0);
                   const displayQty = qty;
 
-                  let operationLabel = 'Miscare';
-                  if (movType === 'RECEIPT') operationLabel = 'Receptie Aviz';
-                  else if (movType === 'CONSUMPTION') operationLabel = 'Consum Santier';
-                  else if (movType === 'TRANSFER_OUT') operationLabel = 'Transfer Iesire';
+                  let operationLabel = 'Mișcare';
+                  if (movType === 'RECEIPT') operationLabel = 'Recepție Aviz';
+                  else if (movType === 'CONSUMPTION') operationLabel = 'Consum Șantier';
+                  else if (movType === 'TRANSFER_OUT') operationLabel = 'Transfer Ieșire';
                   else if (movType === 'TRANSFER_IN') operationLabel = 'Transfer Intrare';
                   else if (movType === 'ADJUSTMENT') operationLabel = 'Ajustare';
                   else if (movType === 'RETURN') operationLabel = 'Returnare';

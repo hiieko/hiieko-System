@@ -111,7 +111,7 @@ function AprobarePageInner() {
   };
 
   const tabs = [
-    { k: 'pending', l: 'In Asteptare' },
+    { k: 'pending', l: 'În Așteptare' },
     { k: 'all', l: 'Toate' },
     { k: 'approved', l: 'Aprobate' },
     { k: 'rejected', l: 'Respinse' },
@@ -124,11 +124,11 @@ function AprobarePageInner() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Aprobare Cheltuieli</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Verificare si aprobare cheltuieli trimise de angajati conform §6.6.
+            Verificare și aprobare cheltuieli trimise de angajați conform §6.6.
           </p>
         </div>
         <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">
-          <Clock className="w-3.5 h-3.5 mr-1.5" />{pending} in asteptare
+          <Clock className="w-3.5 h-3.5 mr-1.5" />{pending} în așteptare
         </span>
       </div>
 
@@ -143,7 +143,7 @@ function AprobarePageInner() {
         </div>
         <div className="flex items-center bg-white rounded-lg border border-slate-200 px-3 py-2 shadow-sm w-full sm:w-72">
           <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-          <input type="text" placeholder="Cauta cheltuiala..." value={search}
+          <input type="text" placeholder="Caută cheltuiala..." value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full text-sm text-slate-800 focus:outline-none placeholder:text-slate-400" />
         </div>
@@ -154,7 +154,7 @@ function AprobarePageInner() {
           <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
             <h3 className="text-base font-semibold text-slate-700">Totul la zi!</h3>
-            <p className="text-sm text-slate-500 mt-1">Nu exista cheltuieli de analizat.</p>
+            <p className="text-sm text-slate-500 mt-1">Nu există cheltuieli de analizat.</p>
           </div>
         ) : filtered.map(exp => {
           const stLabel = enumLabel(exp.status, EXPENSE_STATUS_LABELS);
@@ -173,7 +173,7 @@ function AprobarePageInner() {
                         {stLabel}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-600 mt-1">{exp.description || 'Fara descriere'}</p>
+                    <p className="text-sm text-slate-600 mt-1">{exp.description || 'Fără descriere'}</p>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
                       <span className="flex items-center">
                         <User className="w-3.5 h-3.5 mr-1 text-slate-400" />{((exp as any).submitted_by?.profile?.full_name) || exp.user_id}

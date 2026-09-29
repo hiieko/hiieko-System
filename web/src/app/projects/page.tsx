@@ -271,11 +271,11 @@ function ProjectsPageInner() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data Inceput'}</label>
+                <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data început'}</label>
                 <input className={inputCls} type="date" value={form.startDate} onChange={e => updateForm('startDate', e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Target End Date' : 'Data Tinta Finalizare'}</label>
+                <label className={labelCls}>{locale === 'en' ? 'Target End Date' : 'Data finalizare țintă'}</label>
                 <input className={inputCls} type="date" value={form.targetEndDate} onChange={e => updateForm('targetEndDate', e.target.value)} />
               </div>
             </div>
@@ -308,7 +308,7 @@ function ProjectsPageInner() {
             <p className="text-sm text-slate-500">
               {locale === 'en'
                 ? 'Add initial project members. Note: user directory limited to ADMIN/MANAGER/PM (G10).'
-                : 'Adauga membri initiali. Nota: directorul utilizatorilor limitat la ADMIN/MANAGER/PM (G10).'}
+                : 'Adaugă membri inițiali. Notă: directorul utilizatorilor limitat la ADMIN/MANAGER/PM (G10).'}
             </p>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
@@ -328,7 +328,7 @@ function ProjectsPageInner() {
                 </select>
               </div>
               <Button variant="outline" size="sm" onClick={addMemberToSelection} disabled={!memberUserId}>
-                {locale === 'en' ? 'Add' : 'Adauga'}
+                {locale === 'en' ? 'Add' : 'Adaugă'}
               </Button>
             </div>
             {selectedMembers.length > 0 && (
@@ -362,7 +362,7 @@ function ProjectsPageInner() {
               <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Code' : 'Cod'}</span><span className="font-medium">{form.code}</span></div>
               {form.address && <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Address' : 'Adresa'}</span><span className="font-medium">{form.address}</span></div>}
               {form.budgetTotal && <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Budget' : 'Buget'}</span><span className="font-medium">{parseFloat(form.budgetTotal).toLocaleString()} {form.currency}</span></div>}
-              {form.startDate && <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Start' : 'Inceput'}</span><span className="font-medium">{form.startDate}</span></div>}
+              {form.startDate && <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Start' : 'Început'}</span><span className="font-medium">{form.startDate}</span></div>}
               {selectedMembers.length > 0 && (
                 <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Members' : 'Membri'}</span><span className="font-medium">{selectedMembers.length}</span></div>
               )}
@@ -403,7 +403,7 @@ function ProjectsPageInner() {
     <div className="p-4 sm:p-6 space-y-6">
       <PageHeader
         title={locale === 'en' ? 'Projects' : 'Proiecte'}
-        subtitle={locale === 'en' ? 'Manage your construction projects' : 'Gestioneaza proiectele de constructie'}
+        subtitle={locale === 'en' ? 'Manage your construction projects' : 'Gestionează proiectele de construcție'}
         actions={
           canCreate && (
             <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={openWizard}>
@@ -419,7 +419,7 @@ function ProjectsPageInner() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white"
-            placeholder={locale === 'en' ? 'Search projects...' : 'Cauta proiecte...'}
+            placeholder={locale === 'en' ? 'Search projects...' : 'Caută proiecte...'}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -434,13 +434,13 @@ function ProjectsPageInner() {
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
-          <option value="">{locale === 'en' ? 'All Statuses' : 'Toate Starile'}</option>
+          <option value="">{locale === 'en' ? 'All Statuses' : 'Toate Stările'}</option>
           {statusOptions.map(opt => (
             <option key={opt.value} value={opt.value}>{locale === 'en' ? opt.labelEn : opt.labelRo}</option>
           ))}
         </select>
         <Button variant="outline" size="sm" icon={<RefreshCw className="w-4 h-4" />} onClick={loadProjects}>
-          {locale === 'en' ? 'Refresh' : 'Reimprospateaza'}
+          {locale === 'en' ? 'Refresh' : 'Reîmprospătează'}
         </Button>
       </div>
 
@@ -448,11 +448,11 @@ function ProjectsPageInner() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={<MapPin className="w-12 h-12 text-slate-300" />}
-          title={locale === 'en' ? 'No projects found' : 'Niciun proiect gasit'}
+          title={locale === 'en' ? 'No projects found' : 'Niciun proiect găsit'}
           description={
             search || statusFilter
-              ? (locale === 'en' ? 'Try different search terms' : 'Incearca alti termeni de cautare')
-              : (locale === 'en' ? 'Create your first project to get started' : 'Creeaza primul proiect pentru a incepe')
+              ? (locale === 'en' ? 'Try different search terms' : 'Încearcă alți termeni de căutare')
+              : (locale === 'en' ? 'Create your first project to get started' : 'Creează primul proiect pentru a începe')
           }
           action={(!search && !statusFilter && canCreate) ? (
             <Button variant="primary" size="sm" onClick={openWizard}>
@@ -551,13 +551,13 @@ function ProjectsPageInner() {
                 {wizardError && <span className="text-xs text-red-500">{wizardError}</span>}
                 {wizardStep < WIZARD_STEPS.length - 1 ? (
                   <Button variant="primary" size="sm" icon={<ArrowRight className="w-4 h-4" />} onClick={nextStep} disabled={wizardSaving}>
-                    {locale === 'en' ? 'Next' : 'Urmatorul'}
+                    {locale === 'en' ? 'Next' : 'Următorul'}
                   </Button>
                 ) : (
                   <Button variant="primary" size="sm" icon={<Save className="w-4 h-4" />} onClick={handleCreate} loading={wizardSaving} disabled={wizardSaving}>
                     {wizardSaving
-                      ? (locale === 'en' ? 'Creating...' : 'Se creeaza...')
-                      : (locale === 'en' ? 'Create Project' : 'Creaza Proiect')}
+                      ? (locale === 'en' ? 'Creating...' : 'Se creează...')
+                      : (locale === 'en' ? 'Create Project' : 'Creează Proiect')}
                   </Button>
                 )}
               </div>

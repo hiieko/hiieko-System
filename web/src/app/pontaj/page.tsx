@@ -6,7 +6,7 @@ import { ROUTE_ROLES } from '../../config/route-roles';
 import { WorkerAttendanceView } from '../../components/WorkerAttendanceView';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import {
@@ -112,7 +112,7 @@ function PontajPageInner() {
     u?.full_name || u?.profile?.full_name || u?.email || 'Necunoscut';
 
   const exportAttendance = () => {
-    const header = ['Nume', 'Stantier', 'Sosire', 'Plecare', 'Distanta GPS (m)', 'Ore normale', 'Ore suplimentare', 'Stare'];
+    const header = ['Nume', 'Șantier', 'Sosire', 'Plecare', 'Distanță GPS (m)', 'Ore normale', 'Ore suplimentare', 'Stare'];
     const rows = attendanceRecords.map((log) => {
       const userName = log.user?.profile?.full_name || log.user?.email || 'Necunoscut';
       return [
@@ -123,7 +123,7 @@ function PontajPageInner() {
         String(log.check_in_distance_m || 0),
         String(log.regular_hours || 0),
         String(((log.overtime_minutes || 0) / 60).toFixed(1)),
-        log.check_out_time ? 'Finalizat' : 'Pe santier',
+        log.check_out_time ? 'Finalizat' : 'Pe șantier',
       ];
     });
     const csv = [header, ...rows]
@@ -144,11 +144,9 @@ function PontajPageInner() {
       <div className="space-y-6 max-w-7xl mx-auto">
         <PageTutorial sectionId="attendance" />
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pontaj</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('nav.pontaj', locale)}</h1>
           <p className="text-sm text-slate-500 mt-1">
-            {locale === 'en'
-              ? 'Record your presence at the construction site.'
-              : 'Inregistreaza-ti prezenta la santier.'}
+            {t('worker.attendance_subtitle', locale)}
           </p>
         </div>
         <WorkerAttendanceView />
@@ -162,18 +160,18 @@ function PontajPageInner() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Pontaj &amp; Ore Suplimentare</h1>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('attendance.title', locale)}</h1>
           <p className="text-sm text-slate-500 mt-1">
             {locale === 'en'
               ? 'Team attendance, missing check-ins, active workers and overtime.'
-              : 'Evidenta orelor de lucru, verificarea sosirii si calculul automat al orelor suplimentare.'}
+              : 'Evidența orelor de lucru, verificarea sosirii și calculul automat al orelor suplimentare.'}
           </p>
         </div>
         <div className="flex items-center space-x-3">
           <button onClick={() => { loadData(); loadToday(); }} disabled={loading}
             className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
-            {locale === 'en' ? 'Refresh' : 'Reimprospateaza'}
+            {t('general.refresh', locale)}
           </button>
           <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
             <button
@@ -182,7 +180,7 @@ function PontajPageInner() {
                 activeTab === 'daily' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {locale === 'en' ? 'Daily Attendance' : 'Prezenta Zilnica'}
+              {locale === 'en' ? 'Daily Attendance' : 'Prezență Zilnică'}
             </button>
             <button
               onClick={() => setActiveTab('monthly')}
@@ -212,13 +210,13 @@ function PontajPageInner() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Active now' : 'Pe santier acum'}</div>
+            <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Active now' : 'Pe șantier acum'}</div>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
               <Users className="w-4 h-4 text-emerald-600" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{activeOnSite.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'workers currently on site' : 'de muncitori pe santier'}</div>
+          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'workers currently on site' : 'de muncitori pe șantier'}</div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <div className="flex items-center justify-between">
@@ -228,7 +226,7 @@ function PontajPageInner() {
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{todaySummary?.completedToday ?? '-'}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'shifts with check-out' : 'turnee cu iesire inregistrata'}</div>
+          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'shifts with check-out' : 'turnee cu ieșire înregistrată'}</div>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
           <div className="flex items-center justify-between">
@@ -261,7 +259,7 @@ function PontajPageInner() {
         {/* Active workers on site */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">{locale === 'en' ? 'On Site Now' : 'Pe Santier Acum'}</h3>
+            <h3 className="text-sm font-bold text-slate-900">{locale === 'en' ? 'On Site Now' : 'Pe Șantier Acum'}</h3>
             <span className="text-xs text-slate-400">{activeOnSite.length} {locale === 'en' ? 'active' : 'activi'}</span>
           </div>
           <div className="p-4">
@@ -328,7 +326,7 @@ function PontajPageInner() {
                     </div>
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700">
                       <AlertCircle className="w-3 h-3" />
-                      {locale === 'en' ? 'No check-in' : 'Fara pontaj'}
+                      {locale === 'en' ? 'No check-in' : 'Fără pontaj'}
                     </span>
                   </div>
                 ))}
@@ -344,7 +342,7 @@ function PontajPageInner() {
         <p className="text-xs text-slate-500">
           {locale === 'en'
             ? 'Hours corrections are not exposed by the backend yet — there is no PATCH endpoint for attendance records. Until it ships, corrections should be handled by the site manager through an approved process.'
-            : 'Corectiile de ore nu sunt inca expuse de backend — nu exista niciun endpoint PATCH pentru inregistrarile de pontaj. Pana atunci, corectiile trebuie gestionate de seful de santier printr-un proces aprobat.'}
+            : 'Corecțiile de ore nu sunt încă expuse de backend — nu există niciun endpoint PATCH pentru înregistrările de pontaj. Până atunci, corecțiile trebuie gestionate de șeful de șantier printr-un proces aprobat.'}
         </p>
       </div>
 
@@ -355,7 +353,7 @@ function PontajPageInner() {
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
               <Calendar className="w-4 h-4 text-amber-600" />
-              <span>{locale === 'en' ? 'Daily Attendance Register' : 'Registru Prezenta'}</span>
+              <span>{locale === 'en' ? 'Daily Attendance Register' : 'Registru Prezență'}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -374,8 +372,8 @@ function PontajPageInner() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold uppercase text-slate-500">
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Worker / Team Lead' : 'Muncitor / Sef Echipa'}</th>
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Site' : 'Santier'}</th>
+                  <th className="py-3.5 px-4">{locale === 'en' ? 'Worker / Team Leader' : 'Muncitor / Șef de Echipă'}</th>
+                  <th className="py-3.5 px-4">{locale === 'en' ? 'Site' : 'Șantier'}</th>
                   <th className="py-3.5 px-4">{locale === 'en' ? 'Check-in' : 'AM VENIT'}</th>
                   <th className="py-3.5 px-4">{locale === 'en' ? 'Check-out' : 'AM PLECAT'}</th>
                   <th className="py-3.5 px-4">{locale === 'en' ? 'GPS' : 'Verificare GPS'}</th>
@@ -453,7 +451,7 @@ function PontajPageInner() {
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 animate-pulse">
-                              {locale === 'en' ? 'On site' : 'Pe Santier'}
+                              {locale === 'en' ? 'On site' : 'Pe șantier'}
                             </span>
                           )}
                         </td>

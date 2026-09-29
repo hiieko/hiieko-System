@@ -45,16 +45,16 @@ export function useGeoLocation() {
           let geoStatus: GeoStatus;
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              geoStatus = { state: 'denied', error: 'Accesul la locatie a fost refuzat. Activeaza GPS-ul in setarile browser-ului.' };
+              geoStatus = { state: 'denied', error: 'Accesul la locație a fost refuzat. Activează GPS-ul în setările browser-ului.' };
               break;
             case error.POSITION_UNAVAILABLE:
-              geoStatus = { state: 'unavailable', error: 'Locația nu este disponibila. Verifica semnalul GPS.' };
+              geoStatus = { state: 'unavailable', error: 'Locația nu este disponibilă. Verifică semnalul GPS.' };
               break;
             case error.TIMEOUT:
-              geoStatus = { state: 'timeout', error: 'Cererea de locatie a expirat. Incearca din nou.' };
+              geoStatus = { state: 'timeout', error: 'Cererea de locație a expirat. Încearcă din nou.' };
               break;
             default:
-              geoStatus = { state: 'error', error: 'Eroare la obtinerea locatiei: ' + error.message };
+              geoStatus = { state: 'error', error: 'Eroare la obținerea locației: ' + error.message };
           }
           setStatus(geoStatus);
           resolve(null);

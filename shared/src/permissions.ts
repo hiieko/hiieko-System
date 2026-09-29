@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { UserRole } from './types';
+import { tPrefix, type Locale } from './translations';
 
 // ============================================================================
 // Core Permissions Matrix
@@ -308,29 +309,25 @@ export const getNextEscalationRole = (role: UserRole): UserRole | null => {
 // Role Labels
 // ============================================================================
 
+/** One `tPrefix` pass per locale, reused for every label lookup. */
+const ROLE_LABEL_CACHE: Partial<Record<Locale, Record<string, string>>> = {};
+
 /**
  * Returns a human-readable role label in the given locale.
+ *
+ * The vocabulary itself lives in `shared/src/translations.ts` (`role.*`, resolved through
+ * `tPrefix('role.', …)`), so the repository has exactly ONE authoritative role vocabulary
+ * (UX-R1A C4). Signature note: `role` accepts any casing (`'TEAM_LEADER'` from the API or
+ * `'team_leader'` from the DB) so callers never need their own label map.
  */
-export function getRoleLabel(role: UserRole, locale: 'ro' | 'en' = 'ro'): string {
-  const labels: Record<UserRole, { ro: string; en: string }> = {
-    admin: { ro: 'Administrator', en: 'Administrator' },
-    owner: { ro: 'Owner', en: 'Owner' },
-    manager: { ro: 'Manager', en: 'Manager' },
-    pm: { ro: 'Project Manager', en: 'Project Manager' },
-    site_manager: { ro: 'Șef de Șantier', en: 'Site Manager' },
-    team_leader: { ro: 'Șef de Echipă', en: 'Team Leader' },
-    foreman: { ro: 'Cap de Șantier', en: 'Foreman' },
-    technician: { ro: 'Tehnician', en: 'Technician' },
-    procurement: { ro: 'Achiziții', en: 'Procurement' },
-    finance: { ro: 'Finanțe', en: 'Finance' },
-    qa_qc: { ro: 'Calitate', en: 'QA/QC' },
-    worker: { ro: 'Muncitor', en: 'Worker' },
-    viewer: { ro: 'Vizualizator', en: 'Viewer' },
-    site_logistics: { ro: 'Logistică Șantier', en: 'Site Logistics' },
-    maintenance_director: { ro: 'Director Mentenanță', en: 'Maintenance Director' },
-    technical_director: { ro: 'Director Tehnic', en: 'Technical Director' },
-  };
-  return labels[role]?.[locale] ?? role;
+export function getRoleLabel(
+  role: UserRole | string | null | undefined,
+  locale: Locale = 'ro',
+): string {
+  const value = String(role ?? '').toLowerCase();
+  if (!value) return '';
+  const labels = (ROLE_LABEL_CACHE[locale] ??= tPrefix('role.', locale));
+  return labels[`role.${value}`] ?? String(role);
 }
 
 // ============================================================================

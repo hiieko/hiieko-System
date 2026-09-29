@@ -12,7 +12,7 @@ import {
   Check, AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { canCreateProjects } from '@solar/shared';
+import { canCreateProjects, getRoleLabel, useLocale } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
@@ -29,9 +29,9 @@ interface AppUser {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  PLANNING: 'Planificare', ENGINEERING: 'Inginerie', PROCUREMENT: 'Achizitii',
-  CONSTRUCTION: 'Constructie', TESTING: 'Testare', COMMISSIONING: 'Punere in functiune',
-  HANDOVER: 'Predare', COMPLETED: 'Finalizat', ON_HOLD: 'In pauza', CANCELLED: 'Anulat',
+  PLANNING: 'Planificare', ENGINEERING: 'Inginerie', PROCUREMENT: 'Achiziții',
+  CONSTRUCTION: 'Construcție', TESTING: 'Testare', COMMISSIONING: 'Punere în funcțiune',
+  HANDOVER: 'Predare', COMPLETED: 'Finalizat', ON_HOLD: 'În pauză', CANCELLED: 'Anulat',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -43,13 +43,6 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const MEMBER_ROLES = ['ADMIN','MANAGER','PM','WORKER','VIEWER','TEAM_LEADER','SITE_MANAGER','TECHNICIAN','PROCUREMENT','FINANCE','QA_QC','FOREMAN','SITE_LOGISTICS','MAINTENANCE_DIRECTOR','TECHNICAL_DIRECTOR'] as const;
-const MEMBER_ROLE_LABELS: Record<string, string> = {
-  ADMIN:'Admin', MANAGER:'Manager', PM:'Project Manager', WORKER:'Muncitor',
-  VIEWER:'Vizualizare', TEAM_LEADER:'Sef Echipa', SITE_MANAGER:'Sef Santier',
-  TECHNICIAN:'Tehnician', PROCUREMENT:'Achizitii', FINANCE:'Finante',
-  QA_QC:'QA/QC', FOREMAN:'Maistru', SITE_LOGISTICS:'Logistica Santier',
-  MAINTENANCE_DIRECTOR:'Director Intretinere', TECHNICAL_DIRECTOR:'Director Tehnic',
-};
 
 type TabKey = 'overview' | 'members' | 'settings' | 'stages';
 
@@ -57,6 +50,7 @@ function ProjectDetailPageInner() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { locale } = useLocale();
   const id = params.id as string;
 
   const [project, setProject] = useState<any>(null);
@@ -167,7 +161,7 @@ function ProjectDetailPageInner() {
 
   if (!project) return null;
 
-  const projectName = project.name || 'Fara nume';
+  const projectName = project.name || 'Fără nume';
   const projectCode = project.code || '—';
   const address = project.address || '—';
   const lat = project.latitude ? Number(project.latitude) : null;
@@ -204,7 +198,7 @@ function ProjectDetailPageInner() {
             {address && <p className="text-sm text-slate-500 mt-0.5">{address}</p>}
           </div>
         </div>
-        <button onClick={() => { loadProject(); loadMembers(); }} className="p-2 hover:bg-slate-100 rounded-lg" title="Reimprospateaza">
+        <button onClick={() => { loadProject(); loadMembers(); }} className="p-2 hover:bg-slate-100 rounded-lg" title={locale === 'en' ? 'Refresh' : 'Reîmprospătează'}>
           <RefreshCw className="w-4 h-4 text-slate-500" />
         </button>
       </div>
@@ -213,9 +207,9 @@ function ProjectDetailPageInner() {
         {(['overview', 'members', 'settings', 'stages'] as TabKey[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
-            {t === 'overview' && 'Prezentare Generala'}
+            {t === 'overview' && 'Prezentare generală'}
             {t === 'members' && 'Membri'}
-            {t === 'settings' && 'Setari'}
+            {t === 'settings' && 'Setări'}
             {t === 'stages' && 'Etape'}
           </button>
         ))}
@@ -226,7 +220,7 @@ function ProjectDetailPageInner() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-hii-500" />Informatii Generale
+              <Building2 className="w-4 h-4 text-hii-500" />Informații generale
             </h3>
             <div className="space-y-3">
               <div><label className="text-xs text-slate-500 block">Denumire</label><p className="text-sm font-medium text-slate-900">{projectName}</p></div>
@@ -241,10 +235,10 @@ function ProjectDetailPageInner() {
               <Sliders className="w-4 h-4 text-hii-500" />Detalii Proiect
             </h3>
             <div className="space-y-3">
-              <div><label className="text-xs text-slate-500 block">Data Inceput</label><p className="text-sm text-slate-900"><Calendar className="w-3.5 h-3.5 inline text-slate-400 mr-1" />{formatDate(project.start_date)}</p></div>
-              <div><label className="text-xs text-slate-500 block">Data Finalizare Tinta</label><p className="text-sm text-slate-900"><Calendar className="w-3.5 h-3.5 inline text-slate-400 mr-1" />{formatDate(project.target_end_date)}</p></div>
+              <div><label className="text-xs text-slate-500 block">Data început</label><p className="text-sm text-slate-900"><Calendar className="w-3.5 h-3.5 inline text-slate-400 mr-1" />{formatDate(project.start_date)}</p></div>
+              <div><label className="text-xs text-slate-500 block">Data finalizare țintă</label><p className="text-sm text-slate-900"><Calendar className="w-3.5 h-3.5 inline text-slate-400 mr-1" />{formatDate(project.target_end_date)}</p></div>
               <div><label className="text-xs text-slate-500 block">Buget</label><p className="text-sm text-slate-900"><DollarSign className="w-3.5 h-3.5 inline text-slate-400 mr-1" />{formatDecimal(project.budget_total)} {project.currency || 'RON'}</p></div>
-              <div><label className="text-xs text-slate-500 block">Capacitate instalata</label><p className="text-sm text-slate-900">{project.installed_capacity_mwp ? `${formatDecimal(project.installed_capacity_mwp, 3)} MWp` : '—'}</p></div>
+              <div><label className="text-xs text-slate-500 block">Capacitate instalată</label><p className="text-sm text-slate-900">{project.installed_capacity_mwp ? `${formatDecimal(project.installed_capacity_mwp, 3)} MWp` : '—'}</p></div>
               <div><label className="text-xs text-slate-500 block">Status</label><span className={`px-2 py-0.5 rounded-full text-xs font-semibold inline-block ${STATUS_COLORS[status] || 'bg-slate-100 text-slate-700'}`}>{STATUS_LABELS[status] || status}</span></div>
               <div><label className="text-xs text-slate-500 block">Activ</label><span className={`px-2 py-0.5 rounded-full text-xs font-semibold inline-block ${isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}>{isActive ? 'Da' : 'Nu'}</span></div>
             </div>
@@ -272,28 +266,28 @@ function ProjectDetailPageInner() {
             {canManage && (
               <button onClick={() => setShowAddMember(true)}
                 className="inline-flex items-center px-3 py-1.5 bg-hii-500 hover:bg-hii-600 text-white font-bold text-xs rounded-lg transition-colors">
-                <UserPlus className="w-3.5 h-3.5 mr-1" />Adauga Membru
+                <UserPlus className="w-3.5 h-3.5 mr-1" />Adaugă membru
               </button>
             )}
           </div>
           {memberError && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{memberError}</div>}
           {showAddMember && (
             <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
-              <h4 className="text-xs font-bold text-slate-700 uppercase">Adauga Membru Nou</h4>
+              <h4 className="text-xs font-bold text-slate-700 uppercase">Adaugă membru nou</h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}
                   className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Selecteaza utilizator</option>
+                  <option value="">Selectează utilizator</option>
                   {availableUsers.map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
                 </select>
                 <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}
                   className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  {MEMBER_ROLES.map((r) => <option key={r} value={r}>{MEMBER_ROLE_LABELS[r]}</option>)}
+                  {MEMBER_ROLES.map((r) => <option key={r} value={r}>{getRoleLabel(r, locale)}</option>)}
                 </select>
                 <div className="flex gap-2">
                   <button onClick={handleAddMember} disabled={!selectedUserId || addingMember}
                     className="flex-1 px-3 py-2 bg-hii-500 hover:bg-hii-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">
-                    {addingMember ? 'Se adauga...' : 'Adauga'}
+                    {addingMember ? (locale === 'en' ? 'Adding...' : 'Se adaugă...') : (locale === 'en' ? 'Add' : 'Adaugă')}
                   </button>
                   <button onClick={() => setShowAddMember(false)}
                     className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg"><X className="w-4 h-4" /></button>
@@ -302,7 +296,7 @@ function ProjectDetailPageInner() {
             </div>
           )}
           {members.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-sm">Niciun membru in acest proiect</div>
+            <div className="text-center py-8 text-slate-400 text-sm">Niciun membru în acest proiect</div>
           ) : (
             <div className="divide-y divide-slate-100">
               {members.map((m) => {
@@ -322,10 +316,10 @@ function ProjectDetailPageInner() {
                       {canManage ? (
                         <select value={m.role} onChange={(e) => handleUpdateRole(m.user_id, e.target.value)}
                           className="px-2 py-1 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                          {MEMBER_ROLES.map((r) => <option key={r} value={r}>{MEMBER_ROLE_LABELS[r]}</option>)}
+                          {MEMBER_ROLES.map((r) => <option key={r} value={r}>{getRoleLabel(r, locale)}</option>)}
                         </select>
                       ) : (
-                        <span className="px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700">{MEMBER_ROLE_LABELS[m.role] || m.role}</span>
+                        <span className="px-2 py-1 rounded text-xs font-semibold bg-slate-100 text-slate-700">{getRoleLabel(m.role, locale) || m.role}</span>
                       )}
                       {canManage && (
                         <>
@@ -338,9 +332,9 @@ function ProjectDetailPageInner() {
                             loading={removingMember}
                             onCancel={() => setConfirmRemove(null)}
                             title="Elimina membru"
-                            message={"Sigur doresti sa elimini pe " + displayName(m.user) + " din proiect?"}
-                            confirmLabel="Elimina"
-                            cancelLabel="Anuleaza"
+                            message={(locale === 'en' ? 'Remove ' : 'Sigur dorești să elimini pe ') + displayName(m.user) + (locale === 'en' ? ' from the project?' : ' din proiect?')}
+                            confirmLabel={locale === 'en' ? 'Remove' : 'Elimină'}
+                            cancelLabel={locale === 'en' ? 'Cancel' : 'Anulează'}
                             variant="danger"
                           />
                         </>

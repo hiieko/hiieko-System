@@ -57,7 +57,7 @@ export function WorkerAttendanceCard() {
           </div>
           <button onClick={loadShift} disabled={actionLoading}
             className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
-            title={locale === 'en' ? 'Refresh' : 'Reimprospateaza'}>
+            title={t('general.refresh', locale)}>
             <RefreshCw className={'w-4 h-4 ' + (shiftStatus === 'loading' ? 'animate-spin' : '')} />
           </button>
         </div>
@@ -75,7 +75,7 @@ export function WorkerAttendanceCard() {
               <div className="text-center">
                 <div className="text-3xl font-bold text-slate-900">{t('worker.clock_in', locale)}</div>
                 <p className="text-sm text-slate-500 mt-1">
-                  {locale === 'en' ? 'Tap when you arrive at the site' : 'Apasa cand ajungi la santier'}
+                  {locale === 'en' ? 'Tap when you arrive at the site' : 'Apasă când ajungi la șantier'}
                 </p>
               </div>
             </div>

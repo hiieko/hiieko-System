@@ -8,16 +8,16 @@ import { useProject } from '../contexts/ProjectContext';
 
 const ISSUE_STATUS_LABELS: Record<string, string> = {
   OPEN: 'Deschis',
-  INVESTIGATING: 'In investigare',
-  CORRECTIVE_ACTION_PROPOSED: 'Actiune corectiva propusa',
+  INVESTIGATING: 'În investigare',
+  CORRECTIVE_ACTION_PROPOSED: 'Acțiune corectivă propusă',
   RESOLVED: 'Rezolvat',
-  CLOSED: 'Inchis',
+  CLOSED: 'Închis',
 };
 
 const ISSUE_SEVERITY_LABELS: Record<string, string> = {
-  LOW: 'Scazuta',
+  LOW: 'Scăzută',
   MEDIUM: 'Medie',
-  HIGH: 'Ridicata',
+  HIGH: 'Ridicată',
   CRITICAL: 'Critica',
 };
 
@@ -105,7 +105,7 @@ export function WorkerBlockers({
           </div>
           <button onClick={onRetry} disabled={loading}
             className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
-            title={locale === 'en' ? 'Refresh' : 'Reimprospateaza'}>
+            title={t('general.refresh', locale)}>
             <RefreshCw className={'w-4 h-4 ' + (loading ? 'animate-spin' : '')} />
           </button>
         </div>
@@ -130,7 +130,7 @@ export function WorkerBlockers({
               <p className="font-medium">{error}</p>
               <button onClick={onRetry}
                 className="mt-1 text-amber-700 underline-offset-2 hover:underline text-xs">
-                {locale === 'en' ? 'Try again' : 'Incearca din nou'}
+                {t('general.retry', locale)}
               </button>
             </div>
           </div>
@@ -140,11 +140,11 @@ export function WorkerBlockers({
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <p className="text-sm font-medium text-emerald-700">
-                {locale === 'en' ? 'No blockers reported' : 'Nicio problema raportata'}
+                {locale === 'en' ? 'No blockers reported' : 'Nicio problemă raportată'}
               </p>
             </div>
             <p className="text-xs text-slate-400">
-              {locale === 'en' ? 'Your site is running smoothly' : 'Santierul tau functioneaza fara probleme'}
+              {locale === 'en' ? 'Your site is running smoothly' : 'Șantierul tău funcționează fără probleme'}
             </p>
           </div>
         )}

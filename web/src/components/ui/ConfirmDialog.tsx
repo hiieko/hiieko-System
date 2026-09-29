@@ -32,7 +32,7 @@ export function ConfirmDialog({
   const confirmRef = useRef<HTMLButtonElement>(null);
 
   const resolvedConfirmLabel = confirmLabel ?? 'Confirm';
-  const resolvedCancelLabel = cancelLabel ?? 'Anuleaza';
+  const resolvedCancelLabel = cancelLabel ?? 'Anulează';
 
   useFocusTrap(dialogRef, open);
 
