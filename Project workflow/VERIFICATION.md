@@ -4,6 +4,52 @@ Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6
 
 Record what has actually been tested or verified. Never mark a check as passing unless it was actually performed.
 
+## UX-R1A Baseline (2026-09-29)
+
+`UX-R1A_FOUNDATION_PLAN.md` was reviewed against the repository and is now versioned under
+`Project workflow/`. The implementation is executed in checkpoints **C0-C5**; this section records
+the state the work started from. No product source file is changed at C0.
+
+| Item | Value |
+|---|---|
+| Baseline commit | `82e71294c96134b4375072e7af063f6123dea355` ("docs: record green CI verification") |
+| Baseline date | 2026-09-29 20:53:40 +0300 |
+| Untracked at baseline | `BonFis/`, `Project workflow/UX-R1A_FOUNDATION_PLAN.md`, `database/archive/pre_migration_backup_20260929_093849.sql` |
+| Working tree | clean except the untracked items above (no staged changes, no modified tracked file) |
+
+### Measured debt at baseline
+
+These are the numbers the UX-R1A checks are calibrated against. They were re-measured from the
+source, not copied from the audit prose in the plan document.
+
+| Signal | Measured | Command / method |
+|---|---|---|
+| Translation definitions (lines matching `'key':`) | **985** | `Select-String '^\s*''[^'']+'':` on `shared/src/translations.ts` |
+| Unique translation keys | **972** | parsed key set |
+| Duplicate keys | **13** | parsed key set, count > 1 |
+| `Object.assign(d, {` blocks | **18** | `Select-String 'Object\.assign'` (L198, 222, 267, 312, 365, 442, 820, 839, 855, 870, 885, 896, 912, 924, 936, 962, 1000, 1033) |
+| Corrupt (mojibake) lines in `translations.ts` | **6** | U+00E2 U+20AC / U+017D scan (L194 comment, L237, L414, L449, L450, L617) |
+| U+FFFD in `translations.ts` | **0** | codepoint scan |
+| U+FFFD in `web/src/app/cheltuieli/page.tsx` | **7 chars / 5 lines** | codepoint scan (L70, L206, L215, L220 x2, L229 x2) |
+| Lossy `?`-substituted diacritics (UI text) | **25 chars / 15 lines** | raw-char scan: `rapoarte/page.tsx` 13, `stocuri/page.tsx` 10, `cheltuieli/page.tsx` 2 |
+| `Stantier` typo | **1** (`web/src/app/pontaj/page.tsx:114`) | literal search |
+| Scanned source files (`.ts`/`.tsx` in `web/src`, `Mobile/src`, `shared/src`) | **192** | recursive walk |
+| Legacy task field `assigned_to_id` | **1 usage** (`web/src/components/WorkerDashboard.tsx:45`) | literal search over the 192 files |
+| Legacy task statuses `'TODO'` / `'DONE'` as task status | **3 usages** (`web/src/components/WorkerDashboard.tsx:45, 201, 202`) | literal search + manual classification |
+| `'REVIEW'` / `'ON_HOLD'` | **legitimate elsewhere** (`features/projects/types.ts` ProjectStatusEnum, backend `SolarDesignStatusEnum`, lowercase daily-report `'review'` section ids) | literal search + manual classification - **must not be blanket-forbidden** by the guard |
+| Prisma `TaskStatusEnum` (canonical task statuses) | `PLANNED, READY, IN_PROGRESS, BLOCKED, COMPLETED, VERIFIED, CANCELLED` | `backend/prisma/schema.prisma:1137` |
+
+### Checkpoint plan (approved)
+
+| Checkpoint | Scope |
+|---|---|
+| C0 | Version `UX-R1A_FOUNDATION_PLAN.md`, record this baseline. No source change. |
+| C1 | Add `scripts/check-i18n.mjs`, `scripts/check-frontend-guards.mjs`, the four root npm scripts and the CI step. Prove both checks detect the debt above. `npm run typecheck` stays green. |
+| C2 | Root hook-order fix, `ControlTowerSurface` extraction, `/control-tower`, `/statistici` -> `/control-tower`, canonical route-role map, navigation/guard alignment, persisted locale -> `html lang`. |
+| C3 | Translation/corruption fixes, `WorkerMyDay`, role-aware `WorkerDashboard` (`worker`/`technician` -> `my-tasks`; `team_leader`/`foreman`/`site_manager` -> `GET /api/daily-plans?projectId=&date=`), `WorkerTodayTasks`, Mobile `expenses.project`. No visual redesign. |
+| C4 | Terminology + role-label normalization, documentation corrections. |
+| C5 | Capture verification evidence, update `PROGRESS.md` / `VERIFICATION.md` / `ISSUES.md` / `HANDOFF.md`. |
+
 ## Current Verification Status
 | Check | Status | Last Run | Notes |
 |---|---|---|---|
