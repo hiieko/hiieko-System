@@ -4,6 +4,55 @@
 
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
+## DAILY PLANNING + TAILWIND `content` GLOBS VERIFIED + COMMITTED - CHECKPOINTS `fe23a7d` / `37c7e63` (2026-09-30)
+
+**Working tree:** clean - no tracked uncommitted change; `HEAD` = **`37c7e63`**
+(*fix(web): include feature sources in Tailwind content globs (ISSUE-063)*) on top of **`fe23a7d`**
+(*feat(web): daily planning supervisor day surface (DEC-013, ISSUE-062)*). **Nothing was pushed** -
+`master` is 13 commits ahead of `origin/master`. The `UNCOMMITTED` wording these two slices carried while
+they were written is **historical** (pre-commit state); it was reconciled to the two checkpoints by the
+docs-only commit *docs: record checkpoint commit 37c7e63* - no implementation or verification fact
+changed.
+
+**`fe23a7d` - Daily Planning supervisor day surface `/planning`** (frontend only, **DEC-013**): counters
+band, one table section per plan, exclusive task filters, supervisor-only readiness / attention rail,
+footer summary and a day action cluster, built only on the existing daily-plan/task contracts (new
+`web/src/features/planning/{dayDerivations,readinessReads}.ts` + 6 components; modified
+`web/src/app/planning/page.tsx`, `web/src/features/planning/index.ts`, `shared/src/translations.ts`, 52
+additive keys). Harness `cdp-planning-day.js` **231/231 checks PASS** over 7 scenarios (RO/EN x 375/1440 px,
+a plan-less day, worker role isolation), every counter/row value asserted against the API payloads, 0
+horizontal overflow, 0 JS exceptions, 0 failed requests, worker sessions issue **0** project-wide
+requests; gates typecheck / `web:typecheck` / `web:build` (25/25) / `i18n:check` (1121/1121) /
+`guards:check` / `npm test` (31 suites / 320 tests) all exit 0. **ISSUE-062 stays OPEN** (the My-work card
+prints the raw `plan_date` timestamp - pre-existing, one-line fix, outside that slice's file list).
+
+**`37c7e63` - Tailwind `content` globs (ISSUE-063)** (one line of configuration): the globs named
+`pages` / `components` / `app` only, so `web/src/features/**` (and `src/lib/**`, `src/contexts/**`) were
+never scanned and feature-only utilities were never emitted - which is why the 1440 px `/planning` table
+rendered its 375 px classes. `content` is now `./src/**/*.{js,ts,jsx,tsx,mdx}`; the served
+`/_next/static/css/app/layout.css` went 70,182 B / 704 class tokens -> 75,037 B / **776 tokens (+72, 0
+removals, a pure superset)**. 12 CDP route scenarios: `/planning` 1440 RO 1 grid track per row + a
+`display: none` header + visible mobile labels + 348 px rows -> **6 tracks / `grid` header / 102 px rows /
+labels hidden**, 375 px stays the intended mobile layout, and `/tasks`, `/solar-configurator`,
+`/rapoarte/form` and worker **My Day** are byte-identical before -> after; `cdp-planning-day.js` 231/231
+unchanged; the same five gates exit 0; `git diff --stat backend/ prisma/ database/` empty (**no** backend,
+Prisma, schema/migration, API-contract, shell, navigation or Worker My Day change, and no `/planning`
+visual refinement). 5 files, +224/-6. Post-commit live re-check: 776 class tokens emitted, ports 3000/4000
+listening (exactly one dev server).
+
+**Not re-runnable as-is (data precondition, not a regression):** `cdp-phase1-final.js` pins *today* and
+its first assertion waits for the worker's 2026-09-29 task row, while
+`GET /api/daily-plans/my-tasks?date=2026-09-30` returns `planCount 0 / taskCount 0` (the seeded PUBLISHED
+plan is for 2026-09-29), so it aborts on a row that cannot exist today; My Day parity for the glob change
+was established with the route harness (byte-identical evidence) instead. The `next dev` / `web/.next`
+gotcha stands (**ISSUE-049**): `npm run web:build` needs the dev server stopped, and exactly one server
+was restarted afterwards.
+
+**Next:** the ISSUE-062 one-line fix when a slice touches `MyWorkList`, then the remaining R1B copy pass
+ISSUE-059 `FIXED`, ISSUE-055 untouched, ISSUE-056 deferred) and the visual redesign - still PENDING. Full
+detail: `VERIFICATION.md` -> *Daily Planning - supervisor day surface* and *Tailwind `content` globs -
+feature-only utilities were never emitted*; `ISSUES.md` -> ISSUE-062, ISSUE-063.
+
 ## PHASE 1 VERIFIED + COMMITTED - CHECKPOINT `0ec084a` (2026-09-30)
 
 **Working tree:** the Phase-1 paths were committed as **`0ec084a`** - `feat(web): phase 1 worker my day

@@ -1,6 +1,6 @@
 # Verification & Audit
 
-> **2026-09-30 — Tailwind `content` globs (ISSUE-063, UNCOMMITTED):** the globs skipped
+> **2026-09-30 — Tailwind `content` globs (ISSUE-063, COMMITTED — CHECKPOINT `37c7e63`):** the globs skipped
 > `web/src/features/**`, so utilities used only there were never emitted. `content` is now
 > `./src/**/*.{js,ts,jsx,tsx,mdx}` (one line in `web/tailwind.config.js`). Served `layout.css`
 > 70,182 B / 704 class tokens -> **75,037 B / 776 tokens (+72, 0 removed)**; `grid-template-columns: 92px …`
@@ -12,7 +12,7 @@
 > `npm test` (31 suites / 320 tests) / web:build (25/25) exit 0 and `git diff --stat backend/ prisma/
 > database/` is empty. Detail: *Tailwind `content` globs — feature-only utilities were never emitted*.
 
-Last Updated: 2026-09-30 (Daily Planning supervisor day surface `/planning` **VERIFIED (UNCOMMITTED)** — real stack (PostgreSQL :5433 + NestJS :4000 + `next dev` :3000), real Chrome over CDP, harness `cdp-planning-day.js`: **231/231 checks PASS** over 7 scenarios (supervisor RO/EN x 375/1440 + a plan-less day + worker RO/EN role isolation), every counter/row value asserted against `GET /api/daily-plans?projectId=&date=`, `GET /api/tasks?projectId=`, `GET /api/attendance/today`, `GET /api/inventory/stock` and `GET /api/issues`; 0 horizontal overflow, 0 JS exceptions, 0 failed requests, only the pre-existing `/favicon.ico` 404; gates typecheck / web:typecheck / web:build (25/25) / i18n:check (1121/1121) / guards:check / `npm test` (31 suites / 320 tests) all exit 0 and `git diff --stat backend/ prisma/ database/` is empty; ISSUE-062 opened for the pre-existing raw `plan_date` timestamp on the My-work card. Earlier: CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 - Daily Report finalization (DRAFT -> SUBMITTED) - **PASS**: browser gate `gate-p44-finalize.js` 25/25 with 0 console errors at 375px, backend 31 suites / 320 tests, db:verify 71/71, typecheck 0 errors (backend/shared/web); exactly one immutable revision, one stock consumption, one finalization audit row per report, idempotent replay, read-only UI after submit, Mobile one-call contract verified over HTTP only; ISSUE-051 opened for the Mobile daily-report screen; earlier the same day: ISSUE-048 daily report "Proposed Work" persistence PASS at 30 suites / 295 tests + db:verify 66/66, dev field-team data seeded as REAL PostgreSQL rows PASS, P4.3.1 daily report persistence PASS, Dev/LAN access PASS (ISSUE-047); ISSUE-049 OPEN: two concurrent next dev servers corrupt web/.next)
+Last Updated: 2026-09-30 (Daily Planning supervisor day surface `/planning` **VERIFIED + COMMITTED (checkpoint `fe23a7d`)** — real stack (PostgreSQL :5433 + NestJS :4000 + `next dev` :3000), real Chrome over CDP, harness `cdp-planning-day.js`: **231/231 checks PASS** over 7 scenarios (supervisor RO/EN x 375/1440 + a plan-less day + worker RO/EN role isolation), every counter/row value asserted against `GET /api/daily-plans?projectId=&date=`, `GET /api/tasks?projectId=`, `GET /api/attendance/today`, `GET /api/inventory/stock` and `GET /api/issues`; 0 horizontal overflow, 0 JS exceptions, 0 failed requests, only the pre-existing `/favicon.ico` 404; gates typecheck / web:typecheck / web:build (25/25) / i18n:check (1121/1121) / guards:check / `npm test` (31 suites / 320 tests) all exit 0 and `git diff --stat backend/ prisma/ database/` is empty; ISSUE-062 opened for the pre-existing raw `plan_date` timestamp on the My-work card. Earlier: CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 - Daily Report finalization (DRAFT -> SUBMITTED) - **PASS**: browser gate `gate-p44-finalize.js` 25/25 with 0 console errors at 375px, backend 31 suites / 320 tests, db:verify 71/71, typecheck 0 errors (backend/shared/web); exactly one immutable revision, one stock consumption, one finalization audit row per report, idempotent replay, read-only UI after submit, Mobile one-call contract verified over HTTP only; ISSUE-051 opened for the Mobile daily-report screen; earlier the same day: ISSUE-048 daily report "Proposed Work" persistence PASS at 30 suites / 295 tests + db:verify 66/66, dev field-team data seeded as REAL PostgreSQL rows PASS, P4.3.1 daily report persistence PASS, Dev/LAN access PASS (ISSUE-047); ISSUE-049 OPEN: two concurrent next dev servers corrupt web/.next)
 
 Record what has actually been tested or verified. Never mark a check as passing unless it was actually performed.
 
@@ -2915,7 +2915,7 @@ when each section was written; they were reconciled to this checkpoint by the do
 
 ---
 
-## Daily Planning — supervisor day surface `/planning` (2026-09-30, UNCOMMITTED)
+## Daily Planning — supervisor day surface `/planning` (2026-09-30, COMMITTED — CHECKPOINT `fe23a7d`)
 
 The approved Daily Planning design (`design/figma/daily-planning.png`) is implemented as a
 **supervisor-only day surface** on top of the existing daily-plan/task contracts: counters band,
@@ -3007,19 +3007,21 @@ holds `web/.next`. The dev server was stopped, `web/.next` removed, the gates ru
 **Known gap found during this verification:** the worker's My-work card (`MyWorkList`, untouched by this
 slice) still renders the raw `plan_date` timestamp — filed as **ISSUE-062** with the one-line fix.
 
-**Historical wording:** the `UNCOMMITTED` markers on the Daily Planning heading above (and on the
-`Last Updated:` line) record the state at the time of writing — the reviewed slice was committed as
-**`fe23a7d`** (`feat(web): daily planning supervisor day surface (DEC-013, ISSUE-062)`). The only
-uncommitted change in the tree is the Tailwind `content` glob fix recorded below.
+**Checkpoint reconciliation (2026-09-30):** the `UNCOMMITTED` wording this section heading and the
+`Last Updated:` line above carried while they were written (pre-commit state) was reconciled to
+**`fe23a7d`** — `feat(web): daily planning supervisor day surface (DEC-013, ISSUE-062)` — by the
+docs-only commit *docs: record checkpoint commit 37c7e63*; no implementation or verification fact
+changed. The Tailwind section below records its own checkpoint (`37c7e63`).
 
 ---
 
-## Tailwind `content` globs — feature-only utilities were never emitted (2026-09-30, UNCOMMITTED)
+## Tailwind `content` globs — feature-only utilities were never emitted (2026-09-30, COMMITTED — CHECKPOINT `37c7e63`)
 
 **Scope:** one line of configuration — `web/tailwind.config.js` → `content: ['./src/**/*.{js,ts,jsx,tsx,mdx}']`
 (+ a comment). No component, page, translation, backend, Prisma, database, migration, endpoint or
-dependency change: `git diff --stat` = `web/tailwind.config.js | 8 +++++---` (1 file, +5/-3) and
-`git diff --stat backend/ prisma/ database/` is empty.
+dependency change: the checkpoint commit `37c7e63` is **5 files, +224/−6**
+(`web/tailwind.config.js` +6/−3 plus the four workflow documents) and
+`git diff --stat backend/ prisma/ database/` stays empty.
 
 **Root cause (measured, not inferred).** The `content` list named `./src/pages/**`, `./src/components/**`
 and `./src/app/**` only, so Tailwind never scanned `web/src/features/**` (the Daily Planning day surface,
@@ -3117,3 +3119,25 @@ and its first assertion waits for the worker's 2026-09-29 task row, while
 plan is for 2026-09-29), so the harness aborts on a row that cannot exist today. My Day parity for this
 change was therefore established with the route harness (byte-identical evidence, header present, 0
 exceptions) instead of by re-running that harness; its Phase-1 PASS result stands as recorded above.
+
+### Checkpoint commit (2026-09-30) - `37c7e63`
+
+Reviewed and committed as **`37c7e63`** - `fix(web): include feature sources in Tailwind content globs
+(ISSUE-063)` - **5 files, +224/-6**: `web/tailwind.config.js` (+6/-3, the glob plus the comment) and
+`Project workflow/{ISSUES,VERIFICATION,PROGRESS,DESIGN_SYSTEM}.md`. The committed blob
+(`git hash-object web/tailwind.config.js` = `ffaa75dd4c634c2801b94a767492be8217456b43`) is identical to
+`HEAD:web/tailwind.config.js` and `git diff HEAD` is empty, so the committed tree is the tree the gates
+above ran on - no code changed after verification. `37c7e63` is a normal commit on top of `fe23a7d`: no
+amend, no rebase, **no push** (`master` is 13 commits ahead of `origin/master`). The six pre-existing
+untracked entries (`.hiiEko/`, `BonFis/`, `Project workflow/design/`, `Start-HIIEKO.ps1`,
+`Stop-HIIEKO.ps1`, `database/archive/pre_migration_backup_20260929_093849.sql`) were not staged, and the
+gitignored harness (`cdp-globfix-*.js`, `cdp-*.js`), `task-screenshots/` and `web/.next/` never entered
+the index.
+
+**Post-commit live re-check:** the served `/_next/static/css/app/layout.css` still reports **776 class
+tokens** with every feature-only probe emitted (`cdp-globfix-css.js after`, exit 0), and ports 3000/4000
+are listening (exactly one dev server).
+
+**Reconciliation:** the `UNCOMMITTED` marker this section's heading carried while it was written records
+the pre-commit state; it was reconciled to `37c7e63` by the docs-only commit *docs: record checkpoint
+commit 37c7e63* (no implementation or verification fact changed).

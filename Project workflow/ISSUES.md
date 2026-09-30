@@ -2,16 +2,19 @@
 
 Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column (migration `20260929170000_add_daily_report_proposed_work`), independent of `general_notes`; backend + shared + web changes and a 375px EN/RO browser gate are green. Earlier the same day: dev field-team data seeded and browser-verified (12 accounts / 3 teams / 12 tasks / 3 published daily plans), ISSUE-049 opened OPEN (two concurrent `next dev` servers corrupting web/.next), P4.3.1 daily report PERSISTENCE VERIFIED, ISSUE-047 RESOLVED)
 
-> **2026-09-30 (Daily Planning supervisor day surface, UNCOMMITTED):** **ISSUE-062 opened** — the My-work
+> **2026-09-30 (Daily Planning supervisor day surface — COMMITTED, CHECKPOINT `fe23a7d`):** **ISSUE-062 opened** — the My-work
 > card prints the raw `plan_date` timestamp (pre-existing; the surface is outside the approved Daily
 > Planning file list, so it was recorded rather than changed). Nothing was closed or reopened by the
 > slice: ISSUE-041 fail-closed progress editing, the worker/technician data scope and the plan lifecycle
 > were re-verified unchanged on the live stack.
 
-> *(Written while that slice was uncommitted: it was committed on 2026-09-30 as checkpoint `fe23a7d`; the
-> only uncommitted change in the tree is the Tailwind `content` glob fix below.)*
+> *(Both notes were written while their work was uncommitted: the Daily Planning slice was committed on
+> 2026-09-30 as checkpoint `fe23a7d` and the Tailwind `content` glob fix as `37c7e63`, so the
+> `UNCOMMITTED` wording these markers carried was historical (pre-commit state). They were reconciled to
+> those checkpoints by the docs-only commit *docs: record checkpoint commit 37c7e63*; the tracked working
+> tree is clean and nothing was pushed. No issue changed state.)*
 
-> **2026-09-30 (Tailwind `content` globs, UNCOMMITTED):** **ISSUE-063 opened and resolved in the same
+> **2026-09-30 (Tailwind `content` globs — COMMITTED, CHECKPOINT `37c7e63`):** **ISSUE-063 opened and resolved in the same
 > pass** — the globs never scanned `web/src/features/**`, so responsive/arbitrary utilities used only
 > there were absent from the served and built CSS and the desktop `/planning` surface rendered its mobile
 > classes at 1440 px. One line in `web/tailwind.config.js`
@@ -27,8 +30,8 @@ Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now 
 
 # Open Issues
 
-## ISSUE-063 — Tailwind `content` globs skipped `web/src/features/**`, so feature-only responsive utilities were never emitted (RESOLVED 2026-09-30 — fix applied and verified, uncommitted)
-**Status:** ✅ `RESOLVED` (2026-09-30 — one line in `web/tailwind.config.js`; **uncommitted**, awaiting review)
+## ISSUE-063 — Tailwind `content` globs skipped `web/src/features/**`, so feature-only responsive utilities were never emitted (RESOLVED 2026-09-30 — COMMITTED, CHECKPOINT `37c7e63`)
+**Status:** ✅ `RESOLVED` (2026-09-30 — one line in `web/tailwind.config.js`; **committed as `37c7e63`**, not pushed)
 
 ### Description
 `web/tailwind.config.js` listed only `./src/pages/**`, `./src/components/**` and `./src/app/**` under

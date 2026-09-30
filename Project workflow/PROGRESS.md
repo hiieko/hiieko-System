@@ -937,7 +937,7 @@ Files: **new** `web/src/features/planning/{dayDerivations,readinessReads}.ts`,
 `shared/src/translations.ts` (52 additive keys). Decision record: **DEC-013**. Known gap: **ISSUE-062**
 (the My-work card still prints the raw `plan_date` timestamp — untouched by this slice).
 
-## Tailwind `content` globs — feature-only utilities were never emitted (fixed 2026-09-30, UNCOMMITTED)
+## Tailwind `content` globs — feature-only utilities were never emitted (fixed 2026-09-30, COMMITTED — CHECKPOINT `37c7e63`)
 
 `web/tailwind.config.js` scanned `./src/pages/**`, `./src/components/**` and `./src/app/**` only, so
 Tailwind never saw `web/src/features/**` and every utility used **only** there was missing from the served
@@ -960,6 +960,17 @@ production bundle. Route harness on real Chrome over CDP (12 scenarios, RO/EN, 3
 `git diff --stat backend/ prisma/ database/` empty. Issue: **ISSUE-063**. Files: **modified**
 `web/tailwind.config.js` only. Detail: `VERIFICATION.md` -> *Tailwind `content` globs — feature-only
 utilities were never emitted*.
+
+**Tailwind checkpoint commit (2026-09-30):** committed as **`37c7e63`** -
+`fix(web): include feature sources in Tailwind content globs (ISSUE-063)` - 5 files, +224/-6
+(`web/tailwind.config.js` +6/-3 plus `Project workflow/{ISSUES,VERIFICATION,PROGRESS,DESIGN_SYSTEM}.md`).
+The committed blob is byte-identical to the file the gates ran on (`git diff HEAD` empty - no code changed
+after verification), the six pre-existing untracked entries (`.hiiEko/`, `BonFis/`,
+`Project workflow/design/`, `Start-HIIEKO.ps1`, `Stop-HIIEKO.ps1`,
+`database/archive/pre_migration_backup_20260929_093849.sql`) were not staged, and **nothing was pushed**
+(`master` is 13 commits ahead of `origin/master`). The `UNCOMMITTED` wording this entry carried while it
+was written is **historical** (pre-commit state); it was reconciled to this checkpoint by the docs-only
+commit *docs: record checkpoint commit 37c7e63*.
 
 ## Next Actions
 
