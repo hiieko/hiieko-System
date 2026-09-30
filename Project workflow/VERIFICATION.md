@@ -2426,3 +2426,133 @@ with the real API (`:4000`) and DB (`:5433`), authenticated through the real log
 - No visual/design review, no manual device pass, no remote CI run, **no commit and no push**.
 - The CDP harness and its JSON/log evidence live in `%TEMP%` only and are intentionally not committed.
 
+---
+
+## R1B.2 — ISSUE-059 (`PageTutorial` locale propagation) (2026-09-30, UNCOMMITTED)
+
+### Scope
+One component plus workflow documentation. No backend, Prisma / database, CI, route-architecture or
+translation change: no key renamed, no copy changed, no tutorial content touched, no redesign, no new
+dependency, no new endpoint, **no call-site change**.
+
+| File | Change |
+|---|---|
+| `web/src/components/PageTutorial.tsx` | +11/−1 — the hardcoded `locale = 'ro'` prop default is replaced by the active locale read from the existing `LocaleContext` (`useLocale()`); the prop stays as an explicit override |
+| `Project workflow/{ISSUES,VERIFICATION,PROGRESS,HANDOFF}.md` | documentation only |
+
+### Root cause
+`PageTutorial` declared `locale?: 'ro' | 'en'` **with a `'ro'` default** and resolved every string
+through `t(key, locale)`. All 17 call sites render `<PageTutorial sectionId="…" />` with no `locale`
+prop, so the card was permanently Romanian while the rest of the page (and
+`document.documentElement.lang`) followed the active locale. `t()` also falls back to `e['ro']`, so a
+missing EN entry would have been invisible behind the same default.
+
+### Call-site inventory — 17 sites in 16 files (the ISSUE-059 count of "16" was one short)
+Every site is `<PageTutorial sectionId="…" />` with **0** passing `locale` — before and after R1B.2.
+The last column records whether the host file already used the locale layer on its own (context for
+the chosen fix, not a requirement any more).
+
+| # | Call site | `sectionId` | Host already uses `useLocale()` |
+|---|---|---|---|
+| 1 | `web/src/app/aprobare/page.tsx:122` | `approvals` | no |
+| 2 | `web/src/app/avize/page.tsx:96` | `deliveries` | yes |
+| 3 | `web/src/app/cheltuieli/page.tsx:180` | `expenses` | yes |
+| 4 | `web/src/app/issues/page.tsx:114` | `issues` | yes |
+| 5 | `web/src/app/notificari/page.tsx:100` | `notifications` | yes |
+| 6 | `web/src/app/planning/page.tsx:293` | `planning` | yes |
+| 7 | `web/src/app/pontaj/page.tsx:145` | `attendance` | yes (early-return branch) |
+| 8 | `web/src/app/pontaj/page.tsx:159` | `attendance` | yes (main branch) |
+| 9 | `web/src/app/profil/page.tsx:85` | `profile` | yes |
+| 10 | `web/src/app/projects/[id]/page.tsx:178` | `project-detail` | yes |
+| 11 | `web/src/app/rapoarte/page.tsx:101` | `reports` | yes |
+| 12 | `web/src/app/santiere/page.tsx:95` | `sites` | no |
+| 13 | `web/src/app/stocuri/page.tsx:102` | `stock` | yes |
+| 14 | `web/src/app/teams/page.tsx:269` | `teams` | no |
+| 15 | `web/src/app/utilizatori/page.tsx:87` | `users` | yes |
+| 16 | `web/src/app/workforce/page.tsx:143` | `workforce` | yes |
+| 17 | `web/src/components/ControlTowerSurface.tsx:149` | `dashboard` | yes (renders on `/` and `/control-tower`) |
+
+### Fix (one file)
+```tsx
+export function PageTutorial({ sectionId, locale: localeProp, role }: PageTutorialProps) {
+  const { locale: activeLocale } = useLocale();
+  const locale = localeProp ?? activeLocale;
+```
+The component reads the **existing** locale layer (`shared/src/i18n.ts` `LocaleContext`, provided by
+`LocaleProviderClient` in `web/src/app/layout.tsx`) — the same mechanism `PlanCard`, `TaskCard`,
+`MyWorkList`, `ControlTowerSurface` and the `DailyReport*` sections already use. No second context, no
+second helper, no page-level tutorial logic.
+
+**Chosen over explicit `locale={locale}` on all 17 sites** (the pattern originally proposed in
+ISSUE-059): every site already renders inside the provider, so the context value is always correct;
+`PageTutorial` is `'use client'`, so a hook is safe; the prop-threading variant would touch 16
+unrelated pages — three of which (`/aprobare`, `/santiere`, `/teams`) import no locale hook at all —
+while still letting a future call site forget the prop, whereas a context read makes the defect
+structurally impossible to reintroduce. The optional prop is kept for explicit overrides (0 current
+callers).
+
+### FAIL-first evidence
+With `PageTutorial.tsx` reverted to `HEAD` (`git checkout --`, restored byte-identically afterwards —
+same blob `c033e2d`, CRLF preserved) the identical probe, account and server reported:
+
+| Measure | Pre-fix (`HEAD`) | Post-fix |
+|---|---|---|
+| records / pass / fail (375 px × 17 routes × RO+EN) | **34 / 17 / 17** | **46 / 46 / 0** |
+| EN records rendering RO copy (`romanianLeaksInEn`) | **17** | **0** |
+| RO records | 17/17 PASS (fix must not change RO) | 17/17 PASS |
+| `lang` mismatches / raw `tutorial.*` keys | 0 / 0 | 0 / 0 |
+
+Pre-fix EN samples: `/` `aria-label="Panou Principal"` + `Cum funcționează?`, `/planning`
+`"Plan Zilnic"`, `/workforce` `"Forță de Muncă"`, `/projects/[id]` `"Detalii Proiect"` — all with
+`document.documentElement.lang === "en"`.
+
+### Browser sweep (after the fix)
+**46 records** = 375 px × all 17 tutorial routes × {RO, EN} **plus** 768 px and 1440 px ×
+{`/planning`, `/teams`, `/workforce`} × {RO, EN}. Real headless Chrome `Chrome/154.0.8037.58` over
+the DevTools Protocol against a production `next start` on `:3100` (`BUILD_ID`
+`tFTCFIINiQvFxHHnmHJS4`) with the real API (`:4000`) and DB (`:5433`). Authenticated through the
+**real login form** (`mode=ui-form`, `dev@hiieko.local`, `authVerified=true`); the locale was switched
+through the **real header switcher** (`[data-locale="…"]` click, `mode=ui-click`) followed by a real
+reload before each locale pass; every record additionally expands the card through its own toggle
+button and compares title, short, purpose, steps, role notes, important note and both toggle labels
+with the values **computed from the committed sources** (`shared/src/translations.ts` +
+`shared/src/tutorials.ts`, 1009 keys, 21/21 sections parsed — the probe refuses to run if that
+extraction is not trustworthy).
+
+| Check | Result |
+|---|---|
+| every card string equals the dictionary value for the **active** locale | **46/46 PASS** |
+| `document.documentElement.lang` equals the pass locale | **46/46** |
+| `solar:locale` persisted as `en` after the EN switch + reload | all EN records |
+| raw `tutorial.*` keys in body text / in any `aria-label` | **0 / 0** |
+| RO-only copy visible in EN mode | **0** |
+| `/planning` `/teams` `/workforce` (required matrix) | `Plan Zilnic` / `Echipe` / `Forță de Muncă` (RO) ↔ `Daily Plan` / `Teams` / `Workforce` (EN) at 375, 768 and 1440 px |
+| `main.scrollWidth === main.clientWidth`, 375 px | 16/17 routes; `/` and `/control-tower` stay **375/375** (ISSUE-058 intact) |
+| 768 px / 1440 px | `768/768` and `1184/1184` (shell aside) on every record |
+
+### Gates (final tree)
+| Gate | Result |
+|---|---|
+| `npm run i18n:check` | **PASS** — 194 source files, 1009 key definitions, 1009 unique keys (unchanged: no key added/renamed/removed) |
+| `npm run guards:check` | **PASS** — 194 source files scanned |
+| `npm run typecheck` | **exit 0** — shared + web + Mobile + backend |
+| `npm run web:typecheck` | **exit 0** |
+| `npm run web:build` | **exit 0** — `✓ Compiled successfully`, 25/25 pages |
+| `npm test` | **exit 0** — 31 suites / 320 tests PASS |
+| `npm run db:verify` (root) | **exit 0 — 41/41 checks passed** with `DATABASE_URL` from `backend/.env` (the `.env` quotes must be stripped; without the variable the script exits 2 — pre-existing precondition) |
+| `npm run db:verify --workspace=backend` | **exit 0 — TOTAL 71 / FAILED 0** |
+
+### Not verified / out of scope
+- Only `admin` was swept. The defect was role-independent (the card never read a role) and the C5/R1B.1
+  sweeps already cover the other three dev roles.
+- RO rendering is asserted **equal to the dictionary values** (i.e. unchanged from `HEAD`); no pixel or
+  visual diff was taken, and no design review was performed.
+- `/pontaj` at 375 px measures `main 405/375` (RO) and `378/375` (EN) — **pre-existing at `HEAD`**, also
+  visible with the pre-fix bundle in RO, with `documentElement.scrollWidth` 375 = `innerWidth` (an inner
+  scroller, not page overflow). It is outside ISSUE-058's scope (the Control Tower surfaces are
+  `375/375`) and is **reported, not fixed**.
+- Environment note: the `next start` on `:3000` was serving a `.next` that a later `next build` had
+  replaced (dev-style chunk URLs → 404 → no hydration), so verification used a fresh production build
+  served by `next start` on `:3100`. `.next` is a gitignored artifact; no source file was affected.
+- No commit, no push, no remote CI run, no mobile pass. Harness + JSON evidence live in `%TEMP%` only.
+

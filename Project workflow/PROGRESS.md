@@ -303,6 +303,28 @@ All quality gates verified as of 2026-09-30 (R1B.1):
 
 ## Recent Work
 
+### 2026-09-30 - R1B.2: ISSUE-059 `PageTutorial` locale propagation (GREEN, UNCOMMITTED)
+
+ISSUE-059 fixed in one file: `web/src/components/PageTutorial.tsx` (+11/−1). The `locale = 'ro'`
+default is gone — the card now resolves the active locale from the **existing** locale layer
+(`useLocale()` / `LocaleContext`, provided by `LocaleProviderClient` in `web/src/app/layout.tsx`) and
+keeps the optional prop only as an explicit override. All **17 call sites in 16 files** (the ISSUE-059
+count of "16" missed `ControlTowerSurface.tsx`) were inventoried and deliberately left untouched: a
+context read cannot be forgotten by a future call site, whereas threading the prop through 16 pages —
+three of which import no locale hook at all — can silently regress again. No key renamed, no copy
+changed, no second i18n mechanism.
+
+| Check | Result |
+|---|---|
+| **FAIL-first (`HEAD`)** | 375 px × 17 routes × {RO, EN} = **34 records / 17 PASS / 17 FAIL** — every EN record rendered RO copy (`lang="en"`, `Panou Principal`, `Plan Zilnic`, `Forță de Muncă`, `Cum funcționează?`), 17/17 RO PASS (the fix must not change RO) |
+| **After the fix** | **46 records / 46 PASS** = 375 px × 17 routes × {RO, EN} + 768 px and 1440 px × {planning, teams, workforce} × {RO, EN}. Title/short/purpose/steps/role notes/important note/toggle labels asserted equal to values computed from `shared/src/translations.ts` + `shared/src/tutorials.ts` (1009 keys, 21/21 sections); `documentElement.lang` correct **46/46**; **0** raw `tutorial.*` keys (text + aria); **0** RO-only strings in EN; real login form + real header switcher + reload; real headless Chrome 154 over CDP against a production `next start` on `:3100` with the live API and DB |
+| **Gates** | `i18n:check` **PASS** (194 files, 1009/1009 keys), `guards:check` **PASS**, `typecheck` **exit 0** (shared + web + Mobile + backend), `web:typecheck` **exit 0**, `web:build` **exit 0** (25/25 pages), `npm test` **31 suites / 320 tests PASS**, root `db:verify` **41/41**, `db:verify --workspace=backend` **TOTAL 71 / FAILED 0** |
+| **ISSUE-057 / ISSUE-058** | untouched and still `FIXED`; `/` and `/control-tower` remain `375/375` at 375 px, ≥ 640 px unchanged. ISSUE-055 untouched, ISSUE-056 still deferred |
+| **Not claimed / observed** | `/pontaj` at 375 px: `main 405/375` (RO) / `378/375` (EN) — pre-existing at `HEAD` (also with the pre-fix bundle), inner scroller (`documentElement.scrollWidth` 375 = `innerWidth`), outside ISSUE-058's scope → reported, not fixed. Only `admin` swept. No pixel diff, no design review, no commit, no push |
+
+**R1B.2 DONE and uncommitted (1 tracked source file + 4 workflow docs). The R1B copy pass continues; the visual redesign remains PENDING.**
+Full detail: `VERIFICATION.md` → *R1B.2*.
+
 ### 2026-09-30 - R1B.1: ISSUE-057 tutorial translation keys + ISSUE-058 375 px Control Tower overflow (GREEN, UNCOMMITTED)
 
 Two scoped fixes: the 21 missing `tutorial.*` keys the C5 sweep flagged as **F1**, and the 54 px
@@ -762,9 +784,10 @@ Files: `web/src/features/planning/{types,api,index}.ts`, `components/PlanTaskRow
    AsyncStorage draft is deleted *before* the API/queue call, so a failed submit loses the draft.
    The Mobile app was not part of the P4.4 browser verification - fix both before calling the Mobile
    daily report verified.
-9. **ISSUE-059 (opened by R1B.1)** - `PageTutorial` defaults `locale` to `'ro'` and none of its 16 call
-   sites passes it, so every page introduction card renders Romanian in the EN locale. Thread the
-   active locale (`useLocale()` from `shared/src/i18n.ts`) into all 16 call sites and add an assertion
-   so a card cannot silently fall back to RO.
+9. **ISSUE-059 - DONE in R1B.2 (2026-09-30).** `PageTutorial` now resolves the active locale from the
+   existing `LocaleContext` (`useLocale()` from `shared/src/i18n.ts`); the hardcoded RO default is gone
+   and the 17 call sites (16 files) needed no change, so a card can no longer silently fall back to RO.
+   Browser evidence: 46/46 records, 0 RO-only strings in EN, RO rendering unchanged
+   (`VERIFICATION.md` -> *R1B.2*). Next R1B copy items remain open.
 
 See [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) and [HANDOFF.md](HANDOFF.md) for detailed planning.

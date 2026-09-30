@@ -6,11 +6,15 @@ import {
   TutorialSectionId,
   t,
   getRoleLabel,
+  useLocale,
   UserRole,
 } from '@solar/shared';
 
 interface PageTutorialProps {
   sectionId: TutorialSectionId;
+  /** Explicit override. When omitted, the active application locale is used
+   *  (`LocaleContext` via `useLocale()`), so the card can never stay on the
+   *  Romanian default while the application runs in English. */
   locale?: 'ro' | 'en';
   /** When provided only role notes for this role are shown. */
   role?: UserRole;
@@ -22,7 +26,13 @@ interface PageTutorialProps {
  * "How it works" answering What/Why/Do/Who + Important rules. All copy comes
  * from shared translation keys in RO+EN — nothing is hardcoded here.
  */
-export function PageTutorial({ sectionId, locale = 'ro', role }: PageTutorialProps) {
+export function PageTutorial({ sectionId, locale: localeProp, role }: PageTutorialProps) {
+  // The active locale comes from the existing application locale layer
+  // (`LocaleContext` via `useLocale()`) — the same source every other Web
+  // component uses, not a second i18n mechanism. `locale` stays available as
+  // an explicit override, but the hardcoded Romanian default is gone.
+  const { locale: activeLocale } = useLocale();
+  const locale = localeProp ?? activeLocale;
   const [expanded, setExpanded] = useState(false);
   const content = TUTORIALS[sectionId];
   if (!content) return null;

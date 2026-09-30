@@ -4,6 +4,43 @@
 
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
+## R1B.2 DONE — ISSUE-059 fixed, UNCOMMITTED (2026-09-30) — HEAD = `e0c1caf`
+
+**Working tree:** exactly 1 tracked source modification + 4 workflow documents, **no commit and no
+push** — `web/src/components/PageTutorial.tsx` (+11/−1, CRLF preserved, blob `c033e2d`) and
+`Project workflow/{ISSUES,VERIFICATION,PROGRESS,HANDOFF}.md`. The untracked items (`.hiiEko/`,
+`BonFis/`, `Start-HIIEKO.ps1`, `Stop-HIIEKO.ps1`,
+`database/archive/pre_migration_backup_20260929_093849.sql`) predate R1B.2. **R1B.1 is committed as
+`e0c1caf`** — the section below was written before that commit, so its "UNCOMMITTED" wording is
+historical.
+
+**ISSUE-059 (FIXED)** — `PageTutorial` no longer defaults `locale` to `'ro'`; it reads the active
+locale from the existing `LocaleContext` (`const { locale: activeLocale } = useLocale(); const locale
+= localeProp ?? activeLocale;`) and keeps the prop as an explicit override. 17 call sites in 16 files
+(the original count of 16 missed `ControlTowerSurface.tsx`) — **none changed, deliberately**: the
+context read cannot be forgotten by a future call site, unlike a prop threaded through 16 unrelated
+pages (3 of which import no locale hook).
+
+**Verified:** FAIL-first on `HEAD` = 34 records / 17 PASS / 17 FAIL (every EN record rendered RO);
+after = **46 records / 46 PASS** (375 px × 17 tutorial routes × RO+EN plus 768/1440 px ×
+{planning, teams, workforce} × RO+EN), `documentElement.lang` 46/46, 0 raw `tutorial.*` keys in text
+and aria, 0 RO-only strings in EN, RO copy asserted equal to the dictionary values. Gates:
+`i18n:check` PASS (1009/1009), `guards:check` PASS, `typecheck` / `web:typecheck` / `web:build`
+exit 0, `npm test` 31 suites / 320 tests, root `db:verify` 41/41, `db:verify --workspace=backend`
+TOTAL 71 / FAILED 0. Full detail: `VERIFICATION.md` → *R1B.2*.
+
+**Environment gotcha (cost most of this session):** the `next start` on `:3000` was serving a `.next`
+that a later `next build` had overwritten — dev-style chunk URLs (`main-app.js?v=…`) 404 against
+production artifacts, so React never hydrated and every page looked dead. Browser evidence must be
+taken on a fresh build served by its own `next start` (here `:3100`). `.next` is gitignored.
+
+**Observed, not fixed (out of scope):** `/pontaj` at 375 px has `main 405/375` (RO) / `378/375` (EN) —
+pre-existing at `HEAD`, an inner scroller (`documentElement.scrollWidth` 375 = `innerWidth`), not
+ISSUE-058 (the Control Tower surfaces stay `375/375`).
+
+**Next:** commit `PageTutorial.tsx` + the 4 documents once approved, then continue the R1B copy pass
+(ISSUE-055 / ISSUE-056 still deferred) and the visual redesign.
+
 ## R1B.1 DONE — ISSUE-057 + ISSUE-058 fixed, UNCOMMITTED (2026-09-30)
 
 **Working tree:** exactly 3 tracked modifications, **no commit and no push** —

@@ -793,31 +793,58 @@ change, no other part of the component touched, and ≥ 640 px rendering unchang
 ---
 
 ## ISSUE-059 — `PageTutorial` renders Romanian copy in the EN locale (component-level locale default)
-**Status:** 🔍 `OPEN` (found 2026-09-30 by the R1B.1 browser sweep — not an R1B.1 regression)
+**Status:** ✅ `FIXED` (2026-09-30, R1B.2 — locale resolved from the existing `LocaleContext`, no call-site change; verified in a real browser: 46/46 records, 0 RO-only strings in EN, RO rendering unchanged)
 
 ### Description
 `web/src/components/PageTutorial.tsx` declares `locale?: 'ro' | 'en'` with a `'ro'` default
 (`export function PageTutorial({ sectionId, locale = 'ro', role })`, line 25) and resolves every string
-through `t(key, locale)` (lines 37, 41, 49, 52, 58, 60, 65, 69). **None of the 16 call sites passes the
-prop** (measured: 16 × `<PageTutorial sectionId="…" />`, 0 × with `locale`), while the pages themselves
+through `t(key, locale)` (lines 37, 41, 49, 52, 58, 60, 65, 69). **None of the call sites passes the
+prop** (measured: 17 × `<PageTutorial sectionId="…" />`, 0 × with `locale`), while the pages themselves
 already use `useLocale()`. The card is therefore always Romanian, even when
 `document.documentElement.lang === 'en'` and the rest of the page is English.
 
 ### Impact
-Localisation defect on all 16 introduction cards (a missing EN key would additionally hide behind the RO
-default). No layout, data or authorization impact.
+Localisation defect on all 17 introduction cards (16 files: `dashboard` renders twice, on `/` and
+`/control-tower`, through `web/src/components/ControlTowerSurface.tsx` — the site the R1B.1 count of
+"16 call sites" missed). A missing EN key would additionally hide behind the RO default. No layout,
+data or authorization impact.
 
 ### Evidence (measured 2026-09-30, real browser)
 - The 15 EN records of the R1B.1 sweep: `document.documentElement.lang === 'en'` and 0 raw `tutorial.*`
   keys, yet `/planning` EN renders `PLAN ZILNIC … Planificarea zilei de lucru pentru fiecare echipă.`
   with `aria-label="Plan Zilnic"` instead of `Daily Plan` / `Planning the working day for each team.`
-- Code: `PageTutorial.tsx` line 25 + the 16 call sites, 0 of which pass `locale`.
+- Code: `PageTutorial.tsx` line 25 + the 17 call sites, 0 of which pass `locale`.
 
 ### Required Action
-Thread the active locale into every `PageTutorial` call site (`useLocale()` from `shared/src/i18n.ts`).
-16 call sites across the app → belongs to the R1B copy pass, deliberately **not** part of R1B.1 (which
-was scoped to the missing keys and the 375 px overflow only). Add a render/checker assertion so a card
-can never silently regress to the RO default.
+Resolve the active locale from the existing locale layer (`useLocale()` from `shared/src/i18n.ts`) so
+the card can never fall back to RO. Belongs to the R1B copy pass, deliberately **not** part of R1B.1
+(which was scoped to the missing keys and the 375 px overflow only).
+
+### Fix (2026-09-30, R1B.2 — one file, +11/−1)
+`web/src/components/PageTutorial.tsx`: the hardcoded `= 'ro'` default is gone. The component now reads
+the active locale from the existing application locale layer —
+`const { locale: activeLocale } = useLocale(); const locale = localeProp ?? activeLocale;` — the same
+`shared/src/i18n.ts` context (`LocaleProviderClient` in `web/src/app/layout.tsx`) that every other Web
+component already uses. The optional `locale` prop is kept as an explicit override.
+
+**Why the fold-in instead of `locale={locale}` on 17 call sites** (the originally proposed pattern):
+all 17 sites already render inside `<LocaleProviderClient>`, so the context is always in scope with the
+right value; `PageTutorial` is a `'use client'` component, so a hook is safe; reading the locale from
+the context is what the surrounding code does (`PlanCard`, `TaskCard`, `MyWorkList`,
+`ControlTowerSurface`, the `DailyReport*` sections all call `useLocale()`), whereas the disappearing
+prop chain is the exception; and, decisively, the prop-threading variant needs edits in 16 unrelated
+pages — three of which (`/aprobare`, `/santiere`, `/teams`) do not even import `useLocale()` — while
+*still* allowing a future call site to forget the prop. The context read makes the defect structurally
+impossible to reintroduce. No second locale context, no second translation helper, no page-specific
+tutorial logic, no key/copy change.
+
+### Verification (2026-09-30, R1B.2 — real browser, CDP)
+- **FAIL-first:** with `PageTutorial.tsx` reverted to `HEAD`, the same probe reported **34 records /
+  17 PASS / 17 FAIL** — every EN record landed the ISSUE-059 defect (`lang="en"`, card
+  `aria-label="Panou Principal"` / `"Plan Zilnic"`, RO steps, `Cum funcționează?`, 0 raw keys).
+- **After the fix: 46/46 PASS**, `langMismatch` 0, `romanianLeaksInEn` 0, `rawKeyRecords` 0.
+
+Full detail: `VERIFICATION.md` → *R1B.2*.
 
 ---
 
