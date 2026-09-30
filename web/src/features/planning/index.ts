@@ -60,6 +60,59 @@ export {
 } from './fieldWork';
 export type { FieldTaskSource, FieldTaskRow, MyDaySummary, MyDayVolume } from './fieldWork';
 
+// --- Supervisor day derivations (dayDerivations.ts) ---
+export {
+  buildTaskIndex,
+  flattenDayTasks,
+  planDateIso,
+  formatPlanDate,
+  dayTaskStatus,
+  taskStatusLabelKey,
+  taskStatusBadgeVariant,
+  taskStatusLabel,
+  resolveAssignments,
+  countDayTasks,
+  matchesDayTaskFilter,
+  countDayTasksByFilter,
+  filterDayTasks,
+  describeDayTask,
+  buildAttentionItems,
+  DAY_COUNTER_ORDER,
+  DAY_COUNTER_LABEL_KEYS,
+  DAY_COUNTER_HINT_KEYS,
+  DAY_TASK_FILTERS,
+  DAY_TASK_FILTER_LABEL_KEYS,
+} from './dayDerivations';
+export type {
+  DayTaskRow,
+  ResolvedAssignments,
+  DayCounterId,
+  DayCounters,
+  DayTaskFilterId,
+  DayTaskRowContent,
+  AttentionItem,
+  AttentionItemKind,
+  AttentionResult,
+} from './dayDerivations';
+
+// --- Supervisor readiness reads (readinessReads.ts) ---
+export {
+  canReadProjectReadiness,
+  deriveLowStock,
+  deriveMaterialsSnapshot,
+  deriveActiveBlockers,
+  loadProjectReadiness,
+  emptyReadinessSnapshot,
+} from './readinessReads';
+export type {
+  ReadinessSnapshot,
+  ReadResult,
+  StockBalanceRow,
+  StockMaterialRef,
+  LowStockItem,
+  MaterialsSnapshot,
+} from './readinessReads';
+
 // --- API ---
 export {
   getDailyPlans,
@@ -88,4 +141,10 @@ export { PlanningDaySummary } from './components/PlanningDaySummary';
 export { PlanningStatusChips } from './components/PlanningStatusChips';
 export type { PlanningStatusFilter } from './components/PlanningStatusChips';
 export { MyWorkList } from './components/MyWorkList';
+export { PlanningCounters } from './components/PlanningCounters';
+export { PlanTaskTable } from './components/PlanTaskTable';
+export { PlanTaskFilters } from './components/PlanTaskFilters';
+export { SiteReadinessCard } from './components/SiteReadinessCard';
+export { AttentionRequiredCard } from './components/AttentionRequiredCard';
+export { PlanningFooterSummary } from './components/PlanningFooterSummary';
 

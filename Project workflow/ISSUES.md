@@ -2,6 +2,12 @@
 
 Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column (migration `20260929170000_add_daily_report_proposed_work`), independent of `general_notes`; backend + shared + web changes and a 375px EN/RO browser gate are green. Earlier the same day: dev field-team data seeded and browser-verified (12 accounts / 3 teams / 12 tasks / 3 published daily plans), ISSUE-049 opened OPEN (two concurrent `next dev` servers corrupting web/.next), P4.3.1 daily report PERSISTENCE VERIFIED, ISSUE-047 RESOLVED)
 
+> **2026-09-30 (Daily Planning supervisor day surface, UNCOMMITTED):** **ISSUE-062 opened** — the My-work
+> card prints the raw `plan_date` timestamp (pre-existing; the surface is outside the approved Daily
+> Planning file list, so it was recorded rather than changed). Nothing was closed or reopened by the
+> slice: ISSUE-041 fail-closed progress editing, the worker/technician data scope and the plan lifecycle
+> were re-verified unchanged on the live stack.
+
 ## Status Legend
 - `OPEN`
 - `IN PROGRESS`
@@ -10,6 +16,33 @@ Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now 
 - `WONT FIX`
 
 # Open Issues
+
+## ISSUE-062 — My-work card prints the raw `plan_date` timestamp instead of a localized date
+**Status:** 🟡 `OPEN` (opened 2026-09-30 during the Daily Planning day-surface verification; **pre-existing**, not a regression of that slice)
+
+### Description
+`DailyPlan.plan_date` is a Prisma `DateTime`, and the API serialises it as a full ISO timestamp
+(`2026-09-29T00:00:00.000Z`). `formatDateLong()` (`web/src/features/planning/summary.ts`) parses a
+`YYYY-MM-DD` string with `split('-')` + `Number()`; for the ISO value `Number('29T00:00:00.000Z')` is
+`NaN`, so the helper returns its input unchanged and the card heading prints the raw timestamp.
+
+Measured surfaces (2026-09-29, CJ-003, real stack): `MyWorkList` — the worker/technician "My work" view
+of `/planning` — rendered 1 raw-ISO occurrence; the identical call exists in `PlanCard`, which the
+supervisor view no longer renders after the day-surface change.
+
+### Impact
+User-visible cosmetics only (the card heading reads `2026-09-29T00:00:00.000Z` instead of
+`29 septembrie 2026` / `September 29, 2026`). No data or permission risk.
+
+### Fix (deliberately NOT applied — outside the approved Daily Planning file list)
+The day table already ships the normalizing helper: `formatPlanDate(plan.plan_date, locale)`
+(`web/src/features/planning/dayDerivations.ts`) extracts the `YYYY-MM-DD` part before delegating to
+`formatDateLong`. Replacing the `formatDateLong(plan.plan_date, locale)` call in `MyWorkList` (and in
+`PlanCard`, should it be rendered again) with that helper closes the issue.
+
+### Evidence
+`VERIFICATION.md` → *Daily Planning — supervisor day surface `/planning`*: the supervisor surface asserts
+**0** matches of `/\d{4}-\d{2}-\d{2}T\d{2}:/`, while the worker scenario measured **1**.
 
 ## ISSUE-044 — Backend missing PATCH endpoint for draft daily report editing
 **Status:** ✅ `RESOLVED` (2026-09-29 — P4.3 backend slice)

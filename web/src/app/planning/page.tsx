@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { t, useLocale } from '@solar/shared';
 import { ClipboardList, Plus, Send, Ban, CheckCircle2 } from 'lucide-react';
@@ -20,17 +20,31 @@ import {
 import { useToast } from '../../components/ui/Toast';
 import {
   CreatePlanModal,
-  PlanCard,
   MyWorkList,
   PlanningDateBar,
   PlanningDaySummary,
   PlanningStatusChips,
   PlanningSkeleton,
+  PlanningCounters,
+  PlanTaskTable,
+  PlanTaskFilters,
+  SiteReadinessCard,
+  AttentionRequiredCard,
+  PlanningFooterSummary,
   canPerformPlanAction,
   getDailyPlans,
   getMyPlanTasks,
   collectEditablePlanTaskIds,
   deriveDaySummary,
+  buildTaskIndex,
+  flattenDayTasks,
+  countDayTasks,
+  countDayTasksByFilter,
+  filterDayTasks,
+  buildAttentionItems,
+  canReadProjectReadiness,
+  loadProjectReadiness,
+  emptyReadinessSnapshot,
   isFieldPlanRole,
   publishDailyPlan,
   completeDailyPlan,
@@ -43,7 +57,12 @@ import type {
   DailyPlanStatus,
   DailyPlanTask,
   PlanningStatusFilter,
+  DayTaskFilterId,
+  AttentionResult,
+  ReadinessSnapshot,
 } from '../../features/planning';
+import { getTasks } from '../../features/tasks/api';
+import type { Task } from '../../features/tasks/types';
 
 type PlanAction = 'publish' | 'complete' | 'cancel';
 
@@ -71,10 +90,22 @@ function PlanningPageInner() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ planId: string; action: PlanAction } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  // Read-only enrichment join for the supervisor day table:
+  // GET /api/tasks?projectId= (existing endpoint, supervisor scope only).
+  // worker/technician never request the project task list. null = unavailable,
+  // which makes area/responsible/planned-start fall back to the neutral "—".
+  const [projectTasks, setProjectTasks] = useState<Task[] | null>(null);
+  // Day-table presentation state (filters never change the counters band).
+  const [taskFilter, setTaskFilter] = useState<DayTaskFilterId>('ALL');
+  const [taskSearch, setTaskSearch] = useState('');
+  // "Site Readiness" rail: supervisor-only, project-wide reads (attendance /
+  // stock / issues). Field roles never issue these requests.
+  const [readiness, setReadiness] = useState<ReadinessSnapshot>(() => emptyReadinessSnapshot());
+  const [readinessLoading, setReadinessLoading] = useState(false);
+  const [readinessRefreshKey, setReadinessRefreshKey] = useState(0);
 
   const userRole = user?.role;
   // CRITICAL DATA-SCOPE RULE: worker/technician never fetch the full project
@@ -107,6 +138,7 @@ function PlanningPageInner() {
         setPlans([]);
         setMyWorkPlans([]);
         setEditableTaskIds(new Set());
+        setProjectTasks(null);
         setLoading(false);
         setRefreshing(false);
         setError(null);
@@ -128,14 +160,22 @@ function PlanningPageInner() {
           setMyWorkPlans(mine);
           setEditableTaskIds(collectEditablePlanTaskIds(mine));
           setPlans([]);
+          setProjectTasks(null);
         } else {
           // my-tasks = backend-computed membership scope for progress editing
           // (same assignment/team rule as the progress PATCH). Fetched in
           // parallel; on failure editing stays read-only (fail closed).
-          const [res, mineRes] = await Promise.all([
+          const [res, mineRes, tasksRes] = await Promise.all([
             getDailyPlans(selectedProjectId, selectedDate),
             getMyPlanTasks(selectedDate).catch((err) => {
               console.warn('Planning: my-tasks scope lookup failed; progress editing disabled', err);
+              return null;
+            }),
+            getTasks(selectedProjectId).catch((err) => {
+              console.warn(
+                'Planning: task enrichment lookup failed; area / responsible / planned start unavailable',
+                err,
+              );
               return null;
             }),
           ]);
@@ -144,6 +184,7 @@ function PlanningPageInner() {
             : [];
           setMyWorkPlans(mine);
           setEditableTaskIds(collectEditablePlanTaskIds(mine));
+          setProjectTasks(Array.isArray(tasksRes?.data) ? tasksRes.data : null);
           if (res.error) {
             setError(res.error);
             setPlans([]);
@@ -154,6 +195,7 @@ function PlanningPageInner() {
       } catch (err) {
         setEditableTaskIds(new Set());
         setMyWorkPlans([]);
+        setProjectTasks(null);
         setError(err instanceof Error ? err.message : t('planning.load_error', locale));
         setPlans([]);
       } finally {
@@ -171,6 +213,39 @@ function PlanningPageInner() {
   const handlePlanCreated = useCallback(() => {
     loadPlans('refresh');
   }, [loadPlans]);
+
+  // --- Supervisor "Site Readiness" rail ------------------------------------
+  // Supervisor-only project-wide reads (attendance / stock / issues). The role
+  // gate is authoritative: worker/technician never issue these requests, so no
+  // project-wide readiness call can come from a field session.
+  const canReadReadiness = canReadProjectReadiness(userRole);
+
+  useEffect(() => {
+    if (!selectedProjectId || !canReadReadiness || view !== 'plans') {
+      setReadiness(emptyReadinessSnapshot());
+      setReadinessLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setReadinessLoading(true);
+    loadProjectReadiness(selectedProjectId)
+      .then((snapshot) => {
+        if (!cancelled) setReadiness(snapshot);
+      })
+      .catch((err) => {
+        // loadProjectReadiness already fails closed per source — this is a guard.
+        console.warn('Planning: readiness reads failed', err);
+        if (!cancelled) setReadiness(emptyReadinessSnapshot());
+      })
+      .finally(() => {
+        if (!cancelled) setReadinessLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProjectId, canReadReadiness, view, readinessRefreshKey]);
 
   const confirmCopy = (action: PlanAction | undefined) => {
     if (action === 'publish') {
@@ -273,6 +348,43 @@ function PlanningPageInner() {
     ? `${selectedProject.code} - ${selectedProject.name}`
     : t('planning.no_project_selected', locale);
 
+  // Plan lifecycle actions, rendered once per plan group header in the day
+  // table (role-gated exactly as before — publish/complete/cancel unchanged).
+  const renderPlanActions = (plan: DailyPlan) => (
+    <>
+      {actionAllowed(plan.status, 'publish') && (
+        <Button
+          variant="primary"
+          size="sm"
+          icon={<Send className="w-3.5 h-3.5" />}
+          onClick={() => setPendingAction({ planId: plan.id, action: 'publish' })}
+        >
+          {t('planning.publish', locale)}
+        </Button>
+      )}
+      {actionAllowed(plan.status, 'complete') && (
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+          onClick={() => setPendingAction({ planId: plan.id, action: 'complete' })}
+        >
+          {t('planning.complete', locale)}
+        </Button>
+      )}
+      {actionAllowed(plan.status, 'cancel') && (
+        <Button
+          variant="danger"
+          size="sm"
+          icon={<Ban className="w-3.5 h-3.5" />}
+          onClick={() => setPendingAction({ planId: plan.id, action: 'cancel' })}
+        >
+          {t('planning.cancel', locale)}
+        </Button>
+      )}
+    </>
+  );
+
   // Role-aware data sources (approved correction #3):
   // - plans view (supervisors): the full project/day list
   // - my-work view: ONLY the my-tasks payload (also the worker/technician
@@ -281,6 +393,38 @@ function PlanningPageInner() {
   const daySummary = deriveDaySummary(summaryPlans);
   const filteredPlans =
     statusFilter === 'ALL' ? plans : plans.filter((p) => p.status === statusFilter);
+
+  // --- Supervisor day-table derivations ------------------------------------
+  // Read-only enrichment joined by `task_id` from GET /api/tasks?projectId=.
+  // Field roles keep an empty index, so no project task list is ever loaded
+  // for them (the plans list for them is [] as well).
+  const taskIndex = useMemo(() => buildTaskIndex(projectTasks), [projectTasks]);
+  const dayRows = useMemo(
+    () => (isFieldRole ? [] : flattenDayTasks(plans, taskIndex)),
+    [isFieldRole, plans, taskIndex],
+  );
+  // Counters: independent, non-exclusive facts about the WHOLE day.
+  const counters = useMemo(() => countDayTasks(dayRows), [dayRows]);
+  // Filters: exclusive presentation selectors — they never feed the counters.
+  const filterCounts = useMemo(
+    () => countDayTasksByFilter(dayRows, { includeUnassigned: counters.assignedKnown }),
+    [dayRows, counters.assignedKnown],
+  );
+  const visibleRows = useMemo(
+    () => filterDayTasks(dayRows, taskFilter, taskSearch),
+    [dayRows, taskFilter, taskSearch],
+  );
+  const attention: AttentionResult = useMemo(
+    () => buildAttentionItems(dayRows, readiness.issues.data, locale),
+    [dayRows, readiness.issues.data, locale],
+  );
+  // The day's only draft plan — the one unambiguous target for the header
+  // "Publish plan" action (with several drafts each keeps its own button).
+  const dayDraftPlan = useMemo(() => {
+    if (!canPublish) return null;
+    const drafts = plans.filter((plan) => plan.status === 'DRAFT');
+    return drafts.length === 1 ? drafts[0] : null;
+  }, [canPublish, plans]);
 
   const toggleBtnClass = (active: boolean) =>
     active
@@ -295,21 +439,12 @@ function PlanningPageInner() {
         <PageHeader
           title={t('planning.page_title', locale)}
           subtitle={projectSubtitle}
-          onRefresh={() => loadPlans('refresh')}
+          onRefresh={() => {
+            setReadinessRefreshKey((key) => key + 1);
+            loadPlans('refresh');
+          }}
           refreshing={refreshing || loading}
           className="flex-wrap gap-3"
-          actions={
-            canCreate && selectedProjectId ? (
-              <Button
-                variant="primary"
-                size="sm"
-                icon={<Plus className="w-4 h-4" />}
-                onClick={() => setShowCreate(true)}
-              >
-                {t('planning.new_plan', locale)}
-              </Button>
-            ) : null
-          }
         />
 
         <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -318,30 +453,65 @@ function PlanningPageInner() {
             onDateChange={setDate}
             disabled={refreshing}
           />
-          {!isFieldRole && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
+            {!isFieldRole && (
+              <div
+                role="group"
+                aria-label={t('planning.view_toggle_label', locale)}
+                className="flex flex-shrink-0 gap-1 rounded-lg bg-slate-100 p-1"
+              >
+                <button
+                  type="button"
+                  aria-pressed={view === 'plans'}
+                  onClick={() => setView('plans')}
+                  className={toggleBtnClass(view === 'plans')}
+                >
+                  {t('planning.view_plans', locale)}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={view === 'my-work'}
+                  onClick={() => setView('my-work')}
+                  className={toggleBtnClass(view === 'my-work')}
+                >
+                  {t('planning.view_my_work', locale)}
+                </button>
+              </div>
+            )}
+
             <div
               role="group"
-              aria-label={t('planning.view_toggle_label', locale)}
-              className="flex flex-shrink-0 gap-1 rounded-lg bg-slate-100 p-1"
+              aria-label={t('planning.day_actions_label', locale)}
+              className="flex flex-wrap items-center gap-2"
             >
-              <button
-                type="button"
-                aria-pressed={view === 'plans'}
-                onClick={() => setView('plans')}
-                className={toggleBtnClass(view === 'plans')}
-              >
-                {t('planning.view_plans', locale)}
-              </button>
-              <button
-                type="button"
-                aria-pressed={view === 'my-work'}
-                onClick={() => setView('my-work')}
-                className={toggleBtnClass(view === 'my-work')}
-              >
-                {t('planning.view_my_work', locale)}
-              </button>
+              {dayDraftPlan && selectedProjectId && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="min-h-[44px]"
+                  icon={<Send className="w-3.5 h-3.5" />}
+                  aria-label={t('planning.publish_draft_aria', locale).replace(
+                    '{date}',
+                    formatDateMedium(selectedDate, locale),
+                  )}
+                  onClick={() => setPendingAction({ planId: dayDraftPlan.id, action: 'publish' })}
+                >
+                  {t('planning.publish_plan_day', locale)}
+                </Button>
+              )}
+              {canCreate && selectedProjectId && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="min-h-[44px]"
+                  icon={<Plus className="w-4 h-4" />}
+                  onClick={() => setShowCreate(true)}
+                >
+                  {t('planning.new_plan', locale)}
+                </Button>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {!selectedProjectId ? (
@@ -361,28 +531,26 @@ function PlanningPageInner() {
           />
         ) : (
           <>
-            <PlanningDaySummary
-              plans={summaryPlans}
-              variant={view === 'my-work' ? 'my-work' : 'day'}
-            />
-
             {view === 'my-work' ? (
-              myWorkPlans.length === 0 ? (
-                <EmptyState
-                  icon={<ClipboardList className="w-7 h-7" />}
-                  title={t('planning.my_work_empty_title', locale)}
-                  description={t('planning.my_work_empty_message', locale)}
-                />
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <p className="text-sm text-slate-500">{t('planning.my_work_hint', locale)}</p>
-                  <MyWorkList
-                    plans={myWorkPlans}
-                    editableTaskIds={editableTaskIds}
-                    onTaskUpdated={applyUpdatedTask}
+              <>
+                <PlanningDaySummary plans={summaryPlans} variant="my-work" />
+                {myWorkPlans.length === 0 ? (
+                  <EmptyState
+                    icon={<ClipboardList className="w-7 h-7" />}
+                    title={t('planning.my_work_empty_title', locale)}
+                    description={t('planning.my_work_empty_message', locale)}
                   />
-                </div>
-              )
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <p className="text-sm text-slate-500">{t('planning.my_work_hint', locale)}</p>
+                    <MyWorkList
+                      plans={myWorkPlans}
+                      editableTaskIds={editableTaskIds}
+                      onTaskUpdated={applyUpdatedTask}
+                    />
+                  </div>
+                )}
+              </>
             ) : plans.length === 0 ? (
               <EmptyState
                 icon={<ClipboardList className="w-7 h-7" />}
@@ -402,6 +570,10 @@ function PlanningPageInner() {
               />
             ) : (
               <>
+                {/* Counters describe the WHOLE day (independent, non-exclusive);
+                    the chips and the table toolbar below are exclusive filters. */}
+                <PlanningCounters counters={counters} />
+
                 {plans.length > 1 && (
                   <PlanningStatusChips
                     statusCounts={daySummary.statusCounts}
@@ -417,51 +589,46 @@ function PlanningPageInner() {
                     description={t('planning.empty_message', locale)}
                   />
                 ) : (
-                  <div className="flex flex-col gap-4">
-                    {filteredPlans.map((plan) => (
-                      <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        expanded={expandedId === plan.id}
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+                    <div className="min-w-0">
+                      <PlanTaskTable
+                        plans={filteredPlans}
+                        rows={visibleRows}
+                        dayTotal={dayRows.length}
                         editableTaskIds={editableTaskIds}
-                        onToggleExpanded={(id) => setExpandedId((current) => (current === id ? null : id))}
                         onTaskUpdated={applyUpdatedTask}
-                        actions={
-                          <>
-                            {actionAllowed(plan.status, 'publish') && (
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                icon={<Send className="w-3.5 h-3.5" />}
-                                onClick={() => setPendingAction({ planId: plan.id, action: 'publish' })}
-                              >
-                                {t('planning.publish', locale)}
-                              </Button>
-                            )}
-                            {actionAllowed(plan.status, 'complete') && (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                icon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                                onClick={() => setPendingAction({ planId: plan.id, action: 'complete' })}
-                              >
-                                {t('planning.complete', locale)}
-                              </Button>
-                            )}
-                            {actionAllowed(plan.status, 'cancel') && (
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                icon={<Ban className="w-3.5 h-3.5" />}
-                                onClick={() => setPendingAction({ planId: plan.id, action: 'cancel' })}
-                              >
-                                {t('planning.cancel', locale)}
-                              </Button>
-                            )}
-                          </>
+                        renderPlanActions={renderPlanActions}
+                        toolbar={
+                          <PlanTaskFilters
+                            filter={taskFilter}
+                            onFilterChange={setTaskFilter}
+                            counts={filterCounts}
+                            search={taskSearch}
+                            onSearchChange={setTaskSearch}
+                            showUnassigned={counters.assignedKnown}
+                          />
                         }
                       />
-                    ))}
+                      {counters.total > 0 && (
+                        <PlanningFooterSummary
+                          counters={counters}
+                          selectedDate={selectedDate}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex min-w-0 flex-col gap-4">
+                      <SiteReadinessCard
+                        snapshot={readiness}
+                        loading={readinessLoading}
+                        selectedDate={selectedDate}
+                      />
+                      <AttentionRequiredCard
+                        items={attention.items}
+                        total={attention.total}
+                        loading={readinessLoading}
+                      />
+                    </div>
                   </div>
                 )}
               </>

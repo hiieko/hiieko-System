@@ -1,6 +1,6 @@
 # Verification & Audit
 
-Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 - Daily Report finalization (DRAFT -> SUBMITTED) - **PASS**: browser gate `gate-p44-finalize.js` 25/25 with 0 console errors at 375px, backend 31 suites / 320 tests, db:verify 71/71, typecheck 0 errors (backend/shared/web); exactly one immutable revision, one stock consumption, one finalization audit row per report, idempotent replay, read-only UI after submit, Mobile one-call contract verified over HTTP only; ISSUE-051 opened for the Mobile daily-report screen; earlier the same day: ISSUE-048 daily report "Proposed Work" persistence PASS at 30 suites / 295 tests + db:verify 66/66, dev field-team data seeded as REAL PostgreSQL rows PASS, P4.3.1 daily report persistence PASS, Dev/LAN access PASS (ISSUE-047); ISSUE-049 OPEN: two concurrent next dev servers corrupt web/.next)
+Last Updated: 2026-09-30 (Daily Planning supervisor day surface `/planning` **VERIFIED (UNCOMMITTED)** — real stack (PostgreSQL :5433 + NestJS :4000 + `next dev` :3000), real Chrome over CDP, harness `cdp-planning-day.js`: **231/231 checks PASS** over 7 scenarios (supervisor RO/EN x 375/1440 + a plan-less day + worker RO/EN role isolation), every counter/row value asserted against `GET /api/daily-plans?projectId=&date=`, `GET /api/tasks?projectId=`, `GET /api/attendance/today`, `GET /api/inventory/stock` and `GET /api/issues`; 0 horizontal overflow, 0 JS exceptions, 0 failed requests, only the pre-existing `/favicon.ico` 404; gates typecheck / web:typecheck / web:build (25/25) / i18n:check (1121/1121) / guards:check / `npm test` (31 suites / 320 tests) all exit 0 and `git diff --stat backend/ prisma/ database/` is empty; ISSUE-062 opened for the pre-existing raw `plan_date` timestamp on the My-work card. Earlier: CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 - Daily Report finalization (DRAFT -> SUBMITTED) - **PASS**: browser gate `gate-p44-finalize.js` 25/25 with 0 console errors at 375px, backend 31 suites / 320 tests, db:verify 71/71, typecheck 0 errors (backend/shared/web); exactly one immutable revision, one stock consumption, one finalization audit row per report, idempotent replay, read-only UI after submit, Mobile one-call contract verified over HTTP only; ISSUE-051 opened for the Mobile daily-report screen; earlier the same day: ISSUE-048 daily report "Proposed Work" persistence PASS at 30 suites / 295 tests + db:verify 66/66, dev field-team data seeded as REAL PostgreSQL rows PASS, P4.3.1 daily report persistence PASS, Dev/LAN access PASS (ISSUE-047); ISSUE-049 OPEN: two concurrent next dev servers corrupt web/.next)
 
 Record what has actually been tested or verified. Never mark a check as passing unless it was actually performed.
 
@@ -2900,3 +2900,97 @@ code changed after verification. `0ec084a` is a normal commit on top of `e9864d1
 **Historical wording:** the `UNCOMMITTED` markers in the Phase-1 section headings above record the state
 when each section was written; they were reconciled to this checkpoint by the docs-only commit
 `docs: record phase 1 checkpoint commit 0ec084a` (no implementation or verification fact changed).
+
+---
+
+## Daily Planning — supervisor day surface `/planning` (2026-09-30, UNCOMMITTED)
+
+The approved Daily Planning design (`design/figma/daily-planning.png`) is implemented as a
+**supervisor-only day surface** on top of the existing daily-plan/task contracts: counters band,
+day table (one section per plan), task filters, a Site Readiness / Attention Required rail, a footer
+summary and a day action cluster. No backend, Prisma, database, endpoint, npm dependency or shell
+change was made; the design's `CREW` / `PRIORITY` / blocked-reason / equipment / HSE / readiness-score
+fields do not exist in the database and are therefore omitted instead of mocked.
+
+| Item | Value |
+|---|---|
+| Environment | PostgreSQL :5433 + NestJS :4000 + `next dev` :3000 (all live) |
+| Browser | real Chrome `154.0.8037.58`, `--headless=new`, driven over CDP |
+| Harness | `cdp-planning-day.js` (gitignored) → `planning-screenshots/planning-day-report.json` |
+| Accounts | `dev@hiieko.local` (ADMIN = supervisor surface), `daniel.georgescu@hiieko.local` (WORKER) |
+| Project / dates | CJ-003 `f32399f8-1256-44f0-8003-458661a35f51`; **2026-09-29** (real PUBLISHED plan `af7d007c-8ecd-462f-9fb3-c615775d21a4`, team *Echipa Montaj Cluj 1*, 4 plan tasks) and **2026-09-30** (no plans) |
+| Result | **231/231 harness checks PASS** |
+
+### Scenarios (each rendered value asserted against the API payloads, never read off the screen)
+
+| Scenario | Viewport | Locale | Role | Checks | Overflow (`documentElement` / `<main>`) |
+|---|---|---|---|---|---|
+| planning-1440-en | 1440x1000 | EN | ADMIN | 48/48 | 1440/1440 · 1169/1169 |
+| planning-1440-ro | 1440x1000 | RO | ADMIN | 48/48 | 1440/1440 · 1169/1169 |
+| planning-375-ro | 375x812 | RO | ADMIN | 48/48 | 375/375 · 360/360 |
+| planning-375-en | 375x812 | EN | ADMIN | 48/48 | 375/375 · 360/360 |
+| planning-1440-en-today-empty | 1440x1000 | EN | ADMIN | 9/9 | 1440/1440 · 1184/1184 |
+| planning-worker-375-ro | 375x812 | RO | WORKER | 15/15 | 375/375 · 360/360 |
+| planning-worker-1440-en | 1440x1000 | EN | WORKER | 15/15 | 1440/1440 · 1184/1184 |
+
+### Counters — independent, non-exclusive (`dayDerivations.countDayTasks`)
+
+Truth computed from `GET /api/daily-plans?projectId=&date=2026-09-29` + `GET /api/tasks?projectId=`:
+4 plan tasks — `CJ-003-T01` `COMPLETED` (2 assignments, `completed=true`), `CJ-003-T02` `IN_PROGRESS`
+(4), `CJ-003-T03` `PLANNED` (2), `CJ-003-T04` `PLANNED` (2).
+
+| Counter | Predicate | Expected | Rendered (RO / EN) |
+|---|---|---|---|
+| PLANNED | `task.status === 'PLANNED'` | 2 | 2 / 2 |
+| ASSIGNED | `assignments.length >= 1` (a fact, never a status) | 4 | 4 / 4 |
+| IN PROGRESS | `task.status === 'IN_PROGRESS'` | 1 | 1 / 1 |
+| COMPLETED | `DailyPlanTask.completed === true` (day flag, not `Task.status`) | 1 | 1 / 1 |
+| BLOCKED | `task.status === 'BLOCKED'` | 0 | 0 / 0 |
+
+### Rows, filters, lifecycle and progress editing
+
+| Check | Evidence |
+|---|---|
+| One row per plan task, plan-aware | 4 rows grouped under the single plan's header (the day has exactly one plan; grouping is by `plan.id`) |
+| `PLANNED START` = `formatDateTime(task.planned_start)` | `Sep 14, 2026, 08:00 AM` / `Sep 22, 2026, 08:00 AM` / `Oct 01, 2026, 08:00AM` / `Oct 07, 2026, 08:00 AM` (identical to the payload dates rendered through the same `lib/formatters.ts` shape) |
+| AREA = zone, else work package | `Zona 1 - Acoperis hala` on all 4 rows |
+| RESPONSIBLE = real assignments only | `2 assigned`, `4 assigned`, `2 assigned`, `2 assigned`; `0` would render the neutral `—` (never an invented primary) |
+| STATUS = TaskStatusEnum badge | `Completed`, `In progress`, `Planned`, `Planned` (RO: `Finalizat`, `În lucru`, `Planificat`) |
+| Plan date rendering | group header shows the localized long date; the raw `2026-09-29T00:00:00.000Z` timestamp no longer appears (0 raw-ISO occurrences in the supervisor surface; `formatPlanDate` normalizes the Prisma `DateTime`) |
+| Filters | chips `All 4 / In progress 1 / Blocked 0 / Marked completed 1 / Unassigned 0`; clicking **Blocked** → 0 rows + *"No task matches the current filters."*; back to **All** → 4 rows; searching `CJ-003-T01` → 1 row |
+| Lifecycle preserved | PUBLISHED plan header renders **Complete** + **Cancel**; clicking **Complete** opens the existing ConfirmDialog (*"Complete this plan?"*, cancel *"Don't complete yet"*) and `Escape` dismisses it — **0** `/publish`, `/complete` or `/cancel` requests were fired |
+| Progress editing preserved (fail closed) | expanding a row renders the existing `PlanTaskRow`; for ADMIN (no my-tasks scope) the quantity input is **disabled** and **0** `/progress` PATCH requests were fired — ISSUE-041 behavior unchanged |
+| Rail | attendance row = real `GET /api/attendance/today` (0 workers → *"No attendance recorded today"*), materials row = real `GET /api/inventory/stock` (0 rows → *"No stock recorded for this project"*), blockers row = real `GET /api/issues` (0 active → *"No active blockers"*), plus the explicit live-figures note because 2026-09-29 ≠ today; no readiness score/percentage exists |
+| Attention Required | 0 blocked tasks + 0 active blockers + 0 unassigned → *"Nothing requires attention for this day."* |
+| Footer | `2 tasks planned · 4 assigned · 0 blocked` + `Day plan for September 29, 2026` |
+| Empty day (selected-date filtering) | `/planning?date=2026-09-30` → *"No plans for September 30, 2026 in this project."*, no table and no counter band — the date filter still selects the plan set |
+
+### Read-scope evidence (network, per scenario)
+
+| Role | Requests observed |
+|---|---|
+| ADMIN (supervisor) | `GET /api/daily-plans?projectId=…&date=…`, **`GET /api/tasks?projectId=…` (enrichment join)**, `GET /api/attendance/today?projectId=…`, `GET /api/inventory/stock?projectId=…`, `GET /api/issues?projectId=…` — each once |
+| WORKER | **`GET /api/daily-plans/my-tasks?date=2026-09-29` only** — 0 requests to `/api/tasks`, `/api/attendance/today`, `/api/inventory`, `/api/issues` or `/api/daily-plans?projectId=`; no table, no counter band, no rail; the worker's own progress input (`Cantitate realizată`) stays **enabled** (backend scope confirmed by my-tasks) and 0 `/progress` requests were fired while inspecting |
+
+Console/network: **0 JS exceptions, 0 failed requests**, the only HTTP error is the pre-existing
+`/favicon.ico` 404. Screenshots: `planning-screenshots/planning-{1440-en,1440-ro,375-ro,375-en,
+1440-en-today-empty,worker-375-ro,worker-1440-en}.png`.
+
+### Gates on the frozen tree
+
+| Gate | Result |
+|---|---|
+| `npm run typecheck` (shared / web / Mobile / backend) | exit 0, 0 errors |
+| `npm run web:typecheck` | exit 0, 0 errors |
+| `npm run web:build` | exit 0, **25/25** static pages, `/planning` 5.62 kB |
+| `npm run i18n:check` | **PASS** — 213 files, 1121 key definitions / 1121 unique keys (+52 new, 0 duplicates, 0 orphans introduced) |
+| `npm run guards:check` | **PASS** — 213 files scanned, no G1/G2 failure (no new report-only rows from this slice) |
+| `npm test` | 31 suites / **320 tests** passed |
+| `git diff --stat backend/ prisma/ database/` | **empty** (no backend / Prisma / database / migration change) |
+
+**Dev-server note (ISSUE-049 class):** as in Phase 1, `npm run web:build` must not run while `next dev`
+holds `web/.next`. The dev server was stopped, `web/.next` removed, the gates run, and exactly one
+`npm run web:dev` restarted afterwards (verified: `/login` + `/planning` 200, fresh compile).
+
+**Known gap found during this verification:** the worker's My-work card (`MyWorkList`, untouched by this
+slice) still renders the raw `plan_date` timestamp — filed as **ISSUE-062** with the one-line fix.

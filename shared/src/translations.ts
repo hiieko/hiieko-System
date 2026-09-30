@@ -1000,6 +1000,143 @@ Object.assign(d, {
   'planning.task_status_label': T('Status sarcină', 'Task status'),
 });
 
+// Phase 3 — Daily Planning supervisor day table, counters, readiness rail
+// (visual reference: design/figma/daily-planning.png; additive keys only —
+// no existing key was renamed or removed).
+Object.assign(d, {
+  // Day counters — independent, non-exclusive predicates (dayDerivations.ts)
+  'planning.counters_title': T('Contoarele zilei', 'Day counters'),
+  'planning.counters_note': T(
+    'Contoare independente — aceeași sarcină poate fi numărată de mai multe ori.',
+    'Independent counters — the same task can be counted by more than one.',
+  ),
+  'planning.counter_assigned': T('Alocate', 'Assigned'),
+  'planning.counter_completed': T('Marcate finalizate', 'Marked completed'),
+  'planning.counter_unavailable': T('Indisponibil', 'Unavailable'),
+  'planning.counter_planned_hint': T(
+    'Sarcini cu status Planificat.',
+    'Tasks with status Planned.',
+  ),
+  'planning.counter_assigned_hint': T(
+    'Sarcini cu cel puțin un responsabil alocat. Nu este un status de sarcină.',
+    'Tasks with at least one assignee. This is not a task status.',
+  ),
+  'planning.counter_in_progress_hint': T(
+    'Sarcini cu status În lucru.',
+    'Tasks with status In progress.',
+  ),
+  'planning.counter_completed_hint': T(
+    'Sarcini din plan marcate finalizate pentru această zi (flag-ul zilei, nu statusul sarcinii).',
+    'Plan tasks marked completed for this day (the day flag, not the task status).',
+  ),
+  'planning.counter_blocked_hint': T('Sarcini cu status Blocat.', 'Tasks with status Blocked.'),
+});
+
+// Day-table task filters (exclusive presentation filters — they never change
+// the counters above)
+Object.assign(d, {
+  'planning.task_filter_label': T('Filtrează sarcinile zilei', 'Filter the tasks of the day'),
+  'planning.task_filter_unassigned': T('Nealocate', 'Unassigned'),
+  'planning.task_filter_no_results': T(
+    'Nicio sarcină nu corespunde filtrelor.',
+    'No task matches the current filters.',
+  ),
+  'planning.task_search_label': T(
+    'Caută în sarcini, zone și responsabili',
+    'Search tasks, areas and responsible',
+  ),
+  'planning.task_search_placeholder': T('Caută sarcini...', 'Search tasks...'),
+  'planning.task_search_clear': T('Șterge căutarea', 'Clear search'),
+});
+
+// Day table (columns + honest fallbacks). Columns the backend does not expose
+// (crew, priority, blocked reason) are omitted rather than mocked.
+Object.assign(d, {
+  'planning.table_title': T('Sarcinile zilei', 'The tasks of the day'),
+  'planning.table_col_planned_start': T('Început planificat', 'Planned start'),
+  'planning.table_col_task': T('Sarcină', 'Task'),
+  'planning.table_col_area': T('Zonă', 'Area'),
+  'planning.table_col_responsible': T('Responsabil', 'Responsible'),
+  'planning.table_col_status': T('Status', 'Status'),
+  'planning.assigned_count': T('{count} alocate', '{count} assigned'),
+  'planning.not_recorded': T('Nespecificat', 'Not recorded'),
+  'planning.planned_start_hint': T(
+    'Începutul planificat al sarcinii — nu un interval de execuție.',
+    'The task planned start — not a scheduled work slot.',
+  ),
+  'planning.plan_group_tasks_shown': T(
+    '{shown} din {total} sarcini afișate',
+    '{shown} of {total} tasks shown',
+  ),
+  'planning.expand_task': T('Extinde detaliile sarcinii: {title}', 'Expand task details: {title}'),
+  'planning.collapse_task': T(
+    'Restrânge detaliile sarcinii: {title}',
+    'Collapse task details: {title}',
+  ),
+});
+
+// Site readiness rail — one row per existing endpoint, never a fabricated
+// verdict (no score, no percentage: the backend has no such field).
+Object.assign(d, {
+  'planning.readiness_title': T('Pregătirea șantierului', 'Site readiness'),
+  'planning.readiness_subtitle': T('Semnale curente din șantier', 'Current site signals'),
+  'planning.readiness_attendance_value': T(
+    '{active} din {total} prezenți acum',
+    '{active} of {total} on site now',
+  ),
+  'planning.readiness_attendance_empty': T(
+    'Niciun pontaj înregistrat azi',
+    'No attendance recorded today',
+  ),
+  'planning.readiness_materials_value': T(
+    '{tracked} materiale cu stoc înregistrat',
+    '{tracked} materials with recorded stock',
+  ),
+  'planning.readiness_materials_empty': T(
+    'Niciun stoc înregistrat pentru acest proiect',
+    'No stock recorded for this project',
+  ),
+  'planning.readiness_low': T('{count} sub minim', '{count} below minimum'),
+  'planning.readiness_low_stock_hint': T(
+    'Sub minim conform pragului materialului, aceeași regulă ca în Turnul de Control.',
+    'Below the material minimum threshold, the same rule as the Control Tower.',
+  ),
+  'planning.readiness_blockers_value': T('{count} blocaje active', '{count} active blockers'),
+  'planning.readiness_blockers_empty': T('Niciun blocaj activ', 'No active blockers'),
+  'planning.readiness_clear': T('Fără blocaje', 'No blockers'),
+  'planning.readiness_none': T('Fără date', 'No data'),
+  'planning.readiness_unavailable': T('Indisponibil', 'Unavailable'),
+  'planning.readiness_live_note': T(
+    'Pontajul este pentru ziua curentă ({date}), iar stocul este soldul actual — nu valori pentru data afișată.',
+    'Attendance is for the current day ({date}) and stock is the current balance — not figures for the displayed date.',
+  ),
+});
+
+// Attention Required rail — real blocked tasks, real blockers, real unassigned
+// tasks (no blocked-reason text exists on the backend).
+Object.assign(d, {
+  'planning.attention_title': T('Necesită atenție', 'Attention required'),
+  'planning.attention_empty': T(
+    'Nimic nu necesită atenție pentru această zi.',
+    'Nothing requires attention for this day.',
+  ),
+  'planning.attention_more': T('+{count} altele', '+{count} more'),
+});
+
+// Day footer summary + day action cluster
+Object.assign(d, {
+  'planning.footer_tasks_planned': T('{count} sarcini planificate', '{count} tasks planned'),
+  'planning.footer_assigned': T('{count} alocate', '{count} assigned'),
+  'planning.footer_blocked': T('{count} blocate', '{count} blocked'),
+  'planning.footer_for_date': T('Planul zilei pentru {date}', 'Day plan for {date}'),
+  'planning.day_actions_label': T('Acțiuni pentru ziua selectată', 'Actions for the selected day'),
+  'planning.publish_plan_day': T('Publică planul', 'Publish plan'),
+  'planning.publish_draft_aria': T(
+    'Publică schița planului pentru {date}',
+    'Publish the draft plan for {date}',
+  ),
+});
+
 // ============================================================================
 // Issues & Blockers (Phase 4) — /issues
 // All page copy, labels and tutorial content as translation keys (ro + en).

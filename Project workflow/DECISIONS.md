@@ -1,6 +1,7 @@
 # Architecture & Technical Decisions
 
-Last Updated: 2026-09-30 (DEC-012 added)
+Last Updated: 2026-09-30 (DEC-013 added — Daily Planning day surface: supervisor-only frontend
+enrichment join + independent day counters; DEC-012 fixed the shell chrome earlier the same day)
 
 Record decisions that future developers and AI assistants need to understand.
 Unless noted, decisions below are inferred from repository contents (code + docs) on 2026-09-18.
@@ -326,6 +327,95 @@ content-surface palette.
 `web/src/app/globals.css`, `web/tailwind.config.js`, `web/src/components/{AppShell,Header,Sidebar}.tsx`,
 `web/src/components/shell/*`, `web/src/components/worker/*`, `web/src/components/WorkerMyDay.tsx`,
 `Project workflow/DESIGN_SYSTEM.md`, `Project workflow/ISSUES.md` (ISSUE-060).
+
+---
+
+# DEC-013 — Daily Planning day surface: supervisor-only frontend enrichment join + independent day counters
+**Date:** 2026-09-30
+**Status:** ACCEPTED
+
+## Context
+The approved Daily Planning design (`design/figma/daily-planning.png`) shows, per plan task of a day, the
+responsible people, the work area, the planned start and (sometimes) a description, plus site-level
+signals. The verified backend facts are:
+
+- `GET /api/daily-plans?projectId=&date=` (`DailyPlansService.findAll`) selects only
+  `{ id, title, code, status, unit_of_measure, planned_quantity }` on `planTask.task` — it carries **no**
+  `assignments`, `zone`/`work_package`, `planned_start` or `description`.
+- `GET /api/tasks?projectId=` (`TasksService.findAll`) already includes `work_package`, `zone` and
+  `assignments.user{ role, profile }` for the whole project and is readable by supervisors.
+- `GET /api/attendance/today`, `GET /api/inventory/stock` and `GET /api/issues` are existing project
+  reads.
+- Several fields in the reference design (crew, priority, blocked reason, equipment, HSE, readiness
+  score, "inspections pending") have no column anywhere in the schema.
+
+The daily-plan contract was frozen for this slice, and worker/technician must never read project-wide
+data (they use `GET /api/daily-plans/my-tasks` only), so a decision is needed on how the day surface
+obtains the missing facts without inventing them.
+
+## Decision
+1. **Frontend only.** No backend, Prisma, migration, endpoint, npm dependency or shell change. The
+   contract stays as it is.
+2. **Enrichment join, supervisor-only.** The missing task facts are joined in the browser by `task_id`
+   against the existing `GET /api/tasks?projectId=` list. The join is enrichment: an entry that is absent
+   (or a read that failed) degrades to the neutral `—` fallback and never to a guessed value. Field roles
+   keep an empty index and never issue that request.
+3. **Role-gated project reads.** The join and the readiness reads (`/api/attendance/today`,
+   `/api/inventory/stock`, `/api/issues`) are gated by `canReadProjectReadiness` / `isFieldPlanRole`, and
+   the readiness rail is not rendered for worker/technician at all.
+4. **Counters are independent and non-exclusive**, each labelled with its exact predicate:
+   `PLANNED` = `task.status === 'PLANNED'`; `ASSIGNED` = `assignments.length >= 1` (a fact, **never** a
+   status); `IN PROGRESS` = `task.status === 'IN_PROGRESS'`; `COMPLETED` = `DailyPlanTask.completed`
+   (the day flag, **not** `Task.status`); `BLOCKED` = `task.status === 'BLOCKED'`. The band states that
+   the counts overlap, and the exclusive task filters are a separate control.
+5. **No mocked fields.** Design fields without a backing column are omitted (crew, priority, blocked
+   reason, equipment, HSE, readiness score, inspections pending), and no readiness score/percentage is
+   computed because none exists.
+6. **Live figures are labelled as such.** Attendance (today-only endpoint) and stock (current balance)
+   are presented as live signals and the rail says so whenever the table shows another date.
+7. **One low-stock rule.** "Below minimum" reuses the Control Tower predicate
+   `current_quantity < (min_stock_threshold || 0)` so the two surfaces cannot disagree.
+
+## Reason
+The day surface needs four facts that the day payload deliberately does not carry. Re-deriving them
+server-side would change a frozen contract and a verified service; issuing one extra supervisor-only
+list read and joining it client-side is provably equivalent (the assertion harness compares every
+rendered value with the API payload) and touches no persisted data. Independent counters mirror what the
+database actually stores: a plan task can be assigned *and* planned, and "completed" exists twice (the
+day flag and the task status), so a partition would be untrue.
+
+## Alternatives Considered
+- **Extend `DailyPlansService.findAll` / add a day-summary endpoint** — rejected: frozen contract, and
+  the slice is explicitly frontend-only.
+- **Fetch `GET /api/tasks/:id` per plan task** — rejected: N requests for one screen.
+- **Show only what the plans payload carries** — rejected: the design's core columns (responsible, area,
+  planned start) would be blank although the data is one read away.
+- **Derive `ASSIGNED` from a task status** — rejected: assignment is not a status; it would fabricate
+  work on unassigned tasks.
+- **Show the reference design's crew/priority/equipment/HSE/score as static text** — rejected: no column
+  exists; that is exactly the "invented data" failure mode this repository forbids.
+
+## Consequences
+### Positive
+- The supervisor day surface is truthful field-by-field and each value is assertion-checked against the
+  API payload it came from.
+- Zero schema/API/CI risk: `git diff --stat backend/ prisma/ database/` stays empty.
+- The role split is preserved and observable in the network log (worker: my-tasks only, 0 project-wide
+  requests).
+- Missing enrichment degrades gracefully (`—`) instead of failing the page.
+
+### Negative
+- One extra supervisor-only `GET /api/tasks?projectId=` request per day load (parallel, fail-soft), and
+  three project reads for the rail.
+- Fields the payload does not carry (assignments) appear as `—` for a supervisor whose enrichment read
+  fails; the Unassigned filter chip is hidden in that case so it can never claim "0 unassigned".
+- The design's omitted fields stay omitted until a schema change is approved separately.
+
+## Affected Areas
+- `web/src/features/planning/{dayDerivations,readinessReads}.ts`
+- `web/src/features/planning/components/{PlanningCounters,PlanTaskTable,PlanTaskFilters,SiteReadinessCard,AttentionRequiredCard,PlanningFooterSummary}.tsx`
+- `web/src/app/planning/page.tsx`, `web/src/features/planning/index.ts`, `shared/src/translations.ts`
+- `DESIGN_SYSTEM.md` (§2.1.2 inventory, §8 tracker), `VERIFICATION.md` (evidence), `ISSUES.md` (ISSUE-062)
 
 ---
 

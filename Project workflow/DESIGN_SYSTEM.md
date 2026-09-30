@@ -121,6 +121,23 @@ scoped to the shell chrome and the worker "My Day" surface (DEC-012 §3–§6).
 | `WorkerActionsRequired` | ✅ Added | `@/components/worker` | real open/blocked counts + today's site daily report state; `no access` / unavailable states are fail-closed |
 | `WorkerBlockerList` | ✅ Added | `@/components/worker` | real open issues of the selected project (capped), plus role/unavailable states |
 
+#### 2.1.2 Phase 3 — Daily Planning supervisor day surface (2026-09-30)
+
+`/planning` "Plans" view only. Visual reference: `design/figma/daily-planning.png`; contract rules:
+**DEC-013**. No new dependency, no token change — these components compose the existing library (11 files
+of the route's implementation now import from `@/components/ui`).
+
+| Component | Status | Import path | Notes |
+|---|---|---|---|
+| `PlanningCounters` | ✅ Added | `@/features/planning` | 5 independent, non-exclusive counters (`PLANNED` / `ASSIGNED` / `IN PROGRESS` / `COMPLETED` / `BLOCKED`), each with its exact predicate in `aria-label` + `title`; non-interactive (facts, not filters); the band states that the counts overlap |
+| `PlanTaskTable` | ✅ Added | `@/features/planning` | one section per plan (plan-aware), ARIA table semantics on a responsive CSS grid (stacked `< sm`, 6 columns `≥ sm` → no horizontal overflow at 375 px), expandable rows that reuse `PlanTaskRow` |
+| `PlanTaskFilters` | ✅ Added | `@/features/planning` | exclusive task filters + search, separate from `PlanningStatusChips` (which keeps filtering **plans**); 44 px targets |
+| `SiteReadinessCard` | ✅ Added | `@/features/planning` | real `attendance` / `stock` / `issues` reads, per-row "Unavailable" on failure, no score; states that attendance+stock are live (today) figures when another date is shown |
+| `AttentionRequiredCard` | ✅ Added | `@/features/planning` | blocked plan tasks, active blocker issues, unassigned tasks — real rows only, capped with a real "+N more" |
+| `PlanningFooterSummary` | ✅ Added | `@/features/planning` | planned / assigned / blocked counts (same predicates as the band) + the date the table belongs to |
+| `dayDerivations.ts` | ✅ Added | `@/features/planning` | pure day model: counters, filters, row content, attention items, `formatPlanDate` (normalizes the ISO `plan_date`) |
+| `readinessReads.ts` | ✅ Added | `@/features/planning` | role-gated, fail-closed reads for the rail + the Control Tower low-stock rule |
+
 ### 2.2 Planned (Phase D4)
 
 *To be populated as components are adopted into the UI library.*
@@ -256,7 +273,7 @@ ignored by design.
 | `/teams` | 19 | 0 | slate-86, hii-25 | — | ⬜ |
 | `/workforce` | 13 | 0 | slate-67, hii-19 | — | ⬜ |
 | `/cheltuieli` | 7 | 0 | amber-17, slate-62 | — | ⬜ |
-| `/planning` | 7 | 0 | slate-59, hii-5, blue-6 | — | ⬜ |
+| `/planning` | 14 | 11 | slate-179, hii-30, amber-7, emerald-11, red-18 | — | ◐ day surface (2026-09-30) |
 | `/aprobare` | 6 | 0 | amber-6 | — | ⬜ |
 | `/issues` | 6 | 0 | amber-5, hii-7 | — | ⬜ |
 | `/santiere` | 5 | 0 | amber-8, hii-5 | — | ⬜ |
@@ -267,6 +284,12 @@ ignored by design.
 | `/projects` | 3 | 9 | hii-20 ✅ | — | ✅ **reference** |
 | `/projects/[id]` | 3 | 9 | hii-20 ✅ | — | ✅ **reference** |
 | remaining 9 routes | 0–3 | 0 | mostly slate | — | ⬜ |
+
+Legend: `⬜` not adopted · `◐` partially adopted on the surface named in the Status cell · `✅` adopted.
+The `/planning` row was re-measured 2026-09-30 across the route's implementation
+(`web/src/app/planning/page.tsx` + `web/src/features/planning/**`, .ts and .tsx); the earlier `7 / 0` row
+counted the page file alone, so the two numbers are not directly comparable. The day-surface slice
+(DEC-013) introduced no new token and no new dependency.
 
 ---
 
