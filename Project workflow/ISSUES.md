@@ -848,6 +848,119 @@ Full detail: `VERIFICATION.md` → *R1B.2*.
 
 ---
 
+## ISSUE-060 — The approved Phase-1 dark shell chrome contradicts `DESIGN_SYSTEM.md` §7 (light, fixed chrome) (RESOLVED 2026-09-30 — DEC-012 + DESIGN_SYSTEM.md)
+
+### Context
+The approved Phase-1 visual direction (Figma exports `worker-shell.png`, `worker-my-day-desktop.png`,
+`worker-my-day-mobile.png`) makes the shell chrome a fixed dark material: navy `#111827` for the left
+rail and the `< lg` top bar, `#374151` for the compact project band, with the orange `#F59E0B` accent as
+the single shell emphasis colour and green `#49C89E` restricted to positive/completed states.
+`Project workflow/DESIGN_SYSTEM.md` §7 currently describes a light product chrome (and §1/§3/§8 name the
+same surfaces), so the implemented shell now documents the opposite of the design-system text.
+
+### Evidence
+- `HIIEKO_FRONTEND_MASTER_SPEC.md` (approved visual direction) + the three Figma exports above.
+- Implementation: `web/src/app/globals.css` (`--hii-chrome*`, `--hii-accent*`, `--hii-positive*`,
+  `--hii-shell-content-bg`), `web/tailwind.config.js` (`chrome`/`accent`/`positive` colours),
+  `web/src/components/shell/*`, `web/src/components/{Header,Sidebar,AppShell}.tsx`.
+- `VERIFICATION.md` → *Phase 1 — Shell Chrome + Worker "My Day"*.
+
+### Impact
+Documentation-level only (no runtime defect): a reader of `DESIGN_SYSTEM.md` would conclude the chrome
+must stay light and that green is the product primary, while the emitted UI is navy + orange. This is
+**not** a theme switch — Tailwind `darkMode` remains off, no `dark:` utility exists, and the chrome is
+applied through explicit tokens/classes, so a light-chrome rollback is a token/class change only.
+
+### Resolution — FIXED 2026-09-30 (documentation follow-up, decision record created)
+Add a `DEC-0xx` entry recording the fixed dark chrome as a product decision and update
+`DESIGN_SYSTEM.md` §1 (colour roles), §3 (surfaces/typography on dark chrome), §7 (chrome) and §8
+(component inventory: `ShellBrand`, `ProjectContextChip`, `ShellNotificationsButton`, `PageContainer`,
+`WorkerTaskCard`, `WorkerProgressCard`, `WorkerActionsRequired`, `WorkerBlockerList`). Code change
+itself is complete and verified by build/typecheck; the design-system text is deliberately **not**
+rewritten unilaterally while Phase 1 is still awaiting review.
+
+**What was actually done (2026-09-30):**
+- **`DECISIONS.md` → DEC-012 — Fixed dark chrome + accent/positive palette (Phase 1 shell + Worker
+  "My Day")**, ACCEPTED: the chrome is fixed branding and **not** a theme (Tailwind `darkMode` stays
+  `off`, no `dark:` utility, no `prefers-color-scheme`, no user toggle, no per-role/per-page variant);
+  navy `#111827` (`--hii-chrome`), elevated band `#374151`, accent `#F59E0B` (`--hii-accent`, hover
+  `#D97706`), positive `#49C89E` (`--hii-positive`, soft `#DAF8E9`), content canvas `#F3F4F6`; brand
+  green and the semantic status palette stay the content-surface colours; scope = shell + Worker
+  "My Day" only.
+- **`DESIGN_SYSTEM.md`**: §1 gained **1.1 Chrome / accent / positive** (the 13 Phase-1 tokens with their
+  surfaces + the "not a theme" statement) and the §1 notes now say green is the content primary; §3
+  rewritten to the measured Phase-1 shell contract (navy rail/bar, 44 px `#374151` band inside a 101 px
+  compact `<header>`, 72 px `≥ lg` header, `z-header`/`z-drawer` ladder, `hii-shell-canvas`) **with the
+  pre-Phase-1 values kept as a history note**; §7 gained three chrome bullets (no `dark:`/dark-mode, no
+  per-page/per-role re-tint without a new DEC, chrome tokens are not content primaries); the component
+  inventory is **§2.1.1** (the issue text said "§8", which is the page-adoption tracker) and now lists
+  all 8 Phase-1 components; §4 documents that the My Day 4 px status bar uses accent/critical/positive
+  while badges keep the semantic variants.
+- Verified from the implementation, not from the frames: `web/src/app/globals.css` (`--hii-chrome`
+  `#111827`, `--hii-chrome-elevated` `#374151`, `--hii-accent` `#F59E0B`, `--hii-positive` `#49C89E`,
+  `--hii-shell-content-bg` `#F3F4F6`, `--hii-header-height` 4.5rem, `--hii-sidebar-width` 16rem),
+  `web/tailwind.config.js` (`chrome`/`accent`/`positive` aliases, no `darkMode` key), `Sidebar.tsx`
+  (rail + drawer classes), `Header.tsx` (compact navy bar + band, white 72 px bar), and the live stack
+  measurements at 375/768/1440 px (`VERIFICATION.md` → *Phase 1 final verification — RO/EN × 375/1440*).
+- No production code was changed for this issue: the code side was already complete and verified; this
+  closure is documentation + decision only (ISSUE-060 remains a doc/decision defect).
+
+---
+
+## ISSUE-061 — Worker "My Day" summary concatenated Decimal quantities instead of summing them (FIXED 2026-09-30)
+
+### Description
+The *Cantitate raportată* rows of `WorkerProgressCard` (`/` for the worker/technician role) rendered
+concatenated digits instead of a sum for the day used by the Phase-1 review:
+`0451 / 0601 buc` and `0 / 040 m`, where the real day is CJ-003-T02 `45/60 buc`, CJ-003-T03 `0/40 m`
+and CJ-003-T04 `1/1 buc` (completed). The per-task cards (`45/60 buc`, `0/40 m`) and the completion
+ratio (`33 %`, `1 din 3 sarcini finalizate`) were already correct.
+
+### Root cause (measured, not inferred)
+`GET /api/daily-plans/my-tasks?date=` serializes `DailyPlanTask.target_quantity` / `actual_quantity`
+as JSON **strings**: both columns are Prisma `Decimal` (`DECIMAL(12,3)`) and Prisma serializes
+`Decimal` through its `toJSON()`. Captured payload (2026-09-30):
+`"target_quantity":"60"` / `"actual_quantity":"45"` / `actual_quantity: null`.
+`summarizeMyDay()` in `web/src/features/planning/fieldWork.ts` accumulated those values with `+=`,
+so `0 + "45" + "1"` produced the string `"0451"`, which `String(volume.actual)` then rendered.
+`web/src/features/planning/types.ts` declares `target_quantity: number`, so `tsc` could not flag it:
+the declared type does not hold at runtime.
+
+### Impact
+Display-only, worker/technician home, one card (`WorkerProgressCard`), RO + EN. No write path was
+affected: progress is written through `PATCH /api/daily-plans/tasks/:id/progress` with numeric bodies
+and the backend response already carried the correct values.
+
+### Fix (2026-09-30 — one function, one file)
+`web/src/features/planning/fieldWork.ts`: new module-private `toQuantityNumber()` normalises a
+quantity before it enters arithmetic (`Number.isFinite`-checked `Number()` for strings, `0` for
+`null`/`undefined`/non-numeric input, decimals preserved untruncated, `0`/`"0"` kept as a real zero),
+and `summarizeMyDay()` now coerces both fields before the per-unit sum. Unit grouping, the
+open/completed counts, `percentComplete` and the per-task rows are unchanged. No backend, Prisma, DB,
+API-contract, navigation or styling change; nothing staged or committed.
+
+### Verification (2026-09-30 — real stack, real browser)
+PostgreSQL :5433 + NestJS :4000 + `next dev` :3000, real Chrome via CDP, worker
+`daniel.georgescu@hiieko.local`, project Parc Solar Cluj (CJ-003): the card now renders
+`46 / 61 buc` and `0 / 40 m` (matching the per-unit sums computed independently from the API payload),
+per-task cards unchanged (`45/60 buc`, `0/40 m`), `33 %` / `1 din 3 sarcini finalizate` unchanged,
+0 uncaught exceptions and 0 failed requests. Gates: `npm run typecheck`, `npm run web:typecheck`,
+`npm run web:build` (25/25 pages), `npm run i18n:check`, `npm run guards:check` — all exit 0. Full
+detail: `VERIFICATION.md` → *Phase 1 defect fix — ISSUE-061*.
+
+**Final verification (2026-09-30 — RO + EN × 375/1440 px, then fixture cleanup):** re-run against the
+same real day with `cdp-phase1-final.js` — **67/67 checks PASS** (375 px RO 22/22, 375 px EN 22/22,
+1440 px EN 23/23): `buc 46 / 61 buc` and `m 0 / 40 m` in both languages, `CJ-003-T02` `45/60 buc`
+(`În lucru` / `In progress`, `aria-valuenow 75`), `CJ-003-T03` `0/40 m` (`Planificat` / `Planned`,
+`aria-valuenow 0`), `33 %`, `1 din 3 sarcini finalizate` / `1 of 3 tasks completed`,
+`2 sarcini încă nefinalizate` / `2 tasks still open`, 0 JS exceptions, 0 failed requests (the only HTTP
+error is the pre-existing `/favicon.ico` 404). The temporary Phase-1 plan
+`837ef189-1832-474c-ae4e-510be703dd56` (and its 3 plan tasks, 2 verification `TaskAssignment` rows and
+6 audit rows) was then deleted; the seeded task rows it referenced are untouched. Full detail:
+`VERIFICATION.md` → *Phase 1 final verification*.
+
+---
+
 # Known Limitations (not blocking)
 
 - **Mobile `WorkerAttendanceScreen.tsx`** — The `TimeLog` type in `shared/src/types.ts` and the local AsyncStorage-based `activeTimeLog` mechanism are the mobile app's offline attendance state tracking (not the PostgreSQL table, which is now dropped). This is correct and stays.

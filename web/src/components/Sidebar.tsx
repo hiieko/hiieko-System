@@ -3,21 +3,36 @@
 import React, { useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, ShieldCheck } from 'lucide-react';
+import { X, LogOut } from 'lucide-react';
+import { getRoleLabel, t, useLocale } from '@solar/shared';
 import { useAuth } from '../contexts/AuthContext';
 import { NAV_GROUPS, type NavItem, type NavGroup } from '../config/navigation';
-import { t, useLocale } from '@solar/shared';
+import { ShellBrand } from './shell';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }
 
+/**
+ * The dark navigation rail (>= lg) and the navigation drawer (< lg).
+ *
+ * Both render the canonical `NAV_GROUPS` / `ROUTE_ROLES` contract unchanged —
+ * this component only changes how the chrome looks (navy `#111827` chrome, the
+ * HIIEKO accent as the single active/emphasis colour) and puts the real signed-in
+ * user at the bottom of the rail instead of the previous hardcoded build string.
+ *
+ * The drawer also hosts the mobile user block (profile, language, sign-out):
+ * below `lg` the header is the compact brand bar and cannot carry them.
+ */
 export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const userRole = user?.role?.toLowerCase() || 'worker';
   const { locale } = useLocale();
+
+  const userName = user?.fullName || user?.email || t('header.visitator', locale);
 
   // `/` is only exact-matched: the canonical Control Tower route now owns its
   // own navigation entry (`/control-tower`), so `/` must not claim it as active.
@@ -47,14 +62,14 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           href={item.href}
           onClick={onMobileClose}
           aria-current={active ? 'page' : undefined}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
             active
-              ? 'bg-hii-600 text-white shadow-sm'
-              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              ? 'bg-accent text-accent-ink font-semibold shadow-sm'
+              : 'text-chrome-text font-medium hover:bg-chrome-hover hover:text-white'
           }`}
         >
           <Icon
-            className={`w-5 h-5 shrink-0 ${active ? 'text-white' : 'text-slate-400'}`}
+            className={`w-5 h-5 shrink-0 ${active ? 'text-accent-ink' : 'text-chrome-muted'}`}
             aria-hidden="true"
           />
           <span>{t(item.i18nKey, locale) || item.label}</span>
@@ -71,7 +86,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       if (visible.length === 0) return null;
       return (
         <div key={group.titleKey}>
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">
+          <div className="text-[11px] font-semibold text-chrome-muted uppercase tracking-wider px-3 mb-2">
             {t(group.titleKey, locale) || group.title}
           </div>
           <div className="space-y-1">{visible.map(renderNavItem)}</div>
@@ -81,41 +96,37 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     [canSee, renderNavItem, locale],
   );
 
-  const sidebarContent = (
-    <div className="flex flex-col h-full">
-      {/* Brand */}
-      <div className="p-5 border-b border-slate-800">
-        <Link href="/" className="flex items-center gap-3" onClick={onMobileClose}>
-          <div className="w-8 h-8 bg-hii-600 rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-white font-extrabold text-sm">H</span>
-          </div>
-          <div>
-            <h1 className="font-bold text-base tracking-tight text-white leading-tight">HIIEKO</h1>
-            <p className="text-[10px] text-hii-400 font-medium tracking-wider uppercase">Romania SRL</p>
-          </div>
-        </Link>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-6 overflow-y-auto hii-scrollbar-thin">
-        {NAV_GROUPS.map(renderNavGroup)}
-      </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <ShieldCheck className="w-3.5 h-3.5 text-hii-400" aria-hidden="true" />
-          <span>HIIEKO v1.0</span>
-        </div>
-      </div>
-    </div>
+  /** Real signed-in identity (avatar initials, name, role) — no static build label. */
+  const userBlock = (
+    <Link
+      href="/profil"
+      onClick={onMobileClose}
+      aria-label={t('nav.profil', locale)}
+      className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-chrome-hover transition-colors"
+    >
+      <span className="w-8 h-8 rounded-full bg-accent text-accent-ink flex items-center justify-center font-bold text-xs shrink-0">
+        {userName.slice(0, 2).toUpperCase()}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-chrome-text truncate">{userName}</span>
+        <span className="block text-[11px] text-chrome-muted truncate">
+          {getRoleLabel(user?.role, locale)}
+        </span>
+      </span>
+    </Link>
   );
+
+  const navContent = <nav className="p-4 space-y-6">{NAV_GROUPS.map(renderNavGroup)}</nav>;
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-[var(--hii-sidebar-width)] bg-[var(--hii-sidebar-bg)] text-white flex-col shrink-0 border-r border-slate-800 z-sidebar">
-        {sidebarContent}
+      {/* Desktop rail */}
+      <aside className="hidden lg:flex w-[var(--hii-sidebar-width)] hii-shell-chrome flex-col shrink-0 border-r border-chrome-line z-sidebar">
+        <div className="px-5 py-5 border-b border-chrome-line">
+          <ShellBrand size="rail" />
+        </div>
+        <div className="flex-1 overflow-y-auto hii-scrollbar-thin">{navContent}</div>
+        <div className="p-3 border-t border-chrome-line">{userBlock}</div>
       </aside>
 
       {/* Mobile drawer */}
@@ -131,31 +142,36 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           )}
           {/* Drawer */}
           <aside
-            className={`fixed inset-y-0 left-0 z-drawer w-72 bg-[var(--hii-sidebar-bg)] text-white flex flex-col shadow-2xl transform transition-transform duration-250 ease-in-out lg:hidden ${
+            className={`fixed inset-y-0 left-0 z-drawer w-72 hii-shell-chrome flex flex-col shadow-2xl transform transition-transform duration-250 ease-in-out lg:hidden ${
               mobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
-            aria-label={t('sidebar.close', locale) || 'Navigare'}
+            aria-label={t('sidebar.close', locale)}
           >
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-3" onClick={onMobileClose}>
-                <div className="w-8 h-8 bg-hii-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-extrabold text-sm">H</span>
-                </div>
-                <div>
-                  <h1 className="font-bold text-base tracking-tight text-white leading-tight">HIIEKO</h1>
-                  <p className="text-[10px] text-hii-400 font-medium tracking-wider uppercase">Romania SRL</p>
-                </div>
-              </Link>
+            <div className="px-4 py-4 border-b border-chrome-line flex items-center justify-between gap-2">
+              <ShellBrand size="compact" onNavigate={onMobileClose} />
               <button
+                type="button"
                 onClick={onMobileClose}
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-                aria-label={t('sidebar.close', locale) || 'Închide meniul'}
+                className="p-2 text-chrome-muted hover:text-white rounded-lg hover:bg-chrome-hover shrink-0"
+                aria-label={t('sidebar.close', locale)}
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto hii-scrollbar-thin">
-              <nav className="p-4 space-y-6">{NAV_GROUPS.map(renderNavGroup)}</nav>
+            <div className="flex-1 overflow-y-auto hii-scrollbar-thin">{navContent}</div>
+            <div className="p-3 border-t border-chrome-line space-y-2">
+              {userBlock}
+              <div className="px-2">
+                <LanguageSwitcher />
+              </div>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-chrome-text hover:bg-chrome-hover transition-colors"
+              >
+                <LogOut className="w-4 h-4 text-chrome-muted" aria-hidden="true" />
+                {t('header.logout', locale)}
+              </button>
             </div>
           </aside>
         </>

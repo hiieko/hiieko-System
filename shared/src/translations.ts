@@ -1206,6 +1206,93 @@ Object.assign(d, {
   'daily_report.back_to_list': T('Înapoi la listă', 'Back to list'),
 });
 
+// ============================================================================
+// Phase-1 shell + Worker "My Day" (dark chrome, accent emphasis, real data only)
+// ============================================================================
+Object.assign(d, {
+  // --- Shell chrome ---
+  'shell.brand_suffix': T('Romania SRL', 'Romania SRL'),
+  'shell.unread_notifications': T('{count} notificări necitite', '{count} unread notifications'),
+  'a11y.skip_to_content': T('Sari la conținut', 'Skip to content'),
+
+  // --- My Day: greeting (derived from the local clock) ---
+  'worker.my_day.greeting_morning': T('Bună dimineața', 'Good morning'),
+  'worker.my_day.greeting_afternoon': T('Bună ziua', 'Good afternoon'),
+  'worker.my_day.greeting_evening': T('Bună seara', 'Good evening'),
+
+  // --- My Day: my tasks ---
+  'worker.my_day.tasks_progress': T('{done}/{total} finalizate', '{done}/{total} completed'),
+  'worker.my_day.completion_hint': T(
+    'Doar sarcinile tale din planurile publicate pot fi actualizate.',
+    'Only your tasks on published plans can be updated.',
+  ),
+
+  // --- My Day: today's progress ---
+  'worker.my_day.progress_title': T('Progresul de azi', "Today's progress"),
+  'worker.my_day.progress_label': T('{done} din {total} sarcini finalizate', '{done} of {total} tasks completed'),
+  'worker.my_day.progress_empty': T('Nicio sarcină planificată pentru azi.', 'No task planned for today.'),
+  'worker.my_day.volume_title': T('Cantitate raportată', 'Reported quantity'),
+  'worker.my_day.volume_line': T('{actual} / {target} {unit}', '{actual} / {target} {unit}'),
+  'worker.my_day.volume_no_unit': T('Fără unitate de măsură', 'No unit of measure'),
+  'worker.my_day.volume_mixed': T(
+    'Sarcinile de azi au unități de măsură diferite, așa că nu se însumează.',
+    "Today's tasks use different units of measure, so they are not totalled.",
+  ),
+
+  // --- My Day: actions required (real, project/user-scoped facts only) ---
+  'worker.my_day.actions_title': T('Acțiuni necesare', 'Actions required'),
+  'worker.my_day.actions_none_title': T('Nicio acțiune în așteptare', 'Nothing pending'),
+  'worker.my_day.actions_none_desc': T('Nu ai acțiuni restante pentru ziua de azi.', 'You have no outstanding actions for today.'),
+  'worker.my_day.actions_unavailable': T('Acțiunile nu pot fi încărcate momentan.', 'Actions cannot be loaded right now.'),
+  'worker.my_day.action_open_tasks': T('{count} sarcini încă nefinalizate', '{count} tasks still open'),
+  'worker.my_day.action_blocked_tasks': T('{count} sarcini blocate', '{count} blocked tasks'),
+  'worker.my_day.action_report_label': T('Raportul zilnic al șantierului', 'Site daily report'),
+  'worker.my_day.action_report_sent': T('Trimis azi', 'Submitted today'),
+  'worker.my_day.action_report_draft': T('În lucru (ciornă)', 'In progress (draft)'),
+  'worker.my_day.action_report_missing': T('Netrimis azi', 'Not submitted today'),
+  'worker.my_day.action_open': T('Deschide', 'Open'),
+
+  // --- My Day: active blockers (read only when the role may read issues) ---
+  'worker.my_day.blockers_title': T('Blocaje active', 'Active blockers'),
+  'worker.my_day.blockers_count': T('{count} în așteptare', '{count} pending'),
+  'worker.my_day.blockers_none_title': T('Niciun blocaj activ', 'No active blockers'),
+  'worker.my_day.blockers_none_desc': T('Nu există probleme deschise pentru proiectul selectat.', 'No open issues for the selected project.'),
+  'worker.my_day.blockers_no_access': T('Blocajele nu sunt disponibile pentru rolul tău.', 'Blockers are not available for your role.'),
+  'worker.my_day.blockers_error': T('Blocajele nu au putut fi încărcate.', 'Blockers could not be loaded.'),
+
+  // --- Attendance card (worker) ---
+  'worker.clock_in_hint': T('Apasă când ajungi la șantier', 'Tap when you arrive at the site'),
+  'worker.shift_completed': T('Tură finalizată', 'Shift completed'),
+  'worker.new_shift': T('Tură nouă', 'New shift'),
+  'worker.status_checked_in': T('Pontat', 'Checked in'),
+  'worker.status_not_checked_in': T('Nepontat', 'Not checked in'),
+  'worker.elapsed': T('Durată curentă', 'Current duration'),
+  'worker.location_label': T('Locație', 'Location'),
+  'worker.gps_label': T('GPS', 'GPS'),
+  'worker.gps_state_idle': T('Neactivat', 'Not requested'),
+  'worker.gps_state_active': T('Activ', 'Active'),
+  'worker.gps_state_accuracy': T('Activ (±{meters} m)', 'Active (±{meters} m)'),
+  'worker.gps_state_denied': T('Blocat', 'Blocked'),
+  'worker.gps_state_unavailable': T('Indisponibil', 'Unavailable'),
+  'worker.distance_label': T('Distanță față de șantier', 'Distance to site'),
+  'worker.geofence_inside': T('În perimetru', 'Inside perimeter'),
+  'worker.geofence_outside': T('În afara perimetrului', 'Outside perimeter'),
+  'worker.meters': T('{value} m', '{value} m'),
+
+  // --- Blockers card / notifications card (worker components, no inline locale ternaries) ---
+  'worker.blockers.active_count': T('{count} blocaje active', '{count} active blockers'),
+  'worker.blockers.total': T('{count} în total', '{count} in total'),
+  'worker.blockers.none_title': T('Nicio problemă raportată', 'No blockers reported'),
+  'worker.blockers.none_desc': T('Șantierul funcționează fără probleme', 'The site is running smoothly'),
+  'worker.notifications.unread_count': T('{count} necitite', '{count} unread'),
+  'worker.notifications.total': T('{count} în total', '{count} in total'),
+  'worker.notifications.none': T('Nicio notificare nouă', 'No new notifications'),
+  'worker.notifications.time_days': T('acum {count}z', '{count}d ago'),
+  'worker.notifications.time_hours': T('acum {count}h', '{count}h ago'),
+  'worker.notifications.time_minutes': T('acum {count}m', '{count}m ago'),
+  'worker.notifications.time_now': T('chiar acum', 'just now'),
+});
+
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;

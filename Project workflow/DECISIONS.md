@@ -1,6 +1,6 @@
 # Architecture & Technical Decisions
 
-Last Updated: 2026-09-18
+Last Updated: 2026-09-30 (DEC-012 added)
 
 Record decisions that future developers and AI assistants need to understand.
 Unless noted, decisions below are inferred from repository contents (code + docs) on 2026-09-18.
@@ -254,6 +254,78 @@ Pattern re-implementation is the only legally safe path without a commercial lic
 
 ## Affected Areas
 `web/src/components/ui/*`, `web/tailwind.config.js`, `web/src/app/globals.css`, `Project workflow/DESIGN_SYSTEM.md`.
+
+---
+
+# DEC-012 — Fixed dark chrome + accent/positive palette (Phase 1 shell + Worker "My Day")
+**Date:** 2026-09-30
+**Status:** ACCEPTED
+
+## Context
+The approved Phase 1 visual direction (`HIIEKO_FRONTEND_MASTER_SPEC.md` + the three Figma exports) paints
+the navigation shell dark navy with an amber accent and a green-mint "positive" state, while
+`DESIGN_SYSTEM.md` still described a light shell with the brand green as the product primary
+(`bg-slate-900` sidebar, `h-16` white header, `hii-500` primary). A reader of the design system would
+conclude the chrome must stay light while the emitted UI is navy + amber — the doc/UI drift recorded as
+**ISSUE-060**. A decision record is required so future work can tell a deliberate fixed palette from a
+theme that a user (or an OS setting) may switch.
+
+## Decision
+1. **The dark chrome is fixed branding, not a theme.** Tailwind `darkMode` stays `off`, **no `dark:`
+   utility exists anywhere in `web/src`**, there is no `prefers-color-scheme` rule, no user-facing theme
+   toggle and no per-role/per-page chrome variant. The palette is reached exclusively through explicit
+   tokens (`--hii-chrome*`, `--hii-accent*`, `--hii-positive*`, `--hii-shell-content-bg`) exposed as
+   semantic Tailwind aliases (`bg-chrome`, `text-chrome-text`, `bg-accent`, `bg-positive`, …). A rollback
+   to a light chrome is therefore a token/class change, never a theme switch.
+2. **Shell chrome = `#111827` navy** (`--hii-chrome`, Tailwind `chrome`); elevated surface `#374151`
+   (`--hii-chrome-elevated`, the `< lg` project band); hover `#1F2937`; border `#1F2937`; text `#F9FAFB`;
+   muted text `#9CA3AF`.
+3. **HIIEKO accent = `#F59E0B`** (`--hii-accent`), the shell **and** Worker "My Day" accent: active nav
+   pill, primary/check-in action, the `IN_PROGRESS` 4 px status bar, the progress fill below 100 %, and
+   the focus ring on dark chrome. Hover/darker text `#D97706` (`--hii-accent-hover`, AA on white),
+   soft/tile `#FEF3C7` / `#FEF9E3`, ink on an accent fill `#111827` (`--hii-accent-text`).
+4. **Positive/success on the new surfaces = `#49C89E`** (`--hii-positive`, soft `#DAF8E9`): completed
+   state — a 100 % progress fill and the `COMPLETED` / `VERIFIED` status bar.
+5. **Brand green and the semantic status palette are unchanged.** `hii-500/600` stays the content
+   primary and `--hii-success #16A34A` / `--hii-warning #D97706` / `--hii-critical #DC2626` /
+   `--hii-info #2563EB` keep their §1 rows and their badge mappings on data surfaces; the accent/positive
+   pair does not replace them outside the shell chrome and the My Day surface.
+6. **Scope = Phase 1 only:** the shell (`AppShell`, `Header`, `Sidebar`, `components/shell/*`) and the
+   worker "My Day" surface (`WorkerMyDay`, `components/worker/*`). Every other page keeps its current
+   light content layout and its existing tokens; no other role's surface is re-tinted. Page-by-page
+   adoption continues to be tracked in `DESIGN_SYSTEM.md` §8.
+
+## Reason
+The chrome is a brand frame, not a user preference: it must look identical for every role, on every page,
+regardless of OS settings, and it must not imply that a second full palette exists. Writing the rule down
+closes ISSUE-060 (design-system text contradicting the emitted UI) without rewriting the verified
+content-surface palette.
+
+## Alternatives Considered
+- **Implement the chrome as Tailwind dark mode** — rejected: it implies a user-selectable theme, would
+  require a `dark:` variant sweep over 25 routes plus a second palette layer (and a new a11y contrast
+  pass) for a frame that is never user-switchable.
+- **Keep `DESIGN_SYSTEM.md` light and treat the chrome as an undocumented exception** — rejected: that is
+  exactly ISSUE-060; the next contributor would re-derive the wrong rule.
+- **Replace brand green with the amber accent everywhere** — rejected: content surfaces are verified
+  against the green primary, and `#F59E0B` fails AA as text on white (the darker `#D97706` exists for
+  that). Two roles ⇒ two token families, each with its documented surface.
+
+## Consequences
+### Positive
+- Documentation matches the emitted UI; ISSUE-060 can be closed instead of re-opened by the next reader.
+- The chrome/adoption contract is explicit: a future dark or light re-tint is a token edit plus a new DEC,
+  and "no dark mode" can no longer be mistaken for an oversight.
+- The accent-on-chrome focus ring keeps keyboard focus visible on the dark surfaces (a11y).
+### Negative
+- Two palettes coexist on screen (green content primary; navy + amber chrome), so every new page must
+  state which one it uses — the adoption tracker is now load-bearing, not decorative.
+- `DESIGN_SYSTEM.md` §1/§3 values changed (the pre-Phase-1 values are kept in the §3 history note).
+
+## Affected Areas
+`web/src/app/globals.css`, `web/tailwind.config.js`, `web/src/components/{AppShell,Header,Sidebar}.tsx`,
+`web/src/components/shell/*`, `web/src/components/worker/*`, `web/src/components/WorkerMyDay.tsx`,
+`Project workflow/DESIGN_SYSTEM.md`, `Project workflow/ISSUES.md` (ISSUE-060).
 
 ---
 

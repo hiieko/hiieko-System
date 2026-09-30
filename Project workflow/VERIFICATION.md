@@ -2569,3 +2569,306 @@ PASS 194 files / 1009/1009 keys, `guards:check` PASS 194 files, `typecheck` / `w
 in this section's heading — and in R1B.1's — records the state when each section was written:
 R1B.1 = `e0c1caf`, R1B.2 = `9e6a503`.
 
+---
+
+## Phase 1 — Shell Chrome + Worker "My Day" (2026-09-30, UNCOMMITTED — PENDING REVIEW)
+
+**Scope:** `web/` (shell + worker day surface) and one additive shared translation block. No backend,
+Prisma, DB, API, CI, Mobile or other-role change. Nothing committed, nothing staged.
+
+### Gates (run on the final working tree)
+
+| Command | Result |
+|---------|--------|
+| `npm run i18n:check` | **PASS** — 205 source files, 1069 key definitions, 1069 unique keys (report-only sections unchanged) |
+| `npm run guards:check` | **PASS** — 205 source files scanned, no G1/G2 failure (R1/R2 rows unchanged) |
+| `npm run typecheck --workspace=shared` | **exit 0** |
+| `npm run web:typecheck` | **exit 0** |
+| `npm run web:build` | **exit 0** — `✓ Compiled successfully`, 25/25 pages |
+| `npm test` | **exit 0** — 31 suites / 320 tests PASS (backend untouched; regression evidence only) |
+| emitted CSS | every new utility used by the shell/My Day (`border-chrome-line`, `text-chrome-text`, `bg-chrome-hover`, `bg-accent`, `bg-accent-tile`, `text-accent-ink`, `bg-positive-soft`, `border-positive`, `bg-critical-soft`, `ring-chrome`, `hii-status-bar`, `hii-shell-canvas`, `hii-shell-band`) is present in `.next/static/css/*.css`; the `--hii-chrome`, `--hii-accent`, `--hii-positive-soft` custom properties are emitted |
+
+### Contract checks made statically (fail-closed decisions)
+
+| Question | Evidence | Result |
+|----------|----------|--------|
+| Is there an issue → task link for a "blocked reason" panel? | `web/src/features/issues/types.ts` states the `Issue` contract has no task link, no assignee, no due date | **No panel.** Blocked tasks render the real status only |
+| Is a GPS-quality text possible? | `useWorkerShift` now returns the `geoStatus` of the same `useGeoLocation()` instance the check-in path uses (`GeoStatus` union incl. `location.accuracy`) | GPS row renders permission state + measured accuracy, or nothing when `idle` |
+| Can a worker read the project's open issues? | `GET /api/issues` has no `@Roles` (any authenticated project member); `ROUTE_ROLES['/issues']` includes `worker`. The card additionally renders a "not available for your role" state when the route contract excludes the role, and falls back to a truthful empty/unavailable state on 403 (`ApiError.isForbidden()`) or any failure | Real list, fail-closed |
+| Can a worker read the site daily report? | `GET /api/daily-reports` has no `@Roles`; the actions card filters the answer by the real `report_date` and hides the row entirely on failure or an unexpected payload shape | Real row, fail-closed |
+| Is progress write offered where the backend accepts it? | `selectEditableMyPlanTaskIds` feeds `canEditPlanTaskProgress` with the my-tasks payload as the membership signal (backend keeps the user-filtered `task.assignments` for exactly this parity check); the write is the existing `PATCH /api/daily-plans/tasks/:id/progress` and the day is re-read afterwards | Gated write, no optimistic state |
+
+### NOT verified — blocked by this environment
+
+- **Worker smoke test at 375 / 768 / 1440 in RO and EN: NOT RUN.** No PostgreSQL (`:5432` closed), no
+  Docker (not installed), no running backend or web dev server (`:3000` / `:3001` closed), and no
+  browser-automation dependency in the repository (`package.json` / `web/package.json` contain no
+  playwright / puppeteer / cypress) — no authenticated worker session could be produced, and no
+  screenshot, pixel sample or console-error sweep was taken. **No runtime claim is made for this
+  phase.**
+- Breakpoint behaviour is asserted from source only: `lg` = 1024 px, so 375 and 768 render the compact
+  navy bar + project band + drawer navigation, and 1440 renders the rail + white 72 px header.
+- No visual diff against the Figma exports and no design review; the three PNG references stay
+  untracked under `Project workflow/design/`.
+- `#hii-shell-sidebar*` utility classes and the legacy `--hii-sidebar-*` token values are now unused by
+  any component (kept, repointed to the chrome palette) — no cleanup of unrelated surfaces was done.
+- Pre-existing, untouched: the closed mobile drawer stays in the DOM (off-canvas) and remains keyboard
+  reachable — the same behaviour as before this phase; the `header.settings` dropdown entry is still a
+  no-op.
+
+### To run the missing smoke test
+
+```powershell
+pwsh ./Start-HIIEKO.ps1                 # PostgreSQL + NestJS + Next.js
+# sign in as a `worker` account, then check `/` at 375, 768 and 1440 px in RO and EN:
+#   - <lg: navy bar + brand + bell, #374151 project band, drawer nav, drawer user block + language
+#   - >=lg: rail with accent active pill, white 72px header with project chip + language + bell + user
+#   - My Day: attendance card, progress card, task cards (accent/red/green 4px bar), actions required,
+#     active blockers; tick an assigned task and confirm the row leaves the list (PATCH 200)
+```
+
+---
+
+## Phase 1 defect fix — ISSUE-061 (Decimal quantities concatenated in the My Day summary) (2026-09-30, UNCOMMITTED)
+
+**Scope:** one function in one file — `web/src/features/planning/fieldWork.ts` (new private
+`toQuantityNumber` + its two call sites in `summarizeMyDay`). No backend, Prisma, DB, API contract,
+navigation, shell-styling, other-role or unrelated-selector change. Nothing staged, nothing committed.
+
+**Live-surface correction to the phase record:** the runtime smoke test the Phase 1 section above lists
+as *not run* has since been executed against the local stack (PostgreSQL :5433, NestJS :4000,
+`next dev` :3000, real Chrome driven over CDP, worker `daniel.georgescu@hiieko.local`, project
+Parc Solar Cluj (CJ-003), real PUBLISHED plan `837ef189-1832-474c-ae4e-510be703dd56` for 2026-09-30 with
+real `POST /api/tasks/:id/assign` + `PATCH /api/daily-plans/tasks/:id/progress` writes — no mock data).
+It covered **768 px and 1440 px in RO**; 375 px and EN are still not run.
+(→ superseded: *Phase 1 final verification* at the end of this file executed 375 px in RO **and** EN plus
+1440 px in EN on 2026-09-30, and the temporary plan was then removed.)
+
+### FAIL-first evidence (real stack, before the fix)
+
+| Surface | Before | After |
+|---------|--------|-------|
+| Progress card → *Cantitate raportată* | `0451 / 0601 buc`, `0 / 040 m` | `46 / 61 buc`, `0 / 40 m` |
+| Task card CJ-003-T02 | `45/60 buc`, `În lucru`, `aria-valuenow 75` | unchanged |
+| Task card CJ-003-T03 | `0/40 m`, `Planificat`, `aria-valuenow 0` | unchanged |
+| Completion ratio / label | `33 %`, `1 din 3 sarcini finalizate` | unchanged |
+
+### Root cause (measured from the API payload, not inferred)
+
+`GET /api/daily-plans/my-tasks?date=2026-09-30` serializes `DailyPlanTask.target_quantity` /
+`actual_quantity` as JSON **strings** — the columns are Prisma `Decimal` (`DECIMAL(12,3)`) and Prisma
+serializes `Decimal` through its `toJSON()`:
+
+| Task | `target_quantity` | Serialized as | `actual_quantity` | Serialized as |
+|------|-------------------|---------------|-------------------|---------------|
+| CJ-003-T02 | `"60"` | string | `"45"` | string |
+| CJ-003-T03 | `"40"` | string | `null` | object |
+| CJ-003-T04 | `"1"` | string | `"1"` | string |
+
+`summarizeMyDay()` accumulated those values with `+=`, so `0 + "45" + "1"` produced the string
+`"0451"` (JS string concatenation), which `String(volume.actual)` rendered verbatim. The per-task cards
+were already correct because they interpolate the same raw values into `` `${actual}/${target}` ``.
+`web/src/features/planning/types.ts` declares `target_quantity: number`, i.e. the declared type does not
+hold at runtime, so `tsc` could not catch it.
+
+### Fix
+
+`toQuantityNumber(value: number | string | null | undefined): number`, module-private in
+`fieldWork.ts`: finite numbers pass through; strings go through a `Number.isFinite`-checked `Number()`;
+`null`, `undefined` and non-numeric input yield `0` (never `NaN`). Valid decimals are preserved
+untruncated (`"45.5"` → 45.5) and `0` / `"0"` stay a real zero (no falsy shortcut).
+`summarizeMyDay()` now reads `toQuantityNumber(planTask.target_quantity)` /
+`toQuantityNumber(planTask.actual_quantity)`. Unit grouping, counts, `percentComplete` and the per-task
+rows are untouched (`FieldTaskRow` keeps the values it always had — the card interpolates them).
+One intended side effect: the existing guard `if (!unit && target === 0 && actual === 0) continue;`
+now evaluates as written for Decimal-as-string zeros, i.e. a unit-less task with no quantity keeps
+contributing to the counts only — exactly what `WorkerProgressCard`'s contract documents.
+
+### Gates (run on the fixed tree)
+
+| Command | Result |
+|---------|--------|
+| `npm run typecheck` | **exit 0** — shared + web + Mobile + backend |
+| `npm run web:typecheck` | **exit 0** |
+| `npm run web:build` | **exit 0** — `✓ Compiled successfully`, 25/25 pages generated |
+| `npm run i18n:check` | **exit 0** — 1069 key definitions, 1069 unique keys (report-only rows unchanged) |
+| `npm run guards:check` | **exit 0** — no G1/G2 failure |
+| `node cdp-phase1-capture.js` (real Chrome, real stack) | **exit 0** — 2 screenshots, `exceptions 0`, `failedRequests 0`, 1 console error |
+
+The single console error is the pre-existing `GET /favicon.ico → 404` (no `rel="icon"` in
+`web/src/app/layout.tsx`, no `web/public/favicon.ico`) — unrelated to this fix and unchanged by it.
+
+### Runtime verification (after the fix)
+
+Harness output, gitignored: `task-screenshots/phase1-compact-shell-768.png`,
+`task-screenshots/phase1-worker-myday-1440.png`, `task-screenshots/phase1-capture-report.json`
+(the report now carries an independent `apiEvidence` block computed from the same endpoint).
+
+- *Cantitate raportată*, rendered DOM at **768 px** (compact shell) and **1440 px** (rail shell), RO:
+  `buc  46 / 61 buc` and `m  0 / 40 m` — identical to `expectedVolumes`
+  (`buc actual 46 / target 61`, `m actual 0 / target 40`) summed from the API payload with an explicit
+  `Number()` coercion. No concatenated digits anywhere in `document.body.innerText`
+  (`qtyMatches` = `["45/60 buc","0/40 m"]` only).
+- The `buc` target is **61**, not 60: two `buc` tasks are planned that day (`60` + `1`). Per-unit
+  grouping is unchanged by design, and the `m` line stays `0 / 40 m` — no cross-unit total is shown.
+- Per-task cards unchanged at 1440 px: `CJ-003-T02 … În lucru 45/60 buc`,
+  `CJ-003-T03 … Planificat 0/40 m`; `progressValues` = `["33","75","0"]` (summary, T02, T03).
+- Counts unchanged: `33 %`, `1 din 3 sarcini finalizate`, 2 open task cards and
+  "2 sarcini încă nefinalizate" in *Acțiuni necesare*.
+- Shell assertions from the same run: 768 px → `scrollWidth 768` (no horizontal overflow), 101 px chrome
+  (56 px navy bar + `#374151` project band), `sidebarVisible false`; 1440 px → `sidebarVisible true`,
+  72 px header; project `<select>` driven programmatically, `focused false`, `nativeListbox false`.
+- The 1440 px page fits the viewport (`scrollTop` stayed 0), so only the two viewport PNGs are kept.
+
+### Note for the next capture run
+
+`npm run web:build` and a running `next dev` share `web/.next`: after a production build the dev server
+keeps serving the previous dev chunk names (404) until it is restarted, which made the first post-build
+harness run stall on "waiting for shell header". The harness now retries each render up to 3×, and the
+evidence above was captured after restarting `npm run web:dev` (dev health re-checked directly: all 8
+chunks referenced by the SSR HTML answered `200`).
+
+### Not verified / out of scope
+
+- The EN rendering of the summary line was not re-captured (same key, number-only difference), and
+  375 px was not re-run; the like-for-like RO comparison at 768/1440 is what was measured.
+- `FieldTaskRow.targetQuantity` / `actualQuantity` still carry the raw `my-tasks` values (typed `number`,
+  string at runtime). No other consumer does arithmetic on them today (the task card interpolates and
+  divides, which coerces), so nothing was changed there — recorded here as a latent hazard, not fixed
+  unilaterally inside a frozen phase surface.
+- No backend serialization change (`Decimal` → number): `my-tasks` is a consumed contract and other
+  clients may depend on the string form.
+
+---
+
+## Phase 1 final verification — RO/EN × 375/1440 px + fixture cleanup + ISSUE-060 doc closure (2026-09-30, UNCOMMITTED)
+
+**Scope:** verification and documentation only — **no production code was changed in this pass**. The
+only code edit of the whole Phase-1 review remains the ISSUE-061 fix in
+`web/src/features/planning/fieldWork.ts` (section above). Nothing staged, nothing committed, nothing
+pushed; `HEAD` stays `e9864d1`.
+
+**Supersedes the "not run" notes:** the *Phase 1 — Shell Chrome + Worker "My Day"* section lists the live
+worker smoke test (375/768/1440 × RO/EN) as *not run*, and the *Phase 1 defect fix* section recorded only
+768/1440 in RO. This section closes those gaps: **375 px RO, 375 px EN and 1440 px EN were executed on
+the live stack**, 375 px and EN for the first time.
+
+### Environment
+
+PostgreSQL **:5433** (`hiieko`, PG14) + NestJS **:4000** + `next dev` **:3000**, real Chrome 154 headless
+driven over CDP (`cdp-phase1-final.js`, gitignored), worker `daniel.georgescu@hiieko.local`
+(role `worker`), project Parc Solar Cluj **CJ-003** (`f32399f8-1256-44f0-8003-458661a35f51`), the same
+real PUBLISHED plan for 2026-09-30 (`837ef189-1832-474c-ae4e-510be703dd56`, 3 tasks) used by the earlier
+ISSUE-061 run — no mock data, no fixture re-created for this pass.
+
+### Independent API expectation (computed from the payload the card consumes)
+
+`GET /api/daily-plans/my-tasks?date=2026-09-30` -> `200`, `planCount 1`, `taskCount 3`,
+`expectedCompleted 1`, `expectedVolumes` `buc actual 46 / target 61`, `m actual 0 / target 40`.
+The same probe reproduces the pre-fix arithmetic on the same payload (`buggyActual` `"0451"`,
+`buggyTarget` `"0601"`, `m` `"0"` / `"040"`), i.e. the defect's inputs are still the strings
+`"60"`, `"45"`, `"1"`, `null` (`targetSerializedAs` / `actualSerializedAs` = `string` / `object`): the card
+is correct *because the fix coerces*, not because the backend changed. **No backend / Prisma / API change**
+(`Decimal` -> number serialization is a consumed contract; deliberately untouched).
+
+### Rendered result per scenario — 67/67 checks PASS
+
+| Scenario | Viewport | `Reported quantity` rows | Task cards (open only) | Ratio / counts |
+|---|---|---|---|---|
+| `phase1-final-375-ro` (22/22) | 375x812, `html lang=ro` | `buc  46 / 61 buc`, `m  0 / 40 m` | `CJ-003-T02 … În lucru  45/60 buc`, `CJ-003-T03 … Planificat  0/40 m` | `33 %`, `1 din 3 sarcini finalizate`, `1/3 finalizate`, `2 sarcini încă nefinalizate` |
+| `phase1-final-375-en` (22/22) | 375x812, `html lang=en` | `buc  46 / 61 buc`, `m  0 / 40 m` | `CJ-003-T02 … In progress  45/60 buc`, `CJ-003-T03 … Planned  0/40 m` | `33 %`, `1 of 3 tasks completed`, `1/3 completed`, `2 tasks still open` |
+| `phase1-final-1440-en` (23/23) | 1440x1000, `html lang=en` | `buc  46 / 61 buc`, `m  0 / 40 m` | `CJ-003-T02 … In progress  45/60 buc`, `CJ-003-T03 … Planned  0/40 m` | `33 %`, `1 of 3 tasks completed`, `1/3 completed`, `2 tasks still open` |
+
+Every value above is an **assertion**, not an observation: the harness derives the expected rows,
+labels, percentages and counts from the API payload and fails the run if the DOM disagrees. Shared
+assertions in all three scenarios: `progressValues` `["33","75","0"]` (summary, T02, T03) matching the
+payload's `Math.round(actual/target)` per row; exactly one volume row per unit and no cross-unit total;
+the completed `CJ-003-T04` is **not** listed as open; `CJ-003` selected in the project `<select>`;
+locale probes present in the active language (shell project chip, day header, attendance, progress,
+my-tasks, actions, blockers, plus the `Intl` date `septembrie 2026` / `September 2026`) and absent for the
+other language (`document.documentElement.lang` = the scenario locale).
+
+### Layout / overflow / runtime (measured)
+
+| Check | 375 px (RO + EN) | 1440 px (EN) |
+|---|---|---|
+| Horizontal overflow | `documentElement.scrollWidth 375 = clientWidth 375`; `<main>` `scrollWidth 360 = clientWidth 360` | `scrollWidth 1440 = clientWidth 1440`; `<main>` `1184 = 1184` |
+| Shell chrome | no rail (`sidebarVisible false`), navy bar + project band inside a 101 px `<header>` | rail visible, 72 px header |
+| Navy / band | `#111827` (`rgb(17, 24, 39)`) navy surface, `#374151` (`rgb(55, 65, 81)`) 44 px (`h-11`) band | rail `rgb(17, 24, 39)`, header 72 px (`--hii-header-height` 4.5rem) |
+| Content canvas | scrolls inside `<main>` (`scrollHeight 1777/711` RO, `1809/711` EN - the document itself never scrolls) | entire day fits (`scrollHeight 928 = clientHeight 928`) |
+| Day surface | 2 open task cards with completion checkboxes (`checkboxCount 2`) | same, 3-column grid |
+| Console / network | **0 uncaught exceptions**, **0 failed requests**, 1 console error - the pre-existing `GET /favicon.ico -> 404` (no `rel="icon"`; unchanged since R1B) | same |
+
+Evidence (gitignored, local): `task-screenshots/phase1-final-{375-ro,375-en,1440-en}.png` (viewport) and
+`…-cards.png` (the day's cards scrolled into view - needed at 375 px because the shell scrolls `<main>`),
+plus `task-screenshots/phase1-final-report.json` with the API probe, the per-scenario evidence (raw
+`innerText`, chrome/band measurements, `aria-valuenow` list, `<main>` metrics) and every check result.
+The earlier 768/1440 RO artifacts (`phase1-capture-report.json`, `phase1-compact-shell-768.png`,
+`phase1-worker-myday-1440.png`) are kept as the ISSUE-061 before/after record.
+
+### Temporary Phase-1 fixture removed (after the sweep)
+
+The day used for the review existed only to prove the surface, so it was deleted after the final capture
+(nothing else was touched; the tasks it referenced are real seeded rows and stay):
+
+| Object | Deleted |
+|---|---|
+| `DailyPlan` `837ef189-1832-474c-ae4e-510be703dd56` (2026-09-30, `notes = "Phase 1 verification plan …"`) | 1 |
+| its `DailyPlanTask` rows (`CJ-003-T02` 60/45, `CJ-003-T03` 40/null, `CJ-003-T04` 1/1) | 3 |
+| `TaskAssignment` rows created for the review (worker -> `CJ-003-T03`, `CJ-003-T04`, 2026-09-30 10:57:51) | 2 |
+| audit rows for exactly those objects (`DAILY_PLAN_CREATED`, `DAILY_PLAN_PUBLISHED`, 2 x `DAILY_PLAN_TASK_PROGRESS_UPDATED`, 2 x `TASK_ASSIGNED`) | 6 |
+
+| Table | Before | After |
+|---|---|---|
+| `daily_plans` (CJ-003 / all) | 10 / 12 | **9 / 11** |
+| `daily_plan_tasks` | 24 | **21** |
+| `task_assignments` | 33 | **31** |
+| `audit_logs` | 370 | **364** |
+| `tasks` (CJ-003) | 8 (`CJ-003-T01..T04`, `SMOKE-40926`, `PH2-VER-01`, `P3-GATE-T1/T2`) | **8 - untouched** |
+
+Post-cleanup re-probe: `GET /api/daily-plans/my-tasks?date=2026-09-30` -> `planCount 0`, `taskCount 0`,
+`expectedVolumes []` (the worker's day is clean). The four pre-existing verification fixtures on CJ-003
+(ISSUE-050) and the two 2026-09-29 `TaskAssignment` rows (`fore3` / `daniel` -> `CJ-003-T02`, created by
+the earlier C3 verification, *not* by this review) were left exactly as found - deleting them is a
+separate decision and was not required to remove the Phase-1 records.
+
+### ISSUE-060 closed by decision + documentation (no code change)
+
+- `DECISIONS.md` -> **DEC-012 — Fixed dark chrome + accent/positive palette (Phase 1 shell + Worker
+  "My Day")**, ACCEPTED 2026-09-30: fixed branding, **not** a theme (`darkMode` off, no `dark:` utility,
+  no `prefers-color-scheme`, no user toggle); navy `#111827`, band `#374151`, accent `#F59E0B` (hover
+  `#D97706`), positive `#49C89E` (soft `#DAF8E9`), canvas `#F3F4F6`; brand green + the semantic status
+  palette stay the content-surface colours; scope = shell + worker "My Day".
+- `DESIGN_SYSTEM.md`: §1.1 token block (13 Phase-1 tokens + "not a theme"), §3 rewritten to the measured
+  shell contract **with the pre-Phase-1 values kept as history**, §7 chrome bullets, §2.1.1 component
+  inventory (8 components), §4 note (status bar accent/critical/positive vs. semantic badge variants).
+- Cross-checked against the source, not the frames: `globals.css`, `tailwind.config.js` (no `darkMode`
+  key), `Sidebar.tsx`, `Header.tsx` - and against the live measurements in the table above.
+
+### Final gates (run on the frozen tree, after the cleanup)
+
+| Command | Result |
+|---------|--------|
+| `npm run typecheck` | **exit 0** — shared + web + Mobile + backend |
+| `npm run web:typecheck` | **exit 0** |
+| `npm run web:build` | **exit 0** — `Compiled successfully`, `Generating static pages (25/25)`. Ran with **no dev server** and a cleared `web/.next`: two attempts made while a `next dev` was compiling into the same directory failed (`Failed to collect page data for /avize`, then `Cannot find module for page: /_document` + 11 export errors) — the ISSUE-049 failure class (`next build` and `next dev` must not share `web/.next`), not a code regression. `:3000` was confirmed free (no listener after 20 s), `web/.next` removed, then the clean build passed; one `npm run web:dev` was restarted afterwards (`/login` 200, `/` 200, worker login 200). |
+| `npm run i18n:check` | **exit 0** — 205 files, 1069/1069 keys (report-only rows unchanged) |
+| `npm run guards:check` | **exit 0** — 205 files scanned, no G1/G2 finding |
+| `npm test` | **exit 0** — 31 suites / 320 tests (backend untouched; regression evidence only) |
+
+### Not done / out of scope (unchanged by this pass)
+
+- No commit, no push, no staging; no backend, Prisma schema, DB migration, API contract, navigation,
+  styling or other-role/page change.
+- `FieldTaskRow.targetQuantity` / `actualQuantity` still carry the raw `my-tasks` values (typed `number`,
+  string at runtime) — the latent hazard recorded in the section above, still deliberately unfixed.
+- EN at 768 px was not captured (the 375 EN + 1440 EN pair brackets the compact and rail layouts); no
+  visual diff against the three Figma exports and no design review.
+- After a production build the running `next dev` serves stale chunk names until restarted (ISSUE-049) —
+  the sweep was captured *before* the build, on a live-verified dev server.
+- The build gate requires `web/.next` to be free: stop the dev server (and confirm no second one), clear
+  `web/.next`, run `npm run web:build`, then start exactly one `npm run web:dev` again. A dev server
+  compiling into the same directory during the build is what produced the two failed attempts recorded in
+  the gate table — the launcher's `-Watch` loop only *reports* port state, it does not restart services
+  (`Start-HIIEKO.ps1` lines 409-421), so a stopped dev server stays stopped until it is started again.
+

@@ -71,6 +71,27 @@ module.exports = {
           soft: '#f1f5f9',
           foreground: '#475569',
         },
+        // Phase-1 shell visual direction (see globals.css). Fixed dark chrome +
+        // HIIEKO accent; declared as colours, never as a `dark:` theme.
+        chrome: {
+          DEFAULT: 'var(--hii-chrome)',
+          elevated: 'var(--hii-chrome-elevated)',
+          hover: 'var(--hii-chrome-hover)',
+          line: 'var(--hii-chrome-border)',
+          text: 'var(--hii-chrome-text)',
+          muted: 'var(--hii-chrome-text-muted)',
+        },
+        accent: {
+          DEFAULT: 'var(--hii-accent)',
+          hover: 'var(--hii-accent-hover)',
+          soft: 'var(--hii-accent-soft)',
+          tile: 'var(--hii-accent-tile)',
+          ink: 'var(--hii-accent-text)',
+        },
+        positive: {
+          DEFAULT: 'var(--hii-positive)',
+          soft: 'var(--hii-positive-soft)',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],

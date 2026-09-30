@@ -4,6 +4,53 @@
 
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
+## PHASE 1 FINAL VERIFICATION — `e9864d1` (2026-09-30, UNCOMMITTED — AWAITING CHECKPOINT)
+
+**Working tree:** the same uncommitted Phase-1 paths, **no commit and no push** — `HEAD` is still
+`e9864d1` (*docs: record ux-r1b.2 checkpoint commit 9e6a503 (ISSUE-059)*). Only **one** production file
+was edited by the whole Phase-1 review: `web/src/features/planning/fieldWork.ts` (the ISSUE-061 fix).
+This final pass changed **documentation only** — `Project workflow/{DECISIONS,DESIGN_SYSTEM,ISSUES,VERIFICATION,PROGRESS,HANDOFF}.md`.
+The harness (`cdp-phase1-final.js`, `cdp-phase1-capture.js`) and `task-screenshots/` are gitignored.
+
+**Verified on the live stack** (PostgreSQL **:5433**, NestJS **:4000**, `next dev` **:3000**, real Chrome
+154 over CDP, worker `daniel.georgescu@hiieko.local`, project Parc Solar Cluj **CJ-003**, real PUBLISHED
+plan `837ef189-1832-474c-ae4e-510be703dd56` for 2026-09-30 — no mock data): **67/67 harness checks PASS**
+— 375 px RO 22/22, 375 px EN 22/22, 1440 px EN 23/23. Every rendered value is asserted against the
+payload of `GET /api/daily-plans/my-tasks?date=` (the card's only source): `buc 46 / 61 buc` and
+`m 0 / 40 m` in **RO and EN**, `CJ-003-T02` `45/60 buc` (*În lucru* / *In progress*, `aria-valuenow 75`),
+`CJ-003-T03` `0/40 m` (*Planificat* / *Planned*, `aria-valuenow 0`), `33 %`,
+`1 din 3 sarcini finalizate` / `1 of 3 tasks completed`, `2 sarcini încă nefinalizate` /
+`2 tasks still open`, the completed `CJ-003-T04` absent from the open list, one volume row per unit and
+no cross-unit total, locale probes present in the active language and absent from the other
+(`html lang` `ro`/`en`; `septembrie 2026` vs `September 2026`). Layout/runtime: no horizontal overflow at
+375 px (document `scrollWidth 375 = clientWidth 375`; `<main>` `360 = 360`, the day scrolls inside
+`<main>` — `1777/711` RO / `1809/711` EN) or at 1440 px (`1440 = 1440`; `<main>` `1184 = 1184`); compact
+chrome = 101 px `<header>` (56 px navy `#111827` bar + 44 px `#374151` band, no rail) vs. rail + 72 px
+header at `≥ lg`; **0 JS exceptions, 0 failed requests**, the only HTTP error is the pre-existing
+`/favicon.ico` 404.
+
+**Closed in the same pass:** **ISSUE-061** (fixed + re-verified in both languages), **ISSUE-060**
+(`DESIGN_SYSTEM.md` contradicted the emitted chrome → **DEC-012** *Fixed dark chrome + accent/positive
+palette (Phase 1 shell + Worker "My Day")* + `DESIGN_SYSTEM.md` §1.1 tokens, §2.1.1 component inventory,
+§3 measured shell contract with the pre-Phase-1 values kept as history, §4 status-bar note, §7 chrome
+Do-Nots), and the **temporary review fixture** (plan + 3 `DailyPlanTask` + 2 `TaskAssignment` + 6 audit
+rows deleted in one transaction: `daily_plans` 10→9 on CJ-003, `daily_plan_tasks` 24→21,
+`task_assignments` 33→31, `audit_logs` 370→364; seeded `tasks` and the 4 pre-existing CJ-003 fixtures
+untouched; `my-tasks` now returns 0 plans for the day).
+
+**Gates on the frozen tree:** `npm run typecheck`, `npm run web:typecheck`, `npm run web:build` (25/25
+pages), `npm run i18n:check` (205 files, 1069/1069 keys), `npm run guards:check`, `npm test`
+(31 suites / 320 tests) — all **exit 0**. `web:build` was run with the dev server stopped and `web/.next`
+cleared: two earlier attempts failed while a `next dev` compiled into the same directory
+(`Failed to collect page data for /avize`; then `Cannot find module for page: /_document` + 11 export
+errors — the ISSUE-049 class, **not** a code regression). **One `npm run web:dev` was restarted
+afterwards** (single instance on `:3000`, `/login` 200, `/` 200, worker login 200); the launcher's
+`-Watch` loop does not restart services, so do not start a second dev server (ISSUE-049).
+
+**Next:** the tree is ready for the Phase-1 checkpoint commit (nothing staged yet, no push). Full detail:
+`VERIFICATION.md` → *Phase 1 final verification — RO/EN × 375/1440 px + fixture cleanup + ISSUE-060 doc
+closure*.
+
 ## R1B.2 CHECKPOINT COMMITTED — `9e6a503` (2026-09-30)
 
 The R1B.2 tree was reviewed and committed as **`9e6a503`** — `fix(web): ux-r1b.2 tutorial locale
@@ -218,6 +265,11 @@ unchanged; **not pushed, so no GitHub Actions run is claimed**.
   open.
 
 ## Current Task
+
+**Phase 1 — Shell Chrome + Worker "My Day" is at FINAL VERIFICATION PASSED / awaiting the checkpoint
+commit** (see *PHASE 1 FINAL VERIFICATION* at the top of this file; 67/67 live checks, ISSUE-061 fixed,
+ISSUE-060 closed by DEC-012, review fixture removed). The P4.4 summary below is the previous task and
+stays as history.
 
 **P4.4 COMPLETE — Daily Report finalization (DRAFT → SUBMITTED) is E2E verified (2026-09-29):**
 - **Delivered (code from the earlier P4.x sessions, verified end-to-end this session):** one trusted finalization core, `DailyReportsService.finalizeWithin()`, shared by `POST /api/daily-reports/:id/submit` (web DRAFT → SUBMITTED) and by `create()` when the persisted status is already `SUBMITTED` (Mobile's status-less POST + `Idempotency-Key`), so the offline queue needed no second endpoint. One transaction writes: status `SUBMITTED`, `revision_number` 1, the immutable revision snapshot (`schema: 'daily-report-revision@1'`, snapshot `report`/`schema`/`submittedAt`/`submittedById`/`revisionNumber`/`stockReference`/`stockConsumption`), one `CONSUMPTION` movement per reported material (`stock_movements.reference_type = 'daily_report'`, key `daily_report:<reportId>:rev<N>:material:<materialId>`) and the `DAILY_REPORT_SUBMITTED` audit row. A DRAFT create consumes nothing — no stock, no revision.

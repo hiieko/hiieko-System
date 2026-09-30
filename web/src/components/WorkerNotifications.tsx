@@ -74,15 +74,15 @@ export function WorkerNotifications({
       const diffDays = Math.floor(diffHours / 24);
 
       if (diffDays > 0) {
-        return locale === 'en' ? `${diffDays}d ago` : `acum ${diffDays}z`;
+        return t('worker.notifications.time_days', locale).replace('{count}', String(diffDays));
       }
       if (diffHours > 0) {
-        return locale === 'en' ? `${diffHours}h ago` : `acum ${diffHours}h`;
+        return t('worker.notifications.time_hours', locale).replace('{count}', String(diffHours));
       }
       if (diffMins > 0) {
-        return locale === 'en' ? `${diffMins}m ago` : `acum ${diffMins}m`;
+        return t('worker.notifications.time_minutes', locale).replace('{count}', String(diffMins));
       }
-      return locale === 'en' ? 'just now' : 'chiar acum';
+      return t('worker.notifications.time_now', locale);
     } catch {
       return '';
     }
@@ -100,7 +100,10 @@ export function WorkerNotifications({
               <h2 className="text-base font-bold text-slate-900">{t('nav.notificari', locale)}</h2>
               {notifications && notifications.length > 0 && (
                 <p className="text-xs text-slate-400">
-                  {notifications.length} {locale === 'en' ? 'unread' : 'necitite'}
+                  {t('worker.notifications.unread_count', locale).replace(
+                    '{count}',
+                    String(notifications.length),
+                  )}
                 </p>
               )}
             </div>
@@ -139,7 +142,7 @@ export function WorkerNotifications({
         )}
         {!loading && !error && displayedNotifications.length === 0 && (
           <p className="text-sm text-slate-400 text-center py-4">
-            {locale === 'en' ? 'No new notifications' : 'Nicio notificare noua'}
+            {t('worker.notifications.none', locale)}
           </p>
         )}
 
@@ -180,7 +183,10 @@ export function WorkerNotifications({
             {t('worker.view_all', locale)}
             {hasMore && (
               <span className="text-xs text-slate-400">
-                ({(notifications || []).length} {locale === 'en' ? 'total' : 'in total'})
+                ({t('worker.notifications.total', locale).replace(
+                  '{count}',
+                  String((notifications || []).length),
+                )})
               </span>
             )}
             <ArrowRight className="w-4 h-4" />

@@ -49,14 +49,37 @@
   --hii-shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 
   /* Shell tokens */
-  --hii-sidebar-bg: #0f172a;
-  --hii-sidebar-hover: #1e293b;
-  --hii-sidebar-text: #cbd5e1;
-  --hii-sidebar-text-muted: #64748b;
-  --hii-sidebar-active-bg: #188C51;
-  --hii-sidebar-active-text: #ffffff;
+  --hii-sidebar-bg: #111827;
+  --hii-sidebar-hover: #1f2937;
+  --hii-sidebar-text: #d1d5db;
+  --hii-sidebar-text-muted: #9ca3af;
+  --hii-sidebar-active-bg: #f59e0b;
+  --hii-sidebar-active-text: #111827;
   --hii-sidebar-width: 16rem;
-  --hii-header-height: 4rem;
+  --hii-header-height: 4.5rem;
+
+  /* HIIEKO fixed dark chrome (Phase-1 shell visual direction).
+     This is a product chrome decision, NOT a theme switch: it is applied
+     through tokens/classes by the shell components only, and no `dark:`
+     utility is enabled (tailwind.config.js keeps `darkMode` off). */
+  --hii-chrome: #111827;
+  --hii-chrome-elevated: #374151;
+  --hii-chrome-hover: #1f2937;
+  --hii-chrome-border: #1f2937;
+  --hii-chrome-text: #f9fafb;
+  --hii-chrome-text-muted: #9ca3af;
+
+  /* HIIEKO accent (shell emphasis + My Day) and positive/completed pair */
+  --hii-accent: #f59e0b;
+  --hii-accent-hover: #d97706;
+  --hii-accent-soft: #fef3c7;
+  --hii-accent-tile: #fef9e3;
+  --hii-accent-text: #111827;
+  --hii-positive: #49c89e;
+  --hii-positive-soft: #daf8e9;
+
+  /* Content canvas the pages sit on inside the shell */
+  --hii-shell-content-bg: #f3f4f6;
 }
 
 @layer base {
@@ -304,5 +327,28 @@
   }
   .hii-shell-header {
     height: var(--hii-header-height);
+  }
+
+  /* Fixed dark chrome surfaces (left rail on >=lg, top bar on <lg) */
+  .hii-shell-chrome {
+    background-color: var(--hii-chrome);
+    color: var(--hii-chrome-text);
+  }
+  .hii-shell-band {
+    background-color: var(--hii-chrome-elevated);
+  }
+  /* The brand green focus ring is invisible on dark chrome; the accent keeps
+     keyboard focus visible there (a11y). */
+  .hii-shell-chrome :focus-visible,
+  .hii-shell-band :focus-visible {
+    outline-color: var(--hii-accent);
+  }
+  /* Content canvas behind the shell chrome */
+  .hii-shell-canvas {
+    background-color: var(--hii-shell-content-bg);
+  }
+  /* 4px status accent bar used by the My Day task cards */
+  .hii-status-bar {
+    @apply absolute inset-y-0 left-0 w-1;
   }
 }

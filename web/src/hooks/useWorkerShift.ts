@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useProject } from '../contexts/ProjectContext';
 import { useToast } from '../components/ui/Toast';
 import { useGeoLocation } from '../hooks/useGeoLocation';
+import type { GeoStatus } from '../hooks/useGeoLocation';
 import { useLocale } from '@solar/shared';
 import { t } from '@solar/shared';
 import * as attendanceApi from '../features/attendance/api';
@@ -24,6 +25,13 @@ export interface UseWorkerShiftResult {
   resetForNewShift: () => void;
   formatTime: (v: string | Date | null | undefined) => string;
   formatDuration: (secs: number) => string;
+  /**
+   * Live geolocation state of the shift's own `useGeoLocation()` instance —
+   * the same one the check-in/check-out calls use. The attendance card renders
+   * a GPS row from it (permission/accuracy only), never a derived "signal"
+   * quality adjective.
+   */
+  geoStatus: GeoStatus;
 }
 
 export function useWorkerShift(): UseWorkerShiftResult {
@@ -181,6 +189,7 @@ export function useWorkerShift(): UseWorkerShiftResult {
     resetForNewShift,
     formatTime,
     formatDuration,
+    geoStatus,
   };
 }
 

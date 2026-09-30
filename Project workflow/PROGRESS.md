@@ -3,6 +3,16 @@
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
+**Phase 1 - Shell Chrome + Worker "My Day": FINAL VERIFICATION PASSED (2026-09-30, UNCOMMITTED -
+AWAITING CHECKPOINT).** The live worker smoke test the phase record listed as *not run* is now complete:
+**375 px RO, 375 px EN and 1440 px EN** on the real stack, **67/67 harness checks PASS** (each rendered
+value asserted against the API payload the card consumes), 0 JS exceptions, 0 failed requests, only the
+pre-existing `/favicon.ico` 404. ISSUE-061 (Decimal quantities concatenated) is fixed and re-verified;
+ISSUE-060 (design-system text contradicting the emitted chrome) is closed by **DEC-012** +
+`DESIGN_SYSTEM.md`; the temporary Phase-1 verification plan was removed from PostgreSQL afterwards. See
+`VERIFICATION.md` -> *Phase 1 final verification - RO/EN x 375/1440 px + fixture cleanup + ISSUE-060 doc
+closure*.
+
 **UX-R1A foundation: C0-C5 COMPLETE (2026-09-29). R1B PENDING. Visual redesign PENDING.** See
 `VERIFICATION.md` → *UX-R1A C5* for the close-out evidence and `ISSUES.md` for the carried-forward items.
 
@@ -14,6 +24,7 @@
 
 | Check | Status | Notes |
 |-------|--------|-------|
+| **Phase 1 - Shell Chrome + Worker "My Day"** | ✅ **IMPLEMENTED + FINALLY VERIFIED** (uncommitted, awaiting checkpoint) | Dark navy `#111827` shell chrome + `#F59E0B` accent + `#49C89E` positive on a `#F3F4F6` canvas, shell + worker home only (frontend-only; no backend/Prisma/DB/API/CI/Mobile/other-role change). **Final live smoke test (2026-09-30, real stack = PostgreSQL :5433 + NestJS :4000 + `next dev` :3000, real Chrome over CDP, worker `daniel.georgescu@hiieko.local`, project CJ-003): 67/67 checks PASS** — 375 px RO 22/22, 375 px EN 22/22, 1440 px EN 23/23; `Reported quantity` `buc 46 / 61 buc` + `m 0 / 40 m` in RO and EN (asserted equal to the per-unit sums of `GET /api/daily-plans/my-tasks`), `CJ-003-T02` `45/60 buc` (`În lucru` / `In progress`, `aria-valuenow 75`), `CJ-003-T03` `0/40 m` (`Planificat` / `Planned`, `aria-valuenow 0`), `33 %`, `1 din 3 sarcini finalizate` / `1 of 3 tasks completed`, `2 sarcini încă nefinalizate` / `2 tasks still open`; no horizontal overflow (`documentElement.scrollWidth == clientWidth`, `<main>` 360/360 and 1184/1184); compact 101 px chrome (56 px navy bar + 44 px `#374151` band) vs. 72 px header + rail at `≥ lg`; 0 JS exceptions, 0 failed requests, 1 pre-existing `/favicon.ico` 404. **ISSUE-061** fixed (`toQuantityNumber()` in `web/src/features/planning/fieldWork.ts`) and re-verified in both languages; **ISSUE-060** closed by **DEC-012** + `DESIGN_SYSTEM.md` (§1.1 tokens, §3 measured shell contract with pre-Phase-1 history, §2.1.1 component inventory, §4 status-bar/accent note, §7 chrome Do-Nots). The temporary verification plan `837ef189-…` (1 plan + 3 plan tasks + 2 `TaskAssignment` + 6 audit rows) was deleted after the sweep; CJ-003's 8 task rows and the 4 pre-existing fixtures are untouched. Gates on the frozen tree: typecheck / `web:typecheck` / `web:build` (25/25) / `i18n:check` (1069/1069) / `guards:check` / `npm test` (31 suites / 320 tests) all exit 0. Nothing staged, nothing committed, nothing pushed. |
 | **P4.4 - Daily Report finalization (DRAFT -> SUBMITTED)** | ✅ **COMPLETE + E2E VERIFIED** | One trusted finalization core (`DailyReportsService.finalizeWithin()`) is shared by `POST /api/daily-reports/:id/submit` (web DRAFT -> SUBMITTED) and by `create()` when the persisted status is already `SUBMITTED` (Mobile's status-less POST + `Idempotency-Key`), so the offline queue needed no second endpoint. In ONE transaction: status `SUBMITTED`, `revision_number` 1, one immutable revision (`schema: 'daily-report-revision@1'`, snapshot `report`/`schema`/`submittedAt`/`submittedById`/`revisionNumber`/`stockReference`/`stockConsumption`), one `CONSUMPTION` stock movement per reported material with the deterministic key `daily_report:<reportId>:rev<N>:material:<materialId>` (`stock_movements.reference_type = 'daily_report'`), and the `DAILY_REPORT_SUBMITTED` audit row. A DRAFT create consumes nothing (no stock, no revision). **Verified:** browser gate `gate-p44-finalize.js` **25/25 PASS / 0 console errors** at 375px - confirmation dialog on the list (nothing sent on the first click, nothing on cancel), exactly ONE `POST .../submit` on confirm, toast, list stops offering Submit, `SUBMITTED` + revision 1, exactly one revision, exactly one movement, balance 6 -> 4, exactly ONE finalization audit row + exactly ONE `DAILY_REPORT_CREATED` row, frozen form (0 write controls, submitted banner, revision badge), read-only Review section showing "Revision: 1", idempotent replay (no second revision/consumption, `DAILY_REPORT_SUBMIT_REPLAYED` audited), PATCH on SUBMITTED -> 400, Mobile one-call contract 201 + replay creates no second report, insufficient stock -> aggregated 400 with the report left a clean DRAFT, fixtures removed and the balance restored; backend **31 suites / 320 tests PASS**, `db:verify` **71/71 PASS**, backend + shared + web typecheck 0 errors. **Audit vocabulary corrected:** the DRAFT create no longer writes `DAILY_REPORT_SUBMITTED` (it wrote the finalization action for a draft), so the action now matches exactly one event. Mobile app E2E NOT run - see ISSUE-051. |
 | **ISSUE-048 — Daily Report "Proposed Work" vs "General Notes" (two persisted fields)** | ✅ **COMPLETE** | The Work section's "Proposed Work" and the Execution section's "General Notes" were both written to the single `general_notes` column, and the form never read Proposed Work back, so save → reload looked like data loss (the textarea came back empty while the text showed up under General Notes). New dedicated, nullable column `daily_reports.proposed_work` — migration `20260929170000_add_daily_report_proposed_work` (`ALTER TABLE "daily_reports" ADD COLUMN "proposed_work" TEXT;`), additive and non-destructive, no other Daily Report field touched. Backend: `proposedWork` accepted by create/PATCH (service interface + both DTO classes, decorated so the global `whitelist` ValidationPipe cannot strip it); `update()` writes each of the two text fields only when the client sends it, so editing one can never clear the other and an omitted field preserves its stored value (`''` normalises to NULL, like `start_time`); list + `GET /:id` return both. Shared: `DailyReport.proposed_work`. Web: `formStateFromReport()` reads `report.proposed_work` (it was hard-coded `''`), `toCreateDto()` / `toUpdateDto()` send the two texts separately — the `state.proposedWork &#124;&#124; state.generalNotes` fallback is gone. Data compatibility: no historical text moved or guessed — the 6 dev rows keep their `general_notes` and get `proposed_work = NULL` (their 2 non-null note values are scratch/test text, not Proposed Work). Verified: `prisma validate` exit 0, `prisma generate` exit 0 (dev server stopped, no DLL lock), `migrate deploy` + `migrate status` clean (12 migrations), shared/backend/web typecheck 0 errors, backend **30 suites / 295 tests** PASS, `db:verify` **66/66** PASS (new check 8j), web build 26 routes exit 0, browser gate `gate-issue048-browser.js` **23/23** at 375px in RO + EN with 0 console errors — reload keeps each text in its own field, and independent per-field PATCH is proven at API + database level. No status workflow / stock / approval / revision / notification change; Mobile contract unchanged. Resolves ISSUE-048 — STOP here, P4.4 not started. |
 | **Dev Team Accounts / Teams / Projects / Tasks (seeded as real DB rows)** | ✅ **COMPLETE** | 12 development accounts (3 x TEAM_LEADER `chef1-3`, 3 x FOREMAN `fore1-3`, 3 x WORKER `wor1`/`wor2`/`work3`, 3 x TECHNICIAN `tech1-3`) + `UserProfile` + `Employee` + 12 `ProjectMember` + 3 teams (leadership + foreman + worker + technician, `leader_id` set, roster = `TeamMember`) + 9 `ProjectStage` / 9 `WorkPackage` + 3 `LocationZone` + 12 tasks / 24 `TaskAssignment` + 3 `PUBLISHED` `DailyPlan` (today) / 12 `DailyPlanTask` — written directly into PostgreSQL through `backend/scripts/seed-hiieko-teams.ts` (`npm run seed:teams --workspace=backend`), idempotent (2nd run produced identical counters). Applied to the 3 **existing** projects (AR-001 Parc Solar Arad, TM-002 Parc Solar Timisoara, CJ-003 Parc Solar Cluj) matched by code — no duplicate projects, no JSON/mock data, no schema/migration/API change. Verified: `db:verify` **65/65 PASS**; per-account API scoping for 8 logins (each worker/technician sees only their own assignments); `chef1` daily-plans for today → 1 PUBLISHED plan with 4 tasks; browser gate `gate-seed-teams.js` **8/8 page checks / 0 console errors** (real `/login` form → `/teams` team card + 4 members, `/tasks` AR-001-T01..T04 with status counts, `/projects/<id>` Etape + Membri tabs, worker RoleGuard + only-mine filtering, per-project isolation), evidence `gate-seed-teams.out.json`. Known leftovers: the 4 pre-existing verification fixtures (`SMOKE-40926`, `PH2-VER-01`, `P3-GATE-T1/T2` on CJ-003) were deliberately kept (ISSUE-050). |
@@ -787,6 +798,96 @@ backend, `ProjectAccessGuard`, API contracts, shared UI, `/tasks` and Worker My 
 | Verification | Shared + web typecheck PASS; production build PASS (25 routes); 11/11 CDP checks on prod build — non-member admin read-only + cannot PATCH, assigned TL save → PATCH 200 persisted, unchanged → no PATCH | ✅ PASS |
 
 Files: `web/src/features/planning/{types,api,index}.ts`, `components/PlanTaskRow.tsx`, `components/PlanCard.tsx`, `web/src/app/planning/page.tsx`. See ISSUE-041 and VERIFICATION.md → Phase 3 Gate F Follow-up.
+
+### ✅ Phase 1 — Design-Direction Foundation: Shell Chrome + Worker "My Day" (IMPLEMENTED + FINALLY VERIFIED 2026-09-30, UNCOMMITTED — AWAITING CHECKPOINT)
+
+Approved Phase-1 slice of the Figma visual direction: dark navy `#111827` shell chrome + orange
+`#F59E0B` HIIEKO accent, light `#F3F4F6` content canvas, `#49C89E` reserved for positive/completed
+states, compact enterprise chrome, responsive 375 / 768 / 1440 (shell breakpoint = `lg` / 1024 px),
+RO + EN, real data only. **Front-end only** — no backend, Prisma, DB, API, CI, Mobile or other-role
+change; every change is uncommitted.
+
+| Change | Detail | Status |
+|--------|--------|--------|
+| Tokens (`globals.css`, `tailwind.config.js`) | New `--hii-chrome*`, `--hii-accent*`, `--hii-positive*`, `--hii-shell-content-bg`; sidebar/header tokens repointed (`--hii-header-height` 72 px, active nav = accent); new `hii-shell-chrome/band/canvas`, `hii-status-bar` classes; `chrome`/`accent`/`positive` Tailwind colours. Additive only — Tailwind `darkMode` stays off (no `dark:` utility exists) | ✅ ADDED |
+| Shell chrome (`components/shell/*`) | `ShellBrand`, `ProjectContextChip` (header + `#374151` band variants), `ShellNotificationsButton` (real unread `total`, session-memoised so the two breakpoint mounts issue one request), `PageContainer` + barrel | ✅ ADDED |
+| `Header` | `≥ lg`: white 72 px bar (project chip, language switcher, bell, user menu) above the rail; `< lg`: navy 56 px bar (drawer trigger + brand + bell) + `#374151` project band. `#breadcrumb-slot` removed (no consumer anywhere in `web/src`) | ✅ UPDATED |
+| `Sidebar` | Navy rail + drawer on `--hii-sidebar-*`/chrome tokens, accent active pill, `ShellBrand` lockup, real signed-in user block (initials, name, `getRoleLabel`) replacing the hardcoded `HIIEKO v1.0` string; drawer footer gains the user block, language switcher and sign-out (mobile keeps every capability the old header had). `NAV_GROUPS`/`ROUTE_ROLES` untouched | ✅ UPDATED |
+| `AppShell` / `layout.tsx` | Content canvas `#F3F4F6` on body + shell + `<main>`; skip link now `t('a11y.skip_to_content')` on the accent | ✅ UPDATED |
+| Worker "My Day" (`WorkerMyDay`, `components/worker/*`) | 3-column day surface: attendance + today's progress (left), my tasks (centre), actions required + active blockers (right); DOM order serves mobile as attendance → actions → tasks, `lg:col-start/row-start` place the centre column on desktop. New `WorkerTaskCard` (4 px status bar: accent/red/positive, real `actual/target unit`, real per-task %, completion checkbox), `WorkerMyDayTasks`, `WorkerProgressCard`, `WorkerActionsRequired`, `WorkerBlockerList` | ✅ ADDED |
+| Attendance card | Status chip + real rows only: location (project), live GPS state from the shift hook's own `useGeoLocation()` (permission + measured accuracy), captured distance + geofence verdict. Accent = primary check-in, soft red = Check Out (both breakpoints), positive green = completed shift. Inline `locale === …` ternaries removed | ✅ UPDATED |
+| Progress write | Reuses `PATCH /api/daily-plans/tasks/:id/progress`; the checkbox is offered only for rows accepted by `canEditPlanTaskProgress` (new `selectEditableMyPlanTaskIds`), then the day is re-read from the API | ✅ WIRED |
+| `fieldWork.ts` | Additive: `unit` on `FieldTaskRow`, `MY_DAY_TASK_URGENCY` (blocked first), `FIELD_TASK_DONE_STATUSES`, `isPlanTaskCompleted`, `selectMyDayTasks`, `summarizeMyDay` (counts + per-unit volumes), `selectEditableMyPlanTaskIds`. Existing selector order/scope unchanged → technician/team_leader dashboards unaffected | ✅ ADDED |
+| Translations | +43 keys (shell/a11y, My Day, attendance, blockers/notifications); worker copy moved out of inline ternaries; `România` diacritics kept (`Tură nouă`) | ✅ ADDED |
+| ISSUE-061 fix (2026-09-30) | `my-tasks` returns Prisma `Decimal` quantities as JSON **strings**, so `summarizeMyDay` produced `0451 / 0601 buc` by `+=` concatenation. New private `toQuantityNumber()` in `fieldWork.ts` coerces both quantity fields before the per-unit sum → `46 / 61 buc`, `0 / 40 m`. One function, one file; grouping/counts/per-task rows unchanged | ✅ FIXED |
+
+**Omitted on purpose (no real source):** weather chip, "Timp estimat", task zone, "Finalizat la …"
+timestamp, FOTO button, team-activity timeline, notification content rows (nothing in the backend ever
+creates a notification). The blocked-reason panel is omitted too: `Issue` has no task link
+(`features/issues/types.ts` contract) — fail-closed.
+
+**Verification:** see `VERIFICATION.md` → *Phase 1 — Shell Chrome + Worker "My Day"*. Gates: `i18n:check`
+PASS (1069/1069 keys), `guards:check` PASS, shared + web typecheck exit 0, `web:build` exit 0 (25/25),
+`npm test` 31 suites / 320 tests PASS. **The live worker smoke test (375/768/1440 × RO/EN) could not be
+run here**: no PostgreSQL, no Docker, no running dev servers and no browser automation available.
+
+**Runtime smoke test + defect fix (2026-09-30, stack available locally):** the worker home was driven in
+real Chrome against the live stack (PostgreSQL :5433, NestJS :4000, `next dev` :3000, worker
+`daniel.georgescu@hiieko.local`, real PUBLISHED plan `837ef189-1832-474c-ae4e-510be703dd56` for
+2026-09-30 with real assignment + `PATCH /api/daily-plans/tasks/:id/progress` writes — no mock data) at
+**768 px** (56 px navy bar + `#374151` project band, `scrollWidth === 768`, project `<select>` not
+focused) and **1440 px** (rail + 72 px header, `CJ-003-T02` 45/60 buc *În lucru*, `CJ-003-T03` 0/40 m
+*Planificat*, `1 din 3 sarcini finalizate`): 0 uncaught exceptions, 0 failed requests, 1 pre-existing
+console error (`GET /favicon.ico` 404 — no `rel="icon"`). Evidence: `task-screenshots/phase1-*.png` +
+`phase1-capture-report.json` (harness and directory are gitignored). 375 px and the EN sweep are still
+**not run**. *(→ superseded the same day: the final sweep below executed 375 px in RO and EN plus 1440 px
+in EN, 67/67 checks PASS.)*
+
+**One functional defect was found by that smoke test and fixed:** ISSUE-061 — the *Cantitate raportată*
+row concatenated Decimal quantities (`0451 / 0601 buc`) instead of summing them (`46 / 61 buc`).
+Root cause, fix and re-verification: `ISSUES.md` → *ISSUE-061*, `VERIFICATION.md` →
+*Phase 1 defect fix — ISSUE-061*.
+
+**Phase 1 FINAL verification (2026-09-30) — the three missing scenarios, then the fixture removed:**
+the same real day was re-driven with `cdp-phase1-final.js` (real Chrome over CDP, worker
+`daniel.georgescu@hiieko.local`, project CJ-003) — **67/67 checks PASS**: 375 px RO 22/22,
+375 px EN 22/22, 1440 px EN 23/23. Every rendered value is asserted against the payload of
+`GET /api/daily-plans/my-tasks?date=2026-09-30` (the card's only source), not eyeballed: per-unit volumes
+`buc 46 / 61 buc` and `m 0 / 40 m` in **both languages**, per-task `CJ-003-T02 45/60 buc`
+(*În lucru* / *In progress*, `aria-valuenow 75`) and `CJ-003-T03 0/40 m` (*Planificat* / *Planned*,
+`aria-valuenow 0`), `33 %`, `1 din 3 sarcini finalizate` / `1 of 3 tasks completed`,
+`2 sarcini încă nefinalizate` / `2 tasks still open`, the completed `CJ-003-T04` absent from the open
+list, exactly one row per unit (never a cross-unit total), locale probes present in the active language
+and absent from the other (`html lang` `ro`/`en`, `septembrie 2026` vs `September 2026`). Layout/runtime
+at 375 px: no horizontal overflow (document `scrollWidth 375 = clientWidth 375`, `<main>` `360 = 360`;
+the day scrolls inside `<main>` — `1777/711` RO, `1809/711` EN), compact chrome = 101 px `<header>`
+(56 px navy `#111827` bar + 44 px `#374151` band), no rail; at 1440 px: rail visible, 72 px header, whole
+day fits (`928 = 928`), `<main>` `1184 = 1184`. Runtime: **0 JS exceptions, 0 failed requests**, the only
+HTTP error is the pre-existing `/favicon.ico` 404. Evidence: `task-screenshots/phase1-final-*.png` +
+`phase1-final-report.json` (gitignored).
+
+**Temporary Phase-1 fixture removed:** the review-only `DailyPlan` `837ef189-1832-474c-ae4e-510be703dd56`
+plus its 3 `DailyPlanTask` rows, the 2 `TaskAssignment` rows created for the review and the 6 audit rows
+describing exactly those objects were deleted in one transaction
+(`daily_plans` 10→9 on CJ-003, `daily_plan_tasks` 24→21, `task_assignments` 33→31, `audit_logs` 370→364).
+The seeded `tasks` rows (CJ-003's 8, incl. the 4 pre-existing fixtures of ISSUE-050) and the two
+2026-09-29 `TaskAssignment` leftovers from the earlier C3 verification are untouched; a post-cleanup probe
+confirms the worker's day is now empty (`my-tasks` → 0 plans / 0 tasks).
+
+**Gates on the frozen tree (after the cleanup):** `npm run typecheck`, `npm run web:typecheck`,
+`npm run web:build` (**25/25** static pages), `npm run i18n:check` (205 files, 1069/1069 keys),
+`npm run guards:check` (205 files, no G1/G2), `npm test` (**31 suites / 320 tests**) — all exit 0.
+`web:build` must run with no `next dev` holding `web/.next`: two attempts made while a dev server was
+compiling into the same directory failed (`Failed to collect page data for /avize`; then `Cannot find
+module for page: /_document` + 11 export errors) — the ISSUE-049 failure class, cleared by stopping the dev
+server, removing `web/.next` and rebuilding clean. One `npm run web:dev` was restarted afterwards
+(`/login` 200, `/` 200, worker login 200).
+
+Files: `web/src/components/shell/{ShellBrand,ProjectContextChip,ShellNotificationsButton,PageContainer,index}.tsx`,
+`web/src/components/worker/{WorkerTaskCard,WorkerMyDayTasks,WorkerProgressCard,WorkerActionsRequired,WorkerBlockerList,index}.tsx`,
+`web/src/components/{Header,Sidebar,AppShell,WorkerMyDay,WorkerDayHeader,WorkerAttendanceCard,WorkerBlockers,WorkerNotifications}.tsx`,
+`web/src/features/planning/{fieldWork,index}.ts`, `web/src/hooks/useWorkerShift.ts`,
+`web/src/app/{globals.css,layout.tsx}`, `web/tailwind.config.js`, `shared/src/translations.ts`.
 
 ## Next Actions
 

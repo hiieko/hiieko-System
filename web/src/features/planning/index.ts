@@ -47,12 +47,18 @@ export type { DaySummary } from './summary';
 export {
   taskSourceForRole,
   FIELD_TASK_ACTIVE_STATUSES,
+  FIELD_TASK_DONE_STATUSES,
+  MY_DAY_TASK_URGENCY,
   fieldTaskStatusI18nKey,
   fieldTaskStatusBadgeVariant,
+  isPlanTaskCompleted,
+  selectEditableMyPlanTaskIds,
   selectMyWorkTasks,
   selectPlannedTasks,
+  selectMyDayTasks,
+  summarizeMyDay,
 } from './fieldWork';
-export type { FieldTaskSource, FieldTaskRow } from './fieldWork';
+export type { FieldTaskSource, FieldTaskRow, MyDaySummary, MyDayVolume } from './fieldWork';
 
 // --- API ---
 export {

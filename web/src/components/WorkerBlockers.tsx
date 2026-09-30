@@ -98,7 +98,10 @@ export function WorkerBlockers({
               <h2 className="text-base font-bold text-slate-900">{t('nav.issues', locale)}</h2>
               {activeIssues.length > 0 && (
                 <p className="text-xs text-slate-400">
-                  {activeIssues.length} {locale === 'en' ? 'active blockers' : 'blocaje active'}
+                  {t('worker.blockers.active_count', locale).replace(
+                    '{count}',
+                    String(activeIssues.length),
+                  )}
                 </p>
               )}
             </div>
@@ -140,11 +143,11 @@ export function WorkerBlockers({
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <p className="text-sm font-medium text-emerald-700">
-                {locale === 'en' ? 'No blockers reported' : 'Nicio problemă raportată'}
+                {t('worker.blockers.none_title', locale)}
               </p>
             </div>
             <p className="text-xs text-slate-400">
-              {locale === 'en' ? 'Your site is running smoothly' : 'Șantierul tău funcționează fără probleme'}
+              {t('worker.blockers.none_desc', locale)}
             </p>
           </div>
         )}
@@ -182,7 +185,10 @@ export function WorkerBlockers({
             {t('worker.view_all', locale)}
             {hasMore && (
               <span className="text-xs text-slate-400">
-                ({activeIssues.length} {locale === 'en' ? 'total' : 'in total'})
+                ({t('worker.blockers.total', locale).replace(
+                  '{count}',
+                  String(activeIssues.length),
+                )})
               </span>
             )}
             <ArrowRight className="w-4 h-4" />

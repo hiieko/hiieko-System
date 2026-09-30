@@ -4,6 +4,10 @@
 > **Not a parallel roadmap or PM document.** This file records tokens, component contracts, layout rules, a11y rules, and the page-adoption tracker.
 >
 > Design reference: **OpenConstructionERP** (`datadrivenconstruction/OpenConstructionERP`) — pattern re-implementation only (see DEC-011).
+>
+> Fixed dark chrome (navy `#111827`), the `#F59E0B` accent and the `#49C89E` positive state are a
+> **product decision, not a theme** — Tailwind `darkMode` stays `off`, no `dark:` utility exists and there
+> is no user-facing theme switch (see **DEC-012**).
 
 ---
 
@@ -26,6 +30,33 @@
 | Critical | red | `critical` | `--hii-critical: #dc2626` | badge soft: `red-100/800` |
 | Info | blue | `info` | `--hii-info: #2563eb` | badge soft: `blue-100/800` |
 | Neutral | — | `neutral` | `--hii-text-muted` | badge soft: `slate-100/700` |
+
+### 1.1 Chrome / accent / positive — Phase 1 shell + Worker "My Day" (DEC-012)
+
+*Fixed branding, **not** a theme: `darkMode` stays `off`, no `dark:` utility exists, and these values are
+reached only through the semantic aliases below — never through a media query, a user toggle or a
+per-role/per-page variant. A re-tint is a token/class change plus a new DEC.*
+
+| Role | HIIEKO token | CSS variable | Value | Used for |
+|---|---|---|---|---|
+| Shell chrome | `chrome` | `--hii-chrome` | `#111827` navy | `≥ lg` rail, `< lg` 56 px top bar |
+| Chrome elevated | `chrome-elevated` | `--hii-chrome-elevated` | `#374151` | `< lg` 44 px project band |
+| Chrome hover | `chrome-hover` | `--hii-chrome-hover` | `#1F2937` | nav / user-menu / icon hover on chrome |
+| Chrome border | `chrome-line` | `--hii-chrome-border` | `#1F2937` | hairline between bar and band, rail edge |
+| Chrome text | `chrome-text` | `--hii-chrome-text` | `#F9FAFB` | primary text + icons on chrome |
+| Chrome text muted | `chrome-muted` | `--hii-chrome-text-muted` | `#9CA3AF` | secondary text + icons on chrome |
+| Accent (shell + My Day) | `accent` | `--hii-accent` | `#F59E0B` | active nav pill, primary/check-in action, `IN_PROGRESS` status bar, progress fill `< 100 %`, focus ring on chrome |
+| Accent hover | `accent-hover` | `--hii-accent-hover` | `#D97706` | hover + dark accent glyph/text on white (AA) |
+| Accent soft / tile | `accent-soft`, `accent-tile` | `--hii-accent-soft` `#FEF3C7`, `--hii-accent-tile` `#FEF9E3` | — | hover wash / icon tile behind an accent glyph |
+| Accent ink | `accent-ink` | `--hii-accent-text` | `#111827` | text on an accent-filled surface |
+| Positive | `positive` | `--hii-positive` | `#49C89E` | completed state on the new surfaces (`100 %` progress fill, `COMPLETED`/`VERIFIED` status bar) |
+| Positive soft | `positive-soft` | `--hii-positive-soft` | `#DAF8E9` | soft background of the completed state |
+| Content canvas | `hii-shell-canvas` | `--hii-shell-content-bg` | `#F3F4F6` | page background behind the shell chrome |
+
+**Green stays the content primary.** `hii-500`/`hii-600` and the semantic status palette
+(`--hii-success` `#16A34A`, `--hii-warning` `#D97706`, `--hii-critical` `#DC2626`, `--hii-info` `#2563EB`)
+keep their rows above and stay the colours of content surfaces and badges; the accent/positive pair is
+scoped to the shell chrome and the worker "My Day" surface (DEC-012 §3–§6).
 
 ### Fonts
 - **UI:** `Inter` (400/500/600/700/800/900) via Google Fonts import
@@ -76,6 +107,20 @@
 | `Tabs` | ✅ Stable | `@/components/ui` | |
 | `ConfirmDialog` | ✅ Stable | `@/components/ui` | `danger/warning/info`, `ConfirmDialogProps` exported |
 
+#### 2.1.1 Phase 1 shell + Worker "My Day" surfaces (2026-09-30)
+
+| Component | Status | Import path | Notes |
+|---|---|---|---|
+| `ShellBrand` | ✅ Added | `@/components/shell` | brand lockup, `rail` / `compact` sizes (the `< lg` bar and the drawer both link home) |
+| `ProjectContextChip` | ✅ Added | `@/components/shell` | `header` (white bar, `Current project` block) and `band` (`#374151` 44 px band) variants; real selected project only |
+| `ShellNotificationsButton` | ✅ Added | `@/components/shell` | real unread `total`, session-memoised so the two breakpoint mounts issue one request |
+| `PageContainer` | ✅ Added | `@/components/shell` | `.hii-page` wrapper used by every page shell |
+| `WorkerTaskCard` | ✅ Added | `@/components/worker` | 4 px status bar (accent / critical / positive, §4), real `actual/target unit`, per-task `%`, completion checkbox only when the backend write is accepted |
+| `WorkerMyDayTasks` | ✅ Added | `@/components/worker` | open plan tasks of the day; `{done}/{total} completed` subtitle |
+| `WorkerProgressCard` | ✅ Added | `@/components/worker` | `%` + `{done} of {total} tasks completed` + one *Reported quantity* row **per unit of measure** (never a cross-unit total) |
+| `WorkerActionsRequired` | ✅ Added | `@/components/worker` | real open/blocked counts + today's site daily report state; `no access` / unavailable states are fail-closed |
+| `WorkerBlockerList` | ✅ Added | `@/components/worker` | real open issues of the selected project (capped), plus role/unavailable states |
+
 ### 2.2 Planned (Phase D4)
 
 *To be populated as components are adopted into the UI library.*
@@ -86,15 +131,25 @@
 
 | Rule | Value |
 |---|---|
-| Sidebar desktop width | `w-64` (16rem) |
+| Sidebar desktop width | `w-[var(--hii-sidebar-width)]` = 16rem |
 | Sidebar collapsed width | (future: 4.5rem, icon-only) |
-| Sidebar background | `bg-slate-900` |
-| Header height | `h-16` (4rem) |
-| Header background | `bg-white`, `border-b border-slate-200`, `sticky top-0 z-30` |
+| Shell chrome background | `hii-shell-chrome` → `--hii-chrome` `#111827` navy (rail + `< lg` bar; DEC-012) |
+| Active nav item | accent pill (`bg-accent`, `text-accent-ink`) — brand green is content-only now |
+| Project band (`< lg`) | `hii-shell-band` → `--hii-chrome-elevated` `#374151`, 44 px (`h-11`), inside the same `<header>` as the 56 px (`h-14`) navy bar → 101 px measured |
+| Header height | `--hii-header-height` = 4.5rem (**72 px**), measured 72 px at 1440 px |
+| Header background | `bg-white`, `border-b border-slate-200`, `sticky top-0 z-header` (40) |
+| Content canvas | `hii-shell-canvas` → `--hii-shell-content-bg` `#F3F4F6` on body + shell + `<main>` |
 | Page container | `.hii-page` → `max-w-7xl mx-auto px-4/6/8 py-6/8` |
-| Mobile sidebar | `w-72`, overlay with backdrop, transform slide, `z-50` |
+| Mobile drawer | `w-72`, `z-drawer` (60), backdrop `z-backdrop` (50), transform slide; the **closed** drawer stays in the DOM off-canvas (`-translate-x-full`) — same behaviour as before Phase 1 |
 | Toast mount | AppShell (inside AuthGuard, above `<main>`) |
-| Skip link | `#main-content` target, visually hidden until focused |
+| Skip link | `#main-content` target, hidden until focused, `bg-accent text-accent-ink` on the chrome |
+
+**Phase 1 history for this table (2026-09-30):** before Phase 1 the rail was `bg-slate-900`, the header
+was `h-16` / `bg-white` / `z-30`, the mobile drawer was `z-50`, and the page background came from each
+page. Those values are superseded for the shell and the worker "My Day" surface by DEC-012 §2–§6; every
+other page keeps its own (unchanged) light content layout. Measured on the live stack at 375 / 768 /
+1440 px: `scrollWidth === innerWidth`, `<main>` `scrollWidth === clientWidth`, navy `#111827`,
+band `#374151` 44 px, 72 px header at `≥ lg`, rail visible only at `≥ lg`.
 
 ---
 
@@ -115,6 +170,13 @@
 | Severity | `LOW` | `neutral` | `--hii-text-muted` |
 | Severity | `MEDIUM` | `warning` | `--hii-warning` |
 | Severity | `HIGH` / `CRITICAL` | `danger` | `--hii-critical` |
+
+**Task statuses follow `TASK_STATUS_BADGE`** (`web/src/features/tasks/types.ts`): `PLANNED` → `neutral`,
+`READY` → `info`, `IN_PROGRESS` → `warning`, `BLOCKED` → `danger`, `COMPLETED`/`VERIFIED` → `success`,
+`CANCELLED` → `default`. On the Worker "My Day" task cards the same status additionally drives the 4 px
+left status bar: `IN_PROGRESS` → **accent** (`#F59E0B`), `BLOCKED` → **critical**, `COMPLETED`/`VERIFIED`
+→ **positive** (`#49C89E`), anything else → transparent (DEC-012 §3–§4). Badges keep the semantic
+variants above — the amber badge (`warning`) and the amber status bar (`accent`) are two tokens, not one.
 
 ---
 
@@ -177,7 +239,9 @@ ignored by design.
 
 - **Do not** import OpenConstructionERP source files into the tree (AGPL-3.0; see DEC-011).
 - **Do not** add Radix UI, Headless UI, or any component library dependency — dual-author from OCE patterns.
-- **Do not** enable Tailwind dark mode without explicit product decision (token layer would need dark palette).
+- **Do not** enable Tailwind dark mode or add any `dark:` utility/`prefers-color-scheme` rule: the navy chrome is **fixed branding, not a theme** (DEC-012). The token layer already has one palette; a second one needs a new decision.
+- **Do not** re-tint the shell per page, per role or per user, and do not swap the `#F59E0B` accent or the `#49C89E` positive state for another hue without a new DEC — every page's chrome must look identical.
+- **Do not** use the chrome accent/positive tokens as the content primary or as status badge colours: content surfaces keep `hii-500/600` and the semantic `success`/`warning`/`critical`/`info` tokens (DEC-012 §5).
 - **Do not** renumber roadmap phases; use `DESIGN_SYSTEM.md` for design-phase labeling, not `PROGRESS.md`.
 
 ---

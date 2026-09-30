@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ro" className="h-full">
-      <body className="h-full bg-slate-50 antialiased">
+      <body className="h-full hii-shell-canvas antialiased">
         <LocaleProviderClient>
           <AuthProvider>
             <AppShell>{children}</AppShell>

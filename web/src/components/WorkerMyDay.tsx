@@ -1,153 +1,146 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { t, useLocale } from '@solar/shared';
-import { useProject } from '../contexts/ProjectContext';
-import { apiClient } from '../lib/api-client';
-import { getMyPlanTasks, selectMyWorkTasks, todayLocalIso } from '../features/planning';
-import type { FieldTaskRow } from '../features/planning';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from './ui/Toast';
+import { PageContainer } from './shell';
 import { WorkerDayHeader } from './WorkerDayHeader';
 import { WorkerAttendanceCard } from './WorkerAttendanceCard';
-import { WorkerTodayTasks } from './WorkerTodayTasks';
-import { WorkerBlockers } from './WorkerBlockers';
-import { WorkerNotifications } from './WorkerNotifications';
+import { WorkerMyDayTasks } from './worker/WorkerMyDayTasks';
+import { WorkerProgressCard } from './worker/WorkerProgressCard';
+import { WorkerActionsRequired } from './worker/WorkerActionsRequired';
+import { WorkerBlockerList } from './worker/WorkerBlockerList';
+import {
+  getMyPlanTasks,
+  selectEditableMyPlanTaskIds,
+  selectMyDayTasks,
+  summarizeMyDay,
+  todayLocalIso,
+  updatePlanTaskProgress,
+} from '../features/planning';
+import type { DailyPlan, FieldTaskRow, MyDaySummary } from '../features/planning';
 
-interface NotifItem {
-  id: string;
-  title_ro: string;
-  title_en?: string | null;
-  message_ro: string;
-  message_en?: string | null;
-  is_read: boolean;
-  priority: string;
-  action_url?: string | null;
-  metadata?: Record<string, unknown> | null;
-  created_at: string;
-}
+const EMPTY_SUMMARY: MyDaySummary = {
+  totalTasks: 0,
+  completedTasks: 0,
+  openTasks: 0,
+  blockedTasks: 0,
+  percentComplete: 0,
+  volumes: [],
+};
 
+/**
+ * Worker "My Day" — the `/` home of the `worker` role.
+ *
+ * Layout: left column = attendance + today's progress, middle column = my tasks,
+ * right column = actions required + active blockers. On small screens the columns
+ * stack in the reading order attendance → actions → tasks (the day's status first,
+ * then what needs doing, then the work itself); the desktop grid places the task
+ * list in the centre with explicit `col-start`/`row-start` classes, so a single
+ * DOM order serves both breakpoints.
+ *
+ * Data: one source only — GET /api/daily-plans/my-tasks?date= (the backend-scoped
+ * set of the user's own published work). Progress writes go through the existing
+ * PATCH /api/daily-plans/tasks/:id/progress and are offered only for rows that
+ * `canEditPlanTaskProgress` accepted, then re-read from the API.
+ */
 export function WorkerMyDay() {
   const { locale } = useLocale();
-  const { selectedProject } = useProject();
+  const { user } = useAuth();
+  const { success, error: showError } = useToast();
 
-  // Tasks state — worker/technician source only (GET /api/daily-plans/my-tasks),
-  // so the panel no longer depends on the project selector.
-  const [tasks, setTasks] = useState<FieldTaskRow[] | null>(null);
+  const [plans, setPlans] = useState<DailyPlan[] | null>(null);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
+  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
 
-  // Issues/blockers state
-  const [issues, setIssues] = useState<any[] | null>(null);
-  const [issuesLoading, setIssuesLoading] = useState(false);
-  const [issuesError, setIssuesError] = useState<string | null>(null);
-
-  // Notifications state
-  const [notifications, setNotifications] = useState<NotifItem[] | null>(null);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const [notificationsError, setNotificationsError] = useState<string | null>(null);
-
-  // Load tasks
   const loadTasks = useCallback(async () => {
     setTasksLoading(true);
     setTasksError(null);
     try {
       const res = await getMyPlanTasks(todayLocalIso());
-      setTasks(selectMyWorkTasks(res.data));
+      setPlans(Array.isArray(res.data) ? res.data : []);
     } catch (err: unknown) {
       setTasksError(err instanceof Error ? err.message : t('worker.error_generic', locale));
-      setTasks(null);
+      setPlans(null);
     } finally {
       setTasksLoading(false);
     }
   }, [locale]);
 
-  // Load issues
-  const loadIssues = useCallback(async () => {
-    if (!selectedProject) { setIssues(null); return; }
-    setIssuesLoading(true);
-    setIssuesError(null);
-    try {
-      const res = await apiClient.getIssues({ projectId: selectedProject.id });
-      setIssues((res.data || []) as any[]);
-    } catch (err: unknown) {
-      setIssuesError(err instanceof Error ? err.message : t('worker.error_generic', locale));
-      setIssues(null);
-    } finally {
-      setIssuesLoading(false);
-    }
-  }, [selectedProject, locale]);
-
-  // Load notifications
-  const loadNotifications = useCallback(async () => {
-    setNotificationsLoading(true);
-    setNotificationsError(null);
-    try {
-      const res = await apiClient.getNotifications({ pageSize: 5, unreadOnly: true });
-      // Handle both direct array and paginated envelope { data: array }
-      let notifData: any[];
-      if (Array.isArray(res.data)) {
-        notifData = res.data;
-      } else if (res.data && Array.isArray((res.data as any).data)) {
-        notifData = (res.data as any).data;
-      } else {
-        notifData = [];
-      }
-      setNotifications(notifData as NotifItem[]);
-    } catch (err: unknown) {
-      setNotificationsError(err instanceof Error ? err.message : t('worker.error_generic', locale));
-      setNotifications(null);
-    } finally {
-      setNotificationsLoading(false);
-    }
-  }, [locale]);
-
-  // Mark notification as read
-  const handleMarkRead = useCallback(async (id: string) => {
-    try {
-      await apiClient.markNotificationRead(id);
-      setNotifications(prev => prev ? prev.map(n => n.id === id ? { ...n, is_read: true } : n) : prev);
-    } catch (err) {
-      console.error('Failed to mark notification as read:', err);
-    }
-  }, []);
-
-  // Initial load
   useEffect(() => {
-    loadTasks();
-    loadIssues();
-    loadNotifications();
-  }, [loadTasks, loadIssues, loadNotifications]);
+    void loadTasks();
+  }, [loadTasks]);
+
+  const rows: FieldTaskRow[] = useMemo(() => selectMyDayTasks(plans), [plans]);
+  const summary: MyDaySummary = useMemo(
+    () => (plans === null ? EMPTY_SUMMARY : summarizeMyDay(plans)),
+    [plans],
+  );
+  const editableTaskIds = useMemo(
+    () =>
+      selectEditableMyPlanTaskIds({
+        plans,
+        userRole: user?.role,
+        userId: user?.id,
+      }),
+    [plans, user?.role, user?.id],
+  );
+
+  const handleComplete = useCallback(
+    async (row: FieldTaskRow) => {
+      setPendingTaskId(row.planTaskId);
+      try {
+        await updatePlanTaskProgress(row.planTaskId, { completed: true });
+        success(t('planning.quantity_saved', locale));
+        await loadTasks();
+      } catch (err: unknown) {
+        showError(err instanceof Error ? err.message : t('planning.quantity_save_error', locale));
+      } finally {
+        setPendingTaskId(null);
+      }
+    },
+    [locale, loadTasks, success, showError],
+  );
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-4 pb-8">
+    <PageContainer className="pb-8">
       <WorkerDayHeader />
-      <WorkerAttendanceCard />
 
-      <div className="grid grid-cols-1 gap-4">
-        <WorkerTodayTasks
-          rows={tasks}
-          loading={tasksLoading}
-          error={tasksError}
-          onRetry={loadTasks}
-          maxItems={5}
-        />
-        <WorkerBlockers
-          issues={issues}
-          loading={issuesLoading}
-          error={issuesError}
-          onRetry={loadIssues}
-          maxItems={3}
-        />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+        {/* Left: attendance + today's progress */}
+        <div className="space-y-4 lg:col-span-3 lg:col-start-1 lg:row-start-1">
+          <WorkerAttendanceCard />
+          <WorkerProgressCard summary={summary} loading={tasksLoading && plans === null} />
+        </div>
+
+        {/* Right (mobile order: right after the day's status) */}
+        <div className="space-y-4 lg:col-span-3 lg:col-start-10 lg:row-start-1">
+          <WorkerActionsRequired
+            openTasks={summary.openTasks}
+            blockedTasks={summary.blockedTasks}
+            dayLoaded={plans !== null}
+            dayError={tasksError !== null}
+          />
+          <WorkerBlockerList maxItems={3} />
+        </div>
+
+        {/* Centre: the day's task list */}
+        <div className="lg:col-span-6 lg:col-start-4 lg:row-start-1">
+          <WorkerMyDayTasks
+            rows={tasksError ? [] : rows}
+            loading={tasksLoading}
+            error={tasksError}
+            onRetry={loadTasks}
+            editableTaskIds={editableTaskIds}
+            pendingTaskId={pendingTaskId}
+            onComplete={handleComplete}
+            completedCount={summary.completedTasks}
+            totalCount={summary.totalTasks}
+          />
+        </div>
       </div>
-
-      <WorkerNotifications
-        notifications={notifications}
-        loading={notificationsLoading}
-        error={notificationsError}
-        onRetry={loadNotifications}
-        onMarkRead={handleMarkRead}
-        maxItems={3}
-      />
-    </div>
+    </PageContainer>
   );
 }
-
