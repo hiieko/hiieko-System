@@ -1,9 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    // Scan the whole `src` tree. The previous three globs (pages/components/app) skipped
+    // `src/features/**`, `src/lib/**` and `src/contexts/**`, so responsive/arbitrary
+    // utilities used only inside those files were never emitted (e.g. `sm:grid`,
+    // `lg:grid-cols-5` and `sm:grid-cols-[…]` in `features/planning`) and those surfaces
+    // silently fell back to their mobile classes (ISSUE-063).
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {

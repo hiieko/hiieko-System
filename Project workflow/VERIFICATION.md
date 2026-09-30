@@ -1,5 +1,17 @@
 # Verification & Audit
 
+> **2026-09-30 — Tailwind `content` globs (ISSUE-063, UNCOMMITTED):** the globs skipped
+> `web/src/features/**`, so utilities used only there were never emitted. `content` is now
+> `./src/**/*.{js,ts,jsx,tsx,mdx}` (one line in `web/tailwind.config.js`). Served `layout.css`
+> 70,182 B / 704 class tokens -> **75,037 B / 776 tokens (+72, 0 removed)**; `grid-template-columns: 92px …`
+> and `repeat(5` appear for the first time; at 1440 px the `/planning` table goes from 1 grid track per row
+> + a `display: none` header + visible mobile labels to **6 tracks / `grid` header / 102 px rows / labels
+> hidden** (real Chrome over CDP). Regression: `cdp-planning-day.js` **231/231 PASS**, `/tasks`,
+> `/solar-configurator`, `/rapoarte/form` and worker **My Day** byte-identical before->after, 0 overflow,
+> 0 exceptions; gates typecheck / web:typecheck / i18n:check (1121/1121) / guards:check /
+> `npm test` (31 suites / 320 tests) / web:build (25/25) exit 0 and `git diff --stat backend/ prisma/
+> database/` is empty. Detail: *Tailwind `content` globs — feature-only utilities were never emitted*.
+
 Last Updated: 2026-09-30 (Daily Planning supervisor day surface `/planning` **VERIFIED (UNCOMMITTED)** — real stack (PostgreSQL :5433 + NestJS :4000 + `next dev` :3000), real Chrome over CDP, harness `cdp-planning-day.js`: **231/231 checks PASS** over 7 scenarios (supervisor RO/EN x 375/1440 + a plan-less day + worker RO/EN role isolation), every counter/row value asserted against `GET /api/daily-plans?projectId=&date=`, `GET /api/tasks?projectId=`, `GET /api/attendance/today`, `GET /api/inventory/stock` and `GET /api/issues`; 0 horizontal overflow, 0 JS exceptions, 0 failed requests, only the pre-existing `/favicon.ico` 404; gates typecheck / web:typecheck / web:build (25/25) / i18n:check (1121/1121) / guards:check / `npm test` (31 suites / 320 tests) all exit 0 and `git diff --stat backend/ prisma/ database/` is empty; ISSUE-062 opened for the pre-existing raw `plan_date` timestamp on the My-work card. Earlier: CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 - Daily Report finalization (DRAFT -> SUBMITTED) - **PASS**: browser gate `gate-p44-finalize.js` 25/25 with 0 console errors at 375px, backend 31 suites / 320 tests, db:verify 71/71, typecheck 0 errors (backend/shared/web); exactly one immutable revision, one stock consumption, one finalization audit row per report, idempotent replay, read-only UI after submit, Mobile one-call contract verified over HTTP only; ISSUE-051 opened for the Mobile daily-report screen; earlier the same day: ISSUE-048 daily report "Proposed Work" persistence PASS at 30 suites / 295 tests + db:verify 66/66, dev field-team data seeded as REAL PostgreSQL rows PASS, P4.3.1 daily report persistence PASS, Dev/LAN access PASS (ISSUE-047); ISSUE-049 OPEN: two concurrent next dev servers corrupt web/.next)
 
 Record what has actually been tested or verified. Never mark a check as passing unless it was actually performed.
@@ -2994,3 +3006,114 @@ holds `web/.next`. The dev server was stopped, `web/.next` removed, the gates ru
 
 **Known gap found during this verification:** the worker's My-work card (`MyWorkList`, untouched by this
 slice) still renders the raw `plan_date` timestamp — filed as **ISSUE-062** with the one-line fix.
+
+**Historical wording:** the `UNCOMMITTED` markers on the Daily Planning heading above (and on the
+`Last Updated:` line) record the state at the time of writing — the reviewed slice was committed as
+**`fe23a7d`** (`feat(web): daily planning supervisor day surface (DEC-013, ISSUE-062)`). The only
+uncommitted change in the tree is the Tailwind `content` glob fix recorded below.
+
+---
+
+## Tailwind `content` globs — feature-only utilities were never emitted (2026-09-30, UNCOMMITTED)
+
+**Scope:** one line of configuration — `web/tailwind.config.js` → `content: ['./src/**/*.{js,ts,jsx,tsx,mdx}']`
+(+ a comment). No component, page, translation, backend, Prisma, database, migration, endpoint or
+dependency change: `git diff --stat` = `web/tailwind.config.js | 8 +++++---` (1 file, +5/-3) and
+`git diff --stat backend/ prisma/ database/` is empty.
+
+**Root cause (measured, not inferred).** The `content` list named `./src/pages/**`, `./src/components/**`
+and `./src/app/**` only, so Tailwind never scanned `web/src/features/**` (the Daily Planning day surface,
+the solar configurator 2-D roof plan, the daily-report form, the task/issue modals …) — nor `src/lib/**`
+or `src/contexts/**`. Any utility used **only** in those trees was therefore absent from the served and
+built stylesheet and the markup silently rendered its base (mobile) classes.
+
+### Emission evidence — served dev stylesheet (`GET /_next/static/css/app/layout.css`)
+
+Literal occurrences (plain substring, immune to CSS escaping and selector grouping):
+
+| Probe | before | after |
+|---|---|---|
+| `sm:grid-cols-[92px` (`features/planning/components/PlanTaskTable.tsx:28`) | **0** | **1** |
+| `sm:hidden` (`PlanTaskTable.tsx:31`) | **0** | **1** |
+| `lg:grid-cols-5` (`PlanningCounters.tsx`, `PlanningDaySummary.tsx`) | **0** | **1** |
+| `lg:w-72` (`PlanTaskFilters.tsx`) | **0** | **1** |
+| `max-h-[70vh]` (`CreatePlanModal.tsx:195`) | **0** | **1** |
+| `min-w-[20px]` (`PlanningStatusChips.tsx:70`, `PlanTaskFilters.tsx:70`) | **0** | **1** |
+| `touch-none` (`features/solar-configurator/layout/RoofPlan2D.tsx`) | **0** | **1** |
+| `resize-y` (`features/issues/components/IssueCreateModal.tsx`) | **0** | **1** |
+| `grid-template-columns: 92px …` (arbitrary track list) | **0** | **1** |
+| `grid-template-columns: repeat(5` (5-column counter band) | **0** | **1** |
+| `sm:grid` (was already emitted from `app/**` usage) | 3 | 5 |
+
+| Totals | before | after |
+|---|---|---|
+| stylesheet bytes | 70,182 | 75,037 (**+4,855**) |
+| unique class tokens | 704 | 776 (**+72 additions, 0 removals**) |
+
+Attribution: every added responsive/arbitrary token that the design depends on resolves to
+`web/src/features/**` (files above); the rest of the +72 are ordinary base utilities from the same files
+(`sm:text-xl`, `max-h-[60vh]`, `bg-white/20`, `z-30`, …). The class-token set is a pure superset — no class
+that was emitted before disappeared (set difference: 72 added, 0 removed), so the widened glob cannot have
+broken a previously styled surface.
+
+**Production build (not a dev-only artifact):** `web/.next/static/css/40810f45b2efa038.css` (55,375 B)
+contains `sm\:grid-cols-\[92px`, `sm\:grid`, `sm\:hidden`, `lg\:grid-cols-5`, `lg\:w-72`,
+`max-h-\[70vh\]`, `min-w-\[20px\]`, `sm\:gap-3`, `sm\:items-center`, `sm\:justify-end`,
+`min-h-\[44px\]`, `text-\[11px\]`, `touch-none`, `resize-y`, `grid-template-columns: 92px …` and
+`grid-template-columns: repeat(5`.
+
+### Render evidence — 12 scenarios, real Chrome over CDP (`cdp-globfix-routes.js`)
+
+1440×1000 and 375×812, RO/EN, admin + worker, project CJ-003, day 2026-09-29 (the day that holds a
+PUBLISHED plan with 4 plan tasks); `/planning`, `/tasks`, `/solar-configurator`, `/rapoarte/form` and the
+worker My Day (`/`).
+
+| Scenario | before | after |
+|---|---|---|
+| `/planning` 1440 RO — table header (`role=columnheader` row) | `display: none`, 1 track | **`display: grid`, 6 tracks** |
+| `/planning` 1440 RO — task row grid | `1,1,1,1` tracks | **`6,6,6,6` tracks** |
+| `/planning` 1440 RO — row height | `348, 348, 349, 349 px` (stacked) | **`102 px` each** |
+| `/planning` 1440 RO — mobile per-cell labels | `display: block` on all 5 | **`display: none`** (desktop) |
+| `/planning` 1440 RO — counter band (`<ul>`) | 3 tracks, 2 rows (`396,396,396,473,473`) | **5 tracks, 1 row** |
+| `/planning` 1440 RO — task search input | 180 px | **227 px** (`sm:w-56`) |
+| `/planning` 375 RO | (baseline scenario ran without a project selected → no table measured) | 1 track, 338/318/319/319 px rows, labels visible, counters 2-up — the intended mobile layout |
+| `/planning` 1440 EN, empty day | (no table in the baseline run: the first scenario had no project `<select>` yet) | table measured `grid`/6 tracks as above — recorded as a state difference, not a CSS delta |
+| `/tasks` 1440/375, `/solar-configurator` 1440/375, `/rapoarte/form` 1440/375, worker My Day 1440/375 | — | **byte-identical evidence before→after** (e.g. My Day `bodyLen 829/829`, `<main>` 1184/1184) |
+
+Network/console for all 12 scenarios: **0 uncaught exceptions, 0 failed requests, 0 HTTP errors** other
+than the pre-existing `/favicon.ico` 404; **0 scenarios with horizontal document overflow** (`scrollWidth
+== clientWidth` at 375 and 1440). `/solar-configurator` keeps its pre-existing inner `<main>` 370/360 at
+375 px (unchanged before→after — not introduced here). Screenshots: `task-screenshots/globfix-*.png`
+(gitignored); the pre-fix planning set is preserved as `%TEMP%\hii-glob-fix\planning-shots-before\*.png`.
+
+### Harness change forced by this run (gitignored tooling)
+
+The first baseline attempt of `cdp-globfix-routes.js` died on `/rapoarte/form`: the route's first dev
+compile took 22.5 s and the server then answered 200 with HTML that referenced already-replaced dev chunk
+names (the ISSUE-049 class of stale-chunk failure), so the 3× `shell header` wait exhausted and the run
+aborted before writing its report. The harness now treats the shell-header/body-copy waits as advisory
+(retried once for a fully blank document, never fatal), isolates each scenario in a `try`/`catch` and
+records `diagnostics` (`hasHeader`, `devOverlay`, `bodyLength`, `bodyHead`) per scenario. No application
+file was involved; the route answers 200 with a shell header and 0 exceptions in every later run.
+
+### Regression + gates on the changed tree
+
+| Check | Result |
+|---|---|
+| `cdp-planning-day.js` (7 scenarios, 231 assertions) | **231/231 PASS**, 0 exceptions, 0 failed requests, only the pre-existing favicon 404 — identical to the pre-fix baseline |
+| `npm run web:typecheck` | exit 0, 0 errors |
+| `npm run i18n:check` | **PASS** — 213 files, 1121 key definitions / 1121 unique keys |
+| `npm run guards:check` | **PASS** — 213 files scanned, no new failure (unchanged report-only rows) |
+| `npm test` | 31 suites / **320 tests** passed |
+| `npm run web:build` | exit 0, **25/25** pages |
+| `git diff --stat backend/ prisma/ database/` | **empty** |
+
+**Dev-server note (ISSUE-049 class):** the production build was run with `next dev` stopped (`Stop-HIIEKO.ps1`)
+and exactly one dev server restarted afterwards (`.hiiEko/run/web.log`: `Ready in 11.2s`, `/planning` 200).
+
+**Not re-runnable in this pass (data precondition, not a regression):** `cdp-phase1-final.js` pins *today*
+and its first assertion waits for the worker's 2026-09-29 task row, while
+`GET /api/daily-plans/my-tasks?date=2026-09-30` returns `planCount 0 / taskCount 0` (the seeded PUBLISHED
+plan is for 2026-09-29), so the harness aborts on a row that cannot exist today. My Day parity for this
+change was therefore established with the route harness (byte-identical evidence, header present, 0
+exceptions) instead of by re-running that harness; its Phase-1 PASS result stands as recorded above.

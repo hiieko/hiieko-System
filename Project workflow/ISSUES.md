@@ -8,6 +8,16 @@ Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now 
 > slice: ISSUE-041 fail-closed progress editing, the worker/technician data scope and the plan lifecycle
 > were re-verified unchanged on the live stack.
 
+> *(Written while that slice was uncommitted: it was committed on 2026-09-30 as checkpoint `fe23a7d`; the
+> only uncommitted change in the tree is the Tailwind `content` glob fix below.)*
+
+> **2026-09-30 (Tailwind `content` globs, UNCOMMITTED):** **ISSUE-063 opened and resolved in the same
+> pass** — the globs never scanned `web/src/features/**`, so responsive/arbitrary utilities used only
+> there were absent from the served and built CSS and the desktop `/planning` surface rendered its mobile
+> classes at 1440 px. One line in `web/tailwind.config.js`
+> (`content: ['./src/**/*.{js,ts,jsx,tsx,mdx}']`) closes it; nothing was re-opened and no other issue
+> changed state.
+
 ## Status Legend
 - `OPEN`
 - `IN PROGRESS`
@@ -16,6 +26,52 @@ Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now 
 - `WONT FIX`
 
 # Open Issues
+
+## ISSUE-063 — Tailwind `content` globs skipped `web/src/features/**`, so feature-only responsive utilities were never emitted (RESOLVED 2026-09-30 — fix applied and verified, uncommitted)
+**Status:** ✅ `RESOLVED` (2026-09-30 — one line in `web/tailwind.config.js`; **uncommitted**, awaiting review)
+
+### Description
+`web/tailwind.config.js` listed only `./src/pages/**`, `./src/components/**` and `./src/app/**` under
+`content`, so Tailwind never scanned `web/src/features/**` (the Daily Planning day surface, the solar
+configurator 2-D roof plan, the daily-report form, the task and issue modals …), nor `src/lib/**` or
+`src/contexts/**`. Every utility used **only** inside those trees was missing from the served and built
+stylesheet, so the affected markup silently rendered its base (mobile) classes.
+
+Measured on the live stack before the fix (`GET /_next/static/css/app/layout.css`, 70,182 B, 704 class
+tokens) — literal occurrences: `sm:grid-cols-[92px` **0**, `sm:hidden` **0**, `lg:grid-cols-5` **0**,
+`lg:w-72` **0**, `max-h-[70vh]` **0**, `min-w-[20px]` **0**, `touch-none` **0**, `resize-y` **0**,
+`grid-template-columns: 92px …` **0**, `grid-template-columns: repeat(5` **0** — while
+`features/planning/components/PlanTaskTable.tsx:28,31` depends on the first four. Consequence at 1440 px:
+each `/planning` task row was a **1-track grid** (`grid grid-cols-1` with the `sm:grid-cols-[…]` override
+absent), the table header stayed **`display: none`** (`hidden`, no `sm:grid`), the mobile per-cell labels
+stayed `display: block` and the counter band wrapped 3 + 2 — i.e. the approved desktop design rendered the
+375 px layout.
+
+### Impact
+Visual/UX only, but it affected every route that renders a feature component, most visibly the verified
+Daily Planning desktop surface. No data, permission or API effect (Tailwind only emits CSS).
+
+### Resolution — FIXED 2026-09-30 (one line, `web/tailwind.config.js`)
+`content: ['./src/**/*.{js,ts,jsx,tsx,mdx}']` (plus a comment recording why the three folder globs were
+wrong). After a dev-server restart the same capture reports 75,037 B / **776** class tokens
+(**+72 additions, 0 removals** — a pure superset), all eight feature-only utilities above present
+(`0` → `1` each), `grid-template-columns: 92px …` and `repeat(5` present for the first time, and the same
+classes are in the production bundle (`web/.next/static/css/40810f45b2efa038.css`, 55,375 B).
+
+### Verification
+Real stack + real Chrome over CDP, 12 route scenarios before→after: `/planning` 1440 RO goes from 1 track /
+`display:none` header / `block` labels / 348 px rows / 3-up counters to **6 tracks / `grid` header / labels
+hidden / 102 px rows / 5-up counters**, while 375 px stays mobile and `/tasks`, `/solar-configurator`,
+`/rapoarte/form` and the worker **My Day** are byte-identical before→after; `cdp-planning-day.js`
+**231/231 PASS**; 0 horizontal overflow, 0 JS exceptions, 0 failed requests. Gates: `npm run web:typecheck`,
+`npm run web:build` (25/25), `npm run i18n:check` (1121/1121), `npm run guards:check`, `npm test`
+(31 suites / 320 tests) — all exit 0; `git diff --stat backend/ prisma/ database/` empty.
+
+### Evidence
+`VERIFICATION.md` → *Tailwind `content` globs — feature-only utilities were never emitted*;
+`%TEMP%\hii-glob-fix\` (`layout-{before,after}.css`, `classes-{before,after}.txt`, `css-*.json`,
+`routes-*.json`, run logs) and `task-screenshots/globfix-*.png` (gitignored); the pre-fix planning
+screenshots are preserved as `%TEMP%\hii-glob-fix\planning-shots-before\*.png`.
 
 ## ISSUE-062 — My-work card prints the raw `plan_date` timestamp instead of a localized date
 **Status:** 🟡 `OPEN` (opened 2026-09-30 during the Daily Planning day-surface verification; **pre-existing**, not a regression of that slice)

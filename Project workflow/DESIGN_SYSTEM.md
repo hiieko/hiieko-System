@@ -260,6 +260,11 @@ ignored by design.
 - **Do not** re-tint the shell per page, per role or per user, and do not swap the `#F59E0B` accent or the `#49C89E` positive state for another hue without a new DEC — every page's chrome must look identical.
 - **Do not** use the chrome accent/positive tokens as the content primary or as status badge colours: content surfaces keep `hii-500/600` and the semantic `success`/`warning`/`critical`/`info` tokens (DEC-012 §5).
 - **Do not** renumber roadmap phases; use `DESIGN_SYSTEM.md` for design-phase labeling, not `PROGRESS.md`.
+- **Do not** narrow the Tailwind `content` globs back to a per-folder list (`pages` / `components` /
+  `app`): a route's classes do **not** all live beside the route. Feature UI lives in
+  `web/src/features/**` (and `src/lib/**`, `src/contexts/**`), and a utility used only there is dropped
+  from the emitted stylesheet, so the surface silently renders its base (mobile) classes at `sm`/`lg`
+  (ISSUE-063, 2026-09-30). The contract is `./src/**/*.{js,ts,jsx,tsx,mdx}`.
 
 ---
 
@@ -290,6 +295,13 @@ The `/planning` row was re-measured 2026-09-30 across the route's implementation
 (`web/src/app/planning/page.tsx` + `web/src/features/planning/**`, .ts and .tsx); the earlier `7 / 0` row
 counted the page file alone, so the two numbers are not directly comparable. The day-surface slice
 (DEC-013) introduced no new token and no new dependency.
+
+**Emitted-utility contract (fixed 2026-09-30, ISSUE-063).** These rows are measured from source, so they
+were unaffected by it — but no design check is trustworthy while the stylesheet never scanned the feature
+tree. Until that date `web/tailwind.config.js` listed `./src/pages/**`, `./src/components/**` and
+`./src/app/**` only, so `/planning` rendered its **mobile** classes at 1440 px (1 grid track per row, a
+`display: none` table header, visible mobile per-cell labels, a 3 + 2 counter band). `content` is now
+`./src/**/*.{js,ts,jsx,tsx,mdx}`; the served stylesheet grew by 72 class tokens with **0 removals**.
 
 ---
 
