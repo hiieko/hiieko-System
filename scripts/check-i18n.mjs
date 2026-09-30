@@ -12,6 +12,8 @@
  *   4. a lossy '?' that replaced a Romanian diacritic inside UI text
  *   5. a translation call with a locale literal outside the supported set
  *   6. statically referenced translation keys that are not defined
+ *   7. template-built tutorial keys (shared/src/tutorials.ts) that the translation
+ *      table does not define - they would render as a raw key in the UI
  *
  * REPORT ONLY - printed, never fails CI:
  *   - orphan (defined but never statically referenced) keys
@@ -63,6 +65,8 @@ const FAILURE_ORDER = [
   "lossy '?' replacing a Romanian diacritic",
   'translation call with an unsupported locale',
   'referenced but undefined translation keys',
+  'template-built tutorial keys missing from the translation table',
+  'template-built translation keys not validated',
 ];
 const REPORT_ORDER = [
   'orphan keys - defined but never referenced',
@@ -299,7 +303,53 @@ for (const { literal, display, lineNumber } of undefinedRefCandidates) {
   }
 }
 
-// --- 7. unsupported locale literals ----------------------------------------
+// --- 7. template-built tutorial keys ----------------------------------------
+// shared/src/tutorials.ts builds its keys from a per-section prefix
+// (K('planning') followed by '.title'), so the literal-key rules above are blind
+// to them and a section whose copy is missing renders as a raw key through
+// PageTutorial/PageIntro. Resolve those templates into concrete keys here: every
+// generated key must be defined in the table and counts as referenced (the UI
+// renders it via getTutorial). TUTORIAL_KEY_PREFIX mirrors the K() helper in
+// tutorials.ts - if that helper ever changes this rule fails loudly, never silently.
+const TUTORIALS_FILE = 'shared/src/tutorials.ts';
+const TUTORIAL_KEY_PREFIX = 'tutorial.';
+/** K('planning') + '.title' inside a template literal -> one concrete key. */
+const TEMPLATE_KEY = /K\((['"])([A-Za-z-]+)\1\)\}((?:\.[A-Za-z0-9_]+)+)/g;
+
+let templateKeysResolved = 0;
+try {
+  const tutorialsDisplay = TUTORIALS_FILE;
+  const tutorialsText = readFileSync(join(REPO_ROOT, TUTORIALS_FILE), 'utf8');
+  for (const line of tutorialsText.split(/\r?\n/)) {
+    if (isCommentLine(line.trim())) continue;
+    for (const match of line.matchAll(TEMPLATE_KEY)) {
+      const key = TUTORIAL_KEY_PREFIX + match[2] + match[3];
+      if (!KEY_SHAPE.test(key)) continue;
+      templateKeysResolved += 1;
+      referencedKeys.add(key);
+      if (!uniqueKeys.has(key)) {
+        addFailure(
+          'template-built tutorial keys missing from the translation table',
+          tutorialsDisplay + '  ' + key,
+        );
+      }
+    }
+  }
+} catch (error) {
+  const reason = TUTORIALS_FILE + '  could not be read (' + error.message + ')';
+  addFailure(
+    'template-built translation keys not validated',
+    reason + ' - refusing to pass while checking nothing',
+  );
+}
+if (templateKeysResolved === 0) {
+  addFailure(
+    'template-built translation keys not validated',
+    TUTORIALS_FILE + '  no key template resolved - refusing to pass while checking nothing',
+  );
+}
+
+// --- 8. unsupported locale literals ----------------------------------------
 for (const row of badLocaleLiterals) addFailure('translation call with an unsupported locale', row);
 
 // --- reports ----------------------------------------------------------------

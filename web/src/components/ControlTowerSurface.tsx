@@ -167,13 +167,15 @@ export function ControlTowerSurface() {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        {/* Keeps the 375 px main container free of horizontal overflow: the native
+            select cannot shrink below its option text, so the filters stack below sm */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           {/* Project selector filter */}
           <div className="relative">
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              className="w-full sm:w-auto bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             >
               <option value="">Toate Șantierele Active</option>
               {overview?.projects.activeProjectsList.map((p) => (

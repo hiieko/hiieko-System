@@ -683,7 +683,7 @@ Close 1 and 2 in the C5/UX-R1B pass (same file sets that need their own refactor
 ---
 
 ## ISSUE-057 — `/planning`, `/teams`, `/workforce` render raw `tutorial.*` translation keys (RO + EN)
-**Status:** 🔍 `OPEN` (found 2026-09-29 by the UX-R1A C5 browser sweep)
+**Status:** ✅ `FIXED` (2026-09-30, R1B.1 — 21 keys added, fail-first checker rule, verified in a real browser in RO + EN)
 
 ### Description
 `shared/src/tutorials.ts` defines the sections `planning`, `teams` and `workforce` with keys built from a
@@ -711,16 +711,40 @@ every tutorial key resolves in both locales) is not executed by any script.
 - Dormant test: `shared/package.json` has no `test` script and nothing runs `node --test`; a plain
   `node --test shared/src/tutorials.test.ts` fails with `ERR_MODULE_NOT_FOUND` (extensionless import).
 
-### Required Action
-1. Add the `tutorial.planning.*`, `tutorial.teams.*` and `tutorial.workforce.*` keys (RO + EN) to
-   `shared/src/translations.ts` — R1B copy work (~20 keys per section).
-2. Decide how to run `shared/src/*.test.ts` (loader or extension-complete imports) and wire it to CI so
-   this class of defect cannot recur silently.
+### Fix (2026-09-30, R1B.1)
+1. **DONE — copy.** 21 keys added to `shared/src/translations.ts`, 7 per section
+   (`title`, `short`, `purpose`, `step1`, `step2` + 2 `role_*` keys used by `TUTORIALS.planning` /
+   `.teams` / `.workforce`), inserted directly before the `// --- Daily Report Form (P4.3) ---` marker.
+   The table grew **988 → 1009** key definitions.
+2. **DONE — recurrence guard (fail-first).** `scripts/check-i18n.mjs` (+51/−1) now resolves the
+   template-built keys into concrete keys and fails when one is undefined: `FAILURE_ORDER` gains
+   *template-built tutorial keys missing from the translation table* and *template-built translation
+   keys not validated*; the check also fails loudly when `shared/src/tutorials.ts` cannot be read or the
+   template resolution matches 0 keys (a rule that silently no-ops is worse than no rule).
+3. **STILL OPEN — test wiring.** Deciding how to execute `shared/src/*.test.ts` (loader or
+   extension-complete imports) and wiring it to CI is unchanged; the new checker rule covers the same
+   defect class for the three tutorial sections.
+
+### Verification
+- `npm run i18n:check` — **before**: `FAIL (194 source files, 988 key definitions, 988 unique keys)`
+  listing exactly the 21 expected keys; **after**: `PASS (194 source files, 1009 key definitions,
+  1009 unique keys)`. `node --check scripts/check-i18n.mjs` exit 0.
+- `guards:check` PASS; `typecheck` exit 0 (shared + web + Mobile + backend); `web:typecheck` exit 0;
+  `web:build` exit 0; `npm test` 31 suites / 320 tests PASS.
+- Real browser (headless Chrome `Chrome/154.0.8037.58` over CDP, real login form + real API + real DB),
+  30 records = `/`, `/control-tower`, `/planning`, `/teams`, `/workforce` × {375, 768, 1440} px ×
+  {RO, EN}: **0** raw `tutorial.*` occurrences in `document.body.innerText` **and 0** in any
+  `aria-label`; the three cards render real copy (`Plan Zilnic`, `Echipe`, `Forță de Muncă`,
+  `Planificarea zilei de lucru pentru fiecare echipă.`).
+- Role wording was fact-checked against the code before it was written: `foreman` / `team_leader` create
+  the plan draft and complete a published plan but do **not** publish (`site_manager` only), and they
+  work in both the Plans view and My work — so the notes say that instead of claiming a personal-only
+  task list (the first RO draft did and was replaced).
 
 ---
 
 ## ISSUE-058 — 375 px horizontal overflow inside `<main>` on the Control Tower surfaces
-**Status:** 🔍 `OPEN` (found 2026-09-29 by the UX-R1A C5 browser sweep)
+**Status:** ✅ `FIXED` (2026-09-30, R1B.1 — measured cause identified with a read-only CDP probe, 2-line local fix, `main 429/375` → `375/375`)
 
 ### Description
 At 375 px, `admin` gets `main.scrollWidth = 429` against `main.clientWidth = 375` (54 px wider than the
@@ -738,10 +762,62 @@ other three swept roles show no overflow at 375 px (0 records).
 - Suspect: `web/src/components/ControlTowerRedFlagsCard.tsx` — table cells carry `whitespace-nowrap`
   (lines 156-192), which sets a min-content width wider than 375 px.
 
+### Measured cause (read-only CDP probe, 2026-09-30)
+The C5 suspect was **not** the cause. `ControlTowerRedFlagsCard`'s `whitespace-nowrap` table lives inside
+`<div className="overflow-x-auto">`, i.e. it clips: measured `table` = 972 px wide with its right edge
+614 px past the container, and `main.scrollWidth` stays 375 px — the same pattern appears on `/workforce`
+(186 flagged descendants, `main` still `375/375`). The measured culprit is the **global filter row** of
+`ControlTowerSurface` (`<div className="flex items-center space-x-3">`): at 375 px its box is 301 px
+while its content is 392 px (`flex-wrap: nowrap`, no clipping ancestor), the native `<select>` cannot
+shrink below its longest `<option>` text, and the rightmost child — the `Actualizează` refresh `button`
+(114 px wide) — ends at x = **429**, i.e. exactly `main.scrollWidth = 429` against
+`main.clientWidth = 375`. The 54 px propagates up unchanged through
+`card (412) → div.space-y-6.pb-12 (413) → div.hii-page (429) → main (429)`.
+
+### Fix (2026-09-30, R1B.1 — local and measured)
+`web/src/components/ControlTowerSurface.tsx`, 2 lines: the filter row stacks below `sm`
+(`flex items-center space-x-3` → `flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3`) and the
+`<select>` fills its container (`w-full sm:w-auto`). No blanket `overflow-x-hidden`, no shell CSS
+change, no other part of the component touched, and ≥ 640 px rendering unchanged.
+
+### Verification
+- Same probe, same server, same account (admin, RO, 375 px): `/` and `/control-tower`
+  `main 429/375` with `rectSpill = 2` / `selfScroll = 4` → **`main 375/375` with
+  `rectSpill = 0` / `selfScroll = 0`**.
+- Full post-fix sweep (30 records): `main.scrollWidth === main.clientWidth` on **30/30**
+  (1440 px: `1184/1184`, the shell sidebar aside) and `documentElement.scrollWidth === innerWidth` on
+  30/30, in RO and EN.
+- The intentionally scrollable inner tables (`overflow-x-auto`: workforce 277 px, red flags 254 px) stay
+  clipped inside their wrappers and no longer propagate to `main`.
+
+---
+
+## ISSUE-059 — `PageTutorial` renders Romanian copy in the EN locale (component-level locale default)
+**Status:** 🔍 `OPEN` (found 2026-09-30 by the R1B.1 browser sweep — not an R1B.1 regression)
+
+### Description
+`web/src/components/PageTutorial.tsx` declares `locale?: 'ro' | 'en'` with a `'ro'` default
+(`export function PageTutorial({ sectionId, locale = 'ro', role })`, line 25) and resolves every string
+through `t(key, locale)` (lines 37, 41, 49, 52, 58, 60, 65, 69). **None of the 16 call sites passes the
+prop** (measured: 16 × `<PageTutorial sectionId="…" />`, 0 × with `locale`), while the pages themselves
+already use `useLocale()`. The card is therefore always Romanian, even when
+`document.documentElement.lang === 'en'` and the rest of the page is English.
+
+### Impact
+Localisation defect on all 16 introduction cards (a missing EN key would additionally hide behind the RO
+default). No layout, data or authorization impact.
+
+### Evidence (measured 2026-09-30, real browser)
+- The 15 EN records of the R1B.1 sweep: `document.documentElement.lang === 'en'` and 0 raw `tutorial.*`
+  keys, yet `/planning` EN renders `PLAN ZILNIC … Planificarea zilei de lucru pentru fiecare echipă.`
+  with `aria-label="Plan Zilnic"` instead of `Daily Plan` / `Planning the working day for each team.`
+- Code: `PageTutorial.tsx` line 25 + the 16 call sites, 0 of which pass `locale`.
+
 ### Required Action
-Make the Control Tower red-flags table responsive (horizontal scroll wrapper or a stacked mobile layout)
-in the phase that owns Control Tower layout work — the same phase as the ISSUE-056 `ControlTowerSurface`
-copy cleanup. Not a C4/C5 regression.
+Thread the active locale into every `PageTutorial` call site (`useLocale()` from `shared/src/i18n.ts`).
+16 call sites across the app → belongs to the R1B copy pass, deliberately **not** part of R1B.1 (which
+was scoped to the missing keys and the 375 px overflow only). Add a render/checker assertion so a card
+can never silently regress to the RO default.
 
 ---
 

@@ -4,6 +4,37 @@
 
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
+## R1B.1 DONE — ISSUE-057 + ISSUE-058 fixed, UNCOMMITTED (2026-09-30)
+
+**Working tree:** exactly 3 tracked modifications, **no commit and no push** —
+`scripts/check-i18n.mjs` (+51/−1), `shared/src/translations.ts` (+22),
+`web/src/components/ControlTowerSurface.tsx` (+6/−2). The untracked items (`.hiiEko/`, `BonFis/`,
+`Start-HIIEKO.ps1`, `Stop-HIIEKO.ps1`, `database/archive/pre_migration_backup_20260929_093849.sql`)
+predate R1B.1.
+
+**ISSUE-057 (FIXED)** — the 21 `tutorial.{planning,teams,workforce}.*` keys now exist in
+`shared/src/translations.ts` (table 988 → 1009 keys) and `scripts/check-i18n.mjs` resolves the
+template-built tutorial keys so the defect class cannot regress silently. FAIL-first evidence: the
+checker listed exactly those 21 keys *before* the copy fix; after it the check is PASS.
+
+**ISSUE-058 (FIXED, measured)** — the C5 suspect was wrong: the red-flags table lives inside
+`overflow-x-auto` and clips. The real cause was the `ControlTowerSurface` global filter row
+(`flex items-center space-x-3`, `flex-wrap: nowrap`, 301 px box / 392 px content) whose
+`Actualizează` button ended at x = 429 = `main.scrollWidth`. Fixed with 2 class changes (stack below
+`sm`, `w-full sm:w-auto` select): `main 429/375` → `375/375`, ≥ 640 px unchanged.
+
+**Verified:** `i18n:check` PASS (1009/1009), `guards:check` PASS, `typecheck` exit 0 (4 workspaces),
+`web:typecheck` exit 0, `web:build` exit 0, `npm test` 31 suites / 320 tests, root `db:verify` 41/41
+(with `DATABASE_URL` from `backend/.env`), `db:verify --workspace=backend` 71/71, browser sweep
+30/30 clean (5 routes × 375/768/1440 × RO/EN, 0 raw keys in text + aria). Full detail:
+`VERIFICATION.md` → *R1B.1*.
+
+**Opened: ISSUE-059** — `PageTutorial` defaults `locale` to `'ro'` and 0 of its 16 call sites passes
+it, so every introduction card stays Romanian even in EN. Deliberately not fixed here (16 call sites).
+
+**Next:** commit the 3 files once approved, then continue the R1B copy pass (ISSUE-059 first) and the
+visual redesign.
+
 ## Current Status
 **Status:** STABLE - **SUPABASE-FREE REPOSITORY** (Web + Mobile -> NestJS -> Prisma -> PostgreSQL 18 is the only runtime path; Solar Configurator INTEGRATED; P4.4 daily-report finalization verified end-to-end; 31 suites / 320 tests, db:verify 71/71 (`--workspace=backend` → `backend/scripts/db-verify.ts`; the root `npm run db:verify` runs `database/scripts/verify_migration.ts` = 41/41 - two scripts, both PASS: `VERIFICATION.md` → *db:verify denominators*), all quality gates PASS)
 

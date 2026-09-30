@@ -281,23 +281,47 @@ See [ISSUES.md](ISSUES.md) for the complete list with resolution details.
 
 ## Verification Gates
 
-All quality gates verified as of 2026-09-25:
+All quality gates verified as of 2026-09-30 (R1B.1):
 
 | Gate | Result |
 |------|--------|
-| Backend tests (25 suites / 202 tests) | ✅ PASS |
-| db:verify (60/60) | ✅ PASS |
+| Backend tests (31 suites / 320 tests) | ✅ PASS |
+| db:verify — root `database/scripts/verify_migration.ts` (41/41) | ✅ PASS (with `DATABASE_URL` from `backend/.env`) |
+| db:verify — `--workspace=backend` `backend/scripts/db-verify.ts` (71/71) | ✅ PASS |
 | Backend typecheck | ✅ PASS |
 | Shared typecheck | ✅ PASS |
 | Web typecheck | ✅ PASS |
+| Mobile typecheck | ✅ PASS |
 | Backend build | ✅ PASS |
-| Web build (22 routes) | ✅ PASS |
+| Web build (`web:build`, all routes emitted) | ✅ PASS |
+| `i18n:check` (194 source files, 1009/1009 keys) | ✅ PASS |
+| `guards:check` (194 source files) | ✅ PASS |
 | Prisma validate | ✅ PASS |
 | PostgreSQL 18 connection | ✅ VERIFIED |
 
 ---
 
 ## Recent Work
+
+### 2026-09-30 - R1B.1: ISSUE-057 tutorial translation keys + ISSUE-058 375 px Control Tower overflow (GREEN, UNCOMMITTED)
+
+Two scoped fixes: the 21 missing `tutorial.*` keys the C5 sweep flagged as **F1**, and the 54 px
+`<main>` overflow the same sweep flagged as **F2**. No backend / Prisma / database / CI /
+route-architecture / task-source change, no `WorkerAttendanceView` change, no redesign, no new
+dependency. Three tracked files touched, **nothing committed**.
+
+| Change | Detail |
+|--------|--------|
+| **ISSUE-057 FIXED** | `shared/src/translations.ts` +21 keys (`planning`, `teams`, `workforce` × `title`, `short`, `purpose`, `step1`, `step2`, 2 `role_*`); the table goes **988 → 1009** keys. Role notes fact-checked against the code first: `foreman`/`team_leader` create + complete a plan and work in both the Plans view and My work, **`site_manager` publishes** |
+| **Recurrence guard (fail-first, landed first)** | `scripts/check-i18n.mjs` +51/−1 resolves the template-built tutorial keys (`K('planning') + '.title'`) into concrete keys and fails on an undefined one; two new `FAILURE_ORDER` categories; loud failure if `tutorials.ts` is unreadable or 0 keys resolve. Before the copy fix it failed listing exactly the 21 keys; after: PASS |
+| **ISSUE-058 FIXED (measured)** | The C5 suspect was wrong — the red-flags `whitespace-nowrap` table sits inside `overflow-x-auto` and clips. The real cause is the `ControlTowerSurface` global filter row (`flex items-center space-x-3`): at 375 px its box is 301 px but its content 392 px, `flex-wrap: nowrap`, and the `Actualizează` button ends at x = 429 = `main.scrollWidth`. Fix = 2 class changes (stack below `sm`, `w-full sm:w-auto` select). `main 429/375` → **`375/375`**; ≥ 640 px unchanged |
+| **Browser sweep (after)** | **30 records** = `/`, `/control-tower`, `/planning`, `/teams`, `/workforce` × {375, 768, 1440} px × {RO, EN}, real Chrome over CDP, real login + API + DB: `main.scrollWidth === clientWidth` **30/30**, `documentElement.scrollWidth === innerWidth` **30/30**, **0** raw `tutorial.*` keys in text **and** in aria-labels, cards render real copy |
+| **Gates** | `i18n:check` **PASS** (194 files, 1009/1009 keys), `guards:check` **PASS**, `typecheck` exit 0 (4 workspaces), `web:typecheck` exit 0, `web:build` exit 0, `npm test` **31 suites / 320 tests PASS**, root `npm run db:verify` **41/41** (needs `DATABASE_URL`, see below), `npm run db:verify --workspace=backend` **71/71** |
+| **New finding → ISSUE-059** | `PageTutorial` defaults `locale` to `'ro'` and **0 of its 16 call sites** passes it, so every introduction card stays Romanian in the EN locale (measured: `lang="en"` on all 15 EN records, RO card copy). 16 call sites → deliberately **not** fixed in R1B.1 |
+| **Not claimed / environment** | swept against the `next dev` server on `:3000` (C5 used the production build on `:3100`); the ISSUE-058 fix was re-measured on the same server before/after, so the delta is attributable. Root `npm run db:verify` without `DATABASE_URL` exits 2 (`DATABASE_URL is not set.`) — pre-existing precondition, no DB/Prisma artifact touched. Harness + JSON evidence are temp-only (`%TEMP%`) |
+
+**R1B.1 DONE and uncommitted. R1B (remaining copy work, ISSUE-059) and the visual redesign remain PENDING.**
+Full detail: `VERIFICATION.md` → *R1B.1*.
 
 ### 2026-09-29 - UX-R1A C5 final foundation verification, real-browser sweep and CI guardrails (GREEN)
 
@@ -738,5 +762,9 @@ Files: `web/src/features/planning/{types,api,index}.ts`, `components/PlanTaskRow
    AsyncStorage draft is deleted *before* the API/queue call, so a failed submit loses the draft.
    The Mobile app was not part of the P4.4 browser verification - fix both before calling the Mobile
    daily report verified.
+9. **ISSUE-059 (opened by R1B.1)** - `PageTutorial` defaults `locale` to `'ro'` and none of its 16 call
+   sites passes it, so every page introduction card renders Romanian in the EN locale. Thread the
+   active locale (`useLocale()` from `shared/src/i18n.ts`) into all 16 call sites and add an assertion
+   so a card cannot silently fall back to RO.
 
 See [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) and [HANDOFF.md](HANDOFF.md) for detailed planning.

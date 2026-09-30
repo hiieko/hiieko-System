@@ -2333,3 +2333,96 @@ lines, `package.json` 3 lines, `package-lock.json` 12 case-only key lines).
 - The Mobile app was not run here (no device/emulator). CI typechecks the `Mobile` workspace on
   Linux, which is the only additional Mobile coverage this change brings.
 
+---
+
+## R1B.1 — ISSUE-057 (`tutorial.*` keys) + ISSUE-058 (375 px Control Tower overflow) (2026-09-30, UNCOMMITTED)
+
+### Scope
+Copy + one component's responsive classes. No backend, Prisma / database, CI, route-architecture,
+task-source or `WorkerAttendanceView` change; no redesign, no new dependency, no new endpoint. Three
+tracked files, **nothing committed**:
+
+| File | Change |
+|---|---|
+| `scripts/check-i18n.mjs` | +51/−1 — template-built tutorial keys resolved and enforced (fail-first) |
+| `shared/src/translations.ts` | +22 — the 21 missing `tutorial.{planning,teams,workforce}.*` keys (CRLF preserved, 0 lone LF, no BOM) |
+| `web/src/components/ControlTowerSurface.tsx` | +6/−2 — filter row stacks below `sm`, `w-full sm:w-auto` select |
+
+### ISSUE-057 — FAIL-first evidence, then the fix
+| Step | Result |
+|---|---|
+| Root cause | `TUTORIALS.planning` / `.teams` / `.workforce` build their keys from template prefixes; `translations.ts` had no entry for those prefixes and `t()` returns the key when an entry is missing |
+| Guard first | `check-i18n.mjs` resolves the generated keys into concrete keys; new `FAILURE_ORDER` categories *template-built tutorial keys missing from the translation table* / *template-built translation keys not validated*; hard failure when `shared/src/tutorials.ts` is unreadable or 0 keys resolve |
+| **FAIL (before)** | `npm run i18n:check` → **FAIL (194 source files, 988 key definitions, 988 unique keys)**, listing exactly the 21 expected keys; `node --check scripts/check-i18n.mjs` exit 0 |
+| Fix | 21 keys inserted before the `// --- Daily Report Form (P4.3) ---` marker (`title`, `short`, `purpose`, `step1`, `step2` + 2 `role_*` per section) |
+| **PASS (after)** | `npm run i18n:check` → **PASS (194 source files, 1009 key definitions, 1009 unique keys)** |
+| Rendered (after) | `/planning` `aria-label="Plan Zilnic"` + `Planificarea zilei de lucru pentru fiecare echipă.`, `/teams` `Echipe`, `/workforce` `Forță de Muncă` — 0 raw keys in text and 0 in `aria-label` across all 30 swept records |
+
+Role notes were fact-checked against the code before being written (`web/src/features/planning/types.ts`,
+`fieldWork.ts`, `canManageTeam`, project-scoped `getTeams(projectId)`, unscoped `getEmployees()`):
+`foreman` / `team_leader` create the plan draft and complete a published plan but do **not** publish
+(`site_manager` only), and they work in both the Plans view and My work. The first RO draft ("sees only
+his own tasks") contradicted C3 and was replaced.
+
+### ISSUE-058 — measured cause (the C5 suspect was wrong)
+Read-only CDP probe, 375 px, `admin`, RO — identical numbers on `/` and `/control-tower`:
+
+| Measurement | Before | After |
+|---|---|---|
+| `main.scrollWidth / main.clientWidth` | **429 / 375** (54 px) | **375 / 375** |
+| unclipped rect spills / self-scrolls inside `main` | 2 / 4 | **0 / 0** |
+| `documentElement.scrollWidth / innerWidth` | 375 / 375 | 375 / 375 |
+
+The cause is **not** `ControlTowerRedFlagsCard` (`whitespace-nowrap` cells): that table sits inside
+`<div className="overflow-x-auto">` and clips — measured `table` = 972 px with its right edge 614 px
+past the container and no contribution to `main.scrollWidth` (the same pattern occurs on `/workforce`,
+186 flagged descendants with `main` still `375/375`). The measured culprit is `ControlTowerSurface`'s
+global filter row `<div className="flex items-center space-x-3">`: at 375 px its box is 301 px, its
+content 392 px (`flex-wrap: nowrap`, no clipping ancestor), the native `<select>` cannot shrink below
+its longest `<option>` text, and the rightmost child — the `Actualizează` refresh `button` (114 px) —
+ends at x = **429**, i.e. exactly `main.scrollWidth`. The 54 px propagates up unchanged through
+`card (412) → div.space-y-6.pb-12 (413) → div.hii-page (429) → main (429)`.
+
+**Fix (2 lines, local):** the row becomes `flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3` and
+the `<select>` becomes `w-full sm:w-auto`. No blanket `overflow-x-hidden`, no shell CSS change, nothing
+else in the component, and ≥ 640 px rendering unchanged.
+
+### Browser sweep (after both fixes)
+**30 records** = `/`, `/control-tower`, `/planning`, `/teams`, `/workforce` × {375, 768, 1440} px ×
+{RO, EN}, real headless Chrome `Chrome/154.0.8037.58` over CDP against the `next dev` server on `:3000`
+with the real API (`:4000`) and DB (`:5433`), authenticated through the real login form
+(`mode=ui-form`, `dev@hiieko.local`):
+
+| Check | Result |
+|---|---|
+| `main.scrollWidth === main.clientWidth` | **30/30** (1440 px: `1184/1184` — the shell sidebar aside) |
+| `documentElement.scrollWidth === innerWidth` | **30/30** |
+| raw `tutorial.*` keys in `document.body.innerText` | **0** |
+| raw `tutorial.*` keys in any `aria-label` | **0** |
+| `document.documentElement.lang` matches the pass (ro / en) | 30/30 |
+| intentional inner scrollers (workforce table 277 px, red-flags table 254 px at 375 px) | present but clipped by their `overflow-x-auto` wrapper — no propagation to `main` |
+
+### Gates
+| Gate | Result |
+|---|---|
+| `npm run i18n:check` | **PASS** — 194 source files, 1009 key definitions, 1009 unique keys |
+| `npm run guards:check` | **PASS** — 194 source files (report-only rows unchanged by R1B.1: 2 legacy tokens, 6 diacritic rows in `WorkerAttendanceView` / `WorkerDashboard`) |
+| `npm run typecheck` | exit 0 — shared + web + Mobile + backend |
+| `npm run web:typecheck` | exit 0 |
+| `npm run web:build` | exit 0 — production build, every route emitted |
+| `npm test` | exit 0 — **31 suites / 320 tests PASS** |
+| `npm run db:verify` (root) | **41/41 PASS** when `DATABASE_URL` is provided (`backend/.env`); without it the script exits 2 with `DATABASE_URL is not set.` — pre-existing precondition, no database file or Prisma artifact was touched |
+| `npm run db:verify --workspace=backend` | **71/71 PASS**, 0 FAILED |
+
+### Not verified / out of scope
+- **ISSUE-059 opened:** `PageTutorial` defaults `locale` to `'ro'` and **0 of its 16 call sites** passes
+  it, so every introduction card stays Romanian while `lang="en"` (measured on all 15 EN records).
+  Fixing it means touching 16 call sites → R1B copy scope, deliberately not done here.
+- The sweep ran against the `next dev` server (`:3000`), not a production `next start` (the C5 sweep used
+  `:3100`). The ISSUE-058 fix was re-measured on the same server before/after, so the delta is
+  attributable, and `web:build` proves the changed component compiles.
+- Only `admin` was swept for ISSUE-058 this session; the C5 sweep already covers the other three roles
+  at 375/768/1440 and the overflow existed for `admin` only.
+- No visual/design review, no manual device pass, no remote CI run, **no commit and no push**.
+- The CDP harness and its JSON/log evidence live in `%TEMP%` only and are intentionally not committed.
+
