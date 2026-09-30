@@ -2554,5 +2554,18 @@ extraction is not trustworthy).
 - Environment note: the `next start` on `:3000` was serving a `.next` that a later `next build` had
   replaced (dev-style chunk URLs → 404 → no hydration), so verification used a fresh production build
   served by `next start` on `:3100`. `.next` is a gitignored artifact; no source file was affected.
-- No commit, no push, no remote CI run, no mobile pass. Harness + JSON evidence live in `%TEMP%` only.
+- No push, no remote CI run, no mobile pass. Harness + JSON evidence live in `%TEMP%` only. (This bullet
+  was written while the tree was still uncommitted; the checkpoint commit is recorded below.)
+
+### Checkpoint commit (2026-09-30)
+Reviewed and committed as **`9e6a503`** — `fix(web): ux-r1b.2 tutorial locale propagation (ISSUE-059)`
+— 5 files, +242/−15 (`web/src/components/PageTutorial.tsx` +11/−1 plus the four workflow documents).
+The committed source blob `c033e2d` is byte-identical to the file that was built and swept, and the
+untracked local artifacts (`.hiiEko/`, `BonFis/`, `Start-HIIEKO.ps1`, `Stop-HIIEKO.ps1`,
+`database/archive/pre_migration_backup_20260929_093849.sql`) were not staged. **No push** — `master` is
+ahead 8 of `origin/master`. The gates above were re-run unchanged on the committed tree (`i18n:check`
+PASS 194 files / 1009/1009 keys, `guards:check` PASS 194 files, `typecheck` / `web:typecheck` /
+`web:build` exit 0 with 25/25 static pages, `npm test` 31 suites / 320 tests). The `UNCOMMITTED` marker
+in this section's heading — and in R1B.1's — records the state when each section was written:
+R1B.1 = `e0c1caf`, R1B.2 = `9e6a503`.
 

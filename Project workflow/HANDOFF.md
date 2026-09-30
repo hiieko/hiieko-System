@@ -4,6 +4,26 @@
 
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
+## R1B.2 CHECKPOINT COMMITTED — `9e6a503` (2026-09-30)
+
+The R1B.2 tree was reviewed and committed as **`9e6a503`** — `fix(web): ux-r1b.2 tutorial locale
+propagation (ISSUE-059)` — 5 files, +242/−15: `web/src/components/PageTutorial.tsx` (+11/−1, blob
+`c033e2d`, byte-identical to the file that was built and browser-swept) plus
+`Project workflow/{ISSUES,VERIFICATION,PROGRESS,HANDOFF}.md`. The untracked local artifacts
+(`.hiiEko/`, `BonFis/`, `Start-HIIEKO.ps1`, `Stop-HIIEKO.ps1`,
+`database/archive/pre_migration_backup_20260929_093849.sql`) were **not** touched and **not** staged.
+**Nothing was pushed** — `master` is ahead 8 of `origin/master` (`e0c1caf` = R1B.1, `9e6a503` = R1B.2).
+
+Pre-commit checks were clean (`git diff --check` empty, exactly the 5 intended tracked paths, nothing
+staged) and every gate was re-run on the committed tree: `i18n:check` **PASS** (194 files, 1009/1009
+keys), `guards:check` **PASS** (194 files), `typecheck` / `web:typecheck` / `web:build` **exit 0**
+(25/25 static pages), `npm test` **exit 0 — 31 suites / 320 tests**; the R1B.2 `db:verify` results
+(41/41 root, 71/71 backend) are unchanged, no database artifact was touched.
+
+The `UNCOMMITTED` wording in the R1B.2 and R1B.1 sections below is **historical** — it records the state
+when each section was written (R1B.1 = `e0c1caf`, R1B.2 = `9e6a503`). **Next:** continue the R1B copy
+pass (ISSUE-055 untouched, ISSUE-056 still deferred) and then the visual redesign.
+
 ## R1B.2 DONE — ISSUE-059 fixed, UNCOMMITTED (2026-09-30) — HEAD = `e0c1caf`
 
 **Working tree:** exactly 1 tracked source modification + 4 workflow documents, **no commit and no

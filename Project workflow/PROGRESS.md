@@ -303,6 +303,24 @@ All quality gates verified as of 2026-09-30 (R1B.1):
 
 ## Recent Work
 
+### 2026-09-30 - R1B.2 checkpoint committed (`9e6a503`)
+
+The R1B.2 tree was reviewed and committed as **`9e6a503`** — `fix(web): ux-r1b.2 tutorial locale
+propagation (ISSUE-059)` — 5 files, +242/−15: `web/src/components/PageTutorial.tsx` (+11/−1, blob
+`c033e2d`) plus the four workflow documents. The untracked local artifacts were **not** touched and
+**not** staged, and **nothing was pushed** (`master` is ahead 8 of `origin/master`).
+
+| Check (re-run on the committed tree) | Result |
+|---|---|
+| `i18n:check` | **PASS** — 194 files, 1009/1009 keys |
+| `guards:check` | **PASS** — 194 files |
+| `typecheck` / `web:typecheck` / `web:build` | **exit 0** — 25/25 static pages |
+| `npm test` | **exit 0** — 31 suites / 320 tests |
+
+The `UNCOMMITTED` wording in the R1B.2 and R1B.1 entries below is **historical** (R1B.1 = `e0c1caf`).
+**ISSUE-059 stays `FIXED`; R1B continues (ISSUE-055 untouched, ISSUE-056 deferred); the visual redesign
+remains PENDING.**
+
 ### 2026-09-30 - R1B.2: ISSUE-059 `PageTutorial` locale propagation (GREEN, UNCOMMITTED)
 
 ISSUE-059 fixed in one file: `web/src/components/PageTutorial.tsx` (+11/−1). The `locale = 'ro'`
@@ -784,7 +802,7 @@ Files: `web/src/features/planning/{types,api,index}.ts`, `components/PlanTaskRow
    AsyncStorage draft is deleted *before* the API/queue call, so a failed submit loses the draft.
    The Mobile app was not part of the P4.4 browser verification - fix both before calling the Mobile
    daily report verified.
-9. **ISSUE-059 - DONE in R1B.2 (2026-09-30).** `PageTutorial` now resolves the active locale from the
+9. **ISSUE-059 - DONE in R1B.2 (2026-09-30), committed as `9e6a503`.** `PageTutorial` now resolves the active locale from the
    existing `LocaleContext` (`useLocale()` from `shared/src/i18n.ts`); the hardcoded RO default is gone
    and the 17 call sites (16 files) needed no change, so a card can no longer silently fall back to RO.
    Browser evidence: 46/46 records, 0 RO-only strings in EN, RO rendering unchanged

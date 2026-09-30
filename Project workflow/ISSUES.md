@@ -793,7 +793,7 @@ change, no other part of the component touched, and ≥ 640 px rendering unchang
 ---
 
 ## ISSUE-059 — `PageTutorial` renders Romanian copy in the EN locale (component-level locale default)
-**Status:** ✅ `FIXED` (2026-09-30, R1B.2 — locale resolved from the existing `LocaleContext`, no call-site change; verified in a real browser: 46/46 records, 0 RO-only strings in EN, RO rendering unchanged)
+**Status:** ✅ `FIXED` (2026-09-30, R1B.2 — locale resolved from the existing `LocaleContext`, no call-site change; verified in a real browser: 46/46 records, 0 RO-only strings in EN, RO rendering unchanged; committed as `9e6a503`)
 
 ### Description
 `web/src/components/PageTutorial.tsx` declares `locale?: 'ro' | 'en'` with a `'ro'` default
