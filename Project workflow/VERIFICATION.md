@@ -2571,10 +2571,12 @@ R1B.1 = `e0c1caf`, R1B.2 = `9e6a503`.
 
 ---
 
-## Phase 1 — Shell Chrome + Worker "My Day" (2026-09-30, UNCOMMITTED — PENDING REVIEW)
+## Phase 1 — Shell Chrome + Worker "My Day" (2026-09-30, COMMITTED - CHECKPOINT `0ec084a`)
 
 **Scope:** `web/` (shell + worker day surface) and one additive shared translation block. No backend,
-Prisma, DB, API, CI, Mobile or other-role change. Nothing committed, nothing staged.
+Prisma, DB, API, CI, Mobile or other-role change. *This section was written while the tree was
+uncommitted (nothing staged at the time); the Phase-1 checkpoint commit is `0ec084a` - see "Phase 1
+checkpoint commit" at the end of this file.*
 
 ### Gates (run on the final working tree)
 
@@ -2629,11 +2631,12 @@ pwsh ./Start-HIIEKO.ps1                 # PostgreSQL + NestJS + Next.js
 
 ---
 
-## Phase 1 defect fix — ISSUE-061 (Decimal quantities concatenated in the My Day summary) (2026-09-30, UNCOMMITTED)
+## Phase 1 defect fix — ISSUE-061 (Decimal quantities concatenated in the My Day summary) (2026-09-30, COMMITTED - CHECKPOINT `0ec084a`)
 
 **Scope:** one function in one file — `web/src/features/planning/fieldWork.ts` (new private
 `toQuantityNumber` + its two call sites in `summarizeMyDay`). No backend, Prisma, DB, API contract,
-navigation, shell-styling, other-role or unrelated-selector change. Nothing staged, nothing committed.
+navigation, shell-styling, other-role or unrelated-selector change. *Written before the checkpoint
+(nothing staged, nothing committed at the time); committed as `0ec084a` - see below.*
 
 **Live-surface correction to the phase record:** the runtime smoke test the Phase 1 section above lists
 as *not run* has since been executed against the local stack (PostgreSQL :5433, NestJS :4000,
@@ -2741,12 +2744,13 @@ chunks referenced by the SSR HTML answered `200`).
 
 ---
 
-## Phase 1 final verification — RO/EN × 375/1440 px + fixture cleanup + ISSUE-060 doc closure (2026-09-30, UNCOMMITTED)
+## Phase 1 final verification — RO/EN × 375/1440 px + fixture cleanup + ISSUE-060 doc closure (2026-09-30, COMMITTED - CHECKPOINT `0ec084a`)
 
 **Scope:** verification and documentation only — **no production code was changed in this pass**. The
 only code edit of the whole Phase-1 review remains the ISSUE-061 fix in
-`web/src/features/planning/fieldWork.ts` (section above). Nothing staged, nothing committed, nothing
-pushed; `HEAD` stays `e9864d1`.
+`web/src/features/planning/fieldWork.ts` (section above). *Written before the checkpoint: nothing
+was staged, committed or pushed during this pass and `HEAD` was still `e9864d1`; the reviewed slice was
+committed afterwards as `0ec084a` - see below.*
 
 **Supersedes the "not run" notes:** the *Phase 1 — Shell Chrome + Worker "My Day"* section lists the live
 worker smoke test (375/768/1440 × RO/EN) as *not run*, and the *Phase 1 defect fix* section recorded only
@@ -2858,8 +2862,8 @@ separate decision and was not required to remove the Phase-1 records.
 
 ### Not done / out of scope (unchanged by this pass)
 
-- No commit, no push, no staging; no backend, Prisma schema, DB migration, API contract, navigation,
-  styling or other-role/page change.
+- No commit, no push, no staging **during this pass** (the checkpoint commit came afterwards - see below);
+  no backend, Prisma schema, DB migration, API contract, navigation, styling or other-role/page change.
 - `FieldTaskRow.targetQuantity` / `actualQuantity` still carry the raw `my-tasks` values (typed `number`,
   string at runtime) — the latent hazard recorded in the section above, still deliberately unfixed.
 - EN at 768 px was not captured (the 375 EN + 1440 EN pair brackets the compact and rail layouts); no
@@ -2872,3 +2876,27 @@ separate decision and was not required to remove the Phase-1 records.
   the gate table — the launcher's `-Watch` loop only *reports* port state, it does not restart services
   (`Start-HIIEKO.ps1` lines 409-421), so a stopped dev server stays stopped until it is started again.
 
+---
+
+## Phase 1 checkpoint commit (2026-09-30) - `0ec084a`
+
+The reviewed Phase-1 slice was committed as **`0ec084a`** -
+`feat(web): phase 1 worker my day surface, shell and chrome tokens (ISSUE-061, DEC-012)` - **32 files,
++2700/-416**, of which **11 are new** (`web/src/components/shell/*`,
+`web/src/components/worker/*`); the other 21 are modifications (Phase-1 shell / worker / planning /
+token sources, `shared/src/translations.ts`, and
+`Project workflow/{DECISIONS,DESIGN_SYSTEM,ISSUES,VERIFICATION,PROGRESS,HANDOFF}.md`).
+
+**Verified-tree guarantee:** `git diff --cached` was empty before staging and the tracked working tree was
+clean against the gates above, so the committed tree is byte-identical to the tree the six gates ran on - no
+code changed after verification. `0ec084a` is a normal commit on top of `e9864d1`: no amend, no rebase,
+**no push** (`master` is ahead of `origin/master`).
+
+**Not staged (left untracked, as intended):** `.hiiEko/run/*`, `BonFis/*.jpeg`,
+`Project workflow/design/figma/*.png.png`, `Start-HIIEKO.ps1`, `Stop-HIIEKO.ps1`,
+`database/archive/pre_migration_backup_20260929_093849.sql`; the gitignored smoke harness (`cdp-*.js`),
+`task-screenshots/`, `*.log` and `web/.next/` never entered the index.
+
+**Historical wording:** the `UNCOMMITTED` markers in the Phase-1 section headings above record the state
+when each section was written; they were reconciled to this checkpoint by the docs-only commit
+`docs: record phase 1 checkpoint commit 0ec084a` (no implementation or verification fact changed).

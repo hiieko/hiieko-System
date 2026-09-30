@@ -4,11 +4,16 @@
 
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
-## PHASE 1 FINAL VERIFICATION — `e9864d1` (2026-09-30, UNCOMMITTED — AWAITING CHECKPOINT)
+## PHASE 1 VERIFIED + COMMITTED - CHECKPOINT `0ec084a` (2026-09-30)
 
-**Working tree:** the same uncommitted Phase-1 paths, **no commit and no push** — `HEAD` is still
-`e9864d1` (*docs: record ux-r1b.2 checkpoint commit 9e6a503 (ISSUE-059)*). Only **one** production file
-was edited by the whole Phase-1 review: `web/src/features/planning/fieldWork.ts` (the ISSUE-061 fix).
+**Working tree:** the Phase-1 paths were committed as **`0ec084a`** - `feat(web): phase 1 worker my day
+surface, shell and chrome tokens (ISSUE-061, DEC-012)` - 32 files, +2700/-416 (11 new:
+`web/src/components/shell/*`, `web/src/components/worker/*`); the tracked working tree is clean and
+**nothing was pushed** (`master` is ahead of `origin/master`). The verification below was captured while
+the tree was still uncommitted, with `HEAD` at `e9864d1` (*docs: record ux-r1b.2 checkpoint commit
+9e6a503 (ISSUE-059)*), so its `UNCOMMITTED` wording is **historical** - no implementation or verification
+fact changed. Only **one** production file was edited by the whole Phase-1 review:
+`web/src/features/planning/fieldWork.ts` (the ISSUE-061 fix).
 This final pass changed **documentation only** — `Project workflow/{DECISIONS,DESIGN_SYSTEM,ISSUES,VERIFICATION,PROGRESS,HANDOFF}.md`.
 The harness (`cdp-phase1-final.js`, `cdp-phase1-capture.js`) and `task-screenshots/` are gitignored.
 
@@ -47,7 +52,9 @@ errors — the ISSUE-049 class, **not** a code regression). **One `npm run web:d
 afterwards** (single instance on `:3000`, `/login` 200, `/` 200, worker login 200); the launcher's
 `-Watch` loop does not restart services, so do not start a second dev server (ISSUE-049).
 
-**Next:** the tree is ready for the Phase-1 checkpoint commit (nothing staged yet, no push). Full detail:
+**Next:** Phase 1 is committed (`0ec084a`) and **not pushed** - `master` is ahead of
+`origin/master`; no Phase-1 work is outstanding (the visual redesign remains PENDING per `PROGRESS.md`).
+Full detail:
 `VERIFICATION.md` → *Phase 1 final verification — RO/EN × 375/1440 px + fixture cleanup + ISSUE-060 doc
 closure*.
 
@@ -67,8 +74,9 @@ keys), `guards:check` **PASS** (194 files), `typecheck` / `web:typecheck` / `web
 (25/25 static pages), `npm test` **exit 0 — 31 suites / 320 tests**; the R1B.2 `db:verify` results
 (41/41 root, 71/71 backend) are unchanged, no database artifact was touched.
 
-The `UNCOMMITTED` wording in the R1B.2 and R1B.1 sections below is **historical** — it records the state
-when each section was written (R1B.1 = `e0c1caf`, R1B.2 = `9e6a503`). **Next:** continue the R1B copy
+The `UNCOMMITTED` wording in the R1B.2 and R1B.1 sections below is **historical** - it records the state
+when each section was written (R1B.1 = `e0c1caf`, R1B.2 = `9e6a503`); the Phase-1 top section was
+reconciled the same way (Phase 1 = `0ec084a`, see *PHASE 1 VERIFIED + COMMITTED* above). **Next:** continue the R1B copy
 pass (ISSUE-055 untouched, ISSUE-056 still deferred) and then the visual redesign.
 
 ## R1B.2 DONE — ISSUE-059 fixed, UNCOMMITTED (2026-09-30) — HEAD = `e0c1caf`
@@ -266,10 +274,9 @@ unchanged; **not pushed, so no GitHub Actions run is claimed**.
 
 ## Current Task
 
-**Phase 1 — Shell Chrome + Worker "My Day" is at FINAL VERIFICATION PASSED / awaiting the checkpoint
-commit** (see *PHASE 1 FINAL VERIFICATION* at the top of this file; 67/67 live checks, ISSUE-061 fixed,
-ISSUE-060 closed by DEC-012, review fixture removed). The P4.4 summary below is the previous task and
-stays as history.
+**Phase 1 - Shell Chrome + Worker "My Day" is FINAL VERIFICATION PASSED and COMMITTED as `0ec084a`
+(not pushed)** (see the top of this file; 67/67 live checks, ISSUE-061 fixed, ISSUE-060 closed by
+DEC-012, review fixture removed). The P4.4 summary below is the previous task and stays as history.
 
 **P4.4 COMPLETE — Daily Report finalization (DRAFT → SUBMITTED) is E2E verified (2026-09-29):**
 - **Delivered (code from the earlier P4.x sessions, verified end-to-end this session):** one trusted finalization core, `DailyReportsService.finalizeWithin()`, shared by `POST /api/daily-reports/:id/submit` (web DRAFT → SUBMITTED) and by `create()` when the persisted status is already `SUBMITTED` (Mobile's status-less POST + `Idempotency-Key`), so the offline queue needed no second endpoint. One transaction writes: status `SUBMITTED`, `revision_number` 1, the immutable revision snapshot (`schema: 'daily-report-revision@1'`, snapshot `report`/`schema`/`submittedAt`/`submittedById`/`revisionNumber`/`stockReference`/`stockConsumption`), one `CONSUMPTION` movement per reported material (`stock_movements.reference_type = 'daily_report'`, key `daily_report:<reportId>:rev<N>:material:<materialId>`) and the `DAILY_REPORT_SUBMITTED` audit row. A DRAFT create consumes nothing — no stock, no revision.
