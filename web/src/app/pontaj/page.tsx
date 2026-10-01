@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import * as attendanceApi from '../../features/attendance/api';
 import type { AttendanceRecord, TodaySummary } from '../../features/attendance/types';
+import { AttendanceSessionDrawer } from '../../features/attendance/components/AttendanceSessionDrawer';
 
 /** Roles that see the supervisor experience (team attendance, corrections context). */
 const SUPERVISOR_ROLES = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'];
@@ -45,6 +46,7 @@ function PontajPageInner() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [todaySummary, setTodaySummary] = useState<TodaySummary | null>(null);
+  const [selectedSession, setSelectedSession] = useState<AttendanceRecord | null>(null);
 
   const loadData = useCallback(async () => {
     if (!isSupervisor) return;
@@ -95,6 +97,11 @@ function PontajPageInner() {
     return Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => i + 1);
   }, [selectedMonth]);
 
+  const attendanceRecordsForMonth = useMemo(
+    () => attendanceRecords.filter((record) => String(record.date || record.check_in_time).slice(0, 7) === selectedMonth),
+    [attendanceRecords, selectedMonth],
+  );
+
   const workers = users.filter((u) => {
     const r = (u.role || '').toString().toLowerCase();
     return ['worker', 'team_leader', 'technician', 'foreman'].includes(r);
@@ -112,7 +119,7 @@ function PontajPageInner() {
 
   const exportAttendance = () => {
     const header = ['Nume', 'Stantier', 'Sosire', 'Plecare', 'Distanta GPS (m)', 'Ore normale', 'Ore suplimentare', 'Stare'];
-    const rows = attendanceRecords.map((log) => {
+    const rows = attendanceRecordsForMonth.map((log) => {
       const userName = log.user?.profile?.full_name || log.user?.email || 'Necunoscut';
       return [
         userName,
@@ -369,8 +376,25 @@ function PontajPageInner() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+          <div className="divide-y divide-slate-100 md:hidden">
+            {loading ? (
+              <div className="px-4 py-10 text-center text-sm text-slate-500"><Loader2 className="mx-auto size-7 animate-spin text-slate-400" /><p className="mt-2">{locale === 'en' ? 'Loading attendance...' : 'Se încarcă pontajul...'}</p></div>
+            ) : error ? (
+              <div role="alert" className="px-4 py-8 text-center text-sm text-rose-700">{error}<button type="button" onClick={loadData} className="ml-2 min-h-10 px-3 font-semibold underline">{locale === 'en' ? 'Retry' : 'Reîncearcă'}</button></div>
+            ) : attendanceRecordsForMonth.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm text-slate-500">{locale === 'en' ? 'No records for this month.' : 'Nu există înregistrări pentru această lună.'}</div>
+            ) : attendanceRecordsForMonth.map((log) => {
+              const name = log.user?.profile?.full_name || log.user?.email || 'Necunoscut';
+              return <article key={log.id} className="flex flex-col gap-3 p-4">
+                <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate text-sm font-semibold text-slate-900">{name}</h3><p className="mt-0.5 text-xs text-slate-500">{log.project?.name || '—'} · {log.date ? String(log.date).slice(0, 10) : '—'}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${log.check_out_time ? 'bg-slate-100 text-slate-700' : 'bg-emerald-100 text-emerald-800'}`}>{log.check_out_time ? (locale === 'en' ? 'Completed' : 'Finalizat') : (locale === 'en' ? 'On site' : 'Pe șantier')}</span></div>
+                <div className="grid grid-cols-2 gap-3 rounded-lg bg-slate-50 p-3 text-sm"><div><p className="text-[11px] text-slate-500">{locale === 'en' ? 'Check-in' : 'Sosire'}</p><p className="mt-1 font-mono font-semibold">{log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString(locale === 'en' ? 'en-GB' : 'ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—'}</p></div><div><p className="text-[11px] text-slate-500">{locale === 'en' ? 'Check-out' : 'Plecare'}</p><p className="mt-1 font-mono font-semibold">{log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString(locale === 'en' ? 'en-GB' : 'ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—'}</p></div><div><p className="text-[11px] text-slate-500">{locale === 'en' ? 'Regular' : 'Normale'}</p><p className="mt-1 font-semibold">{log.regular_hours || 0} h</p></div><div><p className="text-[11px] text-slate-500">{locale === 'en' ? 'Overtime' : 'Suplimentare'}</p><p className="mt-1 font-semibold">{((log.overtime_minutes || 0) / 60).toFixed(1)} h</p></div></div>
+                <button type="button" onClick={() => setSelectedSession(log)} className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700">{locale === 'en' ? 'Session details' : 'Detalii sesiune'}</button>
+              </article>;
+            })}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
+            <table className="min-w-[920px] w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold uppercase text-slate-500">
                   <th className="py-3.5 px-4">{locale === 'en' ? 'Worker / Team Lead' : 'Muncitor / Sef Echipa'}</th>
@@ -381,32 +405,33 @@ function PontajPageInner() {
                   <th className="py-3.5 px-4">{locale === 'en' ? 'Regular hours' : 'Ore Normale'}</th>
                   <th className="py-3.5 px-4">{locale === 'en' ? 'Overtime' : 'Ore Suplimentare'}</th>
                   <th className="py-3.5 px-4 text-right">{locale === 'en' ? 'Status' : 'Stare'}</th>
+                  <th className="py-3.5 px-4 text-right">{locale === 'en' ? 'Details' : 'Detalii'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
                       <p className="mt-2 text-sm text-slate-500">{locale === 'en' ? 'Loading attendance...' : 'Se incarca datele de pontaj...'}</p>
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <AlertCircle className="w-8 h-8 mx-auto text-rose-400" />
                       <p className="mt-2 text-sm text-rose-500">{error}</p>
                     </td>
                   </tr>
-                ) : attendanceRecords.length === 0 ? (
+                ) : attendanceRecordsForMonth.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <Clock className="w-8 h-8 mx-auto text-slate-300" />
                       <p className="mt-2 text-sm text-slate-500">{locale === 'en' ? 'No attendance records' : 'Nu exista inregistrari de pontaj'}</p>
                     </td>
                   </tr>
                 ) : (
-                  attendanceRecords.map((log) => {
+                  attendanceRecordsForMonth.map((log) => {
                     const userName = log.user?.profile?.full_name || log.user?.email || 'Necunoscut';
                     const userRole = log.user?.profile?.role || log.user?.role || '';
                     const checkInTime = log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -456,6 +481,7 @@ function PontajPageInner() {
                             </span>
                           )}
                         </td>
+                        <td className="py-3.5 px-4 text-right"><button type="button" onClick={() => setSelectedSession(log)} className="min-h-10 rounded-md px-3 text-xs font-semibold text-hii-700 hover:bg-hii-50">{locale === 'en' ? 'Details' : 'Detalii'}</button></td>
                       </tr>
                     );
                   })
@@ -525,7 +551,7 @@ function PontajPageInner() {
                     </td>
                     {daysInMonth.map((day) => {
                       const dayStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
-                      const dayRecord = attendanceRecords.find(
+                      const dayRecord = attendanceRecordsForMonth.find(
                         (r) => r.user_id === worker.id && r.date && r.date.split('T')[0].startsWith(dayStr)
                       );
                       const isWeekend = new Date(`${selectedMonth}-${String(day).padStart(2, '0')}`).getDay() === 0
@@ -545,7 +571,7 @@ function PontajPageInner() {
                       );
                     })}
                     <td className="py-3 px-3 bg-amber-50/50 font-bold text-slate-900">
-                      {attendanceRecords
+                      {attendanceRecordsForMonth
                         .filter((r) => r.user_id === worker.id)
                         .reduce((sum, r) => sum + (r.regular_hours || 0), 0)} ore
                     </td>
@@ -563,6 +589,7 @@ function PontajPageInner() {
           </div>
         </div>
       )}
+      <AttendanceSessionDrawer record={selectedSession} onClose={() => setSelectedSession(null)} />
     </div>
   );
 }

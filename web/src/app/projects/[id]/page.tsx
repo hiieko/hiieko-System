@@ -8,8 +8,10 @@ import { apiClient, ApiError } from '../../../lib/api-client';
 import {
   Loader2, ArrowLeft, RefreshCw, Users, UserPlus, X, Trash2,
   Activity, Building2, Calendar, DollarSign, Sliders,
-  Check, AlertTriangle,
+  Check, AlertTriangle, ClipboardCheck, Clock, Boxes, Truck,
+  FileText, ShieldCheck, SunMedium, CircleAlert,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
 import { canCreateProjects } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
@@ -40,6 +42,21 @@ const STATUS_COLORS: Record<string, string> = {
   HANDOVER: 'bg-indigo-100 text-indigo-800', COMPLETED: 'bg-green-100 text-green-800',
   ON_HOLD: 'bg-yellow-100 text-yellow-800', CANCELLED: 'bg-red-100 text-red-800',
 };
+
+const PROJECT_WORKSPACES = [
+  { href: '/planning', label: 'Planificare zilnică', description: 'Planuri și progres pe zi', icon: Calendar },
+  { href: '/tasks', label: 'Task-uri', description: 'Flux și execuție lucrări', icon: ClipboardCheck },
+  { href: '/pontaj', label: 'Pontaj', description: 'Sesiuni și echipe', icon: Clock },
+  { href: '/stocuri', label: 'Materiale & stoc', description: 'Balanțe și mișcări', icon: Boxes },
+  { href: '/avize', label: 'Livrări', description: 'Avize și recepții', icon: Truck },
+  { href: '/rapoarte', label: 'Rapoarte zilnice', description: 'Activitate de teren', icon: FileText },
+  { href: '/issues', label: 'Probleme / blocaje', description: 'Urmărire probleme', icon: CircleAlert },
+  { href: '/documents', label: 'Documente', description: 'Fișiere și versiuni', icon: FileText },
+  { href: '/qa-qc', label: 'QA/QC', description: 'Inspecții și NCR-uri', icon: ShieldCheck },
+  { href: '/solar-configurator', label: 'Configurație solară', description: 'Layout PV și BOM', icon: SunMedium },
+  { href: '/customers', label: 'Clienți', description: 'Registru și contacte', icon: Building2 },
+  { href: '/projects', label: 'Proiecte', description: 'Portofoliu proiecte', icon: Activity },
+] as const;
 
 const MEMBER_ROLES = ['ADMIN','MANAGER','PM','WORKER','VIEWER','TEAM_LEADER','SITE_MANAGER','TECHNICIAN','PROCUREMENT','FINANCE','QA_QC','FOREMAN','SITE_LOGISTICS','MAINTENANCE_DIRECTOR','TECHNICAL_DIRECTOR'] as const;
 const MEMBER_ROLE_LABELS: Record<string, string> = {
@@ -260,6 +277,12 @@ function ProjectDetailPageInner() {
               </div>
             </div>
           )}
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 sm:p-6">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Spații de lucru ale proiectului</h3><p className="mt-1 text-sm text-slate-500">Navighează către fluxurile operaționale cu proiectul curent selectat.</p></div><span className="text-xs text-slate-400">{projectCode}</span></div>
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {PROJECT_WORKSPACES.map(({ href, label, description, icon: Icon }) => <Link key={href} href={href} className="group flex min-h-16 items-center gap-3 rounded-lg border border-slate-200 p-3 transition-colors hover:border-hii-300 hover:bg-hii-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hii-500"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-hii-700"><Icon className="size-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{label}</span><span className="mt-0.5 block truncate text-xs text-slate-500">{description}</span></span><span aria-hidden="true" className="text-slate-300 transition-colors group-hover:text-hii-700">→</span></Link>)}
+            </div>
+          </section>
         </div>
       )}
 

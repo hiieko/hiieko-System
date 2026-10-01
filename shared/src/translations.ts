@@ -29,6 +29,9 @@ const d: Record<string, { ro: string; en: string }> = {
 'nav.stocuri': { ro: 'Materiale & Stoc', en: 'Materials & Stock' },
 'nav.cheltuieli': { ro: 'Cheltuieli', en: 'Expenses' },
 'nav.projects': { ro: 'Proiecte', en: 'Projects' },
+'nav.customers': { ro: 'Clienți', en: 'Customers' },
+'nav.documents': { ro: 'Documente', en: 'Documents' },
+'nav.qa_qc': { ro: 'QA/QC · Inspecții', en: 'QA/QC · Inspections' },
 'nav.teams': { ro: 'Echipe', en: 'Teams' },
 'nav.workforce': { ro: 'Forță de Muncă', en: 'Workforce' },
 'nav.santiere': { ro: 'Șantiere (GIS)', en: 'Sites (GIS)' },
@@ -469,6 +472,9 @@ Object.assign(d, {
 
   // --- B4 Projects ---
   'nav.projects': T('Proiecte', 'Projects'),
+  'nav.customers': T('Clienți', 'Customers'),
+  'nav.documents': T('Documente', 'Documents'),
+  'nav.qa_qc': T('QA/QC · Inspecții', 'QA/QC · Inspections'),
   'nav.teams': T('Echipe', 'Teams'),
   'nav.workforce': T('Forță de Muncă', 'Workforce'),
   'projects.title': T('Proiecte', 'Projects'),

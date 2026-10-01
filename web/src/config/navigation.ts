@@ -9,7 +9,7 @@
 import {
   LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro,
   ClipboardCheck, Bell, Users, BarChart3, ShieldCheck, User,
-  SunMedium, AlertTriangle, type LucideIcon,
+  SunMedium, AlertTriangle, Building2, type LucideIcon,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -50,6 +50,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle,
         roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
       },
+      { href: '/qa-qc', i18nKey: 'nav.qa_qc', label: 'QA/QC · Inspecții', icon: ShieldCheck, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'qa_qc'] },
       { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock },
       { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
       { href: '/avize', i18nKey: 'nav.avize', label: 'Procurement / Avize', icon: Truck },
@@ -63,6 +64,8 @@ export const NAV_GROUPS: NavGroup[] = [
     roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'],
     items: [
       { href: '/projects', i18nKey: 'nav.projects', label: 'Proiecte', icon: MapPin },
+      { href: '/customers', i18nKey: 'nav.customers', label: 'Clienți', icon: Building2 },
+      { href: '/documents', i18nKey: 'nav.documents', label: 'Documente', icon: FileText },
       { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users },
       { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User },
       { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin },

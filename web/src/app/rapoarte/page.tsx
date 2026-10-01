@@ -25,13 +25,16 @@ import {
   RefreshCw,
   Plus,
   Edit3,
-  Send
+  Send,
+  Search
 } from 'lucide-react';
 
 function RapoartePageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reports, setReports] = useState<DailyReport[]>([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [users, setUsers] = useState<any[]>([]);
   // P4.4 — submitting a DRAFT from the list goes through the same confirmation gate as the form.
   const [submitTarget, setSubmitTarget] = useState<DailyReport | null>(null);
@@ -95,6 +98,15 @@ function RapoartePageInner() {
     }
   }, [submitTarget, submittingId, locale, toastSuccess, toastError, loadData]);
 
+  const availableStatuses = [...new Set(reports.map((report) => String(report.status || '')).filter(Boolean))];
+  const filteredReports = reports.filter((report) => {
+    const term = search.trim().toLocaleLowerCase();
+    const reportDate = String(report.report_date || '').slice(0, 10);
+    const leader = report.team_leader?.profile?.full_name || users.find((candidate) => candidate.id === report.team_leader_id)?.full_name || '';
+    const matchesSearch = !term || [report.project?.name || '', report.project?.code || '', reportDate, leader, report.general_notes || '', report.blockages || ''].some((value) => String(value).toLocaleLowerCase().includes(term));
+    return matchesSearch && (statusFilter === 'ALL' || String(report.status || '') === statusFilter);
+  });
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="reports" />
@@ -102,7 +114,7 @@ function RapoartePageInner() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Rapoarte Zilnice per Echipa</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Activita?i finalizate de ?efii de echipa, muncitori prezen?i, materiale consumate ?i fotografii de execu?ie.
+            Activități finalizate de șefii de echipă, muncitori prezenți, materiale consumate și fotografii de execuție.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -119,24 +131,34 @@ function RapoartePageInner() {
         </div>
       </div>
 
+      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <p className="px-1 text-xs text-slate-500">{filteredReports.length} din {reports.length} rapoarte</p>
+        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_200px]">
+          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-3"><Search className="size-4 shrink-0 text-slate-400" /><span className="sr-only">Caută rapoarte</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Proiect, cod, dată sau șef echipă" className="w-full bg-transparent text-sm outline-none" /></label>
+          <select aria-label="Filtrează după starea rapoartelor" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700"><option value="ALL">Toate stările</option>{availableStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select>
+        </div>
+      </section>
+
       {loading ? (
         <div className="py-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">Îcarcăd rapoartele zilnice...</p>
+          <p className="mt-2 text-sm text-slate-500">Se încarcă rapoartele zilnice...</p>
         </div>
       ) : error ? (
-        <div className="py-12 text-center">
-          <AlertCircle className="w-8 h-8 mx-auto text-rose-400" />
-          <p className="mt-2 text-sm text-rose-500">Eroare: {error}</p>
+        <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-10 text-center">
+          <AlertCircle className="size-8 text-rose-500" />
+          <p className="text-sm text-rose-800">Eroare: {error}</p>
+          <button type="button" onClick={loadData} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">Reîncearcă</button>
         </div>
-      ) : reports.length === 0 ? (
-        <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
-          <FileText className="w-8 h-8 mx-auto text-slate-300" />
-          <p className="mt-2 text-sm text-slate-500">Nu exista rapoarte zilnice</p>
+      ) : filteredReports.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center">
+          <FileText className="mx-auto size-8 text-slate-300" />
+          <h2 className="mt-2 text-sm font-semibold text-slate-800">{reports.length ? 'Niciun rezultat' : 'Nu există rapoarte zilnice'}</h2>
+          <p className="mt-1 text-sm text-slate-500">{reports.length ? 'Ajustează termenul de căutare sau starea selectată.' : 'Nu au fost returnate rapoarte pentru proiectul selectat.'}</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {reports.map((report) => {
+        <div className="flex flex-col gap-4">
+          {filteredReports.map((report) => {
             const siteName = report.project?.name || '?antier';
             const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
@@ -205,7 +227,7 @@ function RapoartePageInner() {
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
                         Transmis spre Aprobare
                       </span>
-                      {isWorker ? null : (<button type="button" className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors"><Check className="w-3.5 h-3.5 mr-1" />Aproba Raport</button>)}
+                      {isWorker ? null : <span className="text-xs text-slate-500">{locale === 'en' ? 'Approval action is not available in this view.' : 'Acțiunea de aprobare nu este disponibilă în această vizualizare.'}</span>}
                     </>
                   )}
                 </div>

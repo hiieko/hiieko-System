@@ -30,7 +30,7 @@ interface EditorToolbarProps {
 }
 
 const toolBtn = (active: boolean) =>
-  `px-2 py-1 text-xs font-semibold rounded-md border ${
+  `min-h-11 px-3 py-2 text-xs font-semibold rounded-md border ${
     active
       ? 'bg-slate-900 text-white border-slate-900'
       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'

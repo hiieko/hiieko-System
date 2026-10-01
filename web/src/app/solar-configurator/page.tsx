@@ -25,6 +25,7 @@ import {
 } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import * as solarApi from '../../features/solar-configurator/api/solar';
 import {
   ProjectOption,
@@ -58,6 +59,12 @@ const SolarScene = dynamic(
   { ssr: false },
 );
 
+interface DeleteTarget {
+  kind: 'roof' | 'obstacle';
+  id: string;
+  label: string;
+}
+
 interface LayoutResult {
   placements: ModulePlacement[];
   mounting: MountingResult;
@@ -77,6 +84,8 @@ function SolarConfiguratorPageInner() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [retryToken, setRetryToken] = useState(0);
   const [selectedRoofSectionId, setSelectedRoofSectionId] = useState<string | null>(null);
   const [selectedModuleIds, setSelectedModuleIds] = useState<Set<string>>(new Set());
   const [selectedObstacleIds, setSelectedObstacleIds] = useState<Set<string>>(new Set());
@@ -152,7 +161,7 @@ function SolarConfiguratorPageInner() {
         setError(e instanceof ApiError ? e.message : 'Eroare la încărcarea datelor');
       }
     })();
-  }, []);
+  }, [retryToken]);
 
   // Debounced persistence: commit placements only after an edit operation completes.
   useEffect(() => {
@@ -315,6 +324,14 @@ function SolarConfiguratorPageInner() {
     }
   };
 
+  const confirmPendingDelete = async () => {
+    if (!deleteTarget) return;
+    const target = deleteTarget;
+    if (target.kind === 'roof') await deleteRoof(target.id);
+    else await deleteObstacle(target.id);
+    setDeleteTarget(null);
+  };
+
   const applyLayout = async (input: LayoutInput) => {
     if (!designId) return;
     setSaving(true);
@@ -460,14 +477,15 @@ function SolarConfiguratorPageInner() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+        <div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => { setError(null); if (designId) void loadDesign(designId); else setRetryToken((token) => token + 1); }} className="min-h-10 shrink-0 rounded-md border border-red-300 bg-white px-3 font-semibold">Reîncearcă</button>
         </div>
       )}
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12 xl:gap-6">
         {/* Left — controls */}
-        <div className="col-span-3 space-y-6">
+        <div className="min-w-0 space-y-4 md:col-span-1 xl:col-span-3 xl:space-y-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">1. Proiect & Design</h2>
             <ProjectSelector
@@ -508,9 +526,9 @@ function SolarConfiguratorPageInner() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            void deleteRoof(r.id);
+                            setDeleteTarget({ kind: 'roof', id: r.id, label: r.name });
                           }}
-                          className="text-xs text-red-600 hover:text-red-700 font-semibold"
+                          className="min-h-10 rounded px-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700"
                         >
                           Șterge
                         </button>
@@ -534,8 +552,8 @@ function SolarConfiguratorPageInner() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => void deleteObstacle(o.id)}
-                            className="text-red-600 hover:text-red-700 font-semibold"
+                            onClick={() => setDeleteTarget({ kind: 'obstacle', id: o.id, label: o.name || o.obstacleType || 'Obstacol' })}
+                            className="min-h-10 rounded px-2 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold"
                           >
                             Șterge
                           </button>
@@ -568,10 +586,10 @@ function SolarConfiguratorPageInner() {
         </div>
 
         {/* Center — 3D + 2D */}
-        <div className="col-span-6 space-y-4">
+        <div className="min-w-0 space-y-4 md:col-span-2 xl:col-span-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Vizualizare 3D</h2>
-            <div className="h-[380px] rounded-lg overflow-hidden border border-slate-100">
+            <div className="h-[280px] overflow-hidden rounded-lg border border-slate-100 sm:h-[340px] xl:h-[380px]">
               <SolarScene roofSections={roofSections} placements={displayPlacements} obstacles={obstacles} />
             </div>
           </div>
@@ -603,7 +621,7 @@ function SolarConfiguratorPageInner() {
               hasMeasure={measure.p1 !== null || measure.p2 !== null}
               onClearMeasure={() => setMeasure(EMPTY_MEASURE)}
             />
-            <div className="h-[420px] mt-3">
+            <div className="mt-3 h-[320px] sm:h-[380px] xl:h-[420px]">
               {activeSurface ? (
                 <RoofPlan2D
                   surface={activeSurface}
@@ -635,7 +653,7 @@ function SolarConfiguratorPageInner() {
         </div>
 
         {/* Right — summary + BOM */}
-        <div className="col-span-3 space-y-6">
+        <div className="min-w-0 space-y-4 md:col-span-1 xl:col-span-3 xl:space-y-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Sumar</h2>
             <SummaryPanel
@@ -654,6 +672,17 @@ function SolarConfiguratorPageInner() {
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onConfirm={confirmPendingDelete}
+        onCancel={() => { if (!saving) setDeleteTarget(null); }}
+        loading={saving}
+        variant="danger"
+        title={deleteTarget?.kind === 'roof' ? 'Ștergi secțiunea de acoperiș?' : 'Ștergi obstacolul?'}
+        message={`„${deleteTarget?.label || ''}” va fi eliminat din designul curent.`}
+        confirmLabel="Șterge"
+        cancelLabel="Păstrează"
+      />
     </div>
   );
 }

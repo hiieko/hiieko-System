@@ -16,6 +16,7 @@ import {
   AlertCircle,
   User,
   Calendar,
+  Search,
 } from 'lucide-react';
 import type { IssueSeverity } from '../../features/issues/types';
 
@@ -65,6 +66,7 @@ function IssuesPageInner() {
   const [formSeverity, setFormSeverity] = useState<IssueSeverity>('MEDIUM');
   const [formError, setFormError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
+  const [search, setSearch] = useState('');
   const { selectedProjectId } = useProject();
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase();
@@ -100,9 +102,16 @@ function IssuesPageInner() {
     finally { setSubmitting(false); }
   };
 
-  const filtered = filter === 'all' ? issues : issues.filter(i => {
-    if (filter === 'open') return i.status === 'OPEN' || i.status === 'INVESTIGATING';
-    return i.status === filter;
+  const filtered = issues.filter((issue) => {
+    const matchesStatus = filter === 'all'
+      || (filter === 'open' && (issue.status === 'OPEN' || issue.status === 'INVESTIGATING'))
+      || issue.status === filter;
+    const query = search.trim().toLowerCase();
+    const matchesSearch = !query
+      || issue.title.toLowerCase().includes(query)
+      || issue.description.toLowerCase().includes(query)
+      || issue.severity.toLowerCase().includes(query);
+    return matchesStatus && matchesSearch;
   });
 
 
@@ -114,7 +123,7 @@ function IssuesPageInner() {
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Probleme & Blocaje</h1>
           <p className="text-sm text-slate-500 mt-1">Raporteaza problemele intalnite pe santier si urmareste rezolvarea lor</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
           {canReport && (
             <button onClick={() => { setShowCreate(true); setFormError(null); }}
               className="inline-flex items-center px-3 py-2 bg-hii-500 hover:bg-hii-600 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
@@ -136,8 +145,9 @@ function IssuesPageInner() {
       )}
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />{error}
+        <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <span className="flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{error}</span>
+          <button type="button" onClick={loadIssues} disabled={loading} className="min-h-10 px-3 rounded-md border border-red-200 font-semibold hover:bg-red-100 disabled:opacity-50">Încearcă din nou</button>
         </div>
       )}
 
@@ -149,11 +159,19 @@ function IssuesPageInner() {
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit">
-            {[{ k: 'all', l: 'Toate' }, { k: 'open', l: 'Deschise' }, { k: 'RESOLVED', l: 'Rezolvate' }, { k: 'CLOSED', l: 'Inchise' }].map(t => (
-              <button key={t.k} onClick={() => setFilter(t.k)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${filter === t.k ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>{t.l}</button>
-            ))}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex w-full sm:w-fit overflow-x-auto items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
+              {[{ k: 'all', l: 'Toate' }, { k: 'open', l: 'Deschise' }, { k: 'RESOLVED', l: 'Rezolvate' }, { k: 'CLOSED', l: 'Inchise' }].map(t => (
+                <button key={t.k} onClick={() => setFilter(t.k)} aria-pressed={filter === t.k}
+                  className={`min-h-10 shrink-0 px-3 py-2 text-xs font-semibold rounded-md transition-colors ${filter === t.k ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>{t.l}</button>
+              ))}
+            </div>
+            <label className="flex min-h-11 items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 shadow-sm sm:max-w-sm">
+              <Search className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
+              <span className="sr-only">Caută după titlu, descriere sau severitate</span>
+              <input value={search} onChange={(event) => setSearch(event.target.value)}
+                placeholder="Caută probleme..." className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
+            </label>
           </div>
 
           {loading ? (
@@ -161,10 +179,11 @@ function IssuesPageInner() {
               <Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca...
             </div>
           ) : filtered.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-              <AlertTriangle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-base font-semibold text-slate-600">Nicio problema raportata</h3>
-              <p className="text-sm text-slate-400 mt-1">Totul este in regula pe acest santier</p>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-12 sm:p-12 text-center">
+              <AlertTriangle className="size-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="text-base font-semibold text-slate-700">{issues.length === 0 ? 'Nicio problemă raportată' : 'Niciun rezultat'}</h3>
+              <p className="text-sm text-slate-500 mt-1">{issues.length === 0 ? 'Nu au fost raportate probleme pentru proiectul selectat.' : 'Încearcă alt termen sau schimbă filtrul de stare.'}</p>
+              {issues.length > 0 && <button type="button" onClick={() => { setSearch(''); setFilter('all'); }} className="min-h-11 mt-4 px-4 text-sm font-semibold text-hii-700 hover:bg-hii-50 rounded-lg">Resetează filtrele</button>}
             </div>
           ) : (
             <div className="space-y-3">
