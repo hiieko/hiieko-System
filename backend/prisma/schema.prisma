@@ -50,12 +50,56 @@ model User {
   reviewed_reports    DailyReport[]            @relation("ReportReviewer")
   report_approvals    DailyReportApproval[]    @relation("ReportApprover")
   report_revisions    DailyReportRevision[]    @relation("RevisionSubmitter")
+  sessions            Session[]
   organization        Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
   @@index([role])
   @@index([status])
   @@map("users")
+}
+
+/// Slice 2 (SEC-004, Decision B / K-4, K-5) — the session is the revocation unit.
+/// `Session.id` is embedded in the access JWT as the `sid` claim, so a single row
+/// revokes an entire login (access + refresh) without a token denylist.
+model Session {
+  id             String         @id @default(uuid())
+  user_id        String
+  created_at     DateTime       @default(now())
+  last_used_at   DateTime       @default(now())
+  /// Absolute lifetime (7 days). No idle timeout in Slice 2.
+  expires_at     DateTime
+  revoked_at     DateTime?
+  revoked_reason String?
+  created_ip     String?
+  user_agent     String?
+  user           User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  refresh_tokens RefreshToken[]
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@map("sessions")
+}
+
+/// Slice 2 — opaque 256-bit refresh-token rotation ledger.
+/// Only the SHA-256 hex of the raw token is ever persisted; the raw value lives
+/// exclusively in the httpOnly `hiieko_rt` cookie. `replaced_by_id` links a consumed
+/// token to its single successor, which is what makes reuse detectable.
+model RefreshToken {
+  id             String        @id @default(uuid())
+  session_id     String
+  token_hash     String        @unique
+  issued_at      DateTime      @default(now())
+  expires_at     DateTime
+  used_at        DateTime?
+  revoked_at     DateTime?
+  replaced_by_id String?       @unique
+  session        Session       @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  replaced_by    RefreshToken? @relation("RefreshTokenRotation", fields: [replaced_by_id], references: [id])
+  replaces       RefreshToken? @relation("RefreshTokenRotation")
+
+  @@index([session_id])
+  @@map("refresh_tokens")
 }
 
 model UserProfile {

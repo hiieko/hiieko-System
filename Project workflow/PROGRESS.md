@@ -3,6 +3,39 @@
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
+## SLICE 2 — Session / Refresh / Revocation: IMPLEMENTED + VERIFIED (2026-10-01, UNCOMMITTED)
+
+**Status:** complete and verified against baseline `3183c4f` (Slice 1). **Not committed, not pushed** —
+the change set is staged only in the working tree per the slice's stop condition.
+
+**What landed (Decision B — K-4 and K-5 become effective; closes SEC-004):**
+- Two **additive** PostgreSQL tables — `sessions` (revocation unit, its `id` is the access-token `sid`)
+  and `refresh_tokens` (rotation ledger). Migration `20261001130000_add_sessions_refresh_tokens`; the
+  Slice 1 migration is untouched and **no** row is backfilled.
+- Access tokens now carry `sid`. **Web** login (`client: 'web'`) → **900 s** access token + httpOnly
+  `hiieko_rt` refresh cookie + `expiresIn: 900`. **Legacy** login (no/other `client`) → the exact
+  Slice 1 body `{ user, accessToken }`, a **7-day** token, **no** cookie and **no** refresh token
+  (frozen Mobile path), but still a session row so revocation stays enforceable.
+- Refresh rotation is **atomic** (conditional `UPDATE … WHERE used_at IS NULL`) — exactly one concurrent
+  caller can consume a token; replay/reuse revokes the whole session family and audits
+  `REFRESH_REUSE_DETECTED`.
+- Real logout: revokes the session + its refresh tokens, precedes Bearer `sid` with a valid refresh
+  cookie, is idempotent, and works after the access token has expired.
+- `JwtAuthGuard` enforces `sid`-backed sessions and **grandfathers** pre-Slice-2 sid-less tokens.
+- Suspension revokes all active sessions; reactivation does **not** restore them.
+- CORS switched from `origin: '*'` to the explicit `CORS_ORIGIN` allowlist with `credentials: true`.
+
+**Gates (all green):** `prisma validate` clean · `prisma migrate deploy` applied (14 migrations) ·
+`prisma migrate diff` → **no schema drift** · root typecheck **0 errors** · Jest **34 suites / 393
+tests** · `db:verify` **82/82** · 39-check live `curl` smoke incl. legacy-vs-web TTLs, cookie
+attributes, rotation, replay → family revocation, logout, suspension and CORS.
+
+**Recorded decisions:** L1–L17 (`DECISIONS.md` → DEC-014). **Accepted limitation (L17):** the frozen
+`Mobile/**` client omits any client discriminator, so callers that do not send `client: 'web'` receive
+the legacy 7-day access-token path — deliberate, documented, deferred.
+
+See `VERIFICATION.md` → *SLICE 2* for the evidence and `REMEDIATION_ROADMAP.md` §8 for the close-out.
+
 **Phase 1 - Shell Chrome + Worker "My Day": FINAL VERIFICATION PASSED + COMMITTED (2026-09-30,
 CHECKPOINT `0ec084a`).** The live worker smoke test the phase record listed as *not run* is now complete:
 **375 px RO, 375 px EN and 1440 px EN** on the real stack, **67/67 harness checks PASS** (each rendered

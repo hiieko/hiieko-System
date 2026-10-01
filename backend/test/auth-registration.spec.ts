@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../src/modules/auth/auth.service';
+import { SessionService } from '../src/modules/auth/session.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { AuditService } from '../src/common/audit/audit.service';
@@ -35,6 +36,7 @@ describe('AuthService — Registration Security (ISSUE-034, SEC-003)', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        SessionService,
         { provide: JwtService, useValue: mockJwtService },
         { provide: PrismaService, useValue: prisma },
         { provide: AuditService, useValue: audit },

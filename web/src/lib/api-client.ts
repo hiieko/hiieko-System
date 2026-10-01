@@ -93,7 +93,15 @@ export interface ErrorDetail {
 export interface ErrorEnvelope {
   success: false;
   statusCode: number;
-  code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'INTERNAL_ERROR';
+  code:
+    | 'UNAUTHORIZED'
+    | 'FORBIDDEN'
+    | 'NOT_FOUND'
+    | 'VALIDATION_ERROR'
+    // Rate limiting (429). Already part of the shared envelope contract in
+    // `shared/src/error-envelope.ts`; the local union is aligned with it here.
+    | 'TOO_MANY_REQUESTS'
+    | 'INTERNAL_ERROR';
   message: string;
   details?: ErrorDetail[];
   timestamp: string;
@@ -221,6 +229,29 @@ export class NestApiClient {
   private baseUrl: string;
   private token: string | null = null;
 
+  /**
+   * Single-flight guard for the Slice 2 refresh cycle.
+   *
+   * When several requests fail with 401 at the same moment they all await THIS promise,
+   * so exactly one `POST /api/auth/refresh` is issued and every caller retries with the
+   * same rotated access token. Prevents a refresh storm (and, because the server rotates
+   * on every use, prevents a self-inflicted reuse-detection logout).
+   */
+  private refreshPromise: Promise<boolean> | null = null;
+
+  /**
+   * Endpoints that must never trigger the 401 → refresh → retry cycle:
+   * refreshing off a failed refresh would recurse forever, and a 401 from
+   * login/register/logout means "credentials wrong" / "nothing to refresh", not
+   * "the access token expired".
+   */
+  private static readonly REFRESH_EXEMPT_ENDPOINTS = [
+    '/api/auth/refresh',
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/logout',
+  ];
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     // Try to load token from localStorage on initialization (client-side only)
@@ -259,10 +290,15 @@ export class NestApiClient {
 
   /**
    * Internal request helper
+   *
+   * Slice 2: on a 401 the request transparently performs ONE refresh + retry cycle
+   * (see `refreshSession`). `allowRefresh` is flipped to `false` for that single retry,
+   * which is what guarantees a request can never loop.
    */
   public async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    allowRefresh = true
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
@@ -301,16 +337,31 @@ export class NestApiClient {
           typeof data.code === 'string' &&
           typeof data.statusCode === 'number';
 
-        if (isStandardEnvelope) {
-          throw new ApiError(data.message || 'Request failed', response.status, data);
+        const apiError = isStandardEnvelope
+          ? new ApiError(data.message || 'Request failed', response.status, data)
+          : // Legacy / non-standard error response
+            new ApiError(
+              data.message || data.error || `HTTP ${response.status}: Request failed`,
+              response.status,
+              undefined
+            );
+
+        // Slice 2 (K-4): a short-lived access token expires mid-session. Instead of
+        // surfacing a 401 (which would sign the user out), refresh once and retry.
+        if (
+          response.status === 401 &&
+          allowRefresh &&
+          !this.isRefreshExempt(endpoint)
+        ) {
+          const refreshed = await this.refreshSession();
+          if (refreshed) {
+            return this.request<T>(endpoint, options, false);
+          }
+          // Refresh impossible: local auth state is cleared, the 401 is surfaced.
+          this.setToken(null);
         }
 
-        // Legacy / non-standard error response
-        throw new ApiError(
-          data.message || data.error || `HTTP ${response.status}: Request failed`,
-          response.status,
-          undefined
-        );
+        throw apiError;
       }
 
       return data;
@@ -325,6 +376,63 @@ export class NestApiClient {
         0,
         undefined
       );
+    }
+  }
+
+  /**
+   * Slice 2 — true for the endpoints that must not start a refresh cycle.
+   */
+  private isRefreshExempt(endpoint: string): boolean {
+    return NestApiClient.REFRESH_EXEMPT_ENDPOINTS.some((exempt) =>
+      endpoint.startsWith(exempt)
+    );
+  }
+
+  /**
+   * Slice 2 — single-flight refresh. Concurrent 401s share one refresh call.
+   */
+  private refreshSession(): Promise<boolean> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.performRefresh().finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+    return this.refreshPromise;
+  }
+
+  /**
+   * Slice 2 — exchanges the httpOnly `hiieko_rt` cookie for a new access token.
+   *
+   * Deliberately does NOT go through `request()`: the refresh endpoint must never be
+   * able to trigger another refresh (that would recurse). A failure clears local auth
+   * state so the UI falls back to the login screen.
+   */
+  private async performRefresh(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        this.setToken(null);
+        return false;
+      }
+
+      const payload: any = await response.json().catch(() => null);
+      const accessToken = payload?.data?.accessToken ?? payload?.accessToken;
+
+      if (!accessToken) {
+        this.setToken(null);
+        return false;
+      }
+
+      this.setToken(accessToken);
+      return true;
+    } catch {
+      // Network failure: keep the existing token so a transient outage is not a logout.
+      return false;
     }
   }
 
@@ -394,7 +502,11 @@ export class NestApiClient {
       '/api/auth/login',
       {
         method: 'POST',
-        body: JSON.stringify(credentials),
+        // Slice 2 (L2): `client: 'web'` opts into the 15-minute access token + httpOnly
+        // refresh cookie. `credentials: 'include'` is required for that cookie to be
+        // accepted (and stored) by the browser.
+        body: JSON.stringify({ ...credentials, client: 'web' }),
+        credentials: 'include',
       }
     );
     
@@ -427,8 +539,25 @@ export class NestApiClient {
     return this.request<ApiResponse<AuthUser>>('/api/auth/me');
   }
 
+  /**
+   * Slice 2 (L7) — revokes the session server-side (the refresh cookie is cleared by the
+   * backend) and always clears the local token, even if the call fails: logging out must
+   * never leave the user stuck in a half-authenticated state.
+   */
   async logout(): Promise<void> {
-    this.setToken(null);
+    try {
+      await fetch(`${this.baseUrl}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: this.token
+          ? { 'Content-Type': 'application/json', Authorization: `Bearer ${this.token}` }
+          : { 'Content-Type': 'application/json' },
+      });
+    } catch {
+      // Best-effort: the local session is cleared regardless.
+    } finally {
+      this.setToken(null);
+    }
   }
 
   // ============================================================================

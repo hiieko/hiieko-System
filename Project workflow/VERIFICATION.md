@@ -3141,3 +3141,117 @@ are listening (exactly one dev server).
 **Reconciliation:** the `UNCOMMITTED` marker this section's heading carried while it was written records
 the pre-commit state; it was reconciled to `37c7e63` by the docs-only commit *docs: record checkpoint
 commit 37c7e63* (no implementation or verification fact changed).
+
+---
+
+# SLICE 2 — Session / Refresh / Revocation (2026-10-01)
+
+**Baseline:** `3183c4f83cdb5dc8db446141a83a5b8fa1f79ee5` (Slice 1, untouched).
+**Status:** implemented + verified in the working tree. **NOT committed, NOT pushed** (slice stop condition).
+**Roadmap:** `REMEDIATION_ROADMAP.md` §4 + §8 · **Decisions:** `DECISIONS.md` → DEC-014 (L1–L17).
+
+## 1. Files changed
+
+**Backend — new (5):**
+`prisma/migrations/20261001130000_add_sessions_refresh_tokens/migration.sql` ·
+`src/modules/auth/auth.constants.ts` · `src/modules/auth/session.service.ts` ·
+`src/common/auth/cookies.ts` · `test/session-refresh.spec.ts`
+
+**Backend — modified (12):**
+`prisma/schema.prisma` · `src/modules/auth/auth.service.ts` · `src/modules/auth/auth.controller.ts` ·
+`src/modules/auth/auth.module.ts` · `src/common/auth/auth.types.ts` ·
+`src/common/auth/guards/jwt-auth.guard.ts` · `src/modules/users/users.service.ts` · `src/main.ts` ·
+`scripts/db-verify.ts` · `test/account-status.spec.ts` · `test/auth-registration.spec.ts` ·
+`test/jwt-auth.guard.spec.ts`
+
+**Web — modified (1):** `web/src/lib/api-client.ts` (the L1 minimal compatibility change)
+
+**Docs (6):** `PROGRESS.md`, `VERIFICATION.md`, `ISSUES.md`, `HANDOFF.md`, `DECISIONS.md`,
+`REMEDIATION_ROADMAP.md`
+
+**Verified untouched:** `Mobile/**` (`git status --porcelain -- Mobile` → empty), the Slice 1 migration,
+the Slice 1 rate limiter/decorator, OCR, the solar schema, attendance, tasks, cost/stock, `database/**`,
+Supabase, the PostgreSQL target, and every `.env` value.
+
+## 2. Gates
+
+| Gate | Command | Result |
+|---|---|---|
+| Prisma validate | `npx prisma validate` (backend) | **valid** |
+| Client generate | `npx prisma generate` | Prisma Client v5.22.0 generated |
+| Migration apply | `npx prisma migrate deploy` | **14 migrations**; `20261001130000_add_sessions_refresh_tokens` applied |
+| Schema drift | `npx prisma migrate diff --from-schema-datasource … --to-schema-datamodel … --exit-code` | `-- This is an empty migration.` / **exit 0 → no drift** |
+| Root typecheck | `npm run typecheck` | **exit 0**, 0 `error TS` (shared + web + Mobile + backend) |
+| Unit/integration | `npx jest --config jest.config.json` | **34 suites / 393 tests passed** (Slice 1 baseline 356) |
+| DB integrity | `npm run db:verify` (backend) | **82 PASSED / 0 FAILED / 0 SKIPPED** (was 71; +11 new) |
+| Whitespace | `git --no-pager diff --check` | **exit 0** (CRLF notices only) |
+
+## 3. New executable coverage — `backend/test/session-refresh.spec.ts` (31 tests)
+
+Issuance · rotation · concurrency · reuse · revocation · logout · suspension · cookie transport ·
+refresh rate limiting. The suite uses an in-memory Prisma double whose `updateMany` performs the filter
+**and** the mutation synchronously and whose `findUnique` returns a **snapshot**, so the
+"exactly one concurrent winner" property (L15) is proven deterministically rather than by timing.
+Six further tests were added to `test/jwt-auth.guard.spec.ts` (sid enforcement: live, revoked, unknown,
+expired, foreign-user session; plus sid-less grandfathering).
+
+## 4. Slice 1 regression (unchanged behaviour)
+
+`test/auth-registration.spec.ts`, `test/account-status.spec.ts`, `test/auth-rate-limit.spec.ts`,
+`test/error-envelope.spec.ts` and `test/jwt-auth.guard.spec.ts` all pass. Live: wrong password → 401;
+password-less login → 401; registration → **201 PENDING with no token**; the 11th login for one
+normalized email inside 60 s → **429 `TOO_MANY_REQUESTS`**.
+
+## 5. Live smoke (real stack, PostgreSQL on `localhost:5433`, backend `localhost:4000`)
+
+Driven with `curl.exe` (PowerShell 5.1 silently drops the restricted `Cookie` header — the first harness
+attempt was invalidated by that and re-run; `curl -b jar` refresh returned 200 where the PS
+`-Headers @{Cookie=…}` variant returned 401, which proved the harness, not the endpoint, was at fault).
+
+**39 checks / 38 PASS.** The one non-PASS was a harness artifact, re-confirmed separately: a refresh
+issued inside the **same wall-clock second** as its login produces a byte-identical JWT (identical
+claims and identical `iat`), so `t2 !== t1` was false. Re-run with a 1.2 s gap: `tokens identical =
+False`, `iat1=1790842462`, `iat2=1790842464`, `exp−iat = 900` on both, same `sid`/`sub`.
+
+| # | Check | Observed |
+|---|---|---|
+| 1 | Legacy login (no `client`) | `200`; body has **no** `expiresIn`; **no** `Set-Cookie`; `exp−iat = 604800`; token carries `sid` |
+| 2 | Web login (`client:'web'`) | `200`; `expiresIn = 900`; `exp−iat = 900`; `Set-Cookie: hiieko_rt=…; Max-Age=604799; Path=/api/auth; HttpOnly; SameSite=Lax` (never `SameSite=None`); new `sid` ≠ legacy `sid` |
+| 3 | Protected request | `GET /api/auth/me` with the 900 s token → `200` |
+| 4 | Refresh rotates | `200`; **cookie rotated** (`hiieko_rt` value changed); new `exp−iat = 900`; same `sid`; rotated token → `200` |
+| 5 | Replay of the consumed token | `401`; `code = UNAUTHORIZED`; `message = "Session expired or invalid"`; **then** the rotated access token → `401` and the successor cookie → `401` (**family revoked**, L10) |
+| 6 | Logout | `200`; `Set-Cookie: hiieko_rt=; Max-Age=0`; refresh with the revoked cookie → `401`; access token → `401`; second logout → `200`; logout with nothing identifying → `200` (idempotent, L7) |
+| 7 | Suspension (L13) | `PATCH /api/users/:id/status {status:'SUSPENDED'}` → `200`; the suspended user's still-valid access token → `401` |
+| 8 | CORS (L4) | Preflight from `http://localhost:3000` → `204` with `Access-Control-Allow-Origin: http://localhost:3000` (echoed, **not** `*`) and `Access-Control-Allow-Credentials: true`; `http://evil.example.com` → **no** ACAO header |
+
+Boot log confirmed `CORS allowlist: http://localhost:3000, http://localhost:19006`.
+
+## 6. Database state (post-verification)
+
+The smoke test necessarily wrote session/refresh rows (15 sessions, 15 refresh tokens at peak) and one
+PENDING self-registration user. Both artifacts were removed afterwards, and `dev@hiieko.local` (used as
+the suspension subject) was restored to `ACTIVE`:
+
+`users = 21`, all `ACTIVE`, `sessions = 0`, `refresh_tokens = 0` — i.e. identical to the pre-Slice-2
+baseline. `db:verify` re-run: **82/82 PASS**.
+
+## 7. Accepted limitation & operational note
+
+- **L17 (accepted):** `Mobile/**` is frozen and sends no client discriminator, so any caller that omits
+  `client: 'web'` receives the legacy 7-day access-token path with no cookie and no refresh token. This
+  is a documented compatibility constraint and a deferred hardening item (never solved with User-Agent
+  sniffing). A session row **is** still created so revocation/suspension stay enforceable.
+- **CORS:** `origin: '*'` is illegal with credentialed cookies. The allowlist now comes from
+  `CORS_ORIGIN`; a new origin (e.g. a LAN tablet URL) must be added to `backend/.env`'s `CORS_ORIGIN`
+  before a browser will accept credentialed requests from it. Non-browser clients (Mobile) send no
+  `Origin` header and are unaffected.
+
+## 8. Deviations / notes
+
+- `cookie-parser` was **not** installed (L3); a ~35-line dependency-free helper
+  (`src/common/auth/cookies.ts`) parses the one cookie the slice needs and serializes the one
+  `Set-Cookie` it writes.
+- `AuthService.logout` verifies the Bearer signature via the module's configured `JwtService` secret
+  while ignoring expiry (`{ ignoreExpiration: true }`) rather than injecting `ConfigService`. This keeps
+  Slice 1 DI/test wiring intact and still refuses a forged/unsigned token (covered by a dedicated test).
+- No `push`. No commit. Slice 1 history is untouched (`git log` still shows `3183c4f` as HEAD).

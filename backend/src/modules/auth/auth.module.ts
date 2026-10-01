@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
+import { SessionService } from './session.service';
 import { AuthController } from './auth.controller';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
@@ -24,7 +25,8 @@ import { RateLimitGuard } from '../../common/auth/guards/rate-limit.guard';
         }
         return {
           secret,
-          // Slice 1 keeps the current 7-day baseline; the 15-minute TTL is Slice 2.
+          // Default (legacy / frozen-Mobile) access-token TTL. Slice 2 web sessions
+          // override this per-sign with WEB_ACCESS_TOKEN_TTL_SECONDS (900 s).
           signOptions: { expiresIn: '7d' },
         };
       },
@@ -33,12 +35,21 @@ import { RateLimitGuard } from '../../common/auth/guards/rate-limit.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
+    SessionService,
     RateLimitGuard,
     JwtAuthGuard,
     RolesGuard,
     PermissionsGuard,
     ProjectAccessGuard,
   ],
-  exports: [AuthService, JwtModule, JwtAuthGuard, RolesGuard, PermissionsGuard, ProjectAccessGuard],
+  exports: [
+    AuthService,
+    SessionService,
+    JwtModule,
+    JwtAuthGuard,
+    RolesGuard,
+    PermissionsGuard,
+    ProjectAccessGuard,
+  ],
 })
 export class AuthModule {}

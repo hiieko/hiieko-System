@@ -4,6 +4,58 @@
 
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
+
+## SLICE 2 — SESSION / REFRESH / REVOCATION IMPLEMENTED + VERIFIED — **UNCOMMITTED, NOT PUSHED** (2026-10-01)
+
+**Baseline:** `3183c4f83cdb5dc8db446141a83a5b8fa1f79ee5` (Slice 1). `git log` HEAD is still `3183c4f`.
+**Roadmap:** `REMEDIATION_ROADMAP.md` §4 (scope) + §8 (close-out addendum). **Decision record:** DEC-014.
+
+### What was done
+Decision **B** implemented — **K-4 (15-minute access token)** and **K-5 (refresh rotation / reuse
+detection / revocation)** are effective; **SEC-004 is closed**.
+
+- **Schema:** two additive tables, `sessions` (revocation unit; `id` is the access-token `sid`) and
+  `refresh_tokens` (rotation ledger, `replaced_by_id` successor chain). Migration
+  `20261001130000_add_sessions_refresh_tokens` (14 migrations total). Slice 1 migration untouched, no
+  backfill, no forced logout — pre-Slice-2 sid-less tokens are **grandfathered** and expire naturally.
+- **Token model:** opaque 256-bit CSPRNG refresh token; **only its SHA-256 hex** is stored; the raw value
+  lives solely in the httpOnly `hiieko_rt` cookie (`Path=/api/auth`, `SameSite=Lax`, `Secure` only in
+  production). Web login → **900 s** access token + cookie + `expiresIn: 900`; legacy login (no/other
+  `client`) → unchanged Slice 1 body `{ user, accessToken }`, **7-day** token, **no** cookie, **no**
+  refresh token — but still a session row, so revocation/suspension stay enforceable.
+- **Endpoints:** `POST /api/auth/login` (optional `client`) · `POST /api/auth/refresh` (cookie only,
+  60/60 s per-IP rate limit) · `POST /api/auth/logout` (public, cookie preferred over Bearer `sid`,
+  idempotent, works after the access token expires). `GET /api/auth/me` unchanged.
+- **Rotation is concurrency-safe:** consumption is a conditional
+  `UPDATE … WHERE id = ? AND used_at IS NULL AND revoked_at IS NULL`, so exactly one concurrent caller
+  can win. Every competitor is a reuse → **whole session family revoked** + `REFRESH_REUSE_DETECTED`.
+- **Guard:** a token with `sid` requires a live session (not revoked, not past `expires_at`, same user);
+  a token without `sid` is grandfathered.
+- **Suspension:** `PATCH /api/users/:id/status {SUSPENDED}` revokes all active sessions
+  (`SESSION_REVOKED`); reactivation does **not** restore them.
+- **CORS:** `origin: '*'` → explicit `CORS_ORIGIN` allowlist + `credentials: true`.
+- **Web:** one file changed, `web/src/lib/api-client.ts` — `client:'web'` + `credentials:'include'` on
+  login, a single-flight one-shot 401 → refresh → retry, `POST /api/auth/logout` on logout, and
+  `TOO_MANY_REQUESTS` added to the local envelope-code union. No other web file touched.
+
+### Verification (all green)
+`prisma validate` clean · `prisma migrate deploy` applied · `prisma migrate diff` **no drift** · root
+typecheck **0 errors** · Jest **34 suites / 393 tests** (~356 baseline + 37 new) · `db:verify` **82/82**
+(+11 new session/refresh integrity checks) · `git diff --check` clean · 39-check live `curl` smoke
+(legacy vs web TTLs, cookie attributes, rotation, replay → family revocation, logout, suspension, CORS).
+DB left pristine: 21 users all `ACTIVE`, `sessions = 0`, `refresh_tokens = 0`. `Mobile/**` unchanged.
+
+### Not done (deliberate)
+**No commit, no push.** Slice 1 history is untouched. Outstanding step for the next session: commit the
+Slice 2 change set (new migration + backend + web + tests + docs) as a single checkpoint, then continue
+with the next slice.
+
+### Known limitation to carry forward
+Any caller omitting `client: 'web'` gets the legacy 7-day access-token path (frozen `Mobile/**` sends no
+client discriminator). Accepted + documented (L17); do **not** paper over it with User-Agent sniffing.
+Operationally, a new browser origin (e.g. a LAN tablet URL) must be added to `CORS_ORIGIN` in
+`backend/.env` before credentialed requests from it are accepted (non-browser clients are unaffected).
+
 ## DAILY PLANNING + TAILWIND `content` GLOBS VERIFIED + COMMITTED - CHECKPOINTS `fe23a7d` / `37c7e63` (2026-09-30)
 
 **Working tree:** clean - no tracked uncommitted change; `HEAD` = **`37c7e63`**

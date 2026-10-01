@@ -8,7 +8,7 @@
 > numbering.
 > Baseline when authored: branch `master`, HEAD `9e0c483`.
 
-**Last Updated:** 2026-10-01
+**Last Updated:** 2026-10-01 (§8 appended — Slice 1 committed and Slice 2 implemented/verified)
 
 ---
 
@@ -267,3 +267,43 @@ Single roadmap — no competing structure. This document preserves:
 **STOP — this document is planning only.** Nothing has been implemented, migrated,
 configured, committed, or pushed. Slice 1 is **not** implemented; schema, backend, frontend,
 migrations, `.env`, and database data are all untouched.
+
+---
+
+## 8. Close-out addendum — Slice 1 committed, Slice 2 implemented (2026-10-01)
+
+> The paragraph above describes the **planning phase** and is preserved verbatim. It is no longer the
+> current status: Slice 1 was committed as `3183c4f`, and Slice 2 is implemented and verified (see §8.1).
+> No section above was renumbered, renamed, or removed.
+
+### 8.1 Slice 2 — Session / Refresh / Revocation (Decision B; K-4, K-5 effective; closes SEC-004)
+
+**Baseline:** `3183c4f83cdb5dc8db446141a83a5b8fa1f79ee5` (Slice 1 history untouched; no push).
+
+**Implemented**
+- `sessions` + `refresh_tokens` — **additive** migration `20261001130000_add_sessions_refresh_tokens`;
+  no Slice 1 migration touched, no backfill, no forced logout.
+- Access token now carries a `sid` claim. **Web** sessions get a **900 s** token (K-4);
+  the **legacy** path keeps the 7-day token for the frozen Mobile client (L2 / L17).
+- Opaque 256-bit refresh token, **SHA-256 hex only** in the database, delivered exclusively through the
+  httpOnly `hiieko_rt` cookie (`Path=/api/auth`, `SameSite=Lax`).
+- Rotation with an **atomic compare-and-set** (L15) plus **reuse detection** that revokes the session
+  family (L10) and audits `REFRESH_REUSE_DETECTED`.
+- Logout (L7) — cookie preferred over Bearer `sid`, idempotent, works after the access token expires,
+  audits `USER_LOGOUT` only on a real revocation.
+- `JwtAuthGuard` enforces `sid`-backed sessions (L5) and **grandfathers** sid-less pre-Slice-2 tokens.
+- Suspension (L13) revokes every active session (`SESSION_REVOKED`); reactivation requires a new login.
+- CORS (L4) switched to the explicit `CORS_ORIGIN` allowlist with `credentials: true`.
+- `POST /api/auth/refresh` rate limited **60 / 60 s per IP**; `GET /api/auth/me` unchanged.
+
+**Decisions recorded:** L1–L17 (see `DECISIONS.md` → DEC-014 for the consolidated record).
+
+**Accepted compatibility limitation (L17, deferred hardening):** the frozen `Mobile/**` client sends no
+client discriminator, so any caller that omits `client: 'web'` receives the legacy 7-day access-token
+path. This is deliberate and documented, not something to fix with User-Agent sniffing.
+
+**Verification:** see `VERIFICATION.md` → *SLICE 2 — Session / Refresh / Revocation*. Summary —
+`prisma validate` clean, `prisma migrate deploy` applied (14 migrations), `prisma migrate diff` reports
+**no drift**, root typecheck 0 errors, Jest **34 suites / 393 tests green**, `db:verify` **82/82**,
+and a 39-check `curl`-driven live smoke (legacy vs web TTLs, cookie attributes, rotation, replay →
+family revocation, logout, suspension, CORS) all green.

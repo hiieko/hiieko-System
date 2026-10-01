@@ -27,6 +27,8 @@ describe('JwtAuthGuard', () => {
     configService = { get: jest.fn().mockReturnValue('test-secret') } as any;
     prisma = {
       user: { findUnique: jest.fn() },
+      // Slice 2 (K-5 / L5): a token carrying `sid` is checked against the session table.
+      session: { findUnique: jest.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -146,5 +148,80 @@ describe('JwtAuthGuard', () => {
     await guard.canActivate(ctx);
 
     expect(jwtService.verify).toHaveBeenCalledWith('valid-token', { secret: 'test-secret' });
+  });
+
+  // -------------------------------------------------------------------------
+  // Slice 2 — sid-backed session enforcement (K-5 / L5) + grandfathering
+  // -------------------------------------------------------------------------
+
+  const activeSession = {
+    id: 'sess-1',
+    user_id: 'user-1',
+    revoked_at: null,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000),
+  };
+
+  it('accepts a token whose sid points at a live session', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1', sid: 'sess-1' });
+    prisma.user.findUnique.mockResolvedValue(mockUser);
+    prisma.session.findUnique.mockResolvedValue(activeSession);
+
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(prisma.session.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'sess-1' } }),
+    );
+  });
+
+  it('rejects a token whose session was revoked (logout is immediately effective)', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1', sid: 'sess-1' });
+    prisma.user.findUnique.mockResolvedValue(mockUser);
+    prisma.session.findUnique.mockResolvedValue({
+      ...activeSession,
+      revoked_at: new Date(),
+    });
+
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/Session revoked or expired/);
+  });
+
+  it('rejects a token whose session is unknown (never existed / hard-deleted)', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1', sid: 'missing' });
+    prisma.user.findUnique.mockResolvedValue(mockUser);
+    prisma.session.findUnique.mockResolvedValue(null);
+
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects a token whose session passed its absolute expiry', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1', sid: 'sess-1' });
+    prisma.user.findUnique.mockResolvedValue(mockUser);
+    prisma.session.findUnique.mockResolvedValue({
+      ...activeSession,
+      expires_at: new Date(Date.now() - 1000),
+    });
+
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('rejects a token whose sid belongs to a different user', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1', sid: 'sess-1' });
+    prisma.user.findUnique.mockResolvedValue(mockUser);
+    prisma.session.findUnique.mockResolvedValue({ ...activeSession, user_id: 'someone-else' });
+
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('grandfathers a pre-Slice-2 token with no sid (no session lookup, still valid)', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1' });
+    prisma.user.findUnique.mockResolvedValue(mockUser);
+
+    const ctx = createMockContext({ authorization: 'Bearer legacy-token' });
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(prisma.session.findUnique).not.toHaveBeenCalled();
   });
 });

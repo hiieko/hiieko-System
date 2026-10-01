@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { SessionService } from '../auth/session.service';
+import { SESSION_REVOKE_REASON } from '../auth/auth.constants';
 import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 
 @Injectable()
@@ -8,6 +10,7 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly sessionService: SessionService,
   ) {}
 
   async findAll(organizationId?: string) {
@@ -126,6 +129,26 @@ export class UsersService {
 
     const activated =
       targetStatus === UserStatusEnum.ACTIVE && before.status !== UserStatusEnum.ACTIVE;
+
+    // Slice 2 (L13): suspending an account revokes every active session immediately, so an
+    // already-issued access token or refresh token stops working. Reactivation does NOT
+    // restore those sessions — the user has to log in again.
+    if (targetStatus === UserStatusEnum.SUSPENDED && before.status !== UserStatusEnum.SUSPENDED) {
+      const revokedSessions = await this.sessionService.revokeAllSessionsForUser(
+        id,
+        SESSION_REVOKE_REASON.SUSPENDED,
+      );
+
+      if (revokedSessions > 0) {
+        await this.auditService.record({
+          actorId,
+          action: 'SESSION_REVOKED',
+          entity: 'User',
+          entityId: id,
+          metadata: { reason: SESSION_REVOKE_REASON.SUSPENDED, revokedSessions },
+        });
+      }
+    }
 
     await this.auditService.record({
       actorId,

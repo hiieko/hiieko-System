@@ -52,6 +52,27 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('User is inactive or not found');
       }
 
+      // Slice 2 (K-5, L5): a token carrying a `sid` is only valid while its session is
+      // alive. Revocation (logout / reuse detection / suspension) is therefore immediately
+      // effective without a token denylist. Tokens issued before Slice 2 have no `sid` and
+      // are grandfathered — they keep working until they expire naturally.
+      if (payload.sid) {
+        const session = await this.prisma.session.findUnique({
+          where: { id: payload.sid },
+          select: { id: true, user_id: true, revoked_at: true, expires_at: true },
+        });
+
+        const sessionActive =
+          session &&
+          !session.revoked_at &&
+          session.expires_at.getTime() > Date.now() &&
+          session.user_id === dbUser.id;
+
+        if (!sessionActive) {
+          throw new UnauthorizedException('Session revoked or expired');
+        }
+      }
+
       const projectRoles: Record<string, UserRoleEnum> = {};
       dbUser.project_members.forEach((pm) => {
         projectRoles[pm.project_id] = pm.role;

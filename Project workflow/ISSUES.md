@@ -2,6 +2,18 @@
 
 Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column (migration `20260929170000_add_daily_report_proposed_work`), independent of `general_notes`; backend + shared + web changes and a 375px EN/RO browser gate are green. Earlier the same day: dev field-team data seeded and browser-verified (12 accounts / 3 teams / 12 tasks / 3 published daily plans), ISSUE-049 opened OPEN (two concurrent `next dev` servers corrupting web/.next), P4.3.1 daily report PERSISTENCE VERIFIED, ISSUE-047 RESOLVED)
 
+> **2026-10-01 (Slice 2 — Session / Refresh / Revocation, UNCOMMITTED):** **SEC-004 CLOSED.** The
+> 15-minute access-token TTL (K-4) and refresh rotation / reuse detection / revocation (K-5) are now
+> effective, with an httpOnly `hiieko_rt` refresh cookie for web and an unchanged 7-day compatibility
+> path for the frozen Mobile client. Verified: root typecheck 0 errors, Jest 34 suites / 393 tests,
+> `db:verify` 82/82, 39-check live `curl` smoke. No issue was reopened and no issue was closed other
+> than SEC-004 — the slice is additive and touches no attendance/task/cost/stock/OCR behaviour.
+>
+> **Accepted limitation recorded (not an open bug):** any caller that omits `client: 'web'` receives the
+> legacy 7-day access-token path (frozen `Mobile/**` cannot send a client discriminator). Documented as
+> a deferred hardening item in `DECISIONS.md` → DEC-014 / L17; it is deliberately **not** solved with
+> User-Agent sniffing.
+
 > **2026-09-30 (Daily Planning supervisor day surface — COMMITTED, CHECKPOINT `fe23a7d`):** **ISSUE-062 opened** — the My-work
 > card prints the raw `plan_date` timestamp (pre-existing; the surface is outside the approved Daily
 > Planning file list, so it was recorded rather than changed). Nothing was closed or reopened by the

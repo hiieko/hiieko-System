@@ -802,6 +802,128 @@ async function main() {
    } catch (e: any) { skip('Daily report movement traceability', `Query error: ${e.message}`); }
 
   // =====================================================================
+  // SECTION 8b (Slice 2): Session / Refresh-Token Integrity
+  // =====================================================================
+  header('SECTION 8b: Session / Refresh-Token Integrity (Slice 2)');
+
+  // 8b.1 — both Slice 2 tables exist and are queryable.
+  let sessionsTableExists = true;
+  try {
+    const sessions = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM sessions`
+    );
+    pass('Table: sessions', `${Number(sessions[0]?.count || 0)} session row(s)`);
+  } catch (e: any) {
+    sessionsTableExists = false;
+    fail('Table: sessions', `Query error: ${e.message}`);
+  }
+
+  let refreshTokensTableExists = true;
+  try {
+    const tokens = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens`
+    );
+    pass('Table: refresh_tokens', `${Number(tokens[0]?.count || 0)} refresh token row(s)`);
+  } catch (e: any) {
+    refreshTokensTableExists = false;
+    fail('Table: refresh_tokens', `Query error: ${e.message}`);
+  }
+
+  // 8b.2 — FK integrity: sessions.user_id → users.
+  try {
+    const orphanSessions = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM sessions s WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.id = s.user_id)`
+    );
+    const count = Number(orphanSessions[0]?.count || 0);
+    if (count === 0) pass('FK: sessions.user_id', 'No orphan session references');
+    else fail('FK: sessions.user_id', `${count} orphan session references`);
+  } catch (e: any) { skip('FK: sessions.user_id', `Query error: ${e.message}`); }
+
+  // 8b.3 — FK integrity: refresh_tokens.session_id → sessions.
+  try {
+    const orphanTokens = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens rt WHERE NOT EXISTS (SELECT 1 FROM sessions s WHERE s.id = rt.session_id)`
+    );
+    const count = Number(orphanTokens[0]?.count || 0);
+    if (count === 0) pass('FK: refresh_tokens.session_id', 'No orphan refresh token references');
+    else fail('FK: refresh_tokens.session_id', `${count} orphan refresh token references`);
+  } catch (e: any) { skip('FK: refresh_tokens.session_id', `Query error: ${e.message}`); }
+
+  // 8b.4 — FK integrity: refresh_tokens.replaced_by_id → refresh_tokens (successor exists).
+  try {
+    const orphanSuccessors = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens rt WHERE rt.replaced_by_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM refresh_tokens succ WHERE succ.id = rt.replaced_by_id)`
+    );
+    const count = Number(orphanSuccessors[0]?.count || 0);
+    if (count === 0) pass('FK: refresh_tokens.replaced_by_id', 'Every successor reference resolves');
+    else fail('FK: refresh_tokens.replaced_by_id', `${count} dangling successor references`);
+  } catch (e: any) { skip('FK: refresh_tokens.replaced_by_id', `Query error: ${e.message}`); }
+
+  // 8b.5 — the raw refresh token must never be stored: only a 64-char lowercase SHA-256 hex.
+  try {
+    const malformed = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens WHERE token_hash !~ '^[0-9a-f]{64}$'`
+    );
+    const count = Number(malformed[0]?.count || 0);
+    if (count === 0) pass('Refresh token storage format', 'Every token_hash is a 64-char SHA-256 hex (raw tokens never persisted)');
+    else fail('Refresh token storage format', `${count} token_hash values are not 64-char lowercase hex`);
+  } catch (e: any) { skip('Refresh token storage format', `Query error: ${e.message}`); }
+
+  // 8b.6 — token_hash uniqueness (one row per opaque token).
+  try {
+    const duplicates = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM (SELECT token_hash FROM refresh_tokens GROUP BY token_hash HAVING COUNT(*) > 1) dup`
+    );
+    const count = Number(duplicates[0]?.count || 0);
+    if (count === 0) pass('Refresh token uniqueness', 'No duplicate token_hash values');
+    else fail('Refresh token uniqueness', `${count} duplicated token_hash values`);
+  } catch (e: any) { skip('Refresh token uniqueness', `Query error: ${e.message}`); }
+
+  // 8b.7 — a consumed token must always point at its single successor (rotation ledger).
+  try {
+    const danglingConsume = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens WHERE used_at IS NOT NULL AND revoked_at IS NULL AND replaced_by_id IS NULL`
+    );
+    const count = Number(danglingConsume[0]?.count || 0);
+    if (count === 0) pass('Rotation ledger completeness', 'Every consumed token links to its successor');
+    else fail('Rotation ledger completeness', `${count} consumed tokens have no successor`);
+  } catch (e: any) { skip('Rotation ledger completeness', `Query error: ${e.message}`); }
+
+  // 8b.8 — a revoked session must not leave a live refresh token behind.
+  try {
+    const liveTokensOnRevokedSessions = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens rt JOIN sessions s ON s.id = rt.session_id WHERE s.revoked_at IS NOT NULL AND rt.revoked_at IS NULL`
+    );
+    const count = Number(liveTokensOnRevokedSessions[0]?.count || 0);
+    if (count === 0) pass('Revocation cascade', 'No unrevoked refresh token belongs to a revoked session');
+    else fail('Revocation cascade', `${count} refresh tokens are still live on revoked sessions`);
+  } catch (e: any) { skip('Revocation cascade', `Query error: ${e.message}`); }
+
+  // 8b.9 — the absolute session cap: a refresh token can never outlive its session.
+  try {
+    const overCap = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens rt JOIN sessions s ON s.id = rt.session_id WHERE rt.expires_at > s.expires_at`
+    );
+    const count = Number(overCap[0]?.count || 0);
+    if (count === 0) pass('Session absolute expiry cap', 'No refresh token expires after its session');
+    else fail('Session absolute expiry cap', `${count} refresh tokens outlive their session`);
+  } catch (e: any) { skip('Session absolute expiry cap', `Query error: ${e.message}`); }
+
+  // 8b.10 — a rotation successor must stay inside the same session (no cross-session chains).
+  try {
+    const crossSession = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
+      `SELECT COUNT(*)::bigint as count FROM refresh_tokens rt JOIN refresh_tokens succ ON succ.id = rt.replaced_by_id WHERE succ.session_id <> rt.session_id`
+    );
+    const count = Number(crossSession[0]?.count || 0);
+    if (count === 0) pass('Rotation chain integrity', 'Every successor belongs to the same session');
+    else fail('Rotation chain integrity', `${count} successors point across sessions`);
+  } catch (e: any) { skip('Rotation chain integrity', `Query error: ${e.message}`); }
+
+  if (!sessionsTableExists || !refreshTokensTableExists) {
+    skip('Slice 2 session model', 'One or more Slice 2 tables are missing — remaining checks may be unreliable');
+  }
+
+  // =====================================================================
   // SECTION 9: Summary & Exit Code
   // =====================================================================
   header('FINAL SUMMARY');

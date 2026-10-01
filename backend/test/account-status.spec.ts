@@ -9,6 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 
 import { AuthService } from '../src/modules/auth/auth.service';
+import { SessionService } from '../src/modules/auth/session.service';
 import { UsersService } from '../src/modules/users/users.service';
 import { UsersController } from '../src/modules/users/users.controller';
 import { PrismaService } from '../src/common/prisma/prisma.service';
@@ -45,12 +46,24 @@ describe('AuthService — account lifecycle (login)', () => {
   }
 
   beforeEach(async () => {
-    prisma = { user: { findUnique: jest.fn(), create: jest.fn() } };
+    prisma = {
+      user: { findUnique: jest.fn(), create: jest.fn() },
+      // Slice 2: every successful login creates a session row (the revocation unit).
+      session: {
+        create: jest.fn().mockResolvedValue({
+          id: 'session-1',
+          user_id: 'u1',
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        }),
+      },
+      refreshToken: { create: jest.fn() },
+    };
     audit = { record: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        SessionService,
         { provide: JwtService, useValue: jwtService },
         { provide: PrismaService, useValue: prisma },
         { provide: AuditService, useValue: audit },
@@ -175,12 +188,17 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   beforeEach(async () => {
     prisma = {
       user: { findUnique: jest.fn(), update: jest.fn() },
+      // Slice 2 (L13): suspension revokes active sessions — these tests exercise a user
+      // with no sessions, so the revocation is a no-op.
+      session: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
+      refreshToken: { updateMany: jest.fn() },
     };
     audit = { record: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
+        SessionService,
         { provide: PrismaService, useValue: prisma },
         { provide: AuditService, useValue: audit },
       ],

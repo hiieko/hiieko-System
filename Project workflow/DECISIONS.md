@@ -1,7 +1,7 @@
 # Architecture & Technical Decisions
 
-Last Updated: 2026-09-30 (DEC-013 added — Daily Planning day surface: supervisor-only frontend
-enrichment join + independent day counters; DEC-012 fixed the shell chrome earlier the same day)
+Last Updated: 2026-10-01 (DEC-014 added — Slice 2 session/refresh/revocation model, K-4/K-5
+effective; DEC-013 added the Daily Planning day surface on 2026-09-30)
 
 Record decisions that future developers and AI assistants need to understand.
 Unless noted, decisions below are inferred from repository contents (code + docs) on 2026-09-18.
@@ -416,6 +416,83 @@ day flag and the task status), so a partition would be untrue.
 - `web/src/features/planning/components/{PlanningCounters,PlanTaskTable,PlanTaskFilters,SiteReadinessCard,AttentionRequiredCard,PlanningFooterSummary}.tsx`
 - `web/src/app/planning/page.tsx`, `web/src/features/planning/index.ts`, `shared/src/translations.ts`
 - `DESIGN_SYSTEM.md` (§2.1.2 inventory, §8 tracker), `VERIFICATION.md` (evidence), `ISSUES.md` (ISSUE-062)
+
+---
+
+# DEC-014 — Session / refresh / revocation model (Slice 2: K-4 + K-5 become effective)
+**Date:** 2026-10-01
+**Status:** ACCEPTED
+
+## Context
+Slice 1 deliberately kept the 7-day access token, so K-4 (15-minute TTL) and K-5 (refresh rotation /
+reuse detection / revocation) were still unimplemented. Closing **SEC-004** required a real session
+model that works for a browser (which must survive a 15-minute token) **without** changing the frozen
+Mobile client (Decision G), which has no refresh flow at all.
+
+## Decision
+- Two additive PostgreSQL tables: **`sessions`** (the revocation unit; its `id` is embedded in the
+  access JWT as the `sid` claim) and **`refresh_tokens`** (the rotation ledger).
+- The refresh token is **opaque, 256-bit, CSPRNG-generated**; only its **SHA-256 hex** is persisted.
+  The raw value exists solely inside the httpOnly `hiieko_rt` cookie (`Path=/api/auth`, `SameSite=Lax`).
+- **Web** login (`client: 'web'`) issues a **900 s access token** + one refresh token + the cookie, and
+  returns `{ user, accessToken, expiresIn: 900 }`.
+- **Legacy** login (no `client`, or any other value) is the **frozen-Mobile compatibility path**: it
+  returns the exact Slice 1 body `{ user, accessToken }`, issues a **7-day** access token, sets **no
+  cookie** and creates **no** refresh token — but it **does** create a session and embed `sid`, so
+  suspension and revocation stay enforceable.
+- **Rotation is concurrency-safe by construction**: consumption is a conditional
+  `UPDATE … WHERE id = ? AND used_at IS NULL AND revoked_at IS NULL`. Exactly one concurrent caller can
+  win; every competitor becomes a reuse and revokes the whole session family.
+- **Pre-Slice-2 (sid-less) tokens are grandfathered** and simply expire naturally — no forced logout,
+  no backfill.
+- Revocation points: logout (cookie preferred over Bearer `sid`, idempotent), reuse detection
+  (`REFRESH_REUSE_DETECTED`), and **suspension** (`SUSPENDED` revokes every active session; reactivation
+  does **not** restore them).
+- **CORS** moves from `origin: '*'` to an explicit `CORS_ORIGIN` allowlist with `credentials: true`.
+  `SameSite=None` is never introduced in Slice 2.
+- All refresh failures answer with one generic **401 `UNAUTHORIZED` / "Session expired or invalid"**.
+
+## Reason
+A session row is the smallest unit that makes "log this user out" and "this token leaked" tractable
+without a token denylist, and `sid` makes revocation immediate even for an in-flight access token. The
+optional `client` discriminator is the only way to give the browser a short TTL while leaving the frozen
+Mobile binary byte-for-byte compatible.
+
+## Alternatives Considered
+- **Redis / token denylist** — rejected: adds a stateful dependency for data PostgreSQL already models
+  (and Slice 7 owns shared/multi-instance hardening).
+- **Refresh token in the response body for Mobile too** — rejected: `Mobile/**` is frozen and cannot
+  consume it (L17).
+- **User-Agent sniffing to detect Mobile** — rejected: fragile and spoofable; an explicit `client`
+  field is deterministic (L2).
+- **Naive read-then-write rotation** — rejected: two concurrent refreshes would both succeed and
+  silently fork the family (L15).
+- **Absolute 15-minute TTL for every caller** — rejected: it would break the frozen Mobile client and
+  the web client had no refresh (L1/L2).
+
+## Consequences
+### Positive
+- K-4/K-5 are effective; SEC-004 is closed. Real, auditable logout with immediate effect.
+- Reuse of a stolen refresh token revokes the family instead of silently minting a parallel session.
+- Zero forced logouts on deploy; the pre-existing 7-day tokens keep working.
+- Two new tables are the whole storage cost — no Redis, no Supabase.
+### Negative
+- **Known limitation (L17):** any caller that omits `client: 'web'` gets the legacy 7-day TTL. This is
+  an accepted compatibility constraint created by the frozen Mobile client, not a security control.
+- Logout answers 200 even when nothing was revoked (intentional idempotency, L7).
+- Single-process rate limiting still applies to `POST /api/auth/refresh` — shared limiting remains
+  deferred to Slice 7.
+- The CORS allowlist is now explicit, so a new origin (e.g. a LAN tablet) must be added to
+  `CORS_ORIGIN` in `backend/.env` before the browser will accept credentialed requests.
+
+## Affected Areas
+- `backend/prisma/schema.prisma`, `backend/prisma/migrations/20261001130000_add_sessions_refresh_tokens/`
+- `backend/src/modules/auth/{auth.constants.ts,session.service.ts,auth.service.ts,auth.controller.ts,auth.module.ts}`
+- `backend/src/common/auth/{cookies.ts,auth.types.ts,guards/jwt-auth.guard.ts}`
+- `backend/src/modules/users/users.service.ts`, `backend/src/main.ts`
+- `web/src/lib/api-client.ts`
+- `backend/scripts/db-verify.ts`, `backend/test/session-refresh.spec.ts` (+ updated auth specs)
+- `REMEDIATION_ROADMAP.md` (§8), `PROGRESS.md`, `VERIFICATION.md`, `ISSUES.md`, `HANDOFF.md`
 
 ---
 
