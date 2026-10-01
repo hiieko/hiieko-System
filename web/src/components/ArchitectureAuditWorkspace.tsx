@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ArrowLeft, ArrowUpRight, ChevronDown, Search } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ChevronDown, Download, Search } from 'lucide-react';
 import { designReviewModules } from './DesignReviewWorkspace';
 
 type ModuleAudit = { id: string; route: string | null; component: string; file: string; audience: string; access: string; sections: string[]; children: string[]; data: string; readiness: string; name?: string };
@@ -100,6 +100,177 @@ const readiness = [
   ['Control Tower', 'Review mock; product route separate.'], ['Worker My Day', 'Review mock; WorkerMyDay component exists separately.'], ['Tasks', 'Product page, feature components and API module exist separately.'], ['Daily Planning', 'Product page/components/API exist separately.'], ['Problems / Blockers', 'Product issues page/components exist separately.'], ['Attendance / Timesheet', 'Review mock; correction drawer explicitly prototype.'], ['Daily Reports', 'Review queue static; product report pages/components separate.'], ['Deliveries / Avize', 'Product route exists; review uses local data.'], ['Materials / Stock', 'Product route/API exists; review is static.'], ['Projects', 'Product route exists; review cards local.'], ['Project Workspace', 'Product detail route exists; review tabs static.'], ['Customers', 'Review explicitly local; product workspace separate.'], ['Documents', 'Review says no upload/persistence; product workspace separate.'], ['QA/QC', 'Review static; QualityWorkspace API-backed in source.'], ['Solar Configuration', 'Review editor local; product editor/API separate.'], ['Approvals', 'Review queue static; real approval parity NOT FOUND IN CURRENT SOURCE.'], ['Workforce', 'Review cards local; product route/API separate.'], ['Shared Application Shell', 'Illustration only; AppShell/sidebar/header/mobile nav are reusable.'], ['Mobile Navigation', 'Phone mock inline; MobilePrimaryNav exists separately.'], ['Responsive States', 'Review utility, not business workflow.'],
 ];
 
+function markdownTable(headers: string[], rows: string[][]) {
+  const formatCell = (value: string) => value.replace(/\|/g, '\\|').replace(/\n/g, '<br>');
+  return [
+    `| ${headers.map(formatCell).join(' | ')} |`,
+    `| ${headers.map(() => '---').join(' | ')} |`,
+    ...rows.map((row) => `| ${row.map(formatCell).join(' | ')} |`),
+  ].join('\n');
+}
+
+function buildAuditMarkdown(modules: ModuleAudit[]) {
+  const sections = [
+    '# HIIEKO — Frontend Architecture Audit',
+    '',
+    '> Read-only, source-grounded engineering handoff. This report exports every section and complete inventory from the architecture audit, regardless of current search filters or collapsed panels.',
+    '',
+    '## Summary',
+    '',
+    markdownTable(['Inventory', 'Count'], [
+      ['Page routes / page exports', String(routes.length)],
+      ['Design-review modules', String(modules.length)],
+      ['Reusable components inventoried', String(reusable.length)],
+      ['Modal / dialog workflows', '12'],
+      ['Drawer workflows', '2'],
+      ['Popover implementations identified', '0'],
+      ['Review-only component definitions', '7'],
+      ['Overlay workflows documented', String(overlays.length)],
+      ['Role entries', String(roles.length)],
+      ['Additional target personas', String(roleGaps.length)],
+    ]),
+    '',
+    '## How to read this audit',
+    '',
+    '- **Review prototype:** All 20 cards are branches of `DesignReviewWorkspace` under `/design-review?module=…`, not 20 standalone pages. Mock records and the nine preview states are not live API responses.',
+    '- **Product source:** Actual routes, page exports, named feature components, route guards and API evidence are listed separately. Imports show implementation wiring, not that a service is available.',
+    '- **Naming accuracy:** Most design-review content is inline JSX, not named React components. Trees label that accurately instead of inventing section components. “NOT FOUND IN CURRENT SOURCE” means no source evidence was identified.',
+    '',
+    '## Page → section → component trees',
+    '',
+    'The route and role filter in the interactive page do not limit this export.',
+    '',
+    ...modules.flatMap((module) => [
+      `### ${module.name ?? module.id} (\`${module.id}\`)`,
+      '',
+      `- **Review branch:** \`/design-review?module=${module.id}\``,
+      `- **Production route:** ${module.route ? `\`${module.route}\`` : 'No standalone product route'}`,
+      `- **Component:** \`${module.component}\``,
+      `- **Source file(s):** \`${module.file}\``,
+      `- **Audience:** ${module.audience}`,
+      `- **Access evidence:** ${module.access}`,
+      `- **Sections / capabilities:** ${module.sections.join('; ')}`,
+      `- **Named child components:** ${module.children.length ? module.children.map((child) => `\`${child}\``).join(', ') : 'No named children listed; rendered inline.'}`,
+      `- **Data boundary:** ${module.data}`,
+      `- **Readiness:** ${module.readiness}`,
+      '',
+    ]),
+    '## Current route inventory',
+    '',
+    'Page export names map to current `page.tsx` files. Preview module IDs are query/local-state branches and are not separate routes. Root layout is `RootLayout → AppShell`. The audit route remains in the existing public design-review subtree.',
+    '',
+    markdownTable(['Route', 'Page component'], routes),
+    '',
+    '## Dialogs, modals, drawers and confirmations',
+    '',
+    'The review prototype contains zero actual overlays. “Confirmation” and “Destructive confirmation” are StatePreview examples. The inventory below describes separate product components and distinguishes local prototypes from API calls.',
+    '',
+    markdownTable(['Workflow', 'Component', 'Actual file', 'Type', 'Triggered by', 'Purpose', 'Fields', 'Buttons / actions', 'Who can use it', 'Close / responsive / data notes'], overlays),
+    '',
+    '## Component reuse map',
+    '',
+    'Review primitives are file-local; product shell and overlay primitives are separate, reusable infrastructure.',
+    '',
+    markdownTable(['Group', 'Component', 'Actual file', 'Used by / purpose', 'Reusable?', 'Page-specific?', 'State', 'Responsive / overlay notes'], reusable),
+    '',
+    '### Reuse patterns',
+    '',
+    '- **Cards:** Metric and SectionCard in review source.',
+    '- **Tables:** Review TableFrame retains a minimum width; mobile uses horizontal scrolling, not cards.',
+    '- **Filters / forms:** TaskFilters is named; several product feature forms are inline in their workspace.',
+    '- **Status / states:** Review StatusBadge and StatePreview; product pages have route-specific markup.',
+    '',
+    '## Interaction map',
+    '',
+    markdownTable(['Button / control', 'Component', 'Trigger → result', 'State owner', 'Local / API evidence', 'Navigation', 'Success / error'], interactions),
+    '',
+    '## Responsive architecture',
+    '',
+    markdownTable(['Area', 'Source-backed behavior'], [
+      ['Review browser', 'Same DesignReviewWorkspace/ModuleContent. Desktop has module navigator; mobile ≤720px hides it and keeps a sticky toolbar.'],
+      ['Review tables', 'Same TableFrame; minimum width remains and content scrolls horizontally rather than transforming into cards.'],
+      ['App navigation', 'AppShell owns mobileSidebarOpen; Sidebar/Header use it, while MobilePrimaryNav is a separate bottom-navigation component.'],
+      ['Inline dialogs', 'QualityWorkspace, CustomersWorkspace, DocumentsWorkspace use bottom-aligned rounded dialogs on small screens and centered dialogs at sm+.'],
+      ['Attendance drawer', 'AttendanceSessionDrawer is a right-side full-width narrow drawer and max-width panel on larger screens.'],
+      ['Sheets / popovers / toolbars', 'No dedicated Sheet or Popover implementation found in this audit. No universal toolbar-collapse or table-to-card rule is established.'],
+    ]),
+    '',
+    '## Role-specific UI and gap audit',
+    '',
+    'Evidence sources: `web/src/config/navigation.ts`, explicit RoleGuard lists and component-level predicates. No capability is inferred solely from navigation visibility.',
+    '',
+    markdownTable(['Role', 'Primary workspace / visible navigation', 'Coverage / missing workflows'], roles),
+    '',
+    '### Additional target personas',
+    '',
+    markdownTable(['Persona', 'Gap result'], roleGaps),
+    '',
+    'Approval, attendance, task, planning, report, material, QA/QC, document and project actions are not consolidated into a role-specific capability matrix in current source. Action-level permission coverage beyond cited guards/predicate: **NOT FOUND IN CURRENT SOURCE**.',
+    '',
+    '## State architecture and data boundaries',
+    '',
+    '### DesignReviewWorkspace state',
+    '',
+    'Source: `web/src/components/DesignReviewWorkspace.tsx` · `useState`.',
+    '',
+    '- **State:** `activeModuleId`, `viewport`, `reviewState`, `search`, `notice`.',
+    '- **Loading, empty, no-results, error, permission-denied, success, confirmation, destructive-confirmation:** StatePreview illustrations, not fetched states or actual permission checks.',
+    '- **Populated:** StatePreview returns null.',
+    '- **Search:** Local filter state in selected preview branch.',
+    '- **Module selection:** Local state plus `history.replaceState` query parameter.',
+    '- **Business data:** Local constants/arrays in review source; no API/fetch import found there.',
+    '',
+    '### Product-state evidence (examples)',
+    '',
+    '- **QA/QC:** loading, refreshing, error, query, statusFilter, openForm, inspectorName, measurements, saving, success, formError; `getInspections` + `POST /api/qa-qc/inspections`.',
+    '- **Tasks:** tasks/loading/error/search/status/onlyMine and modal/update state; imports `getTasks`/`updateTask`.',
+    '- **Project detail:** project/member/user/loading/error/success/tab/add/remove state; imports `apiClient`.',
+    '- **Attendance correction:** Local prototype state; no persistence.',
+    '- **Other route states:** Inspect each route; no global product state contract is claimed.',
+    '',
+    '## Implementation readiness',
+    '',
+    markdownTable(['Readiness category', 'Source-backed finding'], [
+      ['READY FOR REAL FRONTEND IMPLEMENTATION', 'Shared shell, navigation, modal/confirmation primitives and product page/feature sources where cited. Verify each route contract before extension.'],
+      ['DESIGN ONLY', 'All 20 review branches are local-data visuals in one workspace; they are not 20 complete production workflows.'],
+      ['MISSING / NOT FOUND', 'Dedicated unrepresented role workspaces, verified end-to-end approval workflow, and complete action/overlay permission map.'],
+    ]),
+    '',
+    markdownTable(['Module', 'Readiness', 'Source distinction'], readiness.map(([name, note]) => [name, 'DESIGN ONLY', note])),
+    '',
+    '### Reusable infrastructure',
+    '',
+    'AppShell, Sidebar, Header, MobilePrimaryNav, Modal, ConfirmDialog and product API modules where explicitly cited.',
+    '',
+    '### Page-specific / review-only',
+    '',
+    'DesignReviewWorkspace + five file-local helpers (StatusBadge, Metric, SectionCard, TableFrame, StatePreview); ModuleContent renders module branches. Most visual sections are inline JSX, not reusable named components.',
+    '',
+    '### Prototype interactions',
+    '',
+    'Module browsing, viewport/state selection, local sample search and temporary notice. The review does not implement role-specific sessions, persisted mock edits, real uploads or a real approval mutation.',
+    '',
+    '---',
+    '',
+    'HIIEKO · source audit · read only',
+    '',
+  ];
+
+  return sections.join('\n');
+}
+
+function downloadAuditMarkdown(modules: ModuleAudit[]) {
+  const blob = new Blob([buildAuditMarkdown(modules)], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'hiieko-frontend-architecture-audit.md';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function Badge({ children, tone = 'slate' }: { children: ReactNode; tone?: 'green' | 'amber' | 'slate' | 'red' }) {
   const palette = { green: 'border-emerald-200 bg-emerald-50 text-emerald-800', amber: 'border-amber-200 bg-amber-50 text-amber-900', slate: 'border-slate-200 bg-slate-100 text-slate-700', red: 'border-rose-200 bg-rose-50 text-rose-800' };
   return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${palette[tone]}`}>{children}</span>;
@@ -128,7 +299,7 @@ export function ArchitectureAuditWorkspace() {
   }), [modules, query, roleFilter]);
 
   return <main className="min-h-screen bg-slate-50 text-slate-950">
-    <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-4 sm:px-7"><div className="flex min-w-0 items-center gap-3"><Link href="/design-review" aria-label="Return to Design Review" className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><ArrowLeft className="size-4" /></Link><div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">HIIEKO · Engineering handoff</p><p className="truncate text-sm font-semibold">Frontend Architecture</p></div></div><Badge tone="green">Read-only source audit</Badge></div></header>
+    <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-7"><div className="flex min-w-0 items-center gap-3"><Link href="/design-review" aria-label="Return to Design Review" className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><ArrowLeft className="size-4" /></Link><div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">HIIEKO · Engineering handoff</p><p className="truncate text-sm font-semibold">Frontend Architecture</p></div></div><div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => downloadAuditMarkdown(modules)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"><Download aria-hidden="true" className="size-4" /><span>Download full report <span className="max-[420px]:hidden">(.md)</span></span></button><Badge tone="green">Read-only source audit</Badge></div></div></header>
     <div className="mx-auto flex max-w-[1500px] flex-col gap-6 px-4 py-6 sm:px-7 sm:py-8">
       <section className="rounded-3xl bg-slate-950 p-6 text-white sm:p-9"><div className="flex flex-wrap gap-2"><Badge tone="green">Actual source</Badge><Badge>Not a UI redesign</Badge><Badge>No product-data changes</Badge></div><h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Frontend Architecture</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">A source-grounded map of the current review prototype and the real product routes/components it references. Review mockups are not product routes. Capabilities not established by source are marked explicitly.</p><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">{[[String(routes.length), 'page routes / page exports'], [String(reusable.length), 'shared components inventoried'], ['12', 'modal / dialog workflows'], ['2', 'drawer workflows · no sheets found'], ['0', 'popover implementations identified'], ['1', 'separate mobile component: MobilePrimaryNav'], ['7', 'review-only component definitions'], [String(overlays.length), 'overlay workflows documented']].map(([value, label]) => <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-2xl font-semibold tabular-nums">{value}</p><p className="mt-1 text-xs leading-5 text-slate-300">{label}</p></div>)}</div><p className="mt-4 text-xs leading-5 text-slate-400">Counts reflect the source-backed inventories below: the 14 overlay entries comprise 12 dialog/modal and 2 drawer workflows. Seven review-only component definitions include DesignReviewWorkspace and its six file-local helpers. No Sheet or Popover implementation was identified.</p></section>
 
