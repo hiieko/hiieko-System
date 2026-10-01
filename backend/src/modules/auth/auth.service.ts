@@ -2,13 +2,12 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  NotFoundException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
-import { UserRoleEnum } from '@prisma/client';
+import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 export interface RegisterDto {
@@ -36,8 +35,9 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    const email = dto.email.toLowerCase();
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+      where: { email },
     });
 
     if (existing) {
@@ -58,11 +58,16 @@ export class AuthService {
         ? requestedRole
         : UserRoleEnum.WORKER;
 
+    // SEC-003: self-registration never yields a usable account. It starts PENDING and must be
+    // activated by an ADMIN/OWNER. `is_active` mirrors the authoritative status for legacy
+    // readers (kept in lock-step by UsersService.updateStatus).
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email.toLowerCase(),
+        email,
         password_hash: passwordHash,
         role,
+        status: UserStatusEnum.PENDING,
+        is_active: false,
         organization_id: dto.organizationId,
         profile: {
           create: {
@@ -82,19 +87,18 @@ export class AuthService {
       action: 'USER_REGISTERED',
       entity: 'User',
       entityId: user.id,
-      after: { email: user.email, role: user.role, fullName: dto.fullName },
+      after: { email: user.email, role: user.role, status: user.status, fullName: dto.fullName },
     });
 
-    const token = this.generateToken(user);
-
+    // SEC-003: no access token is issued at registration — the account is not yet ACTIVE.
     return {
       user: {
         id: user.id,
         email: user.email,
         role: user.role,
+        status: user.status,
         fullName: user.profile?.full_name,
       },
-      accessToken: token,
     };
   }
 
@@ -108,15 +112,26 @@ export class AuthService {
       },
     });
 
-    if (!user || !user.is_active) {
-      throw new UnauthorizedException('Invalid credentials or inactive account');
-    }
+    // SEC-001: a valid password is MANDATORY. A missing password, a NULL `password_hash`, a
+    // non-ACTIVE account (PENDING/SUSPENDED), and a mismatching password all fail with the SAME
+    // generic 401 so callers cannot probe which condition failed.
+    const passwordValid =
+      !!dto.password &&
+      !!user?.password_hash &&
+      (await bcrypt.compare(dto.password, user.password_hash));
+    const accountActive = user?.status === UserStatusEnum.ACTIVE;
 
-    if (dto.password && user.password_hash) {
-      const match = await bcrypt.compare(dto.password, user.password_hash);
-      if (!match) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
+    if (!user || !passwordValid || !accountActive) {
+      await this.auditService.record({
+        organizationId: user?.organization_id || undefined,
+        actorId: user?.id,
+        action: 'LOGIN_FAILED',
+        entity: 'User',
+        entityId: user?.id ?? email,
+        // Never record the submitted password — only this non-sensitive reason.
+        metadata: { email, reason: this.loginFailureReason(user, dto.password) },
+      });
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     await this.auditService.record({
@@ -135,11 +150,22 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        status: user.status,
         fullName: user.profile?.full_name,
         organizationId: user.organization_id,
       },
       accessToken: token,
     };
+  }
+
+  /** Non-sensitive classification of a failed login, for auditing only. */
+  private loginFailureReason(user: any, password?: string): string {
+    if (!user) return 'UNKNOWN_ACCOUNT';
+    if (!user.password_hash) return 'NO_PASSWORD_SET';
+    if (!password) return 'MISSING_PASSWORD';
+    if (user.status === UserStatusEnum.PENDING) return 'PENDING';
+    if (user.status === UserStatusEnum.SUSPENDED) return 'SUSPENDED';
+    return 'BAD_PASSWORD';
   }
 
   private generateToken(user: any): string {
@@ -148,6 +174,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
       organization_id: user.organization_id,
+      status: user.status,
       user_metadata: {
         full_name: user.profile?.full_name,
         role: user.role,

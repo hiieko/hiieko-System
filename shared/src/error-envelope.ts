@@ -29,9 +29,16 @@ export interface ErrorEnvelope {
    * - "FORBIDDEN"      — authenticated but lacks permission
    * - "NOT_FOUND"      — resource does not exist
    * - "VALIDATION_ERROR" — input validation failed (422)
+   * - "TOO_MANY_REQUESTS" — rate limit exceeded (429)
    * - "INTERNAL_ERROR" — unexpected server failure
    */
-  code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'INTERNAL_ERROR';
+  code:
+    | 'UNAUTHORIZED'
+    | 'FORBIDDEN'
+    | 'NOT_FOUND'
+    | 'VALIDATION_ERROR'
+    | 'TOO_MANY_REQUESTS'
+    | 'INTERNAL_ERROR';
   /**
    * Human-readable summary message.
    * In production, internal server errors use a generic message to avoid leaks.
@@ -52,6 +59,7 @@ export const ERROR_CODES = {
   FORBIDDEN: 'FORBIDDEN',
   NOT_FOUND: 'NOT_FOUND',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
 
@@ -72,6 +80,8 @@ export function statusToErrorCode(status: number): ErrorCode {
     case 422:
     case 413:
       return 'VALIDATION_ERROR';
+    case 429:
+      return 'TOO_MANY_REQUESTS';
     default:
       return 'INTERNAL_ERROR';
   }

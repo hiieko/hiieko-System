@@ -6,7 +6,7 @@ import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { Roles } from '../../common/auth/decorators/auth-metadata.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
-import { UserRoleEnum } from '@prisma/client';
+import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 
 @ApiTags('Users')
 @Controller('api/users')
@@ -37,6 +37,20 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.usersService.updateRole(id, role, user.id);
+  }
+
+  @Patch(':id/status')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER)
+  @ApiOperation({
+    summary:
+      'Activate, suspend, or set PENDING for a user (status authoritative over legacy isActive)',
+  })
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status?: UserStatusEnum; isActive?: boolean },
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.usersService.updateStatus(id, body, user.id);
   }
 
   @Patch('profile')

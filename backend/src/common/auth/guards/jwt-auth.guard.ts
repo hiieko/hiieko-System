@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser, JwtPayload } from '../auth.types';
-import { UserRoleEnum } from '@prisma/client';
+import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -23,9 +23,15 @@ export class JwtAuthGuard implements CanActivate {
 
     const token = authHeader.substring(7);
 
+    // SEC-002: no hardcoded fallback. A missing secret is a server misconfiguration, not a
+    // reason to accept tokens signed with a well-known default.
+    const secret = this.configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new UnauthorizedException('Server misconfiguration: JWT_SECRET is not set');
+    }
+
     try {
       // 1. Verify token
-      const secret = this.configService.get<string>('JWT_SECRET', 'hiieko-solar-secret-key-change-in-prod');
       const payload = this.jwtService.verify<JwtPayload>(token, { secret });
 
       const userId = payload.sub;
@@ -41,7 +47,8 @@ export class JwtAuthGuard implements CanActivate {
         },
       });
 
-      if (!dbUser || !dbUser.is_active) {
+      // Only ACTIVE accounts may use the API; PENDING and SUSPENDED are rejected.
+      if (!dbUser || dbUser.status !== UserStatusEnum.ACTIVE) {
         throw new UnauthorizedException('User is inactive or not found');
       }
 
@@ -56,6 +63,7 @@ export class JwtAuthGuard implements CanActivate {
         role: dbUser.role,
         organizationId: dbUser.organization_id || undefined,
         fullName: dbUser.profile?.full_name,
+        status: dbUser.status,
         projectRoles,
       } as AuthenticatedUser;
 

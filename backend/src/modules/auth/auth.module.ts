@@ -7,21 +7,33 @@ import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { PermissionsGuard } from '../../common/auth/guards/permissions.guard';
 import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
+import { RateLimitGuard } from '../../common/auth/guards/rate-limit.guard';
 
 @Module({
   imports: [
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'hiieko-solar-secret-key-change-in-prod'),
-        signOptions: { expiresIn: '7d' },
-      }),
+      useFactory: (configService: ConfigService) => {
+        // SEC-002: no hardcoded fallback — refuse to start without an explicit secret.
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error(
+            'JWT_SECRET is not set. Refusing to start: configure an explicit JWT_SECRET (SEC-002).'
+          );
+        }
+        return {
+          secret,
+          // Slice 1 keeps the current 7-day baseline; the 15-minute TTL is Slice 2.
+          signOptions: { expiresIn: '7d' },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
+    RateLimitGuard,
     JwtAuthGuard,
     RolesGuard,
     PermissionsGuard,

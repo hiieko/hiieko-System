@@ -31,6 +31,7 @@ model User {
   password_hash       String?
   role                UserRoleEnum             @default(WORKER)
   is_active           Boolean                  @default(true)
+  status              UserStatusEnum           @default(ACTIVE)
   created_at          DateTime                 @default(now())
   updated_at          DateTime                 @updatedAt
   time_logs           AttendanceRecord[]
@@ -53,6 +54,7 @@ model User {
 
   @@index([organization_id])
   @@index([role])
+  @@index([status])
   @@map("users")
 }
 
@@ -1111,6 +1113,12 @@ enum UserRoleEnum {
   SITE_LOGISTICS
   MAINTENANCE_DIRECTOR
   TECHNICAL_DIRECTOR
+}
+
+enum UserStatusEnum {
+  PENDING
+  ACTIVE
+  SUSPENDED
 }
 
 enum AttendanceStatusEnum {

@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../src/common/prisma/prisma.service';
 import { UnauthorizedException, ExecutionContext } from '@nestjs/common';
-import { UserRoleEnum } from '@prisma/client';
+import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
@@ -17,6 +17,7 @@ describe('JwtAuthGuard', () => {
     email: 'test@hiieko.local',
     role: UserRoleEnum.WORKER,
     is_active: true,
+    status: UserStatusEnum.ACTIVE,
     profile: { full_name: 'Test User' },
     project_members: [{ project_id: 'proj-1', role: UserRoleEnum.WORKER }],
   };
@@ -77,9 +78,25 @@ describe('JwtAuthGuard', () => {
     await expect(guard.canActivate(ctx)).rejects.toThrow(/inactive or not found/);
   });
 
-  it('should throw 401 when user is inactive', async () => {
+  it('should throw 401 when user status is SUSPENDED (K-3)', async () => {
     jwtService.verify.mockReturnValue({ sub: 'user-1' });
-    prisma.user.findUnique.mockResolvedValue({ ...mockUser, is_active: false });
+    prisma.user.findUnique.mockResolvedValue({
+      ...mockUser,
+      is_active: false,
+      status: UserStatusEnum.SUSPENDED,
+    });
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/inactive or not found/);
+  });
+
+  it('should throw 401 when user status is PENDING', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1' });
+    prisma.user.findUnique.mockResolvedValue({
+      ...mockUser,
+      is_active: false,
+      status: UserStatusEnum.PENDING,
+    });
     const ctx = createMockContext({ authorization: 'Bearer valid-token' });
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
     await expect(guard.canActivate(ctx)).rejects.toThrow(/inactive or not found/);
@@ -104,25 +121,30 @@ describe('JwtAuthGuard', () => {
     expect(request.user.id).toBe('user-1');
     expect(request.user.email).toBe('test@hiieko.local');
     expect(request.user.role).toBe(UserRoleEnum.WORKER);
+    expect(request.user.status).toBe(UserStatusEnum.ACTIVE);
     expect(request.user.projectRoles).toEqual({ 'proj-1': UserRoleEnum.WORKER });
     expect(request.user.fullName).toBe('Test User');
   });
 
-  it('should use default JWT_SECRET when env var is not set', async () => {
+  it('SEC-002: throws 401 when JWT_SECRET is not configured (no hardcoded fallback)', async () => {
     configService.get.mockReturnValue(undefined);
     jwtService.verify.mockReturnValue({ sub: 'user-1' });
     prisma.user.findUnique.mockResolvedValue(mockUser);
 
-    const request: any = { headers: { authorization: 'Bearer valid-token' } };
-    const ctx = {
-      switchToHttp: () => ({
-        getRequest: () => request,
-      }),
-      getHandler: () => ({}),
-      getClass: () => ({}),
-    } as unknown as ExecutionContext;
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(/JWT_SECRET/);
+    // The token must NOT be verified with a fallback secret.
+    expect(jwtService.verify).not.toHaveBeenCalled();
+  });
 
-    await expect(guard.canActivate(ctx)).resolves.toBe(true);
-    expect(configService.get).toHaveBeenCalledWith('JWT_SECRET', expect.any(String));
+  it('verifies tokens with the configured secret only (no fallback argument)', async () => {
+    jwtService.verify.mockReturnValue({ sub: 'user-1' });
+    prisma.user.findUnique.mockResolvedValue(mockUser);
+
+    const ctx = createMockContext({ authorization: 'Bearer valid-token' });
+    await guard.canActivate(ctx);
+
+    expect(jwtService.verify).toHaveBeenCalledWith('valid-token', { secret: 'test-secret' });
   });
 });

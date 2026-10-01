@@ -70,6 +70,17 @@ describe('AllExceptionsFilter (Error Envelope Contract)', () => {
     expect(env.message).toContain('not found');
   });
 
+  it('429: TOO_MANY_REQUESTS envelope (rate limit)', () => {
+    filter.catch(
+      new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS),
+      createMockHost('POST', '/api/auth/login')
+    );
+    const env = expectValidErrorEnvelope(mockResponse.sentJson, 429, ERROR_CODES.TOO_MANY_REQUESTS);
+    expect(env.message).toContain('Too many');
+    // A rate limit must never masquerade as an internal error.
+    expect(env.code).not.toBe(ERROR_CODES.INTERNAL_ERROR);
+  });
+
   it('422: VALIDATION_ERROR envelope with field details (from class-validator)', () => {
     // class-validator returns BadRequestException with { message: [...], error: "Bad Request" }
     const validationException = new BadRequestException({
