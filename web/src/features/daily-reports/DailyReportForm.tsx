@@ -12,6 +12,7 @@ import { DailyReportMaterialsSection } from './DailyReportMaterialsSection';
 import { DailyReportTasksSection } from './DailyReportTasksSection';
 import { DailyReportExecutionSection } from './DailyReportExecutionSection';
 import { DailyReportReviewSection } from './DailyReportReviewSection';
+import { todayCompanyIso } from '../../lib/company-time';
 
 interface Props { reportId?: string; }
 
@@ -29,7 +30,7 @@ export function DailyReportForm({ reportId }: Props) {
   if (error) return <Card className="max-w-lg mx-auto mt-8"><div className="text-center py-8"><AlertTriangle className="w-10 h-10 mx-auto text-rose-400 mb-3" /><p className="text-sm text-rose-600 mb-4">{error}</p><Button variant="secondary" onClick={() => router.push('/rapoarte')}>{t('general.close', locale)}</Button></div></Card>;
   if (!form) return null;
 
-  const isPreviousDate = form.reportDate < new Date().toISOString().split('T')[0]!;
+  const isPreviousDate = form.reportDate < todayCompanyIso();
   const warningText = warnings.map((key) => t(key, locale)).join(' ');
 
   return (

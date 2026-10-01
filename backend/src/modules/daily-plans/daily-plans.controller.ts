@@ -30,6 +30,7 @@ import { CurrentUser } from '../../common/auth/decorators/current-user.decorator
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
 import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
+import { companyDateIso } from '../../common/datetime/company-time';
 
 @ApiTags('Daily Plans')
 @Controller('api/daily-plans')
@@ -44,7 +45,7 @@ export class DailyPlansController {
   async findByProject(
     @ProjectScope() scope: ProjectScopeType,
     @Query('projectId') projectId?: string,
-    @Query('date') date = new Date().toISOString().split('T')[0],
+    @Query('date') date = companyDateIso(),
   ) {
     const where = buildScopedProjectWhere(scope, projectId);
     return this.dailyPlansService.findByProjectAndDate(projectId, date, where);
@@ -54,7 +55,7 @@ export class DailyPlansController {
   @ApiOperation({ summary: 'Get my assigned daily plan tasks for a date' })
   async findMyTasks(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('date') date = new Date().toISOString().split('T')[0],
+    @Query('date') date = companyDateIso(),
   ) {
     return this.dailyPlansService.findMyTasks(user.id, date);
   }

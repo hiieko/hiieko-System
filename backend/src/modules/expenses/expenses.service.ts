@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { companyDay } from '../../common/datetime/company-time';
 import { ExpenseCategoryEnum, PaymentMethodEnum, ExpenseStatusEnum } from '@prisma/client';
 
 export interface CreateExpenseDto {
@@ -91,8 +92,7 @@ export class ExpensesService {
   }
 
   async create(userId: string, dto: CreateExpenseDto) {
-    const expenseDate = new Date(dto.expenseDate);
-    expenseDate.setUTCHours(0, 0, 0, 0);
+    const expenseDate = companyDay(dto.expenseDate);
 
     const expense = await this.prisma.expense.create({
       data: {

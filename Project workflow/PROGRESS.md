@@ -3,6 +3,41 @@
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
+## SLICE 3 — Company Timezone / Day-Boundary: IMPLEMENTED + VERIFIED (2026-10-01, UNCOMMITTED)
+
+**Status:** complete and verified. **Not committed, not pushed** — the change set lives only in the
+working tree (Slice 1 `3183c4f` and the uncommitted Slice 2 change set are untouched).
+
+**What landed (Decision C — K‑9 becomes effective):**
+- One canonical company day, **`Europe/Bucharest`** by default: backend `COMPANY_TZ`, web
+  `NEXT_PUBLIC_COMPANY_TZ`. New `backend/src/common/datetime/company-time.ts` +
+  `web/src/lib/company-time.ts` derive the company calendar date through `Intl` with the IANA zone
+  (DST-correct by construction — no hand-rolled offsets).
+- UTC-day derivation replaced across attendance (check-in day + active-session lookup, today-summary,
+  find-my-logs, range filter), daily-plan day defaults + `plan_date` encoding, Control Tower workforce
+  "today", and every web "today" call site (planning date bar, worker dashboard / My Day, daily-report
+  defaults + comparisons, expense-date default).
+- `@db.Date` encodings of `CostEntry.entry_date`, `Expense.expense_date` and `Aviz.delivery_date` now use
+  the single `companyDay()` helper — **same UTC-midnight shape, no schema change, no migration, no data
+  rewrite**; instant TIMESTAMP columns untouched. Broader same-class normalization (Issue/Invoice/Receipt/
+  …) deliberately **excluded** (G‑3).
+- Web helper rename `todayLocalIso` → `todayCompanyIso`, `shiftLocalDate` → `shiftCompanyDate` (old names
+  **deleted**, no alias); the dead `checkOut todayDate` variable removed; `Mobile/**` untouched.
+- **Daily-reports backend service unchanged:** `backend/src/modules/daily-reports/` (service, DTOs) is
+  **not** touched — the daily-report defect was at the **date-input / frontend boundary** (the web "today"
+  the reports UI sends), fixed by the web date helper alone. No backend daily-reports edit was made and
+  none should be invented.
+
+**Gates:** `prisma migrate diff` → **no difference detected** · backend Jest **35 suites / 413 tests**
+(new `company-time.spec.ts` + extended attendance/control-tower boundary tests) · `backend:build` exit 0
+· web `next build` exit 0 (25/25 static pages) · web/shared/Mobile `tsc --noEmit` exit 0 · `db:verify`
+**41/41 PASS** (DB read-only, unchanged) · `git diff --check` clean · live `dist` DST smoke 6/6.
+**Pre-existing and unrelated:** root `tsc -p backend/tsconfig.json` fails `TS2769` in
+`backend/src/modules/ocr/providers/paddleocr.provider.ts:100` (stash-proven pre-existing).
+
+See `VERIFICATION.md` → *SLICE 3 — Company Timezone / Day-Boundary*, `DECISIONS.md` → DEC-015 and
+`REMEDIATION_ROADMAP.md` §9.
+
 ## SLICE 2 — Session / Refresh / Revocation: IMPLEMENTED + VERIFIED (2026-10-01, UNCOMMITTED)
 
 **Status:** complete and verified against baseline `3183c4f` (Slice 1). **Not committed, not pushed** —

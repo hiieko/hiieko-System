@@ -2,6 +2,19 @@
 
 Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column (migration `20260929170000_add_daily_report_proposed_work`), independent of `general_notes`; backend + shared + web changes and a 375px EN/RO browser gate are green. Earlier the same day: dev field-team data seeded and browser-verified (12 accounts / 3 teams / 12 tasks / 3 published daily plans), ISSUE-049 opened OPEN (two concurrent `next dev` servers corrupting web/.next), P4.3.1 daily report PERSISTENCE VERIFIED, ISSUE-047 RESOLVED)
 
+> **2026-10-01 (Slice 3 — Company Timezone / Day-Boundary, UNCOMMITTED):** implemented + verified;
+> **no issue changed state.** The slice removes the UTC-day ("today") derivation class that had no issue
+> number: attendance check-in/today, daily-plan defaults, Control Tower workforce "today" and the web
+> worker / daily-report / expense date defaults now derive from one canonical company day
+> (`Europe/Bucharest`; backend `COMPANY_TZ`, web `NEXT_PUBLIC_COMPANY_TZ`) through `Intl`. No schema
+> change, no migration, no data rewrite; `Mobile/**` untouched. **ISSUE-062** (raw `plan_date` timestamp
+> on the My-work card) is **unchanged / still OPEN** — a display-time concern outside this slice's file
+> list. Gates: `prisma migrate diff` no difference · Jest 35 suites / 413 tests · `backend:build` + web
+> `next build` exit 0 · `db:verify` 41/41 · live `dist` DST smoke 6/6. *(Pre-existing, unrelated: root
+> `tsc -p backend/tsconfig.json` `TS2769` in `paddleocr.provider.ts:100`, stash-proven pre-existing.)*
+> The **daily-reports backend service is unchanged** — the defect was at the **date-input / frontend
+> boundary** (the web "today" sent by the reports UI), so no backend daily-reports edit was made.
+
 > **2026-10-01 (Slice 2 — Session / Refresh / Revocation, UNCOMMITTED):** **SEC-004 CLOSED.** The
 > 15-minute access-token TTL (K-4) and refresh rotation / reuse detection / revocation (K-5) are now
 > effective, with an httpOnly `hiieko_rt` refresh cookie for web and an unchanged 7-day compatibility

@@ -10,6 +10,7 @@ import { CurrentUser } from '../../common/auth/decorators/current-user.decorator
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
 import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
+import { companyDateIso } from '../../common/datetime/company-time';
 
 @ApiTags('Attendance')
 @Controller('api/attendance')
@@ -61,7 +62,7 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Get attendance history for current worker' })
   async getMyLogs(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('date') date = new Date().toISOString().split('T')[0],
+    @Query('date') date = companyDateIso(),
   ) {
     return this.attendanceService.findByUserAndDate(user.id, date);
   }

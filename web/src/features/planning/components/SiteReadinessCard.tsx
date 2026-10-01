@@ -4,7 +4,7 @@ import React from 'react';
 import { t, useLocale } from '@solar/shared';
 import { Badge, Card, Skeleton } from '@/components/ui';
 
-import { formatDateMedium, todayLocalIso } from '../summary';
+import { formatDateMedium, todayCompanyIso } from '../summary';
 import { deriveActiveBlockers } from '../readinessReads';
 import type { ReadinessSnapshot, ReadResult } from '../readinessReads';
 
@@ -136,7 +136,7 @@ export function SiteReadinessCard({ snapshot, loading, selectedDate }: SiteReadi
   );
 
   const rows = [attendance, materials, blockers];
-  const showsOtherDate = selectedDate !== todayLocalIso();
+  const showsOtherDate = selectedDate !== todayCompanyIso();
 
   return (
     <Card padding={false} className="p-4">
@@ -147,7 +147,7 @@ export function SiteReadinessCard({ snapshot, loading, selectedDate }: SiteReadi
         <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] text-slate-500">
           {t('planning.readiness_live_note', locale).replace(
             '{date}',
-            formatDateMedium(todayLocalIso(), locale),
+            formatDateMedium(todayCompanyIso(), locale),
           )}
         </p>
       )}

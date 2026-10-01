@@ -10,6 +10,7 @@ import { useLocale } from '@solar/shared';
 import { t } from '@solar/shared';
 import * as attendanceApi from '../features/attendance/api';
 import type { AttendanceRecord } from '../features/attendance/types';
+import { todayCompanyIso } from '../lib/company-time';
 
 export type ShiftStatus = 'loading' | 'noProject' | 'idle' | 'active' | 'result';
 
@@ -47,7 +48,7 @@ export function useWorkerShift(): UseWorkerShiftResult {
   const [actionLoading, setActionLoading] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const today = useMemo(() => todayCompanyIso(), []);
 
   // Live elapsed timer for an active shift
   useEffect(() => {

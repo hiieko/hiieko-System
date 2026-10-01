@@ -4,6 +4,7 @@ import { t, useLocale } from '@solar/shared';
 import { CheckCircle2, Users, Package, ClipboardList, Cloud, AlertTriangle, Shield, Calendar, Clock, Send, Lock } from 'lucide-react';
 import type { DailyReportFormState } from './types';
 import { Button } from '../../components/ui';
+import { todayCompanyIso } from '../../lib/company-time';
 
 interface Props {
   form: DailyReportFormState;
@@ -23,7 +24,7 @@ export function DailyReportReviewSection({
 }: Props) {
   const { locale } = useLocale();
 
-  const isToday = form.reportDate === new Date().toISOString().split('T')[0]!;
+  const isToday = form.reportDate === todayCompanyIso();
   const ohsChecked = form.ohsRisks.filter(r => r.checked).length;
 
   return (

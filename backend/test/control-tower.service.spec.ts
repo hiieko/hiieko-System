@@ -361,4 +361,58 @@ describe('ControlTowerService', () => {
       }
     });
   });
+
+  describe('workforce "today" uses the company calendar day (Slice 3)', () => {
+    const originalTz = process.env.COMPANY_TZ;
+
+    beforeEach(() => {
+      process.env.COMPANY_TZ = 'Europe/Bucharest';
+      // One active project so the workforce computation actually runs.
+      prisma.project.findMany.mockResolvedValue([
+        {
+          id: 'proj-boundary',
+          organization_id: mockOrgId,
+          name: 'Boundary Site',
+          code: 'BND-01',
+          status: ProjectStatusEnum.CONSTRUCTION,
+          target_end_date: null,
+          budget_total: 0,
+          currency: 'RON',
+          stages: [],
+          tasks: [],
+          members: [],
+        },
+      ]);
+      prisma.attendanceRecord.findMany.mockResolvedValue([]);
+      prisma.projectMember.findMany.mockResolvedValue([]);
+      prisma.task.findMany.mockResolvedValue([]);
+      prisma.stockBalance.findMany.mockResolvedValue([]);
+      prisma.aviz.findMany.mockResolvedValue([]);
+      prisma.costEntry.findMany.mockResolvedValue([]);
+      prisma.expense.findMany.mockResolvedValue([]);
+      prisma.commitment.findMany.mockResolvedValue([]);
+      prisma.inspection.findMany.mockResolvedValue([]);
+      prisma.nCR.findMany.mockResolvedValue([]);
+      prisma.document.findMany.mockResolvedValue([]);
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    afterAll(() => {
+      if (originalTz === undefined) delete process.env.COMPANY_TZ;
+      else process.env.COMPANY_TZ = originalTz;
+    });
+
+    it('filters attendance by the Europe/Bucharest day, not the UTC day', async () => {
+      // 2026-01-14T22:30Z = 2026-01-15 00:30 EET → company day is 2026-01-15
+      jest.useFakeTimers().setSystemTime(new Date('2026-01-14T22:30:00.000Z'));
+
+      await service.getOverview(mockOrgId);
+
+      const where = prisma.attendanceRecord.findMany.mock.calls[0][0].where;
+      expect((where.date as Date).toISOString()).toBe('2026-01-15T00:00:00.000Z');
+    });
+  });
 });

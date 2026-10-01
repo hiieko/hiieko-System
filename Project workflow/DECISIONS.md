@@ -1,7 +1,7 @@
 # Architecture & Technical Decisions
 
-Last Updated: 2026-10-01 (DEC-014 added — Slice 2 session/refresh/revocation model, K-4/K-5
-effective; DEC-013 added the Daily Planning day surface on 2026-09-30)
+Last Updated: 2026-10-01 (DEC-015 added — Slice 3 company timezone / day boundary, K-9 effective;
+DEC-014 added the Slice 2 session/refresh/revocation model, K-4/K-5 effective)
 
 Record decisions that future developers and AI assistants need to understand.
 Unless noted, decisions below are inferred from repository contents (code + docs) on 2026-09-18.
@@ -493,6 +493,88 @@ Mobile binary byte-for-byte compatible.
 - `web/src/lib/api-client.ts`
 - `backend/scripts/db-verify.ts`, `backend/test/session-refresh.spec.ts` (+ updated auth specs)
 - `REMEDIATION_ROADMAP.md` (§8), `PROGRESS.md`, `VERIFICATION.md`, `ISSUES.md`, `HANDOFF.md`
+
+---
+
+# DEC-015 — Company timezone / day boundary = Europe/Bucharest (Decision C; K‑9 effective) — Slice 3
+**Date:** 2026-10-01
+**Status:** ACCEPTED (implemented + verified; **UNCOMMITTED, not pushed**)
+
+## Context
+Every business calendar day ("today") was derived from the *server/process* UTC clock
+(`new Date().toISOString().split('T')[0]`) or from the *browser's device* timezone. Around midnight that
+disagrees with the company's working day (Romania, Europe/Bucharest = EET/EEST): attendance check-in/out
+could be stamped on the wrong day, `GET /api/attendance/today` could summarise the wrong day, and the
+daily-plan day defaults, the Control Tower workforce "today" and the web worker/daily-report/expense date
+defaults could silently shift a day for any user east/west of UTC and across both DST transitions.
+Decision C (K‑9) fixes one canonical company timezone; Slice 3 makes it effective.
+
+## Decision
+1. **One canonical company day.** Company timezone = **`Europe/Bucharest`** by default, overridable by env:
+   backend **`COMPANY_TZ`**, web **`NEXT_PUBLIC_COMPANY_TZ`**. Blank/missing → `Europe/Bucharest`.
+2. **Single implementation, both layers.** New `backend/src/common/datetime/company-time.ts` and the
+   parallel `web/src/lib/company-time.ts` derive the company calendar date through `Intl`
+   (`Intl.DateTimeFormat(..., { timeZone }).formatToParts`) — DST is handled by construction, with **no**
+   hand-rolled UTC-offset arithmetic.
+3. **`@db.Date` encoding keeps its shape.** Date-only columns keep the existing UTC-midnight encoding of
+   the calendar date, now produced by one helper: `companyDay(iso) = new Date(`${iso.slice(0,10)}T00:00:00.000Z`)`.
+   **No schema change, no Prisma migration, no data rewrite.**
+4. **Instant `TIMESTAMP` columns are untouched** (`check_in_time`, `check_out_time`, `created_at`,
+   `submitted_at`, …). Only calendar-date derivations move.
+5. **Rewrite scope (Decision C + G‑3):** attendance (check-in day + active-session lookup, today-summary,
+   find-my-logs, range filter), daily-plan defaults + `plan_date` encoding, Control Tower workforce
+   "today", and the date-only encodings of `CostEntry.entry_date`, `Expense.expense_date`,
+   `Aviz.delivery_date`, plus every web "today" call site (planning date bar, worker dashboard / My Day,
+   daily-report defaults + comparisons, expense-date default). Broader same-class normalization
+   (Issue/Invoice/Receipt/… columns) is **excluded on purpose**.
+6. **Naming.** Web helpers are `todayCompanyIso()` / `shiftCompanyDate(iso, days)`; the old
+   `todayLocalIso` / `shiftLocalDate` names are **deleted** (no alias). The `features/planning` barrel
+   re-exports the new names, so consumers keep one import path.
+7. **Mobile frozen.** `Mobile/**` is not touched (its own `new Date().toISOString()` expense default is
+   out of scope, per Decision G).
+8. **Daily-reports backend service unchanged.** `backend/src/modules/daily-reports/` (service, DTOs) is
+   **not** touched: the daily-report defect was at the **date-input / frontend boundary** (the web "today"
+   the reports UI sends), fixed by the web date helper alone. No backend daily-reports change was made,
+   and none should be invented.
+
+## Reason
+One DST-correct, configurable source of truth removes a whole class of off-by-one-day defects with **no**
+storage change: the `@db.Date` rows already hold correct calendar dates, so only the *derivations* were
+wrong.
+
+## Alternatives Considered
+- **Global timestamp-type migration (`timestamptz`)** — rejected: heavy, risky, rewrites history, and does
+  not fix the calendar-*day* derivation that actually caused the defects.
+- **Client-supplied "today"** — rejected: untrusted, and still wrong for a device on another timezone.
+- **Hand-rolled `UTC+2`/`UTC+3` offset switching** — rejected: DST rules change; `Intl` is authoritative.
+- **Keep `todayLocalIso` device-local, rename only** — rejected: the point is the *company* day.
+
+## Consequences
+### Positive
+- Attendance day, daily-plan day, Control Tower workforce day and all web "today" defaults agree
+  regardless of server/device timezone and across both 2026 DST transitions.
+- One helper per layer; DST covered by unit tests (and a live `dist` smoke); no schema/migration/data change.
+### Negative
+- Two small near-duplicate helpers exist (backend + web) because the runtimes are separate bundles —
+  accepted rather than introducing a new shared runtime dependency.
+- The company timezone is a deployment setting: changing `COMPANY_TZ` changes "today" product-wide.
+
+## Affected Areas
+- `backend/src/common/datetime/company-time.ts` (new), `backend/test/company-time.spec.ts` (new)
+- `backend/src/modules/attendance/{attendance.service.ts,attendance.controller.ts}`,
+  `backend/src/modules/daily-plans/{daily-plans.service.ts,daily-plans.controller.ts}`,
+  `backend/src/modules/control-tower/control-tower.service.ts`,
+  `backend/src/modules/costs/costs.service.ts`, `backend/src/modules/expenses/expenses.service.ts`,
+  `backend/src/modules/procurement/procurement.service.ts`
+- `web/src/lib/company-time.ts` (new), `web/src/features/planning/{summary.ts,index.ts}`,
+  `web/src/features/planning/components/{PlanningDateBar,SiteReadinessCard}.tsx`,
+  `web/src/app/planning/page.tsx`, `web/src/app/cheltuieli/page.tsx`,
+  `web/src/components/{WorkerDashboard,WorkerMyDay}.tsx`,
+  `web/src/components/worker/WorkerActionsRequired.tsx`,
+  `web/src/features/daily-reports/{helpers.ts,DailyReportForm.tsx,DailyReportReviewSection.tsx,DailyReportWorkSection.tsx}`,
+  `web/src/hooks/useWorkerShift.ts`
+- `backend/.env.example` (`COMPANY_TZ`), `.env.example` (`NEXT_PUBLIC_COMPANY_TZ`)
+- `REMEDIATION_ROADMAP.md` (§9), `PROGRESS.md`, `VERIFICATION.md`, `ISSUES.md`, `HANDOFF.md`
 
 ---
 

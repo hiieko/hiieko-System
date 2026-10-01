@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { formatDecimal, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_COLORS, enumLabel } from '../../lib/formatters';
+import { todayCompanyIso } from '../../lib/company-time';
 // Category labels now use EXPENSE_CATEGORY_LABELS from formatters
 // Status colors now use EXPENSE_STATUS_COLORS from formatters
 function CheltuieliPageInner() {
@@ -32,7 +33,7 @@ function CheltuieliPageInner() {
   const [formAmount, setFormAmount] = useState('');
   const [formCurrency, setFormCurrency] = useState('RON');
   const [formPaymentMethod, setFormPaymentMethod] = useState('COMPANY_CARD');
-  const [formExpenseDate, setFormExpenseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [formExpenseDate, setFormExpenseDate] = useState(todayCompanyIso());
   const [formDescription, setFormDescription] = useState('');
   const [formMerchantName, setFormMerchantName] = useState('');
   const { user } = useAuth();
@@ -137,7 +138,7 @@ function CheltuieliPageInner() {
       setFormAmount('');
       setFormDescription('');
       setFormMerchantName('');
-      setFormExpenseDate(new Date().toISOString().split('T')[0]);
+      setFormExpenseDate(todayCompanyIso());
       // Reload expenses
       const reloadParams: any = {};
       if (selectedProjectId) reloadParams.projectId = selectedProjectId;

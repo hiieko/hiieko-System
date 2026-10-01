@@ -20,6 +20,7 @@ describe('AttendanceService (Geofencing & Hours Calculation)', () => {
         findUnique: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
+        findMany: jest.fn(),
       },
     };
 
@@ -120,6 +121,86 @@ describe('AttendanceService (Geofencing & Hours Calculation)', () => {
           longitude: 23.8122,
         })
       ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('Company day boundary (Slice 3 — Europe/Bucharest)', () => {
+    const originalTz = process.env.COMPANY_TZ;
+
+    beforeEach(() => {
+      process.env.COMPANY_TZ = 'Europe/Bucharest';
+    });
+
+    afterAll(() => {
+      if (originalTz === undefined) delete process.env.COMPANY_TZ;
+      else process.env.COMPANY_TZ = originalTz;
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('stamps check-in with the company calendar date, not the UTC date', async () => {
+      // 2026-01-14T22:30Z = 2026-01-15 00:30 EET → company day is 2026-01-15
+      jest.useFakeTimers().setSystemTime(new Date('2026-01-14T22:30:00.000Z'));
+
+      prisma.project.findUnique.mockResolvedValue({
+        id: 'proj-1',
+        latitude: 44.2981,
+        longitude: 23.8122,
+        geofence_radius_meters: 300,
+      });
+      prisma.attendanceRecord.findFirst.mockResolvedValue(null);
+      prisma.attendanceRecord.create.mockImplementation(({ data }: any) => ({
+        id: 'att-boundary',
+        ...data,
+      }));
+
+      await service.checkIn('user-1', {
+        projectId: 'proj-1',
+        latitude: 44.2982,
+        longitude: 23.8123,
+      });
+
+      const stamped = prisma.attendanceRecord.create.mock.calls[0][0].data.date as Date;
+      expect(stamped.toISOString()).toBe('2026-01-15T00:00:00.000Z');
+    });
+
+    it('uses the company calendar date for the active-session lookup', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-01-14T22:30:00.000Z'));
+
+      prisma.project.findUnique.mockResolvedValue({
+        id: 'proj-1',
+        latitude: 44.2981,
+        longitude: 23.8122,
+        geofence_radius_meters: 300,
+      });
+      prisma.attendanceRecord.findFirst.mockResolvedValue(null);
+      prisma.attendanceRecord.create.mockImplementation(({ data }: any) => ({
+        id: 'att-boundary-2',
+        ...data,
+      }));
+
+      await service.checkIn('user-1', {
+        projectId: 'proj-1',
+        latitude: 44.2982,
+        longitude: 23.8123,
+      });
+
+      const lookupDate = prisma.attendanceRecord.findFirst.mock.calls[0][0].where.date as Date;
+      expect(lookupDate.toISOString()).toBe('2026-01-15T00:00:00.000Z');
+    });
+
+    it('reports the company calendar date in the today summary', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-01-14T22:30:00.000Z'));
+      prisma.attendanceRecord.findMany.mockResolvedValue([]);
+
+      const summary = await service.getTodaySummary('proj-1');
+
+      expect(summary.date).toBe('2026-01-15');
+      const where = prisma.attendanceRecord.findMany.mock.calls[0][0].where;
+      expect((where.date as Date).toISOString()).toBe('2026-01-15T00:00:00.000Z');
+      expect(where.project_id).toBe('proj-1');
     });
   });
 });

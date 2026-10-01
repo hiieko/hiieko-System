@@ -65,34 +65,12 @@ export function deriveDaySummary(
   };
 }
 
-// --- Local-calendar date helpers ---
-// The previous implementation used new Date().toISOString() for "today",
-// which shifts the date for users west of UTC between 00:00 and 01:00 local
-// time (and shifts full days for users east/west of UTC around midnight).
-// All helpers below operate strictly on the user's LOCAL calendar date.
-
-function pad(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
-/** Today in local calendar time as YYYY-MM-DD */
-export function todayLocalIso(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
-
-/**
- * Shift a YYYY-MM-DD date by whole days on the local calendar.
- * Parsed with explicit y/m/d (no timezone reinterpretation) and noon-safe
- * arithmetic via setDate.
- */
-export function shiftLocalDate(iso: string, days: number): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  if (!y || !m || !d) return iso;
-  const dt = new Date(y, m - 1, d);
-  dt.setDate(dt.getDate() + days);
-  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-}
+// --- Company day helpers (Slice 3) ---
+// The canonical company calendar day lives in web/src/lib/company-time.ts so the
+// web "today" matches the backend COMPANY_TZ (Europe/Bucharest by default) for
+// every user, regardless of their device timezone and across DST. Re-exported
+// here so the planning feature keeps a single import path for these helpers.
+export { todayCompanyIso, shiftCompanyDate } from '../../lib/company-time';
 
 function localeTag(locale: string): string {
   return locale === 'ro' ? 'ro-RO' : 'en-US';

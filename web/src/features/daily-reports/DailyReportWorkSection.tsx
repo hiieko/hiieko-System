@@ -6,6 +6,7 @@ import type { DailyReportFormState } from './types';
 import { apiClient } from '../../lib/api-client';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
+import { todayCompanyIso } from '../../lib/company-time';
 
 interface Props { form: DailyReportFormState; onChange: (patch: Partial<DailyReportFormState>) => void; }
 
@@ -19,7 +20,7 @@ export function DailyReportWorkSection({ form, onChange }: Props) {
     apiClient.getProjects().then(r => setProjects((r.data || []) as any[])).catch(() => {});
   }, []);
 
-  const today = new Date().toISOString().split('T')[0]!;
+  const today = todayCompanyIso();
   const isPrevious = form.reportDate < today;
 
   return (

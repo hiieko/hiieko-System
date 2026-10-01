@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { companyDay } from '../../common/datetime/company-time';
 
 export interface CreateBudgetDto {
   projectId: string;
@@ -71,8 +72,7 @@ export class CostsService {
   }
 
   async recordCost(dto: CreateCostEntryDto, actorId?: string) {
-    const entryDate = new Date(dto.entryDate);
-    entryDate.setUTCHours(0, 0, 0, 0);
+    const entryDate = companyDay(dto.entryDate);
 
     const cost = await this.prisma.costEntry.create({
       data: {

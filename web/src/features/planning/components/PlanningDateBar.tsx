@@ -4,19 +4,19 @@ import React from 'react';
 import { t, useLocale } from '@solar/shared';
 import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { todayLocalIso, shiftLocalDate } from '../summary';
+import { todayCompanyIso, shiftCompanyDate } from '../summary';
 
 interface PlanningDateBarProps {
   selectedDate: string;
-  /** Receives a YYYY-MM-DD local calendar date (URL format unchanged) */
+  /** Receives a YYYY-MM-DD company calendar date (URL format unchanged) */
   onDateChange: (iso: string) => void;
   disabled?: boolean;
 }
 
 /**
  * Date navigation for /planning — native date input + Yesterday/Today/Tomorrow.
- * All operations use local calendar date helpers (summary.ts), fixing the
- * previous UTC-day drift around midnight.
+ * All operations use the company-day helpers (company-time.ts, re-exported by
+ * summary.ts), fixing the previous UTC-day drift around midnight.
  * Touch targets >= 44px on the controls; stacks vertically on mobile.
  */
 export function PlanningDateBar({
@@ -53,7 +53,7 @@ export function PlanningDateBar({
           size="sm"
           disabled={disabled}
           className="min-h-[44px]"
-          onClick={() => onDateChange(shiftLocalDate(selectedDate, -1))}
+          onClick={() => onDateChange(shiftCompanyDate(selectedDate, -1))}
         >
           {t('planning.yesterday', locale)}
         </Button>
@@ -62,7 +62,7 @@ export function PlanningDateBar({
           size="sm"
           disabled={disabled}
           className="min-h-[44px]"
-          onClick={() => onDateChange(todayLocalIso())}
+          onClick={() => onDateChange(todayCompanyIso())}
         >
           {t('planning.today', locale)}
         </Button>
@@ -71,7 +71,7 @@ export function PlanningDateBar({
           size="sm"
           disabled={disabled}
           className="min-h-[44px]"
-          onClick={() => onDateChange(shiftLocalDate(selectedDate, 1))}
+          onClick={() => onDateChange(shiftCompanyDate(selectedDate, 1))}
         >
           {t('planning.tomorrow', locale)}
         </Button>

@@ -14,7 +14,7 @@ import {
   selectMyWorkTasks,
   selectPlannedTasks,
   taskSourceForRole,
-  todayLocalIso,
+  todayCompanyIso,
 } from '../features/planning';
 import type { FieldTaskRow } from '../features/planning';
 import { WorkerTodayTasks } from './WorkerTodayTasks';
@@ -39,7 +39,7 @@ export function WorkerDashboard() {
       const response = await apiClient.getMyAttendanceLogs();
       const data = response.data;
       if (Array.isArray(data) && data.length > 0) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = todayCompanyIso();
         const todayRecs = data.filter((r: any) => (r.date || '').split('T')[0] === today);
         setAttendance(todayRecs.length > 0 ? todayRecs[0] : data[0]);
       } else if (data && typeof data === 'object') setAttendance(data);
@@ -65,7 +65,7 @@ export function WorkerDashboard() {
     setTasksLoading(true);
     setTasksError(null);
     try {
-      const today = todayLocalIso();
+      const today = todayCompanyIso();
       if (taskSource === 'my-tasks') {
         const res = await getMyPlanTasks(today);
         setTaskRows(selectMyWorkTasks(res.data));

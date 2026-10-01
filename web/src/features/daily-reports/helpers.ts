@@ -1,11 +1,12 @@
 import type { DailyReport, DailyReportOhsItem, DailyReportOhsRiskType } from '@solar/shared';
 import type { DailyReportFormState, OhsRiskItem } from './types';
 import { DEFAULT_OHS_RISKS } from './types';
+import { todayCompanyIso } from '../../lib/company-time';
 
 export function createEmptyFormState(
   teamLeaderId: string, teamLeaderName: string, projectId = '',
 ): DailyReportFormState {
-  const today = new Date().toISOString().split('T')[0]!;
+  const today = todayCompanyIso();
   return {
     teamLeaderId, teamLeaderName, projectId, reportDate: today,
     startTime: '07:00', endTime: '17:00', proposedWork: '',
@@ -22,7 +23,7 @@ export function formStateFromReport(
   return {
     reportId: report.id, teamLeaderId, teamLeaderName,
     projectId: report.project_id,
-    reportDate: report.report_date?.split('T')[0] ?? new Date().toISOString().split('T')[0]!,
+    reportDate: report.report_date?.split('T')[0] ?? todayCompanyIso(),
     startTime: report.start_time || '07:00',
     endTime: report.end_time || '17:00',
     // ISSUE-048: "Proposed Work" now round-trips from its own column (it used to be dropped,

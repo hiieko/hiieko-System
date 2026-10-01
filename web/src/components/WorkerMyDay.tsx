@@ -16,7 +16,7 @@ import {
   selectEditableMyPlanTaskIds,
   selectMyDayTasks,
   summarizeMyDay,
-  todayLocalIso,
+  todayCompanyIso,
   updatePlanTaskProgress,
 } from '../features/planning';
 import type { DailyPlan, FieldTaskRow, MyDaySummary } from '../features/planning';
@@ -59,7 +59,7 @@ export function WorkerMyDay() {
     setTasksLoading(true);
     setTasksError(null);
     try {
-      const res = await getMyPlanTasks(todayLocalIso());
+      const res = await getMyPlanTasks(todayCompanyIso());
       setPlans(Array.isArray(res.data) ? res.data : []);
     } catch (err: unknown) {
       setTasksError(err instanceof Error ? err.message : t('worker.error_generic', locale));

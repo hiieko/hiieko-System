@@ -5,6 +5,45 @@
 Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; P4.4 COMPLETE - Daily Report finalization DRAFT -> SUBMITTED verified end-to-end: `POST /api/daily-reports/:id/submit` + the Mobile status-less one-call contract, one immutable revision, one stock consumption, one `DAILY_REPORT_SUBMITTED` audit row (a DRAFT create now audits as `DAILY_REPORT_CREATED`), idempotent replay, PATCH-after-submit 400, insufficient stock -> clean DRAFT, read-only UI after submit at 375px; browser gate `gate-p44-finalize.js` 25/25 / 0 console errors, backend 31 suites / 320 tests, db:verify 71/71, backend/shared/web typecheck 0 errors; Mobile app E2E NOT run - ISSUE-051 opened: free-text `taskId` + draft deleted before a successful submit; earlier the same day: ISSUE-048 RESOLVED - daily report "Proposed Work" persists in its own `daily_reports.proposed_work` column, 30 suites / 295 tests, db:verify 66/66, gate-issue048-browser.js 23/23; dev team accounts / teams / projects / tasks seeded as REAL PostgreSQL rows, gate-seed-teams.js 8/8; ISSUE-049 open: two concurrent next dev servers corrupt web/.next)
 
 
+## SLICE 3 — COMPANY TIMEZONE / DAY-BOUNDARY IMPLEMENTED + VERIFIED — **UNCOMMITTED, NOT PUSHED** (2026-10-01)
+
+**Roadmap:** `REMEDIATION_ROADMAP.md` §9 (close-out addendum). **Decision record:** DEC-015 (Decision C /
+K‑9 effective). **Baseline:** HEAD still `53a1632` (Slice 2 checkpoint); Slice 1 `3183c4f` untouched.
+
+### What was done
+- **One canonical company day = `Europe/Bucharest`** (env: backend `COMPANY_TZ`, web
+  `NEXT_PUBLIC_COMPANY_TZ`; blank → default). New `backend/src/common/datetime/company-time.ts` and
+  `web/src/lib/company-time.ts`; the company date is resolved through `Intl` with the IANA zone, so DST is
+  handled by construction (no hand-rolled offsets).
+- UTC-day derivation replaced: attendance (check-in day + active-session lookup, today-summary,
+  find-my-logs, range filter), daily-plan day defaults + `plan_date`, Control Tower workforce "today", and
+  the web "today" call sites (planning date bar, worker dashboard / My Day, daily-report defaults +
+  comparisons, expense-date default).
+- `@db.Date` encodings of `CostEntry.entry_date`, `Expense.expense_date` and `Aviz.delivery_date` now use
+  one `companyDay()` helper (**same UTC-midnight shape**). **No schema change, no migration, no data
+  rewrite; instant TIMESTAMP columns untouched.** Broader same-class normalization excluded (G‑3).
+- Web helper rename `todayLocalIso` → `todayCompanyIso`, `shiftLocalDate` → `shiftCompanyDate` (old names
+  deleted, no alias); the dead `checkOut todayDate` variable removed; `Mobile/**` untouched.
+- **Daily-reports backend service unchanged:** `backend/src/modules/daily-reports/` (service, DTOs) is
+  **not** touched — the daily-report defect was at the **date-input / frontend boundary** (the web "today"
+  the reports UI sends), fixed by the web date helper alone; no backend daily-reports change was made and
+  none should be invented.
+
+### Verification (all green except one pre-existing item)
+- `prisma migrate diff` → **no difference detected** · backend Jest **35 suites / 413 tests** (new
+  `company-time.spec.ts` + extended attendance/control-tower boundary tests) · `npm run backend:build`
+  exit 0 · web `next build` exit 0 (25/25 static pages) · web/shared/Mobile `tsc --noEmit` exit 0 ·
+  `db:verify` **41/41 PASS** (DB read-only / pristine) · `git diff --check` clean · live `dist` DST smoke
+  6/6.
+- **Pre-existing, unrelated:** the standalone root `tsc -p backend/tsconfig.json` fails `TS2769` in
+  `backend/src/modules/ocr/providers/paddleocr.provider.ts:100` (`Buffer` not assignable to `BodyInit`) —
+  reproduced with the Slice 3 edits stashed (pristine backend), so it is not caused by this slice.
+
+### Not done (deliberate)
+**No commit, no push.** Outstanding step for the next session: commit Slice 3 (helpers + backend/web edits
++ tests + env templates + docs) as one checkpoint, then continue with the next slice
+(Slice 4 — Project Scope & Ownership Phase 1).
+
 ## SLICE 2 — SESSION / REFRESH / REVOCATION IMPLEMENTED + VERIFIED — **UNCOMMITTED, NOT PUSHED** (2026-10-01)
 
 **Baseline:** `3183c4f83cdb5dc8db446141a83a5b8fa1f79ee5` (Slice 1). `git log` HEAD is still `3183c4f`.

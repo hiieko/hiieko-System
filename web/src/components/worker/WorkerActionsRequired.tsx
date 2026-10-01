@@ -15,7 +15,7 @@ import {
 import { t, useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { apiClient } from '../../lib/api-client';
-import { todayLocalIso } from '../../features/planning';
+import { todayCompanyIso } from '../../features/planning';
 
 type ReportState = 'sent' | 'draft' | 'missing';
 
@@ -67,7 +67,7 @@ export function WorkerActionsRequired({
     setReportLoading(true);
     try {
       const res = await apiClient.getDailyReports({ projectId: selectedProject.id });
-      const today = todayLocalIso();
+      const today = todayCompanyIso();
       const payload: unknown = res.data;
       // GET /api/daily-reports answers with a plain array; any other shape is
       // treated as "not readable" (fail closed) instead of as "not submitted".

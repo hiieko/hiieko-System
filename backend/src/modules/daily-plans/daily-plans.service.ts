@@ -7,6 +7,7 @@ import {
 import { DailyPlanStatusEnum } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { companyDay } from '../../common/datetime/company-time';
 
 export interface CreateDailyPlanDto {
   projectId: string;
@@ -32,8 +33,7 @@ export class DailyPlansService {
   ) {}
 
   async findByProjectAndDate(projectId: string, dateStr: string, projectScopeWhere?: Record<string, any>) {
-    const d = new Date(dateStr);
-    d.setUTCHours(0, 0, 0, 0);
+    const d = companyDay(dateStr);
 
     const where: any = { ...projectScopeWhere, plan_date: d };
     if (projectId) {
@@ -93,8 +93,7 @@ export class DailyPlansService {
   }
 
   async create(dto: CreateDailyPlanDto, actorId?: string) {
-    const planDate = new Date(dto.planDate);
-    planDate.setUTCHours(0, 0, 0, 0);
+    const planDate = companyDay(dto.planDate);
 
     if (!dto.tasks || dto.tasks.length === 0) {
       throw new BadRequestException('A daily plan must contain at least one task');
@@ -210,8 +209,7 @@ export class DailyPlansService {
   }
 
   async findMyTasks(userId: string, dateStr: string) {
-    const d = new Date(dateStr);
-    d.setUTCHours(0, 0, 0, 0);
+    const d = companyDay(dateStr);
 
     const plans = await this.prisma.dailyPlan.findMany({
       where: { plan_date: d, status: DailyPlanStatusEnum.PUBLISHED },

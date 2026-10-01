@@ -32,11 +32,11 @@ export {
   isFieldPlanRole,
 } from './types';
 
-// --- Pure derivations & local-date helpers (summary.ts) ---
+// --- Pure derivations & company-day helpers (summary.ts) ---
 export {
   deriveDaySummary,
-  todayLocalIso,
-  shiftLocalDate,
+  todayCompanyIso,
+  shiftCompanyDate,
   formatDateLong,
   formatDateMedium,
   formatDateTimeLocal,

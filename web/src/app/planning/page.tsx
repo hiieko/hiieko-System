@@ -49,7 +49,7 @@ import {
   publishDailyPlan,
   completeDailyPlan,
   cancelDailyPlan,
-  todayLocalIso,
+  todayCompanyIso,
   formatDateMedium,
 } from '../../features/planning';
 import type {
@@ -77,8 +77,8 @@ function PlanningPageInner() {
   const { success: toastSuccess, error: toastError } = useToast();
 
   const urlDate = searchParams.get('date');
-  // Local calendar date (never toISOString — that drifts around UTC midnight).
-  const selectedDate = urlDate && DATE_RE.test(urlDate) ? urlDate : todayLocalIso();
+  // Company calendar date (never toISOString — that drifts around UTC midnight).
+  const selectedDate = urlDate && DATE_RE.test(urlDate) ? urlDate : todayCompanyIso();
 
   const [plans, setPlans] = useState<DailyPlan[]>([]);
   // my-tasks plans (PUBLISHED, user's own scope) — the data source for the

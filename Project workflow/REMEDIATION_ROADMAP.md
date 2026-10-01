@@ -8,7 +8,8 @@
 > numbering.
 > Baseline when authored: branch `master`, HEAD `9e0c483`.
 
-**Last Updated:** 2026-10-01 (§8 appended — Slice 1 committed and Slice 2 implemented/verified)
+**Last Updated:** 2026-10-01 (§9 appended — Slice 3 company timezone / day boundary implemented and
+verified; §8 = Slice 1 committed + Slice 2 implemented/verified)
 
 ---
 
@@ -307,3 +308,44 @@ path. This is deliberate and documented, not something to fix with User-Agent sn
 **no drift**, root typecheck 0 errors, Jest **34 suites / 393 tests green**, `db:verify` **82/82**,
 and a 39-check `curl`-driven live smoke (legacy vs web TTLs, cookie attributes, rotation, replay →
 family revocation, logout, suspension, CORS) all green.
+
+---
+
+## 9. Close-out addendum — Slice 3 Company Timezone / Day-Boundary (Decision C; K‑9 effective) (2026-10-01)
+
+**Status:** implemented + verified, **UNCOMMITTED / NOT PUSHED**. No section above was renumbered,
+renamed, or removed; Slice 1 (`3183c4f`) and the uncommitted Slice 2 change set are untouched.
+
+**Implemented**
+- One canonical company day = **`Europe/Bucharest`** by default (backend `COMPANY_TZ`, web
+  `NEXT_PUBLIC_COMPANY_TZ`). New `backend/src/common/datetime/company-time.ts` +
+  `web/src/lib/company-time.ts` derive the company calendar date through `Intl` with the IANA zone
+  (DST-correct by construction).
+- Replaced UTC-day derivation in attendance (check-in day + active-session lookup, today-summary,
+  find-my-logs, range filter), daily-plan day defaults + `plan_date` encoding, Control Tower workforce
+  "today", and every web "today" call site (planning date bar, worker dashboard / My Day, daily-report
+  defaults + comparisons, expense-date default).
+- `@db.Date` encodings of `CostEntry.entry_date`, `Expense.expense_date` and `Aviz.delivery_date` now go
+  through the single `companyDay()` helper (**same UTC-midnight shape**). **No schema change, no Prisma
+  migration, no data rewrite; instant TIMESTAMP columns untouched.**
+- Web helper rename: `todayLocalIso` → `todayCompanyIso`, `shiftLocalDate` → `shiftCompanyDate`
+  (old names **deleted**, no alias). Removed the dead `checkOut todayDate` variable. `Mobile/**` untouched.
+
+**Excluded on purpose (G‑3):** broader same-class normalization (Issue, Invoice, Receipt and other
+date-only columns) — only the planned costs / expenses / procurement paths changed.
+
+**Daily-reports backend service unchanged:** `backend/src/modules/daily-reports/` (service, DTOs) is not
+touched — the daily-report defect was at the **date-input / frontend boundary** (the web "today" the
+reports UI sends), fixed by the web date helper alone; no backend daily-reports change was made, and none
+is to be invented.
+
+**Verification:** see `VERIFICATION.md` → *SLICE 3 — Company Timezone / Day-Boundary*. Summary —
+`prisma migrate diff` → **no difference detected**; backend Jest **35 suites / 413 tests green**
+(new `backend/test/company-time.spec.ts` + extended attendance/control-tower boundary tests);
+`npm run backend:build` (nest, `tsconfig.build.json`) exit 0; web `next build` exit 0 (25/25 static
+pages); web + shared + Mobile `tsc --noEmit` exit 0; `db:verify` **41/41 PASS** (target tables 24/24)
+with the database read-only / pristine; `git diff --check` clean; a live `dist` DST smoke 6/6.
+**Pre-existing and unrelated:** the standalone root `tsc -p backend/tsconfig.json` (which includes
+`test/**`) fails `TS2769` in `backend/src/modules/ocr/providers/paddleocr.provider.ts:100` (`Buffer` not
+assignable to `BodyInit`); proved pre-existing by stashing the Slice 3 edits (same error) — not caused by
+this slice.

@@ -1,6 +1,7 @@
 ﻿import { Injectable, BadRequestException, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { companyDay } from '../../common/datetime/company-time';
 import { StockMovementTypeEnum } from '@prisma/client';
 
 export interface CreatePurchaseOrderDto {
@@ -141,8 +142,7 @@ export class ProcurementService {
       throw new ConflictException(`Delivery note number '${dto.avizNumber}' already exists for this project`);
     }
 
-    const deliveryDate = new Date(dto.deliveryDate);
-    deliveryDate.setUTCHours(0, 0, 0, 0);
+    const deliveryDate = companyDay(dto.deliveryDate);
 
     // Atomic transaction: create aviz + post stock
     return this.prisma.$transaction(async (tx) => {

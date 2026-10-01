@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { companyDateIso, companyDay, companyDayFor } from '../../common/datetime/company-time';
 import { AttendanceStatusEnum } from '@prisma/client';
 
 export interface CheckInDto {
@@ -61,8 +62,8 @@ export class AttendanceService {
       throw new NotFoundException(`Project ${dto.projectId} not found`);
     }
 
-    const todayDate = dto.date ? new Date(dto.date) : new Date();
-    todayDate.setUTCHours(0, 0, 0, 0);
+    // Company calendar day (Europe/Bucharest by default) — never the server UTC day.
+    const todayDate = dto.date ? companyDay(dto.date) : companyDayFor();
 
     // 2. Check if user already checked in today for this project without check-out
     const activeLog = await this.prisma.attendanceRecord.findFirst({
@@ -125,9 +126,6 @@ export class AttendanceService {
   }
 
   async checkOut(userId: string, dto: CheckOutDto) {
-    const todayDate = new Date();
-    todayDate.setUTCHours(0, 0, 0, 0);
-
     let record = null;
     if (dto.attendanceRecordId) {
       record = await this.prisma.attendanceRecord.findUnique({
@@ -187,8 +185,7 @@ export class AttendanceService {
   }
 
   async findByUserAndDate(userId: string, date: string) {
-    const d = new Date(date);
-    d.setUTCHours(0, 0, 0, 0);
+    const d = companyDay(date);
 
     return this.prisma.attendanceRecord.findMany({
       where: {
@@ -200,8 +197,8 @@ export class AttendanceService {
   }
 
   async getTodaySummary(projectId?: string, projectScopeWhere?: Record<string, any>) {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    const todayIso = companyDateIso();
+    const today = companyDay(todayIso);
 
     const where: any = { ...projectScopeWhere, date: today };
     if (projectId) {
@@ -221,7 +218,7 @@ export class AttendanceService {
     const totalOvertimeMinutes = records.reduce((sum, r) => sum + r.overtime_minutes, 0);
 
     return {
-      date: today.toISOString().split('T')[0],
+      date: todayIso,
       totalWorkersToday: records.length,
       activeNow: activeCount,
       completedToday: completedCount,
@@ -246,12 +243,11 @@ export class AttendanceService {
       where.user_id = params.userId;
     }
     if (params?.startDate) {
-      const start = new Date(params.startDate);
-      start.setUTCHours(0, 0, 0, 0);
+      const start = companyDay(params.startDate);
       where.date = { ...where.date, gte: start };
     }
     if (params?.endDate) {
-      const end = new Date(params.endDate);
+      const end = companyDay(params.endDate);
       end.setUTCHours(23, 59, 59, 999);
       where.date = { ...where.date, lte: end };
     }

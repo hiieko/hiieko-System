@@ -1,6 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { companyDateIso, companyDay } from '../../common/datetime/company-time';
 import {
   ControlTowerOverviewDto,
   ProjectsMetrics,
@@ -54,7 +55,8 @@ export class ControlTowerService {
     projectId?: string,
   ): Promise<ControlTowerOverviewDto> {
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    // Company calendar day (Europe/Bucharest by default) — never the server UTC day.
+    const todayStr = companyDateIso(now);
 
     // Fetch projects for the organization (or single project)
     const projects = await this.prisma.project.findMany({
@@ -343,7 +345,7 @@ export class ControlTowerService {
     const attendanceRecords = await this.prisma.attendanceRecord.findMany({
       where: {
         project_id: { in: projectIds },
-        date: new Date(todayStr),
+        date: companyDay(todayStr),
       },
     });
 

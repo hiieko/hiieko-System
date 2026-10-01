@@ -1,5 +1,17 @@
 # Verification & Audit
 
+> **2026-10-01 — SLICE 3 — Company Timezone / Day-Boundary (Decision C, K‑9 effective; UNCOMMITTED, not
+> pushed):** one canonical company day (`Europe/Bucharest`; backend `COMPANY_TZ`, web
+> `NEXT_PUBLIC_COMPANY_TZ`) resolved through `Intl` (DST-correct). UTC-day derivation removed from
+> attendance (check-in day + active-session lookup, today-summary, find-my-logs, range filter),
+> daily-plan defaults + `plan_date`, Control Tower workforce "today" and every web "today" call site;
+> the `@db.Date` encodings of costs / expenses / avize now use one `companyDay()` helper. **No schema
+> change, no migration, no data rewrite; instant TIMESTAMP columns and `Mobile/**` untouched.** Gates:
+> `prisma migrate diff` **no difference detected** · Jest **35 suites / 413 tests** · `backend:build`
+> exit 0 · web `next build` exit 0 (25/25) · web/shared/Mobile `tsc --noEmit` exit 0 · `db:verify`
+> **41/41 PASS** · `git diff --check` clean · live `dist` DST smoke 6/6. Detail:
+> *SLICE 3 — Company Timezone / Day-Boundary*.
+
 > **2026-09-30 — Tailwind `content` globs (ISSUE-063, COMMITTED — CHECKPOINT `37c7e63`):** the globs skipped
 > `web/src/features/**`, so utilities used only there were never emitted. `content` is now
 > `./src/**/*.{js,ts,jsx,tsx,mdx}` (one line in `web/tailwind.config.js`). Served `layout.css`
@@ -15,6 +27,75 @@
 Last Updated: 2026-09-30 (Daily Planning supervisor day surface `/planning` **VERIFIED + COMMITTED (checkpoint `fe23a7d`)** — real stack (PostgreSQL :5433 + NestJS :4000 + `next dev` :3000), real Chrome over CDP, harness `cdp-planning-day.js`: **231/231 checks PASS** over 7 scenarios (supervisor RO/EN x 375/1440 + a plan-less day + worker RO/EN role isolation), every counter/row value asserted against `GET /api/daily-plans?projectId=&date=`, `GET /api/tasks?projectId=`, `GET /api/attendance/today`, `GET /api/inventory/stock` and `GET /api/issues`; 0 horizontal overflow, 0 JS exceptions, 0 failed requests, only the pre-existing `/favicon.ico` 404; gates typecheck / web:typecheck / web:build (25/25) / i18n:check (1121/1121) / guards:check / `npm test` (31 suites / 320 tests) all exit 0 and `git diff --stat backend/ prisma/ database/` is empty; ISSUE-062 opened for the pre-existing raw `plan_date` timestamp on the My-work card. Earlier: CI GREEN - GitHub Actions run 36606409946 on commit `6bd45b7`: Tests ✅ / Typecheck ✅ / Build ✅; `ci.yml` now builds `@solar/shared` before the commands that resolve it and the root workspace casing is `Mobile`; P4.4 - Daily Report finalization (DRAFT -> SUBMITTED) - **PASS**: browser gate `gate-p44-finalize.js` 25/25 with 0 console errors at 375px, backend 31 suites / 320 tests, db:verify 71/71, typecheck 0 errors (backend/shared/web); exactly one immutable revision, one stock consumption, one finalization audit row per report, idempotent replay, read-only UI after submit, Mobile one-call contract verified over HTTP only; ISSUE-051 opened for the Mobile daily-report screen; earlier the same day: ISSUE-048 daily report "Proposed Work" persistence PASS at 30 suites / 295 tests + db:verify 66/66, dev field-team data seeded as REAL PostgreSQL rows PASS, P4.3.1 daily report persistence PASS, Dev/LAN access PASS (ISSUE-047); ISSUE-049 OPEN: two concurrent next dev servers corrupt web/.next)
 
 Record what has actually been tested or verified. Never mark a check as passing unless it was actually performed.
+
+## SLICE 3 — Company Timezone / Day-Boundary (2026-10-01, UNCOMMITTED)
+
+Decision **C** / **K‑9** made effective. **No schema change, no Prisma migration, no database write**;
+the `@db.Date` rows already held correct calendar dates, so only the *derivations* changed.
+
+### Implemented (exact files)
+- **New:** `backend/src/common/datetime/company-time.ts` (`companyTimeZone`, `companyDateIso`,
+  `companyDay`, `companyDayFor`), `web/src/lib/company-time.ts` (`companyTimeZone`, `companyDateIso`,
+  `todayCompanyIso`, `shiftCompanyDate`), `backend/test/company-time.spec.ts`.
+- **Backend (UTC-day removed):** `attendance/attendance.service.ts` (check-in day + active-session
+  lookup, today-summary, find-my-logs, range filter; dead `checkOut todayDate` removed),
+  `attendance/attendance.controller.ts` (`my-logs` default), `daily-plans/daily-plans.service.ts`
+  (`findByProjectAndDate`, `create.plan_date`, `findMyTasks`), `daily-plans/daily-plans.controller.ts`
+  (2 date defaults), `control-tower/control-tower.service.ts` (workforce "today"),
+  `costs/costs.service.ts`, `expenses/expenses.service.ts`, `procurement/procurement.service.ts`
+  (`@db.Date` encodings).
+- **Web (UTC-day removed / renamed):** `features/planning/summary.ts` (re-exports the company-day
+  helpers), `features/planning/index.ts`,
+  `features/planning/components/{PlanningDateBar,SiteReadinessCard}.tsx`, `app/planning/page.tsx`,
+  `app/cheltuieli/page.tsx`, `components/{WorkerDashboard,WorkerMyDay}.tsx`,
+  `components/worker/WorkerActionsRequired.tsx`,
+  `features/daily-reports/{helpers.ts,DailyReportForm.tsx,DailyReportReviewSection.tsx,DailyReportWorkSection.tsx}`,
+  `hooks/useWorkerShift.ts`. `todayLocalIso` → `todayCompanyIso`, `shiftLocalDate` → `shiftCompanyDate`
+  (old names **deleted**, no alias); no `new Date().toISOString().split('T')[0]` call site remains in
+  product code.
+- **Env templates:** `backend/.env.example` (`COMPANY_TZ="Europe/Bucharest"`), `.env.example`
+  (`NEXT_PUBLIC_COMPANY_TZ=Europe/Bucharest`). `Mobile/**` unchanged.
+
+### Evidence
+- **Prisma drift:** `npx prisma migrate diff --from-schema-datasource prisma/schema.prisma
+  --to-schema-datamodel prisma/schema.prisma` → **"No difference detected."** (exit 0).
+- **Backend Jest:** `npx jest --config jest.config.json` → **35 suites / 413 tests passed, 0 failed**
+  (Slice 2 baseline = 34/393; +1 suite, +20 tests). New `test/company-time.spec.ts` pins the
+  Europe/Bucharest winter/summer day boundary, **both 2026 DST transitions** (spring-forward
+  2026-03-29 01:00Z, fall-back 2026-10-25 01:00Z), the `COMPANY_TZ` env fallback and the `@db.Date`
+  encode. Extended `attendance.service.spec.ts` (fake clock `2026-01-14T22:30:00Z` → company day
+  `2026-01-15` for the check-in stamp, the active-session lookup and the today summary) and
+  `control-tower.service.spec.ts` (the workforce attendance filter uses the company day).
+- **Backend build:** `npm run backend:build` exit **0**.
+- **Web build:** `npm run web:build` exit **0** — `✓ Compiled successfully`, `Generating static pages
+  (25/25)`, lint + type checking pass.
+- **Typecheck:** web `tsc --noEmit` exit 0 · shared exit 0 · Mobile exit 0 · `backend:build` 0.
+  **Pre-existing and unrelated:** the standalone `tsc -p backend/tsconfig.json` (which includes
+  `test/**`) fails `TS2769` in `backend/src/modules/ocr/providers/paddleocr.provider.ts:100` (`Buffer`
+  not assignable to `BodyInit`) — reproduced with the Slice 3 edits **stashed** (pristine backend), so it
+  predates this slice.
+- **DB verify:** `db:verify` → **41/41 checks PASS** (target tables 24/24). Read-only; the database is
+  unchanged (`attendance_records` 12, `daily_reports` 6, `projects` 3, `users` 21, `expenses` 0,
+  `avize` 0, `stock_balances`/`stock_movements` 0; FK orphans 0; non-negative balances; no expense
+  self-approval). This slice wrote **no** row.
+- **DST runtime smoke (live `backend/dist`):** 6/6 PASS — winter `2026-01-14T22:30Z` → `2026-01-15`;
+  spring-forward `2026-03-29T21:30Z` → `2026-03-30`; fall-back repeated hour `2026-10-25T01:30Z` →
+  `2026-10-25`; fall-back evening `2026-10-25T22:30Z` → `2026-10-26`; summer `2026-07-01T21:30Z` →
+  `2026-07-02`; `companyDay('2026-01-15')` → `2026-01-15T00:00:00.000Z`; default fallback
+  `Europe/Bucharest`.
+- **Mobile frozen:** `git status` shows **no** `Mobile/**` change.
+- **`git diff --check`:** clean (exit 0). **No commit, no push.**
+
+### Deliberate exclusions
+Broader same-class normalization (Issue, Invoice, Receipt and other date-only columns) — only the planned
+costs / expenses / procurement paths changed (G‑3). The unrelated Control Tower
+`computeProductionMetrics` `todayStr` parameter was left as-is (not part of the finalized plan).
+- **Daily-reports backend service was NOT changed.** `backend/src/modules/daily-reports/` (service, DTOs)
+  is untouched: the daily-report defect addressed by this slice sits at the **date-input / frontend
+  boundary** — the web "today" the reports UI sends as `YYYY-MM-DD`
+  (`web/src/features/daily-reports/*`, `web/src/hooks/useWorkerShift.ts`) — so the fix is the *date the
+  client derives*, not server-side report logic. No backend daily-reports edit was made and none should be
+  invented.
 
 ## UX-R1A Baseline (2026-09-29)
 
