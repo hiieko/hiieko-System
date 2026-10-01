@@ -14,7 +14,7 @@ import { ToastProvider } from './ui/Toast';
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const isDesignReviewPage = pathname === '/design-review';
+  const isDesignReviewPage = pathname.startsWith('/design-review');
   const isAuthPage = pathname === '/login' || pathname === '/signup';
 
   if (isDesignReviewPage) return <>{children}</>;
