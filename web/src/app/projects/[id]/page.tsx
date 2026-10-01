@@ -288,8 +288,8 @@ function ProjectDetailPageInner() {
 
 
       {tab === 'members' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Membri Proiect</h3>
             {canManage && (
               <button onClick={() => setShowAddMember(true)}
@@ -302,23 +302,23 @@ function ProjectDetailPageInner() {
           {showAddMember && (
             <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
               <h4 className="text-xs font-bold text-slate-700 uppercase">Adauga Membru Nou</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
+              <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-3">
+                <select aria-label="Selectează utilizatorul" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="min-w-0 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
                   <option value="">Selecteaza utilizator</option>
                   {availableUsers.map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
                 </select>
-                <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}
-                  className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
+                <select aria-label="Selectează rolul membrului" value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}
+                  className="min-w-0 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
                   {MEMBER_ROLES.map((r) => <option key={r} value={r}>{MEMBER_ROLE_LABELS[r]}</option>)}
                 </select>
                 <div className="flex gap-2">
                   <button onClick={handleAddMember} disabled={!selectedUserId || addingMember}
                     className="flex-1 px-3 py-2 bg-hii-500 hover:bg-hii-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">
-                    {addingMember ? 'Se adauga...' : 'Adauga'}
+                    {addingMember ? 'Se adaugă...' : 'Adaugă'}
                   </button>
-                  <button onClick={() => setShowAddMember(false)}
-                    className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg"><X className="w-4 h-4" /></button>
+                  <button type="button" aria-label="Închide adăugarea membrului" onClick={() => setShowAddMember(false)}
+                    className="min-h-10 min-w-10 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg"><X className="w-4 h-4" /></button>
                 </div>
               </div>
             </div>
@@ -330,7 +330,7 @@ function ProjectDetailPageInner() {
               {members.map((m) => {
                 const memberName = displayName(m.user);
                 return (
-                  <div key={m.id} className="py-3 flex items-center justify-between">
+                  <div key={m.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-hii-100 flex items-center justify-center text-xs font-bold text-hii-700">
                         {memberName.slice(0, 2).toUpperCase()}
@@ -340,10 +340,10 @@ function ProjectDetailPageInner() {
                         <div className="text-xs text-slate-500">{m.user?.email}</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
                       {canManage ? (
-                        <select value={m.role} onChange={(e) => handleUpdateRole(m.user_id, e.target.value)}
-                          className="px-2 py-1 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
+                        <select aria-label={`Rolul lui ${memberName}`} value={m.role} onChange={(e) => handleUpdateRole(m.user_id, e.target.value)}
+                          className="min-w-0 max-w-full flex-1 px-2 py-2 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white sm:flex-none">
                           {MEMBER_ROLES.map((r) => <option key={r} value={r}>{MEMBER_ROLE_LABELS[r]}</option>)}
                         </select>
                       ) : (
@@ -351,7 +351,7 @@ function ProjectDetailPageInner() {
                       )}
                       {canManage && (
                         <>
-                          <button onClick={() => setConfirmRemove(m.user_id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600" title="Elimina membru">
+                          <button type="button" onClick={() => setConfirmRemove(m.user_id)} className="min-h-10 min-w-10 rounded-lg p-2 hover:bg-red-50 text-slate-400 hover:text-red-600" title="Elimină membru" aria-label={`Elimină ${memberName} din proiect`}>
                               <Trash2 className="w-4 h-4" />
                             </button>
                           <ConfirmDialog

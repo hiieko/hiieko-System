@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { AlertCircle, Clock3, MapPin, X } from 'lucide-react';
 import type { AttendanceRecord } from '../types';
 
@@ -31,11 +32,29 @@ function formatValue(value: string) {
 }
 
 export function AttendanceSessionDrawer({ record, onClose }: AttendanceSessionDrawerProps) {
+  const dialogRef = useRef<HTMLElement>(null);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [reason, setReason] = useState('');
   const [corrections, setCorrections] = useState<PrototypeCorrection[]>([]);
   const [success, setSuccess] = useState(false);
+
+  useFocusTrap(dialogRef, record !== null);
+  useEffect(() => {
+    setCheckIn('');
+    setCheckOut('');
+    setReason('');
+    setCorrections([]);
+    setSuccess(false);
+  }, [record?.id]);
+  useEffect(() => {
+    if (!record) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [record, onClose]);
 
   const initialCheckIn = useMemo(() => toLocalInput(record?.check_in_time), [record?.check_in_time]);
   const initialCheckOut = useMemo(() => toLocalInput(record?.check_out_time), [record?.check_out_time]);
@@ -66,7 +85,7 @@ export function AttendanceSessionDrawer({ record, onClose }: AttendanceSessionDr
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <section role="dialog" aria-modal="true" aria-labelledby="attendance-session-title" className="flex h-full w-full max-w-xl flex-col overflow-y-auto bg-white shadow-2xl">
+      <section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="attendance-session-title" className="flex h-full w-full max-w-xl flex-col overflow-y-auto bg-white shadow-2xl">
         <header className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-hii-700">Pontaj · {record.date?.slice(0, 10) || 'Sesiune'}</p>

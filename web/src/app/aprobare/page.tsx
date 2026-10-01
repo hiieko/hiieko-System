@@ -11,6 +11,7 @@ import {
 import { Expense } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useProject } from '../../contexts/ProjectContext';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { formatDecimal, enumLabel, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_COLORS, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/formatters';
 
 // STATUS_MAP and CAT_MAP replaced by shared formatters (EXPENSE_STATUS_LABELS, EXPENSE_CATEGORY_LABELS)
@@ -20,6 +21,7 @@ function AprobarePageInner() {
   const [filter, setFilter] = useState('pending');
   const [search, setSearch] = useState('');
   const [selId, setSelId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ id: string; status: 'APPROVED' | 'REJECTED' } | null>(null);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState<string | null>(null);
@@ -37,19 +39,9 @@ function AprobarePageInner() {
       const response = await apiClient.getExpenses(Object.keys(params).length ? params : undefined);
       let data = (response.data || []) as Expense[];
       
-      // Filter by status
-      // Backend returns UPPERCASE status values (SUBMITTED, APPROVED, etc.)
-      if (filter === 'pending') {
-        data = data.filter((e: any) => {
-          const status = (e.status || '').toUpperCase();
-          return status === 'SUBMITTED' || status === 'UNDER_REVIEW';
-        });
-      } else if (filter !== 'all') {
-        data = data.filter((e: any) => {
-          return (e.status || '').toUpperCase() === filter.toUpperCase();
-        });
-      }
-      
+      // Keep the complete response in state so pending totals stay accurate across tabs.
+      // Status filtering remains client-side below because the API does not support it.
+
       // Sort by created_at descending
       data.sort((a: any, b: any) => 
         new Date(b.created_at || b.createdAt || 0).getTime() - 
@@ -66,7 +58,7 @@ function AprobarePageInner() {
     } finally {
       setLoading(false);
     }
-  }, [filter, selectedProjectId]);
+  }, [selectedProjectId]);
 
   useEffect(() => { loadExpenses(); }, [loadExpenses]);
 
@@ -105,12 +97,13 @@ function AprobarePageInner() {
     } finally {
       setSelId(null);
       setNote('');
+      setPendingAction(null);
       setActing(null);
     }
   };
 
   const tabs = [
-    { k: 'pending', l: 'In Asteptare' },
+    { k: 'pending', l: 'În așteptare' },
     { k: 'all', l: 'Toate' },
     { k: 'approved', l: 'Aprobate' },
     { k: 'rejected', l: 'Respinse' },
@@ -123,11 +116,11 @@ function AprobarePageInner() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Aprobare Cheltuieli</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Verificare si aprobare cheltuieli trimise de angajati conform §6.6.
+            Verificare și aprobare cheltuieli trimise de angajați conform §6.6.
           </p>
         </div>
         <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">
-          <Clock className="w-3.5 h-3.5 mr-1.5" />{pending} in asteptare
+          <Clock className="w-3.5 h-3.5 mr-1.5" />{loading || error ? '—' : pending} în așteptare
         </span>
       </div>
 
@@ -142,20 +135,25 @@ function AprobarePageInner() {
         </div>
         <div className="flex items-center bg-white rounded-lg border border-slate-200 px-3 py-2 shadow-sm w-full sm:w-72">
           <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
-          <input type="text" placeholder="Cauta cheltuiala..." value={search}
+          <input type="text" aria-label="Caută cheltuieli" placeholder="Caută cheltuială..." value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full text-sm text-slate-800 focus:outline-none placeholder:text-slate-400" />
         </div>
       </div>
 
       <div className="space-y-4">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div role="status" className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-12 text-sm text-slate-500"><Loader2 className="size-5 animate-spin" />Se încarcă cheltuielile...</div>
+        ) : error ? (
+          <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-10 text-center"><AlertCircle className="size-8 text-rose-500" /><p className="text-sm text-rose-800">Nu s-au putut încărca cheltuielile: {error}</p><button type="button" onClick={() => void loadExpenses()} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">Reîncearcă</button></div>
+        ) : filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
             <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-700">Totul la zi!</h3>
-            <p className="text-sm text-slate-500 mt-1">Nu exista cheltuieli de analizat.</p>
+            <h3 className="text-base font-semibold text-slate-700">{search ? 'Niciun rezultat' : filter === 'pending' ? 'Totul la zi!' : 'Nicio cheltuială găsită'}</h3>
+            <p className="text-sm text-slate-500 mt-1">{search ? 'Nicio cheltuială nu corespunde căutării.' : filter === 'pending' ? 'Nu există cheltuieli în așteptare.' : 'Nu există cheltuieli care să corespundă stării selectate.'}</p>
           </div>
         ) : filtered.map(exp => {
+          const status = (exp.status || '').toUpperCase();
           const stLabel = enumLabel(exp.status, EXPENSE_STATUS_LABELS);
           const catLabel = enumLabel(exp.category, EXPENSE_CATEGORY_LABELS);
           return (
@@ -197,17 +195,17 @@ function AprobarePageInner() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-1.5">
-                    <button type="button" onClick={() => setSelId(selId === exp.id ? null : exp.id)}
+                    <button type="button" aria-label={`${selId === exp.id ? 'Ascunde' : 'Vezi'} detaliile cheltuielii ${exp.description || exp.id}`} aria-expanded={selId === exp.id} onClick={() => { setNote(''); setSelId(selId === exp.id ? null : exp.id); }}
                       className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4" aria-hidden="true" />
                     </button>
-                    <button type="button" onClick={() => act(exp.id, 'APPROVED')} disabled={loading}
+                    <button type="button" aria-label={`Aprobă cheltuiala ${exp.description || exp.id}`} onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
                       className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg disabled:opacity-50">
-                      <CheckCircle2 className="w-5 h-5" />
+                      <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
                     </button>
-                    <button type="button" onClick={() => act(exp.id, 'REJECTED')} disabled={loading}
+                    <button type="button" aria-label={`Respinge cheltuiala ${exp.description || exp.id}`} onClick={() => setPendingAction({ id: exp.id, status: 'REJECTED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
                       className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg disabled:opacity-50">
-                      <XCircle className="w-5 h-5" />
+                      <XCircle className="w-5 h-5" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -216,20 +214,20 @@ function AprobarePageInner() {
               {selId === exp.id && (
                 <div className="px-5 pb-5 pt-2 border-t border-slate-100 bg-slate-50/50 space-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-slate-600 block mb-1.5">
-                      <MessageSquare className="w-3.5 h-3.5 inline mr-1" />Nota revizuire
+                    <label htmlFor={`approval-review-note-${exp.id}`} className="text-xs font-semibold text-slate-600 block mb-1.5">
+                      <MessageSquare className="w-3.5 h-3.5 inline mr-1" />Notă de revizuire
                     </label>
-                    <textarea value={note} onChange={e => setNote(e.target.value)}
+                    <textarea id={`approval-review-note-${exp.id}`} value={note} onChange={e => setNote(e.target.value)}
                       placeholder="Motiv pentru aprobare/respingere..." rows={2}
                       className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 resize-none" />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button type="button" onClick={() => act(exp.id, 'APPROVED')} disabled={loading}
+                    <button type="button" onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
                       className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg disabled:opacity-50">
                       <CheckCircle2 className="w-4 h-4 mr-1.5" />Aproba
                     </button>
                     
-                    <button type="button" onClick={() => act(exp.id, 'REJECTED')} disabled={loading}
+                    <button type="button" onClick={() => setPendingAction({ id: exp.id, status: 'REJECTED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
                       className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg disabled:opacity-50">
                       <XCircle className="w-4 h-4 mr-1.5" />Respinge
                     </button>
@@ -240,6 +238,19 @@ function AprobarePageInner() {
           );
         })}
       </div>
+      <ConfirmDialog
+        open={pendingAction !== null}
+        onConfirm={() => { if (pendingAction) void act(pendingAction.id, pendingAction.status); }}
+        onCancel={() => { if (!acting) setPendingAction(null); }}
+        loading={pendingAction !== null && acting === pendingAction.id}
+        variant={pendingAction?.status === 'REJECTED' ? 'danger' : 'warning'}
+        title={pendingAction?.status === 'REJECTED' ? 'Confirmi respingerea?' : 'Confirmi aprobarea?'}
+        message={pendingAction?.status === 'REJECTED'
+          ? 'Cheltuiala va fi marcată ca respinsă. Verifică nota de revizuire înainte de confirmare.'
+          : 'Cheltuiala va fi marcată ca aprobată. Confirmă doar după verificarea documentelor și a detaliilor.'}
+        confirmLabel={pendingAction?.status === 'REJECTED' ? 'Respinge cheltuiala' : 'Aprobă cheltuiala'}
+        cancelLabel="Revizuiește"
+      />
     </div>
   );
 }

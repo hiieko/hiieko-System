@@ -51,8 +51,6 @@ function AvizePageInner() {
         status: aviz.status ? String(aviz.status) : undefined,
         driver_name: aviz.driver_name,
         vehicle_plate: aviz.vehicle_plate,
-        driver_name: aviz.driver_name,
-        vehicle_plate: aviz.vehicle_plate,
         // Map items
         items: (aviz.items || []).map((item: any) => ({
           material_id: item.material_id,
@@ -83,7 +81,7 @@ function AvizePageInner() {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError(err instanceof Error ? err.message : 'Eroare la incarcarea avizelor.');
+        setError(err instanceof Error ? err.message : 'Eroare la încărcarea avizelor.');
       }
     } finally {
       setLoading(false);
@@ -121,7 +119,7 @@ function AvizePageInner() {
       ) : null}
       {loading ? (
         <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca avizele...
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />Se încarcă avizele...
         </div>
       ) : error ? null : filteredDeliveries.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm">

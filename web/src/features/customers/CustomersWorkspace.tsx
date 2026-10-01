@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, Mail, Phone, Plus, Search, Trash2, UserRound, X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface CustomerRecord {
   id: string;
@@ -28,6 +29,20 @@ export function CustomersWorkspace() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<CustomerRecord | null>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const dialogOpen = openForm || deleteTarget !== null;
+
+  useFocusTrap(dialogRef, dialogOpen);
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (deleteTarget) setDeleteTarget(null);
+      else setOpenForm(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [dialogOpen, deleteTarget]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
@@ -55,7 +70,7 @@ export function CustomersWorkspace() {
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-hii-700">Portofoliu</p>
@@ -84,8 +99,8 @@ export function CustomersWorkspace() {
         )}
       </section>
 
-      {openForm && <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-0 sm:items-center sm:p-4" onMouseDown={(event) => event.target === event.currentTarget && setOpenForm(false)}><section role="dialog" aria-modal="true" aria-labelledby="customer-form-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl sm:p-6"><div className="flex items-start justify-between"><div><h2 id="customer-form-title" className="text-lg font-bold text-slate-900">Client nou</h2><p className="mt-1 text-xs text-amber-800">Doar demonstrație — nu se salvează pe server.</p></div><button type="button" onClick={() => setOpenForm(false)} className="grid size-11 place-items-center rounded-lg hover:bg-slate-100" aria-label="Închide formularul"><X className="size-5" /></button></div><form onSubmit={saveCustomer} className="mt-5 flex flex-col gap-4"><label className="text-sm font-medium text-slate-700">Denumire client *<input required value={form.name} onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><label className="text-sm font-medium text-slate-700">CUI<input value={form.cui} onChange={(event) => setForm((previous) => ({ ...previous, cui: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium text-slate-700">Persoană de contact<input value={form.contactPerson} onChange={(event) => setForm((previous) => ({ ...previous, contactPerson: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><label className="text-sm font-medium text-slate-700">Telefon<input type="tel" value={form.contactPhone} onChange={(event) => setForm((previous) => ({ ...previous, contactPhone: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label></div><label className="text-sm font-medium text-slate-700">Email contact<input type="email" value={form.contactEmail} onChange={(event) => setForm((previous) => ({ ...previous, contactEmail: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><button type="button" onClick={() => setOpenForm(false)} className="min-h-11 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700">Anulează</button><button type="submit" disabled={saving || !form.name.trim()} className="min-h-11 rounded-lg bg-hii-700 px-4 text-sm font-semibold text-white disabled:opacity-50">{saving ? 'Se salvează local…' : 'Adaugă în prototip'}</button></div></form></section></div>}
-      {deleteTarget && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4"><section role="alertdialog" aria-modal="true" aria-labelledby="customer-delete-title" className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"><h2 id="customer-delete-title" className="text-base font-bold text-slate-900">Eliminare din prototip</h2><p className="mt-2 text-sm leading-6 text-slate-600">Elimini „{deleteTarget.name}” din lista locală de demonstrație? Acțiunea nu atinge date reale.</p><div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setDeleteTarget(null)} className="min-h-11 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700">Păstrează</button><button type="button" onClick={confirmDelete} className="min-h-11 rounded-lg bg-rose-700 px-4 text-sm font-semibold text-white">Elimină local</button></div></section></div>}
-    </main>
+      {openForm && <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-0 sm:items-center sm:p-4" onMouseDown={(event) => event.target === event.currentTarget && setOpenForm(false)}><section ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="customer-form-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-2xl bg-white p-5 shadow-2xl sm:rounded-2xl sm:p-6"><div className="flex items-start justify-between"><div><h2 id="customer-form-title" className="text-lg font-bold text-slate-900">Client nou</h2><p className="mt-1 text-xs text-amber-800">Doar demonstrație — nu se salvează pe server.</p></div><button type="button" onClick={() => setOpenForm(false)} className="grid size-11 place-items-center rounded-lg hover:bg-slate-100" aria-label="Închide formularul"><X className="size-5" /></button></div><form onSubmit={saveCustomer} className="mt-5 flex flex-col gap-4"><label className="text-sm font-medium text-slate-700">Denumire client *<input required value={form.name} onChange={(event) => setForm((previous) => ({ ...previous, name: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><label className="text-sm font-medium text-slate-700">CUI<input value={form.cui} onChange={(event) => setForm((previous) => ({ ...previous, cui: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium text-slate-700">Persoană de contact<input value={form.contactPerson} onChange={(event) => setForm((previous) => ({ ...previous, contactPerson: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><label className="text-sm font-medium text-slate-700">Telefon<input type="tel" value={form.contactPhone} onChange={(event) => setForm((previous) => ({ ...previous, contactPhone: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label></div><label className="text-sm font-medium text-slate-700">Email contact<input type="email" value={form.contactEmail} onChange={(event) => setForm((previous) => ({ ...previous, contactEmail: event.target.value }))} className="mt-1.5 min-h-11 w-full rounded-lg border border-slate-300 px-3 text-sm" /></label><div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"><button type="button" onClick={() => setOpenForm(false)} className="min-h-11 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700">Anulează</button><button type="submit" disabled={saving || !form.name.trim()} className="min-h-11 rounded-lg bg-hii-700 px-4 text-sm font-semibold text-white disabled:opacity-50">{saving ? 'Se salvează local…' : 'Adaugă în prototip'}</button></div></form></section></div>}
+      {deleteTarget && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4"><section ref={dialogRef} role="alertdialog" aria-modal="true" aria-labelledby="customer-delete-title" className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"><h2 id="customer-delete-title" className="text-base font-bold text-slate-900">Eliminare din prototip</h2><p className="mt-2 text-sm leading-6 text-slate-600">Elimini „{deleteTarget.name}” din lista locală de demonstrație? Acțiunea nu atinge date reale.</p><div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={() => setDeleteTarget(null)} className="min-h-11 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700">Păstrează</button><button type="button" onClick={confirmDelete} className="min-h-11 rounded-lg bg-rose-700 px-4 text-sm font-semibold text-white">Elimină local</button></div></section></div>}
+    </section>
   );
 }

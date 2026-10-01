@@ -13,8 +13,12 @@ export function MobilePrimaryNav() {
   const { user } = useAuth();
   const { locale } = useLocale();
   const role = user?.role?.toLowerCase();
-  const items = PRIMARY_HREFS.map((href) => NAV_GROUPS.flatMap((group) => group.items).find((item) => item.href === href))
-    .filter((item) => item && (!item.roles?.length || (!!role && item.roles.includes(role))));
+  const navItems = NAV_GROUPS.flatMap((group) => group.items);
+  const items = PRIMARY_HREFS.flatMap((href) => {
+    const item = navItems.find((candidate) => candidate.href === href);
+    if (!item || (item.roles?.length && (!role || !item.roles.includes(role)))) return [];
+    return [item];
+  });
 
   if (!items.length) return null;
 

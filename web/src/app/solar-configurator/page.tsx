@@ -85,6 +85,7 @@ function SolarConfiguratorPageInner() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [moduleDeleteTarget, setModuleDeleteTarget] = useState<string[] | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const [selectedRoofSectionId, setSelectedRoofSectionId] = useState<string | null>(null);
   const [selectedModuleIds, setSelectedModuleIds] = useState<Set<string>>(new Set());
@@ -412,8 +413,14 @@ function SolarConfiguratorPageInner() {
 
   const deleteSelected = () => {
     if (selectedModuleIds.size === 0) return;
+    setModuleDeleteTarget([...selectedModuleIds]);
+  };
+
+  const confirmDeleteSelected = () => {
+    if (!moduleDeleteTarget?.length) return;
+    applyTransform(deletePlacements(placements, new Set(moduleDeleteTarget)));
     setSelectedModuleIds(new Set());
-    applyTransform(deletePlacements(placements, selectedModuleIds));
+    setModuleDeleteTarget(null);
   };
 
   const alignSelectedX = () => {
@@ -672,6 +679,16 @@ function SolarConfiguratorPageInner() {
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={moduleDeleteTarget !== null}
+        onConfirm={confirmDeleteSelected}
+        onCancel={() => setModuleDeleteTarget(null)}
+        variant="danger"
+        title="Ștergi modulele selectate?"
+        message={`Vor fi eliminate ${moduleDeleteTarget?.length || 0} module din layoutul local. Acțiunea poate fi anulată prin istoricul de editare.`}
+        confirmLabel="Șterge modulele"
+        cancelLabel="Păstrează"
+      />
       <ConfirmDialog
         open={deleteTarget !== null}
         onConfirm={confirmPendingDelete}

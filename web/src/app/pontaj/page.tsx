@@ -589,7 +589,7 @@ function PontajPageInner() {
           </div>
         </div>
       )}
-      <AttendanceSessionDrawer record={selectedSession} onClose={() => setSelectedSession(null)} />
+      <AttendanceSessionDrawer key={selectedSession?.id || 'closed'} record={selectedSession} onClose={() => setSelectedSession(null)} />
     </div>
   );
 }

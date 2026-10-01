@@ -10,15 +10,15 @@ import { useProject } from '../../contexts/ProjectContext';
 import { ConfirmDialog, useToast } from '../../components/ui';
 import { submitDailyReport } from '../../features/daily-reports';
 import { useRouter } from 'next/navigation';
-import { 
-  FileText, 
-  CheckCircle2, 
-  Users, 
-  Wrench, 
-  Boxes, 
-  Image as ImageIcon, 
-  Calendar, 
-  Check, 
+import {
+  FileText,
+  CheckCircle2,
+  Users,
+  Wrench,
+  Boxes,
+  Image as ImageIcon,
+  Calendar,
+  Check,
   X,
   Loader2,
   AlertCircle,
@@ -28,6 +28,22 @@ import {
   Send,
   Search
 } from 'lucide-react';
+
+const REPORT_STATUS_LABEL_KEYS: Record<string, string> = {
+  DRAFT: 'daily_report.status_draft',
+  SUBMITTED: 'daily_report.status_submitted',
+  APPROVED: 'daily_report.status_approved',
+  REJECTED: 'daily_report.status_rejected',
+  CANCELLED: 'daily_report.status_cancelled',
+};
+
+const REPORT_STATUS_CLASSES: Record<string, string> = {
+  DRAFT: 'bg-amber-100 text-amber-800',
+  SUBMITTED: 'bg-blue-100 text-blue-800',
+  APPROVED: 'bg-emerald-100 text-emerald-800',
+  REJECTED: 'bg-rose-100 text-rose-800',
+  CANCELLED: 'bg-slate-100 text-slate-700',
+};
 
 function RapoartePageInner() {
   const [loading, setLoading] = useState(true);
@@ -126,7 +142,7 @@ function RapoartePageInner() {
           )}
           <button onClick={loadData} disabled={loading}
             className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reimprospateaza
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('daily_report.refresh', locale)}
           </button>
         </div>
       </div>
@@ -159,12 +175,12 @@ function RapoartePageInner() {
       ) : (
         <div className="flex flex-col gap-4">
           {filteredReports.map((report) => {
-            const siteName = report.project?.name || '?antier';
+            const siteName = report.project?.name || t('daily_report.site_fallback', locale);
             const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
                              users.find(u => u.id === report.team_leader_id)?.full_name || 
                              'Necunoscut';
-            const notes = report.general_notes || report.blockages || 'Nu exista observa?ii';
+            const notes = report.general_notes || report.blockages || t('daily_report.notes_empty', locale);
             
             // Get present workers from workers array
             const presentWorkerIds = (report.workers || []).map(w => w.worker_id);
@@ -178,6 +194,10 @@ function RapoartePageInner() {
               quantity: m.quantity_used || 0,
               unit: m.material?.unit || 'buc',
             }));
+            const reportStatus = String(report.status || 'UNKNOWN');
+            const statusLabelKey = REPORT_STATUS_LABEL_KEYS[reportStatus];
+            const statusLabel = statusLabelKey ? t(statusLabelKey, locale) : reportStatus;
+            const statusClassName = REPORT_STATUS_CLASSES[reportStatus] || 'bg-slate-100 text-slate-700';
 
           return (
             <div key={report.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -197,7 +217,7 @@ function RapoartePageInner() {
                     </span>
                     <span>•</span>
                     <span>
-                      ?ef Echipa: <strong className="text-slate-700">{leaderName}</strong>
+                      {t('daily_report.team_leader_label', locale)}: <strong className="text-slate-700">{leaderName}</strong>
                     </span>
                   </div>
                 </div>
@@ -205,12 +225,12 @@ function RapoartePageInner() {
                 <div className="flex items-center space-x-3">
                   {report.status === 'DRAFT' ? (
                     <>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                        Ciorna
+                      <span data-status={reportStatus} aria-label={`${reportStatus}: ${statusLabel}`} className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusClassName}`}>
+                        {statusLabel}
                       </span>
                       <button type="button" onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
                         className="inline-flex items-center px-3 py-1.5 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
-                        <Edit3 className="w-3.5 h-3.5 mr-1" />Editeaza
+                        <Edit3 className="w-3.5 h-3.5 mr-1" />{t('daily_report.edit', locale)}
                       </button>
                       {/* P4.4 — one-click finalization for a DRAFT; confirms first, then submits. */}
                       <button type="button"
@@ -224,8 +244,8 @@ function RapoartePageInner() {
                     </>
                   ) : (
                     <>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                        Transmis spre Aprobare
+                      <span data-status={reportStatus} aria-label={`${reportStatus}: ${statusLabel}`} className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusClassName}`}>
+                        {statusLabel}
                       </span>
                       {isWorker ? null : <span className="text-xs text-slate-500">{locale === 'en' ? 'Approval action is not available in this view.' : 'Acțiunea de aprobare nu este disponibilă în această vizualizare.'}</span>}
                     </>
@@ -250,12 +270,12 @@ function RapoartePageInner() {
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu exista sarcini âregistrate</p>
+                      <p className="text-xs text-slate-400 italic py-3">{t('daily_report.tasks_empty', locale)}</p>
                     )}
                   </div>
 
                   <div className="mt-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Observa?ii ?antier:</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">{t('daily_report.site_observations', locale)}:</h4>
                     <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
                       "{notes}"
                     </p>
@@ -303,11 +323,11 @@ function RapoartePageInner() {
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <ImageIcon className="w-4 h-4 mr-1.5 text-amber-600" />
-                    Fotografii Execu?ie ?antier
+                    {t('daily_report.site_execution_photos', locale)}
                   </h3>
                   <div className="grid grid-cols-1 gap-3">
                     <p className="text-xs text-slate-400 italic py-3">
-                      Fotografiile nu sunt disponibile in aceasta versiune.
+                      {t('daily_report.photos_unavailable', locale)}
                     </p>
                   </div>
                 </div>

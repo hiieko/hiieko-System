@@ -3,7 +3,7 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiClient } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { RoleGuard } from '../../lib/auth-guard';
 import { 
@@ -231,9 +231,9 @@ function StocuriPageInner() {
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
             <History className="w-4 h-4 text-amber-600" />
-            <span>Jurnal Imutabil Mi?cari de Stoc (Audit Trail)</span>
+            <span>{t('stock.audit_immutable_title', locale)}</span>
           </div>
-          <span className="text-xs text-slate-500">Conformitate Regula 11: Fiecare mi?care are autor, timestamp ?i sursa</span>
+          <span className="text-xs text-slate-500">{t('stock.audit_immutable_note', locale)}</span>
         </div>
 
         <div className="hidden overflow-x-auto md:block">
@@ -241,11 +241,11 @@ function StocuriPageInner() {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
                 <th className="py-3 px-4">Data & Ora</th>
-                <th className="py-3 px-4">Tip Opera?iune</th>
+                <th className="py-3 px-4">{t('stock.movement_type', locale)}</th>
                 <th className="py-3 px-4">Material</th>
                 <th className="py-3 px-4 text-right">Cantitate</th>
                 <th className="py-3 px-4">Executat De</th>
-                <th className="py-3 px-4">Referin?a Document</th>
+                <th className="py-3 px-4">{t('stock.document_reference', locale)}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
