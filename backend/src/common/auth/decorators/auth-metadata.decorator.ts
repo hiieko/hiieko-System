@@ -49,7 +49,8 @@ export type ScopedEntityModel =
   | 'issue'
   | 'ocrJob'
   | 'purchaseOrder'
-  | 'aviz';
+  | 'aviz'
+  | 'attendanceRecord';
 
 export const REQUIRE_ENTITY_PROJECT_ACCESS_KEY = 'require_entity_project_access';
 export interface RequireEntityProjectAccessMetadata {

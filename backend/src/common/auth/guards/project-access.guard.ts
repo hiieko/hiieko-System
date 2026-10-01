@@ -35,6 +35,7 @@ const ENTITY_RESOLVER: Record<
   ocrJob: { delegate: 'oCRJob', projectField: 'project_id', nestedInclude: true },
   purchaseOrder: { delegate: 'purchaseOrder', projectField: 'project_id' },
   aviz: { delegate: 'aviz', projectField: 'project_id' },
+  attendanceRecord: { delegate: 'attendanceRecord', projectField: 'project_id' },
 };
 
 @Injectable()

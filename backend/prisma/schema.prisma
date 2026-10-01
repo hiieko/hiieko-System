@@ -51,6 +51,7 @@ model User {
   report_approvals    DailyReportApproval[]    @relation("ReportApprover")
   report_revisions    DailyReportRevision[]    @relation("RevisionSubmitter")
   sessions            Session[]
+  attendance_corrections AttendanceCorrection[] @relation("AttendanceCorrections")
   organization        Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
@@ -396,10 +397,33 @@ model AttendanceRecord {
   updated_at          DateTime             @updatedAt
   project             Project              @relation(fields: [project_id], references: [id], onDelete: Cascade)
   user                User                 @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  corrections         AttendanceCorrection[]
 
   @@index([user_id, date])
   @@index([project_id, date])
   @@map("attendance_records")
+}
+
+/// Slice 5 — attendance correction audit ledger. Each row captures one authorized
+/// correction of an AttendanceRecord, storing before/after snapshots plus the
+/// mandatory human-readable reason. The FK to AttendanceRecord is `Restrict`
+/// (Slice 5): a record that has been corrected can never be silently deleted,
+/// preserving the audit trail. The `@@index([attendance_id])` keeps the
+/// per-record correction history lookup cheap.
+model AttendanceCorrection {
+  id            String   @id @default(uuid())
+  attendance_id String
+  corrected_by   String
+  reason         String
+  before_state   Json
+  after_state    Json
+  created_at    DateTime @default(now())
+
+  attendance AttendanceRecord @relation(fields: [attendance_id], references: [id], onDelete: Restrict)
+  actor      User             @relation("AttendanceCorrections", fields: [corrected_by], references: [id])
+
+  @@index([attendance_id])
+  @@map("attendance_corrections")
 }
 
 model DailyPlan {

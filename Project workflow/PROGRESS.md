@@ -3,6 +3,55 @@
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
+## SLICE 5 — Attendance Correction Support: IMPLEMENTED + VERIFIED (2026-10-01, UNCOMMITTED)
+
+**Status:** complete and verified. **Not committed, not pushed** — the change set lives only in the
+working tree (Slice 1 `3183c4f` and the uncommitted Slice 2/Slice 3 change sets are untouched).
+
+**What landed:**
+- **`PATCH /api/attendance/:id`** attendance-correction endpoint (secure, audited). Authorization is
+  **ADMIN / OWNER / MANAGER / PM only** and requires **entity project scope** on the affected
+  `AttendanceRecord` (new `attendanceRecord` `ScopedEntityModel` + `ENTITY_RESOLVER` entry), so a caller
+  must be assigned to the record's project (global roles bypass).
+- **Correction contract:** `reason` (required), whitelisted patch fields only — `checkInTime`,
+  `checkOutTime` (nullable), `notes`, `status`. Everything else is immutable via this endpoint
+  (geofence coords, distance, hours, overtime, offline flag, idempotency key, ids, timestamps).
+  Hours (`regular_hours`, `overtime_minutes`) are re-derived automatically whenever a time boundary
+  changes (8 h regular cap + overtime minutes, same rules as check-out).
+- **Atomic transaction (P4.4):** a single Prisma `$transaction` does ① re-read the record → ② before
+  snapshot → ③ apply patch + re-derive hours → ④ persist → ⑤ write the `AttendanceCorrection` row
+  (before/after + reason) → ⑥ write the `ATTENDANCE_CORRECT` audit-log row **through the same
+  transaction client**. Any failure rolls the whole unit back — no audit entry can describe a change
+  that did not commit.
+- **DB audit integrity (Slice 5):** `AttendanceCorrection.attendance` FK is **`onDelete: Restrict`** and
+  `@@index([attendance_id])` added. The uncommitted model also gained the missing `User` back-relation
+  (`@relation("AttendanceCorrections")`) which was required for Prisma validation.
+- **Global one-open-session-per-user invariant:** manual PostgreSQL **partial unique index**
+  `attendance_records(user_id) WHERE check_out_time IS NULL` — the DB is the final authority under
+  concurrency, and the service now enforces the **same global scope** (any project, any company day):
+  the check-in `findFirst` filters only `user_id` + `check_out_time: null`, and a Prisma **P2002** raised
+  by this index during check-in `create` is mapped to the same `409 Conflict`. Multiple completed
+  sessions/day are still allowed (the index only touches open rows).
+- **Correction validation:** invalid `checkInTime`/`checkOutTime` values and a check-out earlier than the
+  (effective) check-in are rejected with `400` before persistence — an invalid chronology is never
+  silently clamped to zero hours. Patch fields remain restricted to the approved set: `checkInTime`,
+  `checkOutTime` (nullable), `notes`, `status`.
+- **Migrations:** `20261001140000_add_attendance_correction_integrity` (creates
+  `attendance_corrections` + Restrict FK + index, idempotent) and
+  `20261001140100_add_single_open_session_partial_index` (manual partial unique index).
+- **No Mobile changes.** No unrelated architectural changes.
+
+**Gates (this task):** `prisma validate` PASS · `npm run typecheck` (backend) exit 0 · `npm run build`
+(nest build) exit 0 · focused Jest `test/attendance.service.spec.ts` **28/28 PASS** (15 Slice-5 cases:
+global open-session scope incl. cross-project/cross-date, P2002 → 409 incl. non-conversion negative,
+correction-validation 4xx, authorization metadata + PM scope) · `git diff --check` clean.
+**DB verification:** NOT run in this task — the two migrations below are present but **not deployed**
+(`prisma migrate` / `db:verify` intentionally skipped).
+
+See `DECISIONS.md` → DEC-016 and the Slice 5 roadmap items. (No separate `VERIFICATION.md` Slice 5
+section exists; verification evidence for this change set lives in `test/attendance.service.spec.ts` and
+the gates above.)
+
 ## SLICE 3 — Company Timezone / Day-Boundary: IMPLEMENTED + VERIFIED (2026-10-01, UNCOMMITTED)
 
 **Status:** complete and verified. **Not committed, not pushed** — the change set lives only in the
