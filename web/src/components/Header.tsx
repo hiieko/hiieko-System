@@ -9,6 +9,9 @@ import { DropdownMenu, type DropdownMenuItem } from './ui/DropdownMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { useProject } from '../contexts/ProjectContext';
 import { t, useLocale } from '@solar/shared';
+import { NAV_GROUPS } from '../config/navigation';
+import { GlobalQuickSearch } from './GlobalQuickSearch';
+import { usePathname } from 'next/navigation';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -24,6 +27,12 @@ export function Header({ onMenuClick }: HeaderProps) {
     loading: projectsLoading,
   } = useProject();
   const { locale } = useLocale();
+  const pathname = usePathname();
+  const activeNavItem = NAV_GROUPS.flatMap((group) => group.items)
+    .filter((item) => item.href !== '/')
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  const activeTitle = activeNavItem ? t(activeNavItem.i18nKey, locale) || activeNavItem.label : '';
 
   const currentUser = loading
     ? t('general.loading', locale)
@@ -58,7 +67,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   return (
     <header className="h-[var(--hii-header-height)] bg-white border-b border-slate-200 px-4 lg:px-6 flex items-center justify-between sticky top-0 z-header shadow-sm">
       {/* Left section */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         {/* Mobile menu trigger */}
         <Button
           variant="ghost"
@@ -70,8 +79,10 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Menu className="w-5 h-5" />
         </Button>
 
-        {/* Breadcrumb slot */}
-        <div id="breadcrumb-slot" />
+        <nav className="hidden min-w-0 items-center gap-2 text-sm sm:flex" aria-label={locale === 'en' ? 'Breadcrumb' : 'Navigare'}>
+          {pathname !== '/' && <span className="text-slate-300" aria-hidden="true">/</span>}
+          <span className="max-w-36 truncate font-semibold text-slate-700">{pathname === '/' ? (locale === 'en' ? 'Operations' : 'Operațiuni') : activeTitle}</span>
+        </nav>
 
         {/* Project selector */}
         <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
@@ -105,7 +116,8 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+        <GlobalQuickSearch />
         <LanguageSwitcher />
 
         <Link

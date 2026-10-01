@@ -155,21 +155,21 @@ export default function ControlTowerDashboardPage() {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="control-tower-page space-y-6 pb-12">
       <PageTutorial sectionId="dashboard" />
 
       {/* Control Tower Header & Global Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="control-tower-heading flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500 text-slate-950 uppercase tracking-wide">
+            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 text-hii-700 uppercase tracking-[0.12em] border border-emerald-100">
               Turn de Control HIIEKO
             </span>
             <span className="text-xs text-slate-400 font-medium">
               Ultima actualizare: {lastUpdated.toLocaleTimeString('ro-RO')}
             </span>
           </div>
-          <h1 className="text-2xl font-black text-slate-950 mt-1 tracking-tight">
+          <h1 className="text-2xl md:text-[1.75rem] font-extrabold text-slate-950 mt-2 tracking-tight">
             Panou Operațional de Management
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -232,7 +232,7 @@ export default function ControlTowerDashboardPage() {
       {overview && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {/* DOMAIN 1: PROIECTE (Projects) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -304,7 +304,7 @@ export default function ControlTowerDashboardPage() {
           </div>
 
           {/* DOMAIN 2: PERSONAL & PONTAJ (Workforce) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -377,7 +377,7 @@ export default function ControlTowerDashboardPage() {
           </div>
 
           {/* DOMAIN 3: PRODUCȚIE & EXECUȚIE (Production) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -444,7 +444,7 @@ export default function ControlTowerDashboardPage() {
           </div>
 
           {/* DOMAIN 4: MATERIALE & STOCURI (Materials) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -512,7 +512,7 @@ export default function ControlTowerDashboardPage() {
           </div>
 
           {/* DOMAIN 5: FINANȚE & BUGETE (Finance) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -584,7 +584,7 @@ export default function ControlTowerDashboardPage() {
           </div>
 
           {/* DOMAIN 6: CALITATE & CONFORMITATE (Quality) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -652,7 +652,7 @@ export default function ControlTowerDashboardPage() {
           </div>
 
           {/* DOMAIN 7: DOCUMENTAȚIE TEHNICĂ (Documentation) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -722,7 +722,7 @@ export default function ControlTowerDashboardPage() {
       )}
 
       {/* QUICK WORKFLOW ACCESS */}
-      <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-sm border border-slate-800">
+      <div className="control-quick-links bg-slate-900 rounded-2xl p-6 text-white shadow-sm border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">

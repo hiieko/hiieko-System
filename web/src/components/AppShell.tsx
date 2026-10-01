@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { MobilePrimaryNav } from './MobilePrimaryNav';
 import { ProjectProvider } from '../contexts/ProjectContext';
 import { AuthGuard } from '../lib/auth-guard';
 import { ToastProvider } from './ui/Toast';
@@ -38,9 +39,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 tabIndex={-1}
                 className="flex-1 overflow-y-auto focus:outline-none"
               >
-                <div className="hii-page">{children}</div>
+                <div className="hii-page pb-24 lg:pb-8">{children}</div>
               </main>
             </div>
+            <MobilePrimaryNav />
           </div>
         </ToastProvider>
       </ProjectProvider>
