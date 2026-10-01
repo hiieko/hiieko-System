@@ -7,6 +7,11 @@ export const metadata: Metadata = {
     'Read-only, source-grounded map of HIIEKO frontend routes, components, overlays, roles, state and implementation readiness.',
 };
 
-export default function FrontendArchitecturePage() {
-  return <ArchitectureAuditWorkspace />;
+export default async function FrontendArchitecturePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ download?: string }>;
+}) {
+  const { download } = await searchParams;
+  return <ArchitectureAuditWorkspace autoDownload={download === '1'} />;
 }

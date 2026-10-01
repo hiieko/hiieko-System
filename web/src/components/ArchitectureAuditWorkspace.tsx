@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowLeft, ArrowUpRight, ChevronDown, Download, Search } from 'lucide-react';
 import { designReviewModules } from './DesignReviewWorkspace';
@@ -288,10 +288,14 @@ function DataTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return <div className="overflow-x-auto rounded-xl border border-slate-200"><table className="w-full min-w-max border-collapse text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr>{headers.map((header) => <th key={header} className="p-3">{header}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${row[0]}-${index}`} className="border-t border-slate-100 align-top">{row.map((cell, cellIndex) => <td key={cellIndex} className="p-3 text-slate-700">{cell}</td>)}</tr>)}</tbody></table></div>;
 }
 
-export function ArchitectureAuditWorkspace() {
+export function ArchitectureAuditWorkspace({ autoDownload = false }: { autoDownload?: boolean }) {
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
-  const modules: ModuleAudit[] = designReviewModules.map((module) => ({ id: module.id, name: module.name || module.id, ...moduleAudit[module.id] }));
+  const modules = useMemo<ModuleAudit[]>(() => designReviewModules.map((module) => ({ id: module.id, name: module.name || module.id, ...moduleAudit[module.id] })), []);
+
+  useEffect(() => {
+    if (autoDownload) downloadAuditMarkdown(modules);
+  }, [autoDownload, modules]);
   const visibleModules = useMemo(() => modules.filter((module) => {
     const matchesQuery = `${module.id} ${module.name ?? ''} ${module.route ?? ''} ${module.component} ${module.file} ${module.audience} ${module.access} ${module.sections.join(' ')}`.toLowerCase().includes(query.toLowerCase());
     const matchesRole = roleFilter === 'ALL' || `${module.audience} ${module.access}`.toUpperCase().includes(roleFilter);
@@ -299,7 +303,7 @@ export function ArchitectureAuditWorkspace() {
   }), [modules, query, roleFilter]);
 
   return <main className="min-h-screen bg-slate-50 text-slate-950">
-    <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-7"><div className="flex min-w-0 items-center gap-3"><Link href="/design-review" aria-label="Return to Design Review" className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><ArrowLeft className="size-4" /></Link><div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">HIIEKO · Engineering handoff</p><p className="truncate text-sm font-semibold">Frontend Architecture</p></div></div><div className="flex flex-wrap items-center justify-end gap-2"><button type="button" onClick={() => downloadAuditMarkdown(modules)} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"><Download aria-hidden="true" className="size-4" /><span>Download full report <span className="max-[420px]:hidden">(.md)</span></span></button><Badge tone="green">Read-only source audit</Badge></div></div></header>
+    <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-7"><div className="flex min-w-0 items-center gap-3"><Link href="/design-review" aria-label="Return to Design Review" className="grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"><ArrowLeft className="size-4" /></Link><div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700">HIIEKO · Engineering handoff</p><p className="truncate text-sm font-semibold">Frontend Architecture</p></div></div><div className="flex flex-wrap items-center justify-end gap-2"><Link href="/design-review/architecture?download=1" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"><Download aria-hidden="true" className="size-4" /><span>Download full report <span className="max-[420px]:hidden">(.md)</span></span></Link><Badge tone="green">Read-only source audit</Badge></div></div></header>
     <div className="mx-auto flex max-w-[1500px] flex-col gap-6 px-4 py-6 sm:px-7 sm:py-8">
       <section className="rounded-3xl bg-slate-950 p-6 text-white sm:p-9"><div className="flex flex-wrap gap-2"><Badge tone="green">Actual source</Badge><Badge>Not a UI redesign</Badge><Badge>No product-data changes</Badge></div><h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">Frontend Architecture</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">A source-grounded map of the current review prototype and the real product routes/components it references. Review mockups are not product routes. Capabilities not established by source are marked explicitly.</p><div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">{[[String(routes.length), 'page routes / page exports'], [String(reusable.length), 'shared components inventoried'], ['12', 'modal / dialog workflows'], ['2', 'drawer workflows · no sheets found'], ['0', 'popover implementations identified'], ['1', 'separate mobile component: MobilePrimaryNav'], ['7', 'review-only component definitions'], [String(overlays.length), 'overlay workflows documented']].map(([value, label]) => <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-2xl font-semibold tabular-nums">{value}</p><p className="mt-1 text-xs leading-5 text-slate-300">{label}</p></div>)}</div><p className="mt-4 text-xs leading-5 text-slate-400">Counts reflect the source-backed inventories below: the 14 overlay entries comprise 12 dialog/modal and 2 drawer workflows. Seven review-only component definitions include DesignReviewWorkspace and its six file-local helpers. No Sheet or Popover implementation was identified.</p></section>
 
