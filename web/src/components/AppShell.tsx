@@ -7,16 +7,22 @@ import { Header } from './Header';
 import { MobilePrimaryNav } from './MobilePrimaryNav';
 import { ProjectProvider } from '../contexts/ProjectContext';
 import { AuthGuard } from '../lib/auth-guard';
+import { AuthProvider } from '../contexts/AuthContext';
 import { ToastProvider } from './ui/Toast';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const isDesignReviewPage = pathname === '/design-review';
   const isAuthPage = pathname === '/login' || pathname === '/signup';
 
-  if (isAuthPage) return <>{children}</>;
+  if (isDesignReviewPage) return <>{children}</>;
 
   return (
+    <AuthProvider>
+      {isAuthPage ? (
+        <>{children}</>
+      ) : (
     <AuthGuard>
       <ProjectProvider>
         <ToastProvider>
@@ -47,5 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </ToastProvider>
       </ProjectProvider>
     </AuthGuard>
+      )}
+    </AuthProvider>
   );
 }

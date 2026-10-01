@@ -1,7 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { LocaleProviderClient } from '../components/LocaleProviderClient';
-import { AuthProvider } from '../contexts/AuthContext';
 import { AppShell } from '../components/AppShell';
 
 export const metadata: Metadata = {
@@ -18,9 +17,7 @@ export default function RootLayout({
     <html lang="ro" className="h-full">
       <body className="h-full bg-slate-50 antialiased">
         <LocaleProviderClient>
-          <AuthProvider>
-            <AppShell>{children}</AppShell>
-          </AuthProvider>
+          <AppShell>{children}</AppShell>
         </LocaleProviderClient>
       </body>
     </html>
