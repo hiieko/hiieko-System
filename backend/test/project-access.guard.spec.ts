@@ -63,13 +63,24 @@ describe('ProjectAccessGuard (Access Control)', () => {
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
   });
 
-  it('should grant access to PM', async () => {
+  it('should DENY a global PM who is NOT a project member (Slice 4 — PM is membership-scoped)', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue('projectId');
+    prisma.projectMember.findUnique.mockResolvedValue(null);
     const ctx = createMockContext(
       { id: 'pm-1', role: UserRoleEnum.PM },
       { projectId: 'proj-123' },
     );
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+  });
+
+  it('should GRANT a PM who is an assigned project member (Slice 4 — projectRoles fast path, no DB hit)', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue('projectId');
+    const ctx = createMockContext(
+      { id: 'pm-1', role: UserRoleEnum.PM, projectRoles: { 'proj-123': UserRoleEnum.PM } },
+      { projectId: 'proj-123' },
+    );
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(prisma.projectMember.findUnique).not.toHaveBeenCalled();
   });
 
   it('should grant access to MANAGER', async () => {

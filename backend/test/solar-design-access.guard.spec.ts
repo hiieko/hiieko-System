@@ -48,6 +48,35 @@ describe('SolarDesignAccessGuard (project isolation)', () => {
     expect(result).toBe(true);
   });
 
+  it('allows a PM who is an assigned member of the design project', async () => {
+    prisma.solarDesign.findUnique.mockResolvedValue({ project_id: 'proj-1' });
+
+    const user = {
+      id: 'pm-1',
+      role: UserRoleEnum.PM,
+      projectRoles: { 'proj-1': UserRoleEnum.PM },
+    };
+
+    await expect(
+      guard.canActivate(ctx(user, { designId: 'd1' })),
+    ).resolves.toBe(true);
+  });
+
+  it('denies a PM who is not a member of the design project', async () => {
+    prisma.solarDesign.findUnique.mockResolvedValue({ project_id: 'proj-1' });
+    prisma.projectMember.findUnique.mockResolvedValue(null);
+
+    const user = {
+      id: 'pm-2',
+      role: UserRoleEnum.PM,
+      projectRoles: {},
+    };
+
+    await expect(
+      guard.canActivate(ctx(user, { designId: 'd1' })),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
   it('denies a user who knows the design id but is not a project member', async () => {
     prisma.solarDesign.findUnique.mockResolvedValue({ project_id: 'proj-1' });
     prisma.projectMember.findUnique.mockResolvedValue(null);

@@ -7,9 +7,13 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
  * Enforces project-scoped access to a SolarDesign.
  *
  * Resolves the design -> project_id and reuses the same membership check and
- * Admin/Owner/PM/Manager bypass as the existing ProjectAccessGuard. This is not
- * a second authorization system — it reuses `AuthenticatedUser.projectRoles`
+ * the Admin/Owner/Manager bypass as the existing ProjectAccessGuard. This is
+ * not a second authorization system — it reuses `AuthenticatedUser.projectRoles`
  * and the `project_members` table.
+ *
+ * Slice 4 / Decision D (K-10): PM removed from the global bypass here in
+ * lockstep with `GLOBAL_PROJECT_SCOPE_ROLES` — a PM now requires a ProjectMember
+ * row on the design's project, matching the project-access guard semantics.
  */
 @Injectable()
 export class SolarDesignAccessGuard implements CanActivate {
@@ -26,7 +30,6 @@ export class SolarDesignAccessGuard implements CanActivate {
     if (
       user.role === UserRoleEnum.ADMIN ||
       user.role === UserRoleEnum.OWNER ||
-      user.role === UserRoleEnum.PM ||
       user.role === UserRoleEnum.MANAGER
     ) {
       return true;

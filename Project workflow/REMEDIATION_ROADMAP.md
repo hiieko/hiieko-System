@@ -349,3 +349,40 @@ with the database read-only / pristine; `git diff --check` clean; a live `dist` 
 `test/**`) fails `TS2769` in `backend/src/modules/ocr/providers/paddleocr.provider.ts:100` (`Buffer` not
 assignable to `BodyInit`); proved pre-existing by stashing the Slice 3 edits (same error) — not caused by
 this slice.
+
+---
+
+## 10. Slice 4 (K‑10) — PM removed from project global scope; MANAGER preserved (2026-10-01)
+
+**Status:** implemented + verified, **UNCOMMITTED / NOT PUSHED**. Adds to the K‑10 (project isolation)
+authorization hardening, not a renumbering of any earlier slice.
+
+### Change (Decision D / DEC-016)
+
+- `backend/src/common/auth/project-scope.ts`: `PM` removed from
+  `GLOBAL_PROJECT_SCOPE_ROLES` (now `ADMIN, OWNER, MANAGER`). PM is **no longer**
+  a global project-scope role — it now requires an explicit `ProjectMember`
+  row on the target project. Comment updated with the `Slice 4 / K-10 / Decision D`
+  note. `MANAGER` **preserved** globally (deferred to a follow-up ownership-scope
+  decision; out of scope here).
+- `backend/src/modules/solar/guards/solar-design-access.guard.ts`: PM removed
+  from the inline `Admin/Owner/PM/Manager` bypass **in lockstep** (same commit),
+  so the solar design guard cannot act as a residual cross-project bypass for PM.
+- **Only these two files changed** — the backend sweep confirmed no other inline
+  global-bypass role list exists in `backend/src` (the `RolesGuard` global bypass
+  remains ADMIN/OWNER-only exactly as before; `ProjectAccessGuard` consumes the
+  shared `GLOBAL_PROJECT_SCOPE_ROLES` constant).
+
+### Tests
+
+- `backend/test/project-access.guard.spec.ts`: PM grant → now requires membership;
+  added PM-member grant + PM-non‑member deny cases.
+- `backend/test/solar-design-access.guard.spec.ts`: added PM-member grant +
+  PM-non‑member deny + ADMIN/MANAGER bypass preserved.
+
+### Verification summary
+
+- Backend Jest PM-related guard suites green; backend typecheck exit 0.
+- Web: **verify-only** — no client-side mirror of the global-scope list exists
+  (scan of `web/src` = no `GLOBAL_PROJECT_SCOPE_ROLES`/`isGlobalProjectScope`
+  mirror); web role gating is route-based and requires no change for this slice.

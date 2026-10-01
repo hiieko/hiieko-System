@@ -578,6 +578,63 @@ wrong.
 
 ---
 
+# DEC-016 — PM removed from the project global-scope bypass; MANAGER deferred (Slice 4 / K‑10 / Decision D)
+
+**Date:** 2026-10-01
+**Slice:** 4 (K‑10) — Project-scoped authorization tightening
+**Supersedes:** the PM row introduced into the global bypass by the Slice 2 / K‑10
+  authority work (now removed); does **not** supersede Decision D itself (DEC-015
+  covers company timezone; this is the authorization half of K‑10).
+
+### Decision
+
+`PM` (and only `PM`) is removed from `GLOBAL_PROJECT_SCOPE_ROLES`. After this
+decision, a **PM no longer bypasses project-membership checks**. A PM must have
+an explicit `ProjectMember` row (role `PM`) on the target project — or an
+in-memory `projectRoles[projectId]` fast-path entry — to access that project;
+otherwise the guard denies with `ForbiddenException`.
+
+`MANAGER` is **preserved** as a global-scope role (unchanged, still bypasses
+membership) and is explicitly **deferred** to a follow-up ownership-scope
+decision (out of scope for Slice 4). `ADMIN`, `OWNER`, and `MANAGER` keep the
+global bypass.
+
+### Why
+
+- K‑10 (Project-Scope Authorization / project isolation) has **two**
+  enforcement points that previously listed PM globally: the shared
+  `GLOBAL_PROJECT_SCOPE_ROLES` constant (consumed by `ProjectAccessGuard` and
+  the project-scope query scoping) and the solar design guard's own inline
+  bypass. Removing PM from only one would leave the other as a residual
+  cross-project leak for the same role — so both are changed **in lockstep**.
+- A PM "owns" projects only through membership; granting every PM unconditional
+  access to **every** project (through either guard) is broader than the
+  documented `ROLE_VISIBILITY_MATRIX` membership scope and was flagged as a
+  cross-project leak (Decision D trail / K‑10).
+- MANAGER's global bypass is deferred (not silently changed) so the change stays
+  minimal and the remaining scope work is a single, documented decision.
+
+### Impact
+
+- `backend/src/common/auth/project-scope.ts` — PM removed from
+  `GLOBAL_PROJECT_SCOPE_ROLES` (comment updated).
+- `backend/src/modules/solar/guards/solar-design-access.guard.ts` — PM removed
+  from the inline Admin/Owner/PM/Manager bypass (comment updated).
+- Tests: `backend/test/project-access.guard.spec.ts`,
+  `backend/test/solar-design-access.guard.spec.ts` — PM grant/deny lockstep
+  cases added (PM-member grant, PM-non‑member deny; ADMIN/OWNER/MANAGER
+  unchanged).
+- `web` — **no change** (verified: no client-side mirror of the
+  `GLOBAL_PROJECT_SCOPE_ROLES` list; the web surfaces are role-gated at the
+  route/component level only, so the backend-scope list is the single authority).
+
+### Verification
+
+- Backend Jest: PM-related guard suites green (see `VERIFICATION.md` Slice 4).
+- `npm run typecheck` (backend) exit 0.
+
+---
+
 # Superseded Decisions
 Never silently delete old decisions. Mark them SUPERSEDED.
 
