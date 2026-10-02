@@ -5,11 +5,15 @@ import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
-import { 
-  Truck, FileText, Calendar, MapPin, User, Boxes, CheckCircle2, 
-  Loader2, RefreshCw
+import { useAuth } from '../../contexts/AuthContext';
+import { Button } from '../../components/ui/Button';
+import { AvizCreateModal } from '../../features/procurement/components/AvizCreateModal';
+import type { Aviz } from '../../features/procurement/types';
+import {
+  Truck, FileText, Calendar, MapPin, User, Boxes, CheckCircle2,
+  Loader2, RefreshCw, Plus
 } from 'lucide-react';
 
 interface DNRow {
@@ -29,6 +33,39 @@ function AvizePageInner() {
   const [error, setError] = useState<string | null>(null);
   const { locale } = useLocale();
   const { selectedProjectId } = useProject();
+  const { user } = useAuth();
+  const [showCreate, setShowCreate] = useState(false);
+  // Mirrors backend @Roles(ADMIN, PROCUREMENT, SITE_MANAGER, TEAM_LEADER) + RolesGuard
+  // ADMIN/OWNER bypass on POST /api/procurement/avize. PM and WORKER are denied server-side
+  // and never see the create control.
+  const AVIZ_CREATE_ROLES = ['admin', 'owner', 'procurement', 'site_manager', 'team_leader'];
+  const userRole = user?.role?.toLowerCase();
+  const canCreate = Boolean(selectedProjectId) && AVIZ_CREATE_ROLES.includes(userRole || '');
+
+  /** Maps a created NestJS aviz onto the page's DNRow shape (same mapping as load()),
+   *  so the new receipt can be prepended without refetching the whole list. */
+  const mapCreatedAviz = (aviz: Aviz): (DNRow & { items: DNItem[] }) => ({
+    id: aviz.id,
+    invoice_or_aviz_number: aviz.aviz_number || '',
+    supplier: aviz.supplier?.name || 'Necunoscut',
+    project_id: aviz.project_id || '',
+    receiver_user_id: '',
+    delivery_date: aviz.delivery_date || aviz.created_at,
+    photo_url: '',
+    notes: aviz.notes || '',
+    created_at: aviz.created_at,
+    items: (aviz.items || []).map((item) => ({
+      material_id: item.material_id,
+      material_code: item.material?.code || '',
+      material_name: item.material?.name || '',
+      unit: item.material?.unit || '',
+      quantity: item.quantity,
+    })) as DNItem[],
+  });
+
+  const handleCreated = (created: Aviz) => {
+    setDeliveries((prev) => [mapCreatedAviz(created), ...prev]);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -101,10 +138,20 @@ function AvizePageInner() {
             Evidența avizelor recepționate în șantier, fotografii documente și încărcarea automată a stocului.
           </p>
         </div>
-        <button onClick={load} disabled={loading}
-          className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reîmprospătează
-        </button>
+        <div className="flex items-center gap-2">
+          {canCreate && (
+            <Button type="button" variant="primary" onClick={() => setShowCreate(true)}>
+              <span className="inline-flex items-center gap-1.5">
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                {t('avize.action_new', locale)}
+              </span>
+            </Button>
+          )}
+          <button onClick={load} disabled={loading}
+            className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reîmprospătează
+          </button>
+        </div>
       </div>
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
       {loading ? (
@@ -212,6 +259,14 @@ function AvizePageInner() {
         })}
       </div>
       )}
+
+      <AvizCreateModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        projectId={selectedProjectId || ''}
+        locale={locale}
+        onCreated={handleCreated}
+      />
     </div>
   );
 }

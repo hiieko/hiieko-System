@@ -1089,6 +1089,15 @@ export class NestApiClient {
   }
 
   // ============================================================================
+  // SUPPLIERS (org-scoped; used by receipt/avize creation)
+  // ============================================================================
+
+  /** List suppliers for the authenticated organization — GET /api/suppliers (any authenticated role). */
+  async getSuppliers(): Promise<ApiResponse<any[]>> {
+    return this.request<ApiResponse<any[]>>('/api/suppliers');
+  }
+
+  // ============================================================================
   // DELIVERY NOTES (Avize)
   // ============================================================================
 
