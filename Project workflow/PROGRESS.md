@@ -4,6 +4,50 @@
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
 ## SLICE 5 — Attendance Correction Support: IMPLEMENTED + VERIFIED (2026-10-01, UNCOMMITTED)
+## SLICE 6 — Task Lifecycle + Verification: IMPLEMENTED + VERIFIED (2026-10-02, UNCOMMITTED)
+
+**Status:** complete and verified. **Not committed, not pushed.** The additive migration
+`20261002000000_add_task_verification_fields` is **created but NOT deployed** — `prisma migrate
+deploy` / `db:verify` are intentionally deferred to a separate controlled step (DB verification has
+NOT run and must not be claimed).
+
+**What landed (Decision F — K‑6 / K‑7 effective; K‑8 remains deferred):**
+- **Backend-authoritative Task.status FSM** (`TASK_STATUS_TRANSITIONS` in `tasks.service.ts`):
+  the server now validates every status change against the approved lifecycle and rejects illegal
+  jumps with `400` (`Task.status` is the single source of truth). The map mirrors the web FSM in
+  `web/src/features/tasks/types.ts` (`TASK_WORKFLOW_NEXT`) plus the K‑7 reopen transitions.
+- **K‑7 reopen transitions** (server-enforced, audited): `VERIFIED → IN_PROGRESS` requires
+  ADMIN / OWNER / PM; `CANCELLED → PLANNED` requires ADMIN / OWNER. Both were added to the web FSM.
+- **Server-controlled `actual_start` / `actual_end`:** client-supplied `actualStart`/`actualEnd`
+  are ignored; the server stamps `actual_start` on entering `IN_PROGRESS` (if unset) and
+  `actual_end` on `COMPLETED`; reopening clears `actual_end` and preserves the original
+  `actual_start`. The web Tasks page no longer auto-fills them.
+- **Verification fields + authority (K‑6):** new `tasks.verified_by` / `tasks.verified_at`
+  (additive FK to `users`, ON DELETE SET NULL). `VERIFIED` may only be set by ADMIN / OWNER /
+  PM / SITE_MANAGER / QA_QC; ADMIN/OWNER keep the global bypass while PM / SITE_MANAGER / QA_QC
+  are enforced against the task's **project membership role** (`ProjectMember`) — Slice 4
+  PM-membership scoping and `GLOBAL_PROJECT_SCOPE_ROLES` are unchanged. Entering `VERIFIED`
+  stamps both fields; reopening out of `VERIFIED` clears them.
+- **No self-verification:** a task assignee can never verify their own task, regardless of role
+  (checked before any role logic — applies even to ADMIN/OWNER and QA_QC members).
+- **PLAN-001 (daily-plans completion path):** inspected
+  `daily-plans.service.ts` → `complete()`; it only writes `DailyPlanTask.completed` and
+  `DailyPlan.status` and **never writes `Task.status`**, so no lifecycle conflict exists. No
+  production change was made to daily-plans; a focused regression test guards the invariant that
+  plan completion never touches `Task.status`.
+- **Out of scope, unchanged:** no BLOCKED reason field (K‑8 deferred), no task-dependency gating,
+  Mobile frozen, existing task history/audit rows not rewritten or retro-validated.
+
+**Gates (this task):** `prisma generate` PASS · `prisma validate` PASS · backend Jest
+**35 suites / 473 tests PASS** (30 new Slice 6 cases: FSM legal/illegal, server timestamps,
+K‑6 role matrix incl. membership scoping, self-verify denial, verification record
+stamp/clear, K‑7 reopen roles, PLAN-001 regression) · `nest build` exit 0 · web `tsc --noEmit`
+exit 0 · web `next build` exit 0 · `git diff --check` clean. **Pre-existing, not a Slice 6
+regression:** root `tsc -p backend/tsconfig.json` still fails `TS2769` in
+`backend/src/modules/ocr/providers/paddleocr.provider.ts:100`. **DB verification: NOT run —
+migration not deployed.**
+
+
 
 **Status:** complete and verified. **Not committed, not pushed** — the change set lives only in the
 working tree (Slice 1 `3183c4f` and the uncommitted Slice 2/Slice 3 change sets are untouched).

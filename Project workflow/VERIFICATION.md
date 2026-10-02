@@ -13,6 +13,45 @@
 > *SLICE 3 — Company Timezone / Day-Boundary*.
 
 > **2026-09-30 — Tailwind `content` globs (ISSUE-063, COMMITTED — CHECKPOINT `37c7e63`):** the globs skipped
+## SLICE 6 — Task Lifecycle + Verification (2026-10-02, UNCOMMITTED)
+
+Decision **F** / **K‑6 / K‑7** made effective; **K‑8 (BLOCKED reason) remains deferred**. The server
+is now the authoritative source of task lifecycle state. **Migration created but NOT deployed —
+`db:verify` NOT run; no database-verification claim is made.**
+
+### Implemented (exact files)
+- **New migration:** `backend/prisma/migrations/20261002000000_add_task_verification_fields/migration.sql`
+  — purely additive (`tasks.verified_by` TEXT FK→`users` ON DELETE SET NULL, `tasks.verified_at`
+  TIMESTAMP(3), index `tasks_verified_by_idx`); no existing column altered, no data rewritten
+  (existing task history is not retro-validated). `prisma migrate status` confirms it is pending.
+- **Schema:** `backend/prisma/schema.prisma` — `Task.verified_by/verified_at` + `TaskVerifiedBy`
+  relation, `User.verified_tasks` back-relation. `TaskStatusEnum` values unchanged.
+- **Backend:** `backend/src/modules/tasks/tasks.service.ts` — exported
+  `TASK_STATUS_TRANSITIONS` FSM; `update()` enforces legal transitions (illegal jump → 400),
+  K‑7 reopen role gates (`VERIFIED→IN_PROGRESS` = ADMIN/OWNER/PM; `CANCELLED→PLANNED` =
+  ADMIN/OWNER), K‑6 verification authorization (ADMIN/OWNER global bypass; PM/SITE_MANAGER/
+  QA_QC verified against the task's `ProjectMember` role), assignee self-verify denial
+  (checked first, role-independent), server-controlled `actual_start`/`actual_end`
+  (client values ignored; stamped on IN_PROGRESS/COMPLETED, actual_end cleared on reopen),
+  `verified_by`/`verified_at` stamped on VERIFIED and cleared on reopen, audit action
+  `TASK_STATUS_CHANGED` on transitions. `tasks.controller.ts` passes `user.role`.
+- **Web:** `web/src/features/tasks/types.ts` (`TASK_WORKFLOW_NEXT` gains K‑7 reopens; `Task`
+  type gains `verified_by`/`verified_at`), `web/src/app/tasks/page.tsx` (client auto-fill of
+  actualStart/actualEnd removed), `web/src/features/tasks/components/TaskCard.tsx`
+  (verified-at badge), `shared/src/translations.ts` (EN/RO keys: `task.invalid_transition`,
+  `task.verify_forbidden`, `task.verified_by`, `task.verified_at`).
+- **Tests:** `backend/test/tasks.service.spec.ts` — 30 new Slice 6 cases.
+- **Untouched (verified by empty diff):** `daily-plans.service.ts` (PLAN-001: `complete()`
+  never writes `Task.status` — regression test added), task-dependencies module,
+  `GLOBAL_PROJECT_SCOPE_ROLES` (PM not re-added), Mobile, existing history.
+
+### Gates actually run
+`prisma generate` PASS · `prisma validate` PASS · backend Jest **35 suites / 473 tests PASS** ·
+`nest build` exit 0 · web `tsc --noEmit` exit 0 · web `next build` exit 0 · `git diff --check`
+clean. **Pre-existing, not a Slice 6 regression:** root `tsc -p backend/tsconfig.json` TS2769 in
+`paddleocr.provider.ts:100`. **NOT run:** `prisma migrate deploy`, `db:verify`, browser E2E.
+
+
 > `web/src/features/**`, so utilities used only there were never emitted. `content` is now
 > `./src/**/*.{js,ts,jsx,tsx,mdx}` (one line in `web/tailwind.config.js`). Served `layout.css`
 > 70,182 B / 704 class tokens -> **75,037 B / 776 tokens (+72, 0 removed)**; `grid-template-columns: 92px …`

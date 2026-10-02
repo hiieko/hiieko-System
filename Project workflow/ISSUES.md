@@ -1,5 +1,21 @@
 # Issues
 
+
+> **2026-10-02 (Slice 6 — Task Lifecycle + Verification, UNCOMMITTED):** implemented + verified;
+> **no issue changed state.** The server is now the authoritative source of task lifecycle state:
+> backend FSM (`TASK_STATUS_TRANSITIONS`) rejects illegal status jumps (400), K‑7 reopen transitions
+> are role-gated (`VERIFIED→IN_PROGRESS` = ADMIN/OWNER/PM; `CANCELLED→PLANNED` = ADMIN/OWNER),
+> `actual_start`/`actual_end` are server-controlled (client values ignored), and K‑6 verification is
+> enforced (`verified_by`/`verified_at` stamped only by ADMIN/OWNER or project-membership
+> PM/SITE_MANAGER/QA_QC; assignees can never self-verify, regardless of role). PLAN-001 investigated:
+> `daily-plans.complete()` never writes `Task.status`, so no conflict exists — no daily-plans
+> production change; a regression test guards the invariant. No BLOCKED reason (K‑8 remains
+> deferred), no dependency gating, Mobile frozen, existing task history not rewritten. Additive
+> migration `20261002000000_add_task_verification_fields` created but **NOT deployed** (`db:verify`
+> not run). Gates: backend Jest 35 suites / 473 tests PASS · prisma validate PASS · nest build
+> PASS · web typecheck PASS · web build PASS. Pre-existing (not a regression): root backend
+> `tsc` TS2769 in `paddleocr.provider.ts:100`.
+
 Last Updated: 2026-09-29 (ISSUE-048 RESOLVED - Daily Report "Proposed Work" now persists in its own `daily_reports.proposed_work` column (migration `20260929170000_add_daily_report_proposed_work`), independent of `general_notes`; backend + shared + web changes and a 375px EN/RO browser gate are green. Earlier the same day: dev field-team data seeded and browser-verified (12 accounts / 3 teams / 12 tasks / 3 published daily plans), ISSUE-049 opened OPEN (two concurrent `next dev` servers corrupting web/.next), P4.3.1 daily report PERSISTENCE VERIFIED, ISSUE-047 RESOLVED)
 
 > **2026-10-01 (Slice 3 — Company Timezone / Day-Boundary, UNCOMMITTED):** implemented + verified;

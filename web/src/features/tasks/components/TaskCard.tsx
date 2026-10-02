@@ -11,6 +11,7 @@ import {
   Clock,
   Hash,
   MapPin,
+  CheckCircle2,
 } from 'lucide-react';
 
 import { Task, TaskStatus, TASK_STATUS_I18N, TASK_STATUS_BADGE } from '../types';
@@ -181,6 +182,12 @@ export function TaskCard({
                         {formatDate(task.actual_end)}
                       </>
                     )}
+                  </span>
+                )}
+                {task.status === 'VERIFIED' && task.verified_at && (
+                  <span className="flex items-center gap-1 text-emerald-600">
+                    <CheckCircle2 className="w-3 h-3" />
+                    {formatDate(task.verified_at)}
                   </span>
                 )}
               </div>

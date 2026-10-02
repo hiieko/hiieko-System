@@ -180,15 +180,8 @@ export default function TasksPage() {
     try {
       const dto: UpdateTaskDto = { status: newStatus };
 
-      // Auto-fill actual_start when moving to IN_PROGRESS
-      if (newStatus === 'IN_PROGRESS') {
-        dto.actualStart = new Date().toISOString();
-      }
-
-      // Auto-fill actual_end when moving to COMPLETED or VERIFIED
-      if (newStatus === 'COMPLETED' || newStatus === 'VERIFIED') {
-        dto.actualEnd = new Date().toISOString();
-      }
+      // Slice 6: actual_start / actual_end are server-controlled now — the
+      // backend stamps them on IN_PROGRESS / COMPLETED transitions.
 
       const res = await updateTask(taskId, dto);
 

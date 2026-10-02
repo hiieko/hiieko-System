@@ -90,7 +90,7 @@ export class TasksController {
     @Body() dto: UpdateTaskDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.tasksService.update(id, dto, user.id);
+    return this.tasksService.update(id, dto, user.id, user.role);
   }
 
   @Post(':id/assign')

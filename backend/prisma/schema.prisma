@@ -52,6 +52,7 @@ model User {
   report_revisions    DailyReportRevision[]    @relation("RevisionSubmitter")
   sessions            Session[]
   attendance_corrections AttendanceCorrection[] @relation("AttendanceCorrections")
+  verified_tasks      Task[]                   @relation("TaskVerifiedBy")
   organization        Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
@@ -337,6 +338,9 @@ model Task {
   created_at         DateTime          @default(now())
   updated_at         DateTime          @updatedAt
   daily_plan_tasks   DailyPlanTask[]
+  verified_by_user   User?            @relation("TaskVerifiedBy", fields: [verified_by], references: [id])
+  verified_by        String?
+  verified_at        DateTime?
   daily_report_tasks DailyReportTask[]
   assignments        TaskAssignment[]
   dependents         TaskDependency[]  @relation("PredecessorTask")

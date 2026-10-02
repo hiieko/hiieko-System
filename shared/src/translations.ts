@@ -692,6 +692,10 @@ Object.assign(d, {
   'task.status.completed': T('Finalizat', 'Completed'),
   'task.status.verified': T('Verificat', 'Verified'),
   'task.status.cancelled': T('Anulat', 'Cancelled'),
+  'task.invalid_transition': T('Tranziție de status nepermisă', 'Illegal status transition'),
+  'task.verify_forbidden': T('Nu aveți permisiunea de a verifica această sarcină', 'You are not allowed to verify this task'),
+  'task.verified_by': T('Verificat de', 'Verified by'),
+  'task.verified_at': T('Verificat la', 'Verified at'),
 
   // --- Tasks: page chrome ---
   'task.page_title': T('Task-uri', 'Tasks'),

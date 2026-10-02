@@ -6,6 +6,48 @@ Last Updated: 2026-09-29 (CI GREEN - GitHub Actions run 36606409946 on commit `6
 
 
 ## SLICE 3 — COMPANY TIMEZONE / DAY-BOUNDARY IMPLEMENTED + VERIFIED — **UNCOMMITTED, NOT PUSHED** (2026-10-01)
+## SLICE 6 — TASK LIFECYCLE + VERIFICATION IMPLEMENTED + VERIFIED — **UNCOMMITTED, NOT PUSHED** (2026-10-02)
+
+**Roadmap:** `REMEDIATION_ROADMAP.md` Slice 6 (Decision F — K‑6 / K‑7 effective; **K‑8 deferred**).
+**Baseline:** HEAD `ceeb8b0` (Slice 5 committed + deployed; Slice 5 `db:verify` 82/82).
+
+### What was done
+- **Backend-authoritative Task.status FSM:** `TASK_STATUS_TRANSITIONS` in
+  `backend/src/modules/tasks/tasks.service.ts` — illegal jumps rejected with 400;
+  `Task.status` is the single source of truth.
+- **K‑7 reopen transitions** (server-enforced + audited): `VERIFIED → IN_PROGRESS` =
+  ADMIN/OWNER/PM; `CANCELLED → PLANNED` = ADMIN/OWNER. Added to the web FSM
+  (`TASK_WORKFLOW_NEXT`) so the UI can offer them; the backend remains the authority.
+- **Server-controlled `actual_start`/`actual_end`:** client-supplied values ignored; server
+  stamps on IN_PROGRESS/COMPLETED; reopen clears `actual_end`, preserves `actual_start`.
+  Web Tasks page auto-fill removed.
+- **Verification (K‑6):** new additive fields `tasks.verified_by` / `tasks.verified_at`;
+  VERIFIED allowed only for ADMIN/OWNER (global bypass) or project-membership
+  PM/SITE_MANAGER/QA_QC; **assignees can never self-verify** (checked first, role-independent).
+  Stamped on VERIFIED, cleared on reopen.
+- **PLAN-001:** `daily-plans.complete()` inspected — never writes `Task.status`; **no daily-plans
+  production change**; regression test added protecting `Task.status` authority.
+- **Not done / out of scope:** no BLOCKED reason (K‑8 deferred), no dependency gating,
+  Mobile frozen, history not rewritten, no new governance decision number.
+
+### Verification state
+- **RUN + PASS:** `prisma generate` · `prisma validate` · backend Jest **35 suites / 473 tests**
+  (30 new Slice 6 cases) · `nest build` · web `tsc --noEmit` · web `next build` · `git diff --check`.
+- **Pre-existing, NOT a Slice 6 regression:** root `tsc -p backend/tsconfig.json` TS2769 in
+  `backend/src/modules/ocr/providers/paddleocr.provider.ts:100`.
+- **NOT run / NOT claimed:** migration `20261002000000_add_task_verification_fields` is
+  **created but NOT deployed**; `prisma migrate deploy`, `db:verify`, and browser E2E are the
+  remaining steps before/with the Slice 6 commit. **Do not claim DB verification has passed.**
+
+### Next steps for the next assistant
+1. In a controlled step: `npx prisma migrate deploy` (backend), then run `db:verify`
+   and update `VERIFICATION.md` with the real result.
+2. Update browser/E2E evidence if desired (tasks page lifecycle + verify-role matrix).
+3. Commit the Slice 6 change set (files list in `PROGRESS.md` → Slice 6 section) — do **not**
+   stage the unrelated untracked files (`.hiiEko/`, `BonFis/`, `Project workflow/design/`,
+   `Start-/Stop-HIIEKO.ps1`, `database/archive/*.sql`).
+
+
 
 **Roadmap:** `REMEDIATION_ROADMAP.md` §9 (close-out addendum). **Decision record:** DEC-015 (Decision C /
 K‑9 effective). **Baseline:** HEAD still `53a1632` (Slice 2 checkpoint); Slice 1 `3183c4f` untouched.

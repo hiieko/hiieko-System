@@ -94,6 +94,8 @@ export interface Task {
   planned_quantity?: number | string | null;
   actual_quantity?: number | string | null;
   unit_of_measure?: string | null;
+  verified_by?: string | null;
+  verified_at?: string | null;
   created_at: string;
   updated_at: string;
 
@@ -203,6 +205,6 @@ export const TASK_WORKFLOW_NEXT: Record<TaskStatus, TaskStatus[]> = {
   IN_PROGRESS: ['COMPLETED', 'BLOCKED', 'CANCELLED'],
   BLOCKED: ['READY', 'IN_PROGRESS', 'CANCELLED'],
   COMPLETED: ['VERIFIED'],
-  VERIFIED: [],
-  CANCELLED: [],
+  VERIFIED: ['IN_PROGRESS'], // K-7 reopen — backend restricts to ADMIN/OWNER/PM
+  CANCELLED: ['PLANNED'], // K-7 reopen — backend restricts to ADMIN/OWNER
 };
