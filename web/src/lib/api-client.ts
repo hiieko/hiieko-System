@@ -1097,6 +1097,21 @@ export class NestApiClient {
     return this.request<ApiResponse<any[]>>('/api/suppliers');
   }
 
+  /** Create a supplier — POST /api/suppliers (@Roles ADMIN/PROCUREMENT/MANAGER + OWNER bypass). */
+  async createSupplier(data: {
+    name: string;
+    cui?: string;
+    address?: string;
+    contactPerson?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // ============================================================================
   // DELIVERY NOTES (Avize)
   // ============================================================================

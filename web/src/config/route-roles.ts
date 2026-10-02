@@ -95,6 +95,15 @@ export const QA_ROLES: string[] = ['admin', 'owner', 'qa_qc', 'pm', 'site_manage
 export const ADMIN_ROLES: string[] = ['admin'];
 
 /**
+ * `/furnizori` (Suppliers master-data).
+ * View: ADMIN / OWNER / MANAGER / PM / PROCUREMENT.
+ * Create: ADMIN / OWNER / MANAGER / PROCUREMENT (PM is read-only — backend
+ * `POST /api/suppliers` is `@Roles(ADMIN, PROCUREMENT, MANAGER)` + OWNER bypass).
+ * Governance decision for this feature (the role matrix has no Suppliers row).
+ */
+export const SUPPLIER_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'procurement'];
+
+/**
  * `/control-tower` (the canonical Control Tower route, and the surface `/`
  * renders for these roles).
  *
@@ -145,6 +154,7 @@ export type AppRoute =
   | '/projects'
   | '/projects/[id]'
   | '/teams'
+  | '/furnizori'
   | '/workforce'
   | '/santiere'
   | '/qa'
@@ -176,6 +186,7 @@ export const ROUTE_ROLES = {
   // Detail route mirrors its list route (same guard on both pages today).
   '/projects/[id]': PROJECT_ROLES,
   '/teams': PROJECT_ROLES,
+  '/furnizori': SUPPLIER_ROLES,
   '/workforce': WORKFORCE_ROLES,
   '/santiere': GIS_ROLES,
   '/qa': QA_ROLES,
