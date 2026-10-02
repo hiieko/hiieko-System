@@ -7,6 +7,7 @@ import { Plus, RefreshCw, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { useToast } from '../../components/ui/Toast';
+import { ApiError } from '../../lib/api-client';
 
 import {
   Task,
@@ -195,7 +196,15 @@ export default function TasksPage() {
         toastError(t('task.generic_error'), res.error);
       }
     } catch (err) {
-      toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+      if (err instanceof ApiError && err.statusCode === 400) {
+        // Slice 6: illegal transition (or a reopen the role may not perform).
+        toastError(t('task.invalid_transition'), err.message);
+      } else if (err instanceof ApiError && err.statusCode === 403) {
+        // K-6: verification role restriction / self-verification prohibition.
+        toastError(t('task.verify_forbidden'), err.message);
+      } else {
+        toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+      }
     } finally {
       setUpdatingStatusIds((prev) => {
         const next = new Set(prev);
@@ -261,7 +270,7 @@ export default function TasksPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div>
       {/* Create Modal */}
       <TaskCreateModal
         open={showCreateModal}
@@ -300,7 +309,7 @@ export default function TasksPage() {
               onClick={loadTasks}
               loading={loading}
             >
-              Refresh
+              {t('general.refresh')}
             </Button>
             {userCanCreate && (
               <Button
@@ -310,7 +319,7 @@ export default function TasksPage() {
                 onClick={() => setShowCreateModal(true)}
                 disabled={!selectedProject}
               >
-                {t('task.new') || 'New Task'}
+                {t('task.new')}
               </Button>
             )}
           </div>
@@ -377,7 +386,7 @@ export default function TasksPage() {
             action={
               userCanCreate && selectedProject
                 ? {
-                    label: t('task.create') || 'Create Task',
+                    label: t('task.create'),
                     onClick: () => setShowCreateModal(true),
                   }
                 : undefined

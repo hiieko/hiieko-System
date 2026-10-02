@@ -72,6 +72,16 @@ export function TaskCard({
   // Get assigned users display
   const assignedUsers = task.assignments?.filter((a) => a.user) || [];
 
+  // Slice 6: verifier identity — resolved ONLY from data already in the task
+  // payload (an assignment whose user_id matches verified_by). Never a lookup,
+  // never a raw id. Falls back to the date-only display.
+  const verifierName = task.verified_by
+    ? (task.assignments || []).find((a) => a.user_id === task.verified_by)?.user
+    : null;
+  const verifierLabel = verifierName
+    ? verifierName.profile?.full_name || verifierName.fullName || verifierName.email || null
+    : null;
+
   // Handle status change
   const handleStatusChange = async (newStatus: TaskStatus) => {
     if (newStatus === 'CANCELLED') {
@@ -114,8 +124,8 @@ export function TaskCard({
       <article
         id={cardId}
         className={clsx(
-          'bg-white border border-slate-200 rounded-xl shadow-sm',
-          'hover:shadow-md hover:border-slate-300 transition-all duration-150',
+          'bg-surface border border-chrome-line rounded-xl shadow-sm',
+          'hover:shadow-md hover:border-chrome-line transition-all duration-150',
           expanded && 'shadow-md',
           className
         )}
@@ -127,7 +137,7 @@ export function TaskCard({
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 {/* Task code */}
-                <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                <span className="text-xs font-mono font-medium text-content-muted bg-surface-muted px-2 py-0.5 rounded">
                   <Hash className="w-3 h-3 inline mr-0.5 -mt-0.5" />
                   {task.code}
                 </span>
@@ -147,12 +157,12 @@ export function TaskCard({
               </div>
 
               {/* Title */}
-              <h3 className="text-base font-medium text-slate-900 mb-1">
+              <h3 className="text-base font-medium text-content mb-1">
                 {task.title}
               </h3>
 
               {/* Meta info */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-content-muted">
                 {task.work_package && <span>{task.work_package.name}</span>}
                 {task.zone && (
                   <span className="flex items-center gap-1">
@@ -166,7 +176,7 @@ export function TaskCard({
                     {formatDate(task.planned_start)}
                     {task.planned_end && (
                       <>
-                        <span className="text-slate-300">→</span>
+                        <span className="text-content-muted">→</span>
                         {formatDate(task.planned_end)}
                       </>
                     )}
@@ -178,7 +188,7 @@ export function TaskCard({
                     {formatDate(task.actual_start)}
                     {task.actual_end && (
                       <>
-                        <span className="text-slate-300">→</span>
+                        <span className="text-content-muted">→</span>
                         {formatDate(task.actual_end)}
                       </>
                     )}
@@ -187,6 +197,11 @@ export function TaskCard({
                 {task.status === 'VERIFIED' && task.verified_at && (
                   <span className="flex items-center gap-1 text-emerald-600">
                     <CheckCircle2 className="w-3 h-3" />
+                    {verifierLabel && (
+                      <span className="font-medium">
+                        {t('task.verified_by')}: {verifierLabel} ·
+                      </span>
+                    )}
                     {formatDate(task.verified_at)}
                   </span>
                 )}
@@ -201,14 +216,14 @@ export function TaskCard({
               aria-label={expanded ? t('task.collapse_details') : t('task.expand_details')}
               className={clsx(
                 'p-2 rounded-lg transition-colors',
-                'hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-hii-500',
-                expanded && 'bg-slate-100'
+                'hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-hii-500',
+                expanded && 'bg-surface-muted'
               )}
             >
               {expanded ? (
-                <ChevronUp className="w-5 h-5 text-slate-500" />
+                <ChevronUp className="w-5 h-5 text-content-muted" />
               ) : (
-                <ChevronDown className="w-5 h-5 text-slate-500" />
+                <ChevronDown className="w-5 h-5 text-content-muted" />
               )}
             </button>
           </div>
@@ -227,7 +242,7 @@ export function TaskCard({
           {/* Assigned users */}
           {assignedUsers.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <User className="w-3.5 h-3.5 text-slate-400" />
+              <User className="w-3.5 h-3.5 text-content-muted" />
               <div className="flex flex-wrap gap-1.5">
                 {assignedUsers.map((assignment) => {
                   const user = assignment.user;
@@ -275,12 +290,12 @@ export function TaskCard({
         {expanded && (
           <div
             id={contentId}
-            className="px-4 pb-4 border-t border-slate-100 pt-4 space-y-4"
+            className="px-4 pb-4 border-t border-chrome-line pt-4 space-y-4"
           >
             {/* Description */}
             {task.description && (
               <div>
-                <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                <p className="text-sm text-content-secondary whitespace-pre-wrap">
                   {task.description}
                 </p>
               </div>
@@ -297,7 +312,7 @@ export function TaskCard({
 
             {/* Quantity Editor */}
             {canUpdateQuantity && (
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2 border-t border-chrome-line">
                 <TaskQuantityEditor
                   currentStatus={task.status}
                   plannedQuantity={task.planned_quantity}
@@ -311,7 +326,7 @@ export function TaskCard({
 
             {/* Status Workflow */}
             {canUpdateStatus && (
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2 border-t border-chrome-line">
                 <TaskStatusWorkflow
                   currentStatus={task.status}
                   onStatusChange={handleStatusChange}
