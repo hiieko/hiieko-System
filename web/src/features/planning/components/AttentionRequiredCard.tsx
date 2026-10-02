@@ -31,7 +31,7 @@ export function AttentionRequiredCard({ items, total, loading }: AttentionRequir
   return (
     <Card padding={false} className="p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-bold text-slate-900">{t('planning.attention_title', locale)}</h2>
+        <h2 className="text-sm font-bold text-content">{t('planning.attention_title', locale)}</h2>
         {total > 0 && (
           <Badge variant="danger" size="sm">
             {total}
@@ -45,7 +45,7 @@ export function AttentionRequiredCard({ items, total, loading }: AttentionRequir
           <Skeleton className="h-12 w-full" variant="rectangular" />
         </div>
       ) : items.length === 0 ? (
-        <p className="mt-3 inline-flex items-start gap-1.5 text-xs text-slate-500">
+        <p className="mt-3 inline-flex items-start gap-1.5 text-xs text-content-muted">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-600" aria-hidden="true" />
           {t('planning.attention_empty', locale)}
         </p>
@@ -55,7 +55,7 @@ export function AttentionRequiredCard({ items, total, loading }: AttentionRequir
             {items.map((item) => (
               <li
                 key={item.id}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+                className="rounded-lg border border-chrome-line bg-surface px-3 py-2.5"
               >
                 <div className="flex items-start gap-2">
                   {item.kind === 'UNASSIGNED_TASK' ? (
@@ -67,9 +67,9 @@ export function AttentionRequiredCard({ items, total, loading }: AttentionRequir
                     />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="break-words text-sm font-medium text-slate-800">{item.title}</p>
+                    <p className="break-words text-sm font-medium text-content">{item.title}</p>
                     {item.detail && (
-                      <p className="mt-0.5 break-words text-xs text-slate-500">{item.detail}</p>
+                      <p className="mt-0.5 break-words text-xs text-content-muted">{item.detail}</p>
                     )}
                   </div>
                   {item.badge && (
@@ -84,7 +84,7 @@ export function AttentionRequiredCard({ items, total, loading }: AttentionRequir
             ))}
           </ul>
           {hidden > 0 && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-content-muted">
               {t('planning.attention_more', locale).replace('{count}', String(hidden))}
             </p>
           )}

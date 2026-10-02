@@ -21,8 +21,8 @@ interface PlanningCountersProps {
  * (DESIGN_SYSTEM.md §7, DEC-012 §5).
  */
 const COUNTER_TONE: Record<DayCounterId, string> = {
-  PLANNED: 'text-slate-700',
-  ASSIGNED: 'text-slate-700',
+  PLANNED: 'text-content-secondary',
+  ASSIGNED: 'text-content-secondary',
   IN_PROGRESS: 'text-amber-600',
   COMPLETED: 'text-emerald-600',
   BLOCKED: 'text-red-600',
@@ -63,9 +63,9 @@ export function PlanningCounters({ counters }: PlanningCountersProps) {
             <li
               key={id}
               aria-label={`${label}: ${unknown ? t('planning.counter_unavailable', locale) : counters.counts[id]}. ${hint}`}
-              className="min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+              className="min-w-0 rounded-lg border border-chrome-line bg-surface px-3 py-2.5"
             >
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
                 <span
                   aria-hidden="true"
                   className={clsx('h-2 w-2 flex-shrink-0 rounded-full', COUNTER_DOT[id])}
@@ -85,7 +85,7 @@ export function PlanningCounters({ counters }: PlanningCountersProps) {
         })}
       </ul>
 
-      <p className="mt-2 text-[11px] text-slate-400">
+      <p className="mt-2 text-[11px] text-content-muted">
         {t('planning.counters_note', locale)}
       </p>
     </section>

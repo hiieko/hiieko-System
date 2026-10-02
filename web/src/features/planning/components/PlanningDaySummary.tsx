@@ -89,7 +89,7 @@ export function PlanningDaySummary({
   ];
 
   const toneClasses: Record<'slate' | 'emerald' | 'amber', string> = {
-    slate: 'text-slate-500',
+    slate: 'text-content-muted',
     emerald: 'text-emerald-600',
     amber: 'text-amber-600',
   };
@@ -102,16 +102,16 @@ export function PlanningDaySummary({
       {stats.map((stat) => (
         <div
           key={stat.key}
-          className="min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+          className="min-w-0 rounded-lg border border-chrome-line bg-surface px-3 py-2.5"
         >
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-muted">
             {stat.icon}
             <span className="truncate">{stat.label}</span>
           </p>
           <p
             className={`mt-0.5 truncate text-lg font-bold ${
               stat.key === 'teams' ? 'text-base font-semibold' : ''
-            } ${stat.key === 'teams' ? 'text-slate-800' : toneClasses[stat.tone]}`}
+            } ${stat.key === 'teams' ? 'text-content' : toneClasses[stat.tone]}`}
             title={stat.truncate ? String(stat.value) : undefined}
           >
             {stat.value}

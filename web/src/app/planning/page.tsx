@@ -428,8 +428,8 @@ function PlanningPageInner() {
 
   const toggleBtnClass = (active: boolean) =>
     active
-      ? 'min-h-[44px] rounded-md bg-white px-4 text-sm font-semibold text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-hii-500'
-      : 'min-h-[44px] rounded-md px-4 text-sm font-medium text-slate-500 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-hii-500';
+      ? 'min-h-[44px] rounded-md bg-surface px-4 text-sm font-semibold text-content shadow-sm focus:outline-none focus:ring-2 focus:ring-hii-500'
+      : 'min-h-[44px] rounded-md px-4 text-sm font-medium text-content-muted hover:text-content-secondary focus:outline-none focus:ring-2 focus:ring-hii-500';
 
   return (
     <div className="min-w-0 overflow-x-hidden">
@@ -458,7 +458,7 @@ function PlanningPageInner() {
               <div
                 role="group"
                 aria-label={t('planning.view_toggle_label', locale)}
-                className="flex flex-shrink-0 gap-1 rounded-lg bg-slate-100 p-1"
+                className="flex flex-shrink-0 gap-1 rounded-lg bg-surface-muted p-1"
               >
                 <button
                   type="button"
@@ -542,7 +542,7 @@ function PlanningPageInner() {
                   />
                 ) : (
                   <div className="flex flex-col gap-4">
-                    <p className="text-sm text-slate-500">{t('planning.my_work_hint', locale)}</p>
+                    <p className="text-sm text-content-muted">{t('planning.my_work_hint', locale)}</p>
                     <MyWorkList
                       plans={myWorkPlans}
                       editableTaskIds={editableTaskIds}

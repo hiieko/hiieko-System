@@ -176,7 +176,7 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
           ? 'bg-emerald-50 border-emerald-200'
           : taskStatus === 'BLOCKED'
             ? 'bg-amber-50 border-amber-300'
-            : 'bg-white border-slate-200',
+            : 'bg-surface border-chrome-line',
       )}
     >
       <button
@@ -188,7 +188,7 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
         className={clsx(
           'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0',
           'focus:outline-none focus:ring-2 focus:ring-hii-500 disabled:cursor-not-allowed',
-          completed ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white',
+          completed ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-chrome-line bg-surface',
         )}
       >
         {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : completed && <CheckCircle2 className="w-3.5 h-3.5" />}
@@ -196,10 +196,10 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={clsx('text-sm font-medium truncate', completed ? 'text-emerald-800 line-through' : 'text-slate-900')}>
+          <span className={clsx('text-sm font-medium truncate', completed ? 'text-emerald-800 line-through' : 'text-content')}>
             {title}
           </span>
-          {code && <span className="text-xs font-mono text-slate-400 flex-shrink-0">{code}</span>}
+          {code && <span className="text-xs font-mono text-content-muted flex-shrink-0">{code}</span>}
           {taskStatus && taskStatusLabel && (
             <span
               className="flex-shrink-0"
@@ -211,7 +211,7 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-content-muted mt-0.5">
           {completed ? t('planning.completed', locale) : t('planning.mark_completed', locale)}
         </p>
       </div>
@@ -243,17 +243,17 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
             }
           }}
           className={clsx(
-            'w-20 text-sm font-medium text-center py-1 rounded-md border bg-white',
+            'w-20 text-sm font-medium text-center py-1 rounded-md border bg-surface',
             'focus:outline-none focus:ring-2 focus:ring-hii-500',
-            'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
-            invalid ? 'border-red-300 bg-red-50' : 'border-slate-200',
-            completed ? 'text-emerald-800' : 'text-slate-900',
+            'disabled:bg-surface-muted disabled:text-content-muted disabled:cursor-not-allowed',
+            invalid ? 'border-red-300 bg-red-50' : 'border-chrome-line',
+            completed ? 'text-emerald-800' : 'text-content',
           )}
         />
-        <span className="text-slate-400 text-sm font-medium">/</span>
-        <span className="w-16 text-sm font-medium text-center py-1 text-slate-500">{planTask.target_quantity}</span>
-        {unit && <span className="text-xs text-slate-400 flex-shrink-0">{unit}</span>}
-        {saving && <span className="text-xs text-slate-400">{t('planning.quantity_saving', locale)}</span>}
+        <span className="text-content-muted text-sm font-medium">/</span>
+        <span className="w-16 text-sm font-medium text-center py-1 text-content-muted">{planTask.target_quantity}</span>
+        {unit && <span className="text-xs text-content-muted flex-shrink-0">{unit}</span>}
+        {saving && <span className="text-xs text-content-muted">{t('planning.quantity_saving', locale)}</span>}
       </div>
     </div>
   );

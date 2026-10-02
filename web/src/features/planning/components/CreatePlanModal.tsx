@@ -203,7 +203,7 @@ export function CreatePlanModal({
         )}
 
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">
+          <span className="font-medium text-content-secondary">
             {t('planning.field_date', locale)}
           </span>
           <input
@@ -211,19 +211,19 @@ export function CreatePlanModal({
             value={planDate}
             onChange={(e) => setPlanDate(e.target.value)}
             disabled={submitting}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none disabled:bg-slate-50"
+            className="rounded-lg border border-chrome-line px-3 py-2 text-sm text-content focus:border-accent focus:outline-none disabled:bg-surface-muted"
           />
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">
+          <span className="font-medium text-content-secondary">
             {t('planning.field_team', locale)}
           </span>
           <select
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
             disabled={submitting || loadingTeams}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none disabled:bg-slate-50"
+            className="rounded-lg border border-chrome-line px-3 py-2 text-sm text-content focus:border-accent focus:outline-none disabled:bg-surface-muted"
           >
             <option value="">
               {loadingTeams
@@ -239,7 +239,7 @@ export function CreatePlanModal({
         </label>
 
         <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-sm font-medium text-content-secondary">
             {t('planning.field_tasks', locale)}
           </span>
           <TaskSelector
@@ -251,7 +251,7 @@ export function CreatePlanModal({
         </div>
 
         <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-slate-700">
+          <span className="font-medium text-content-secondary">
             {t('planning.field_notes', locale)}
           </span>
           <textarea
@@ -260,7 +260,7 @@ export function CreatePlanModal({
             disabled={submitting}
             rows={3}
             placeholder={t('planning.field_notes_placeholder', locale)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none disabled:bg-slate-50"
+            className="rounded-lg border border-chrome-line px-3 py-2 text-sm text-content focus:border-accent focus:outline-none disabled:bg-surface-muted"
           />
         </label>
 

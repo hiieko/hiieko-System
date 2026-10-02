@@ -29,13 +29,13 @@ export function PlanningDateBar({
   return (
     <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
       <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-xs font-medium text-slate-500">
+        <span className="text-xs font-medium text-content-muted">
           {t('planning.select_date', locale)}
         </span>
         <div className="relative">
           <Calendar
             aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-muted"
           />
           <input
             type="date"
@@ -43,7 +43,7 @@ export function PlanningDateBar({
             disabled={disabled}
             onChange={(e) => onDateChange(e.target.value)}
             aria-label={t('planning.select_date', locale)}
-            className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-hii-500 disabled:bg-slate-50 sm:w-56"
+            className="min-h-[44px] w-full rounded-lg border border-chrome-line bg-surface py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-hii-500 disabled:bg-surface-muted sm:w-56"
           />
         </div>
       </label>

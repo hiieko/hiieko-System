@@ -28,7 +28,7 @@ const ROW_GRID =
   'grid grid-cols-1 gap-1.5 px-4 py-3 sm:grid-cols-[92px_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_120px_44px] sm:items-center sm:gap-3';
 
 const HEADER_GRID =
-  'hidden px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 sm:grid sm:gap-3 sm:grid-cols-[92px_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_120px_44px]';
+  'hidden px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-content-muted sm:grid sm:gap-3 sm:grid-cols-[92px_minmax(0,2.2fr)_minmax(0,1fr)_minmax(0,1.1fr)_120px_44px]';
 
 /** Neutral placeholder used repo-wide for "not recorded" values. */
 const DASH = '—';
@@ -51,7 +51,7 @@ interface PlanTaskTableProps {
 
 function CellLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 sm:hidden">
+    <span className="block text-[11px] font-semibold uppercase tracking-wide text-content-muted sm:hidden">
       {children}
     </span>
   );
@@ -89,7 +89,7 @@ export function PlanTaskTable({
       {toolbar}
 
       {showNoResults && (
-        <p className="border-b border-slate-100 bg-slate-50 px-4 py-2 text-xs text-slate-500">
+        <p className="border-b border-chrome-line bg-surface-muted px-4 py-2 text-xs text-content-muted">
           {t('planning.task_filter_no_results', locale)}
         </p>
       )}
@@ -121,19 +121,19 @@ export function PlanTaskTable({
             <div
               role="rowgroup"
               key={plan.id}
-              className="border-b border-slate-100 last:border-b-0"
+              className="border-b border-chrome-line last:border-b-0"
             >
               <div
                 role="row"
-                className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3"
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-chrome-line bg-surface-muted px-4 py-3"
               >
                 <div role="cell" className="flex min-w-0 flex-wrap items-center gap-2">
                   <PlanStatusBadge status={plan.status} size="sm" />
-                  <span className="text-sm font-semibold text-slate-900">
+                  <span className="text-sm font-semibold text-content">
                     {formatPlanDate(plan.plan_date, locale) ?? plan.plan_date}
                   </span>
                   {plan.team?.name && (
-                    <span className="inline-flex max-w-full items-center gap-1 text-xs text-slate-500">
+                    <span className="inline-flex max-w-full items-center gap-1 text-xs text-content-muted">
                       <Users className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
                       <span className="truncate">
                         {t('planning.team', locale)}: {plan.team.name}
@@ -141,22 +141,22 @@ export function PlanTaskTable({
                     </span>
                   )}
                   {creatorName && (
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-content-muted">
                       {t('planning.created_by', locale)}: {creatorName}
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                  <span className="inline-flex items-center gap-1 text-xs text-content-muted">
                     <ClipboardList className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
                     {countLabel}
                   </span>
                   {plan.updated_at && (
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-content-muted">
                       {t('planning.updated_at', locale)}: {formatDateTimeLocal(plan.updated_at, locale)}
                     </span>
                   )}
                   {plan.notes && (
                     <span
-                      className="max-w-full truncate text-xs italic text-slate-500"
+                      className="max-w-full truncate text-xs italic text-content-muted"
                       title={plan.notes}
                     >
                       {plan.notes}
@@ -173,7 +173,7 @@ export function PlanTaskTable({
 
               {planRows.length === 0 ? (
                 <div role="row">
-                  <div role="cell" className="px-4 py-3 text-xs italic text-slate-400">
+                  <div role="cell" className="px-4 py-3 text-xs italic text-content-muted">
                     {planTotal === 0
                       ? t('planning.task_selector_none_selected', locale)
                       : t('planning.task_filter_no_results', locale)}
@@ -198,12 +198,12 @@ export function PlanTaskTable({
                     <React.Fragment key={row.key}>
                       <div
                         role="row"
-                        className={clsx(ROW_GRID, 'border-b border-slate-100', expanded && 'bg-slate-50')}
+                        className={clsx(ROW_GRID, 'border-b border-chrome-line', expanded && 'bg-surface-muted')}
                       >
                         <div role="cell" className="min-w-0">
                           <CellLabel>{t('planning.table_col_planned_start', locale)}</CellLabel>
                           <span
-                            className="text-xs font-medium text-slate-600"
+                            className="text-xs font-medium text-content-secondary"
                             title={
                               content.plannedStart
                                 ? t('planning.planned_start_hint', locale)
@@ -221,19 +221,19 @@ export function PlanTaskTable({
                               'block break-words text-sm font-medium',
                               row.planTask.completed
                                 ? 'text-emerald-800 line-through'
-                                : 'text-slate-900',
+                                : 'text-content',
                             )}
                           >
                             {content.title}
                           </span>
                           {content.code && (
-                            <span className="mt-0.5 block font-mono text-[11px] text-slate-400">
+                            <span className="mt-0.5 block font-mono text-[11px] text-content-muted">
                               {content.code}
                             </span>
                           )}
                           {content.description && (
                             <span
-                              className="mt-0.5 block truncate text-xs text-slate-500"
+                              className="mt-0.5 block truncate text-xs text-content-muted"
                               title={content.description}
                             >
                               {content.description}
@@ -244,7 +244,7 @@ export function PlanTaskTable({
                         <div role="cell" className="min-w-0">
                           <CellLabel>{t('planning.table_col_area', locale)}</CellLabel>
                           <span
-                            className="block truncate text-xs text-slate-600"
+                            className="block truncate text-xs text-content-secondary"
                             title={content.area ?? t('planning.not_recorded', locale)}
                           >
                             {content.area ?? DASH}
@@ -254,7 +254,7 @@ export function PlanTaskTable({
                         <div role="cell" className="min-w-0">
                           <CellLabel>{t('planning.table_col_responsible', locale)}</CellLabel>
                           <span
-                            className="block truncate text-xs text-slate-600"
+                            className="block truncate text-xs text-content-secondary"
                             title={
                               content.responsibleKnown
                                 ? (content.responsible ?? t('planning.not_recorded', locale))
@@ -272,7 +272,7 @@ export function PlanTaskTable({
                               {statusLabel}
                             </Badge>
                           ) : (
-                            <span className="text-xs text-slate-400">{DASH}</span>
+                            <span className="text-xs text-content-muted">{DASH}</span>
                           )}
                         </div>
 
@@ -287,7 +287,7 @@ export function PlanTaskTable({
                                 : t('planning.expand_task', locale).replace('{title}', content.title)
                             }
                             onClick={() => setExpandedRowKey(expanded ? null : row.key)}
-                            className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-hii-500"
+                            className="flex h-11 w-11 items-center justify-center rounded-lg text-content-muted hover:bg-surface-muted hover:text-content-secondary focus:outline-none focus:ring-2 focus:ring-hii-500"
                           >
                             {expanded ? (
                               <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -299,7 +299,7 @@ export function PlanTaskTable({
                       </div>
 
                       {expanded && (
-                        <div role="row" id={detailsId} className="border-b border-slate-100 px-4 pb-3 pt-1">
+                        <div role="row" id={detailsId} className="border-b border-chrome-line px-4 pb-3 pt-1">
                           <div role="cell">
                             <PlanTaskRow
                               planTask={row.planTask}

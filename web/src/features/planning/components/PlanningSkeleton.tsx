@@ -8,7 +8,7 @@ import { Skeleton, Card } from '@/components/ui';
  */
 export function PlanCardSkeleton() {
   return (
-    <Card className="p-4 border border-slate-200 rounded-xl bg-white">
+    <Card className="p-4 border border-chrome-line rounded-xl bg-surface">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           {/* Status badge row */}
@@ -57,7 +57,7 @@ export function TaskSelectorSkeleton({ count = 5 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 p-3 rounded-lg bg-white border border-slate-200"
+          className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-chrome-line"
         >
           <Skeleton className="w-4 h-4 rounded" variant="rectangular" />
           <div className="flex-1 min-w-0">
@@ -84,7 +84,7 @@ export function PlanTaskRowSkeleton() {
       </div>
       <div className="flex items-center gap-2">
         <Skeleton className="w-16 h-8 rounded-lg" variant="rectangular" />
-        <span className="text-slate-400">/</span>
+        <span className="text-content-muted">/</span>
         <Skeleton className="w-16 h-8 rounded-lg" variant="rectangular" />
       </div>
     </div>

@@ -61,14 +61,14 @@ export function PlanningStatusChips({
               'inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-offset-1',
               active
                 ? 'border-hii-600 bg-hii-600 text-white shadow-sm'
-                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                : 'border-chrome-line bg-surface text-content-secondary hover:bg-surface-muted',
             )}
           >
             {label}
             <span
               className={clsx(
                 'inline-flex min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold',
-                active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500',
+                active ? 'bg-surface/20 text-white' : 'bg-surface-muted text-content-muted',
               )}
             >
               {count}

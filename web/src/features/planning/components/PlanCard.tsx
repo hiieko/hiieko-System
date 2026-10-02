@@ -60,7 +60,7 @@ export function PlanCard({ plan, expanded, onToggleExpanded, editableTaskIds, on
   const renderTaskGroup = (group: DailyPlanTask[], label: string | null) => (
     <>
       {group.length > 0 && label && (
-        <p className="pt-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <p className="pt-1 text-[11px] font-bold uppercase tracking-wider text-content-muted">
           {label}
         </p>
       )}
@@ -76,7 +76,7 @@ export function PlanCard({ plan, expanded, onToggleExpanded, editableTaskIds, on
             <div className="flex items-center gap-2 mb-2">
               <PlanStatusBadge status={plan.status} size="sm" />
               {tasks.length > 0 && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-content-muted">
                   <ClipboardList className="w-3 h-3 inline mr-1" />
                   {t('planning.task_count', locale).replace('{count}', String(tasks.length))}
                 </span>
@@ -86,23 +86,23 @@ export function PlanCard({ plan, expanded, onToggleExpanded, editableTaskIds, on
               )}
             </div>
 
-            <h3 className="text-base font-semibold text-slate-900 mb-1">
+            <h3 className="text-base font-semibold text-content mb-1">
               {formatDateLong(plan.plan_date, locale)}
             </h3>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               {teamName && (
-                <span className="text-slate-600">
+                <span className="text-content-secondary">
                   {t('planning.team', locale)}: <span className="font-medium">{teamName}</span>
                 </span>
               )}
               {creatorName && (
-                <span className="text-slate-500 text-xs">
+                <span className="text-content-muted text-xs">
                   {t('planning.created_by', locale)}: {creatorName}
                 </span>
               )}
               {plan.notes && (
-                <span className="text-slate-500 text-xs truncate max-w-xs">{plan.notes}</span>
+                <span className="text-content-muted text-xs truncate max-w-xs">{plan.notes}</span>
               )}
             </div>
           </div>
@@ -112,7 +112,7 @@ export function PlanCard({ plan, expanded, onToggleExpanded, editableTaskIds, on
               onClick={() => onToggleExpanded(plan.id)}
               className={clsx(
                 'p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500',
-                'hover:bg-slate-100 text-slate-500 hover:text-slate-700'
+                'hover:bg-surface-muted text-content-muted hover:text-content-secondary'
               )}
               aria-expanded={expanded}
               aria-controls={expandId}
@@ -126,29 +126,29 @@ export function PlanCard({ plan, expanded, onToggleExpanded, editableTaskIds, on
       </div>
 
       {expanded && (
-        <div id={expandId} className="border-t border-slate-100 px-4 pb-4 pt-3">
+        <div id={expandId} className="border-t border-chrome-line px-4 pb-4 pt-3">
           {plan.notes && (
             <div className="mb-3">
-              <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic break-words">
+              <p className="text-xs text-content-secondary bg-surface-muted p-3 rounded-lg border border-chrome-line italic break-words">
                 {plan.notes}
               </p>
             </div>
           )}
 
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-content-muted">
               <ClipboardList className="w-3.5 h-3.5 inline mr-1.5" />
               {t('planning.task_count', locale).replace('{count}', String(tasks.length))}
             </h4>
             {plan.updated_at && (
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-content-muted">
                 {t('planning.updated_at', locale)}: {formatDateTimeLocal(plan.updated_at, locale)}
               </span>
             )}
           </div>
 
           {tasks.length === 0 ? (
-            <p className="text-xs text-slate-400 italic py-3">
+            <p className="text-xs text-content-muted italic py-3">
               {t('planning.task_selector_none_selected', locale)}
             </p>
           ) : (

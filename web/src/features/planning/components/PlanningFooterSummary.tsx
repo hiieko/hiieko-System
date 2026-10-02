@@ -36,16 +36,16 @@ export function PlanningFooterSummary({ counters, selectedDate }: PlanningFooter
   ];
 
   return (
-    <div className="mt-4 flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mt-4 flex flex-col gap-2 rounded-lg border border-chrome-line bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
         {parts.map((part) => (
-          <li key={part.key} className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+          <li key={part.key} className="inline-flex items-center gap-1.5 text-xs text-content-secondary">
             <span aria-hidden="true" className={`h-2 w-2 rounded-full ${part.dot}`} />
             {part.label}
           </li>
         ))}
       </ul>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-content-muted">
         {t('planning.footer_for_date', locale).replace(
           '{date}',
           formatDateMedium(selectedDate, locale),

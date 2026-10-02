@@ -140,11 +140,11 @@ export function SiteReadinessCard({ snapshot, loading, selectedDate }: SiteReadi
 
   return (
     <Card padding={false} className="p-4">
-      <h2 className="text-sm font-bold text-slate-900">{t('planning.readiness_title', locale)}</h2>
-      <p className="mt-0.5 text-xs text-slate-500">{t('planning.readiness_subtitle', locale)}</p>
+      <h2 className="text-sm font-bold text-content">{t('planning.readiness_title', locale)}</h2>
+      <p className="mt-0.5 text-xs text-content-muted">{t('planning.readiness_subtitle', locale)}</p>
 
       {showsOtherDate && (
-        <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11px] text-slate-500">
+        <p className="mt-2 rounded-md border border-chrome-line bg-surface-muted px-2.5 py-2 text-[11px] text-content-muted">
           {t('planning.readiness_live_note', locale).replace(
             '{date}',
             formatDateMedium(todayCompanyIso(), locale),
@@ -161,10 +161,10 @@ export function SiteReadinessCard({ snapshot, loading, selectedDate }: SiteReadi
                 ? `${row.label}: ${t('planning.readiness_unavailable', locale)}`
                 : `${row.label}: ${row.value ?? t('planning.readiness_unavailable', locale)}`
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5"
+            className="rounded-lg border border-chrome-line bg-surface px-3 py-2.5"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-content-muted">
                 {row.label}
               </p>
               {row.badge && (
@@ -177,11 +177,11 @@ export function SiteReadinessCard({ snapshot, loading, selectedDate }: SiteReadi
             {loading ? (
               <Skeleton className="mt-1.5 h-4 w-32" />
             ) : row.error ? (
-              <p className="mt-0.5 text-xs text-slate-500" title={row.error}>
+              <p className="mt-0.5 text-xs text-content-muted" title={row.error}>
                 {t('planning.readiness_unavailable', locale)}
               </p>
             ) : (
-              <p className="mt-0.5 break-words text-sm font-medium text-slate-800" title={row.valueHint ?? undefined}>
+              <p className="mt-0.5 break-words text-sm font-medium text-content" title={row.valueHint ?? undefined}>
                 {row.value ?? t('planning.readiness_unavailable', locale)}
               </p>
             )}
