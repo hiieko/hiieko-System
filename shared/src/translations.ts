@@ -1355,6 +1355,7 @@ Object.assign(d, {
   'shell.brand_suffix': T('Romania SRL', 'Romania SRL'),
   'shell.unread_notifications': T('{count} notificări necitite', '{count} unread notifications'),
   'a11y.skip_to_content': T('Sari la conținut', 'Skip to content'),
+  'a11y.primary_navigation': T('Navigare principală', 'Primary navigation'),
 
   // --- My Day: greeting (derived from the local clock) ---
   'worker.my_day.greeting_morning': T('Bună dimineața', 'Good morning'),
