@@ -37,31 +37,31 @@ export function WorkerDayHeader() {
     <header className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-content">
             {t(greetingKey(today.getHours()), locale)}, {userName}!
           </h1>
-          <p className="mt-1 text-sm text-slate-600">{t('worker.my_day.subtitle', locale)}</p>
+          <p className="mt-1 text-sm text-content-secondary">{t('worker.my_day.subtitle', locale)}</p>
         </div>
-        <div className="inline-flex items-center gap-2 self-start rounded-full bg-white border border-slate-200 shadow-card px-3 py-1.5 text-sm font-medium text-slate-700 whitespace-nowrap">
+        <div className="inline-flex items-center gap-2 self-start rounded-full bg-surface border border-chrome-line shadow-card px-3 py-1.5 text-sm font-medium text-content-secondary whitespace-nowrap">
           <CalendarDays className="h-4 w-4 shrink-0 text-accent-hover" aria-hidden="true" />
           <time dateTime={dateTime}>{formattedDate}</time>
         </div>
       </div>
 
-      <div className="flex items-start gap-3 bg-white rounded-xl border border-slate-200 shadow-card px-4 py-3">
+      <div className="flex items-start gap-3 bg-surface rounded-xl border border-chrome-line shadow-card px-4 py-3">
         <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-accent-hover" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-content-muted">
             {t('header.current_project', locale)}
           </p>
           {selectedProject ? (
             <>
-              <p className="mt-1 break-words text-sm font-semibold text-slate-900">
+              <p className="mt-1 break-words text-sm font-semibold text-content">
                 {selectedProject.name}{' '}
-                <span className="font-medium text-slate-500">({selectedProject.code})</span>
+                <span className="font-medium text-content-muted">({selectedProject.code})</span>
               </p>
               {selectedProject.address && (
-                <p className="mt-0.5 text-sm text-slate-600">{selectedProject.address}</p>
+                <p className="mt-0.5 text-sm text-content-secondary">{selectedProject.address}</p>
               )}
             </>
           ) : (

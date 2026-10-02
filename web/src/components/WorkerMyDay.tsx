@@ -11,6 +11,8 @@ import { WorkerMyDayTasks } from './worker/WorkerMyDayTasks';
 import { WorkerProgressCard } from './worker/WorkerProgressCard';
 import { WorkerActionsRequired } from './worker/WorkerActionsRequired';
 import { WorkerBlockerList } from './worker/WorkerBlockerList';
+import { WorkerNotifications } from './WorkerNotifications';
+import { apiClient, ApiError } from '../lib/api-client';
 import {
   getMyPlanTasks,
   selectEditableMyPlanTaskIds,
@@ -54,6 +56,9 @@ export function WorkerMyDay() {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<unknown[] | null>(null);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
 
   const loadTasks = useCallback(async () => {
     setTasksLoading(true);
@@ -69,9 +74,58 @@ export function WorkerMyDay() {
     }
   }, [locale]);
 
+  const loadNotifications = useCallback(async () => {
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+
+    try {
+      const res = await apiClient.getNotifications({
+        unreadOnly: true,
+        pageSize: 5,
+      });
+
+      const payload: unknown = res.data;
+
+      const rows = Array.isArray(payload)
+        ? payload
+        : Array.isArray((payload as { data?: unknown })?.data)
+          ? ((payload as { data: unknown[] }).data)
+          : null;
+
+      setNotifications(rows);
+    } catch (err: unknown) {
+      setNotifications(
+        err instanceof ApiError && err.isUnauthorized() ? null : [],
+      );
+
+      setNotificationsError(
+        err instanceof ApiError
+          ? t('notifications.load_error', locale)
+          : t('worker.error_generic', locale),
+      );
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, [locale]);
+
+  const handleMarkRead = useCallback(async (id: string) => {
+    try {
+      await apiClient.markNotificationRead(id);
+
+      setNotifications((prev) =>
+        prev
+          ? prev.filter((n) => (n as { id: string }).id !== id)
+          : prev,
+      );
+    } catch {
+      // Keep the unread item visible.
+    }
+  }, []);
+
   useEffect(() => {
     void loadTasks();
-  }, [loadTasks]);
+    void loadNotifications();
+  }, [loadTasks, loadNotifications]);
 
   const rows: FieldTaskRow[] = useMemo(() => selectMyDayTasks(plans), [plans]);
   const summary: MyDaySummary = useMemo(
@@ -124,6 +178,16 @@ export function WorkerMyDay() {
             dayError={tasksError !== null}
           />
           <WorkerBlockerList maxItems={3} />
+          {notifications !== null && (
+            <WorkerNotifications
+              notifications={notifications as never}
+              loading={notificationsLoading}
+              error={notificationsError}
+              onRetry={loadNotifications}
+              onMarkRead={handleMarkRead}
+              maxItems={3}
+            />
+          )}
         </div>
 
         {/* Centre: the day's task list */}
