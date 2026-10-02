@@ -18,7 +18,7 @@ export function Skeleton({
   height,
   count = 1,
 }: SkeletonProps) {
-  const baseClass = 'animate-pulse bg-slate-200 rounded';
+  const baseClass = 'animate-pulse bg-surface-muted rounded';
 
   const variantClass = variant === 'circular' ? 'rounded-full' : variant === 'rectangular' ? 'rounded-lg' : 'rounded';
 

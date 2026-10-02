@@ -13,6 +13,8 @@ export { ErrorState } from './ErrorState';
 export { PageHeader } from './PageHeader';
 export { ToastProvider, useToast } from './Toast';
 export { Modal } from './Modal';
+export { Drawer } from './Drawer';
+export type { DrawerSide } from './Drawer';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Tabs } from './Tabs';
 export { ConfirmDialog } from './ConfirmDialog';
