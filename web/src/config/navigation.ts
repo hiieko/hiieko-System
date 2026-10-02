@@ -12,7 +12,7 @@
  */
 import {
   LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro,
-  ClipboardCheck, Bell, Users, Store, BarChart3, ShieldCheck, User,
+  ClipboardCheck, Bell, Users, Store, Warehouse, BarChart3, ShieldCheck, User,
   SunMedium, AlertTriangle, type LucideIcon,
 } from 'lucide-react';
 import { ROUTE_ROLES } from './route-roles';
@@ -58,6 +58,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/projects', i18nKey: 'nav.projects', label: 'Proiecte', icon: MapPin, roles: ROUTE_ROLES['/projects'] },
       { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users, roles: ROUTE_ROLES['/teams'] },
       { href: '/furnizori', i18nKey: 'nav.furnizori', label: 'Furnizori', icon: Store, roles: ROUTE_ROLES['/furnizori'] },
+      { href: '/depozite', i18nKey: 'nav.depozite', label: 'Depozite', icon: Warehouse, roles: ROUTE_ROLES['/depozite'] },
       { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User, roles: ROUTE_ROLES['/workforce'] },
       { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin, roles: ROUTE_ROLES['/santiere'] },
       { href: '/qa', i18nKey: 'nav.qa_qc', label: 'QA / QC', icon: ShieldCheck, roles: ROUTE_ROLES['/qa'] },

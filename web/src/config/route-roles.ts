@@ -104,6 +104,15 @@ export const ADMIN_ROLES: string[] = ['admin'];
 export const SUPPLIER_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'procurement'];
 
 /**
+ * `/depozite` (Warehouses master-data).
+ * View: ADMIN / OWNER / MANAGER / PM / PROCUREMENT.
+ * Create: ADMIN / OWNER / PROCUREMENT (PM and MANAGER read-only — backend
+ * `POST /api/warehouses` is `@Roles(ADMIN, OWNER, PROCUREMENT)`).
+ * Governance decision for this feature (the role matrix has no Warehouses row).
+ */
+export const WAREHOUSE_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'procurement'];
+
+/**
  * `/control-tower` (the canonical Control Tower route, and the surface `/`
  * renders for these roles).
  *
@@ -155,6 +164,7 @@ export type AppRoute =
   | '/projects/[id]'
   | '/teams'
   | '/furnizori'
+  | '/depozite'
   | '/workforce'
   | '/santiere'
   | '/qa'
@@ -187,6 +197,7 @@ export const ROUTE_ROLES = {
   '/projects/[id]': PROJECT_ROLES,
   '/teams': PROJECT_ROLES,
   '/furnizori': SUPPLIER_ROLES,
+  '/depozite': WAREHOUSE_ROLES,
   '/workforce': WORKFORCE_ROLES,
   '/santiere': GIS_ROLES,
   '/qa': QA_ROLES,

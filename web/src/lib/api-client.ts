@@ -1113,6 +1113,27 @@ export class NestApiClient {
   }
 
   // ============================================================================
+  // WAREHOUSES (org-scoped master data)
+  // ============================================================================
+
+  /** List warehouses for the authenticated organization — GET /api/warehouses. */
+  async getWarehouses(): Promise<ApiResponse<any[]>> {
+    return this.request<ApiResponse<any[]>>('/api/warehouses');
+  }
+
+  /** Create a warehouse — POST /api/warehouses (@Roles ADMIN/OWNER/PROCUREMENT). */
+  async createWarehouse(data: {
+    name: string;
+    code: string;
+    address?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/warehouses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ============================================================================
   // DELIVERY NOTES (Avize)
   // ============================================================================
 
