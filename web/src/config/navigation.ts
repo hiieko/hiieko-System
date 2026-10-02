@@ -59,6 +59,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users, roles: ROUTE_ROLES['/teams'] },
       { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User, roles: ROUTE_ROLES['/workforce'] },
       { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin, roles: ROUTE_ROLES['/santiere'] },
+      { href: '/qa', i18nKey: 'nav.qa_qc', label: 'QA / QC', icon: ShieldCheck, roles: ROUTE_ROLES['/qa'] },
       { href: '/aprobare', i18nKey: 'nav.aprobare', label: 'Aprobări', icon: ClipboardCheck, roles: ROUTE_ROLES['/aprobare'] },
       // `/statistici` is no longer a destination (it redirects to the canonical Control Tower
       // route), so this slot points at `/control-tower` and carries its own `nav.control_tower`

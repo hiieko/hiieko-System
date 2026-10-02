@@ -81,6 +81,16 @@ export const APPROVAL_ROLES: string[] = ['admin', 'owner', 'manager', 'pm'];
 /** `/santiere` (GIS). Matches the current page guard exactly. */
 export const GIS_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'site_manager'];
 
+/**
+ * `/qa` (QA/QC inspections). Mirrors the backend authorization on
+ * `POST /api/qa-qc/inspections` (`@Roles(ADMIN, QA_QC, PM, SITE_MANAGER)` —
+ * `backend/src/modules/qa-qc/qa-qc.controller.ts`), extended with `owner` per the
+ * established global-bypass convention (`RoleGuard` lets admin/owner through
+ * everywhere already). Read access is project-scoped for any authenticated member
+ * (no `@Roles` on `GET`), matching the Issues pattern.
+ */
+export const QA_ROLES: string[] = ['admin', 'owner', 'qa_qc', 'pm', 'site_manager'];
+
 /** `/utilizatori` — administration only, aligned with the page guard. */
 export const ADMIN_ROLES: string[] = ['admin'];
 
@@ -137,6 +147,7 @@ export type AppRoute =
   | '/teams'
   | '/workforce'
   | '/santiere'
+  | '/qa'
   | '/aprobare'
   | '/utilizatori'
   | '/notificari'
@@ -167,6 +178,7 @@ export const ROUTE_ROLES = {
   '/teams': PROJECT_ROLES,
   '/workforce': WORKFORCE_ROLES,
   '/santiere': GIS_ROLES,
+  '/qa': QA_ROLES,
   '/aprobare': APPROVAL_ROLES,
   '/utilizatori': ADMIN_ROLES,
   '/notificari': null,

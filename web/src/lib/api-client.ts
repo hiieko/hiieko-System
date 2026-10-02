@@ -1067,13 +1067,20 @@ export class NestApiClient {
     );
   }
 
+  /** Mirrors the real CreateInspectionDto (backend/src/modules/qa-qc/qa-qc.service.ts):
+   *  { projectId, templateId?, inspectorName, measurements? }. The previous
+   *  title/description/inspectionType/result shape never existed on the backend —
+   *  the server creates status='COMPLETED' and stamps inspected_at itself. */
   async createInspection(data: {
     projectId: string;
-    title: string;
-    description?: string;
-    inspectionType?: string;
-    result?: string;
-    performedById?: string;
+    templateId?: string;
+    inspectorName: string;
+    measurements?: Array<{
+      parameter: string;
+      value: number;
+      unit: string;
+      passed?: boolean;
+    }>;
   }): Promise<ApiResponse<any>> {
     return this.request<ApiResponse<any>>('/api/qa-qc/inspections', {
       method: 'POST',
