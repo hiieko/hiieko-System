@@ -110,3 +110,6 @@ _*.txt
 /jest-*.txt
 /dbverify*.txt
 /web/tsc_*.txt
+
+opencode-*-progress.log
+temp_*.txt

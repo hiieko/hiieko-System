@@ -1,0 +1,12 @@
+﻿{
+  "": "https://opencode.ai/config.jsonc",
+  "agent": {
+    "subagents": {
+      "hiieko-build": {
+        "description": "HIIEKO implementation agent for safe, scoped changes",
+        "mode": "subagent",
+        "promptPath": "./.opencode/agents/hiieko-build.md"
+      }
+    }
+  }
+}
