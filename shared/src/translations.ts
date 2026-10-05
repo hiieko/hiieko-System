@@ -1721,6 +1721,24 @@ Object.assign(d, {
   'theme': T('Temă', 'Theme'),
 });
 
+
+// v0 production surface labels.
+Object.assign(d, {
+  'daily_report.site_fallback': T('Șantier', 'Site'),
+  'daily_report.notes_empty': T('Nu există observații', 'No notes recorded'),
+  'daily_report.team_leader_label': T('Șef echipă', 'Team lead'),
+  'daily_report.edit': T('Editează', 'Edit'),
+  'daily_report.refresh': T('Reîmprospătează', 'Refresh'),
+  'daily_report.tasks_empty': T('Nu există sarcini înregistrate', 'No tasks recorded'),
+  'daily_report.site_observations': T('Observații șantier', 'Site observations'),
+  'daily_report.site_execution_photos': T('Fotografii execuție șantier', 'Site execution photos'),
+  'daily_report.photos_unavailable': T('Fotografiile nu sunt disponibile în această versiune.', 'Photos are unavailable in this version.'),
+  'stock.audit_immutable_title': T('Jurnal imuabil · Mișcări de stoc (audit trail)', 'Immutable stock movement log (audit trail)'),
+  'stock.audit_immutable_note': T('Conformitate Regula 11: fiecare mișcare are autor, marcaj temporal și sursă', 'Rule 11 compliance: each movement has an author, timestamp and source'),
+  'stock.movement_type': T('Tip operațiune', 'Movement type'),
+  'stock.document_reference': T('Referință document', 'Document reference'),
+});
+
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;
