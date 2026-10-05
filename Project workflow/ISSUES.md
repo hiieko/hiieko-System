@@ -476,7 +476,7 @@ Receipt images remained only on the device. The OCR extraction and all expense f
 ---
 
 ## ISSUE-036 — ToastProvider never mounted → `/projects` page runtime crash
-**Status:** 🚨 OPEN (P0)
+**Status:** ✅ FIXED (2026-09-27)
 
 ## Context
 `web/src/components/ui/Toast.tsx` exports `ToastProvider` and `useToast()`. The `useToast()` hook (line 118) **throws** `useToast must be used within a ToastProvider` when called outside the provider tree. `projects/page.tsx:45` calls `useToast()`, but **no component mounts `ToastProvider`**.
@@ -494,7 +494,7 @@ Receipt images remained only on the device. The OCR extraction and all expense f
 - Fixed on 2026-09-27: `AppShell.tsx` wraps content in `<ToastProvider>` inside `<AuthGuard>` (available to all authenticated routes; `/login` and `/signup` are excluded by the early return).
 
 ## ISSUE-037 — `.hii-btn-primary` AA contrast failure
-**Status:** 🚨 OPEN
+**Status:** ✅ FIXED (2026-09-27)
 
 ## Context
 CSS class `.hii-btn-primary` in `globals.css:139` uses `bg-hii-500 text-white` (green `#188C51` on white). WCAG AA ratio ≈ **4.28:1**, below the 4.5:1 threshold for normal-sized text (14px/15px buttons). The `Button` component (`Button.tsx:21`) correctly uses `bg-hii-600` (6.15:1).
@@ -509,7 +509,7 @@ CSS class `.hii-btn-primary` in `globals.css:139` uses `bg-hii-500 text-white` (
 ---
 
 ## ISSUE-038 — No attendance corrections endpoint (supervisor hours correction)
-**Status:** 🟡 `OPEN` — documented backend gap (Pontaj slice, 2026-09-27)
+**Status:** ✅ `FIXED` (Slice 5, 2026-10-01)
 
 ### Description
 The Pontaj supervisor experience needs a corrections path ("hours → corrections where backend authorization allows"). The backend has **no PATCH/POST endpoint to adjust an `attendance_record`** (hours, check-in/check-out times, or overtime) — `AttendanceController` only exposes: `GET /api/attendance`, `POST /api/attendance/check-in`, `POST /api/attendance/check-out`, `GET /api/attendance/today`, `GET /api/attendance/my-logs`.
@@ -519,7 +519,7 @@ The Pontaj supervisor experience needs a corrections path ("hours → correction
 - A supervisor cannot correct a mis-stamped check-in/check-out through the UI until the backend ships the endpoint.
 
 ### Resolution
-Not started — requires a backend `PATCH /api/attendance/:id` (roles: ADMIN, OWNER, MANAGER, PM) with audit trail, plus a UI dialog in `/pontaj`.
+Implemented in Slice 5: `PATCH /api/attendance/:id` is project-scoped, restricted to ADMIN/OWNER/MANAGER/PM, validates chronology, re-derives hours/overtime, and records correction + audit data atomically. The UI remains intentionally read-only until its dedicated supervisor dialog pass.
 
 ---
 
@@ -539,7 +539,7 @@ Not started — either widen `GET /api/users` to field-supervisor roles (with or
 ---
 
 ## ISSUE-040 — Task write endpoints lack DTO validation → HTTP 500 instead of 400
-**Status:** 🟡 `OPEN` — documented backend gap (Tasks slice, 2026-09-27)
+**Status:** ✅ `FIXED` (2026-10-05)
 
 ### Description
 `POST /api/tasks` and `PATCH /api/tasks/:id` accept the request body without `class-validator` DTOs. During the Tasks slice live smoke test, sending `{ "actualQuantity": "not-a-number" }` to `PATCH /api/tasks/:id` returned **HTTP 500** (unhandled Prisma `Decimal` conversion error) instead of a client error (400/422).
@@ -550,7 +550,7 @@ Not started — either widen `GET /api/users` to field-supervisor roles (with or
 - The same pattern likely affects other controllers that lack DTOs.
 
 ### Resolution
-Not started — add `class-validator` DTOs (`CreateTaskDto`, `UpdateTaskDto`) with `@IsEnum(TaskStatusEnum)`, `@IsNumber()`, `@IsISO8601()` and enable a global `ValidationPipe` so invalid bodies return 400. Tracked in `PROGRESS.md` → Next Actions → DTO validation.
+Implemented in PR #5: `CreateTaskDto` and `UpdateTaskDto` are class-validator DTOs covering UUIDs, strings, ISO dates, numeric quantities and task status. Focused tests prove malformed quantity/status payloads fail validation instead of reaching Prisma conversion.
 
 ---
 
@@ -583,7 +583,7 @@ Day untouched; no new backend endpoint):
 ---
 
 ## ISSUE-042 — Tasks backend performs no status-transition validation (frontend `TASK_WORKFLOW_NEXT` is the sole guard)
-**Status:** 🟡 `OPEN` — documented backend gap (Phase 2 tasks experience, 2026-09-28); **do NOT fix inside a frontend phase**
+**Status:** ✅ `FIXED` (Slice 6, 2026-10-02)
 
 ### Description
 `TasksService.update()` (backend/src/modules/tasks/tasks.service.ts) passes `dto.status` straight to Prisma. There is no server-side enforcement of the workflow map, so any role with `PATCH` rights can set any status in any order (e.g. `VERIFIED → PLANNED`, or straight to `CANCELLED`).
@@ -594,7 +594,7 @@ Day untouched; no new backend endpoint):
 - Related but distinct: ISSUE-040 (missing DTO validation → 500 on malformed bodies). A proper `UpdateTaskDto` (ISSUE-040) is the natural place to also add transition validation.
 
 ### Resolution
-Not started — backend change, out of Phase 2 scope. Add transition validation in `TasksService.update()` (reject illegal `current → next` pairs with 400/409) or a dedicated state-machine guard, plus unit tests. Frontend must remain the UX-level guard regardless.
+Implemented in Slice 6: `TasksService` enforces the backend task lifecycle FSM, including K-7 reopen transitions, server-controlled actual timestamps, verification authority, and self-verification denial. Focused tests cover legal/illegal transitions and verification rules.
 
 ---
 
@@ -747,7 +747,7 @@ documented divergence) during the authorization phase.
 ---
 
 ## ISSUE-055 — `WorkerAttendanceView` (`/pontaj`) still reads the legacy project-task source with a client-side assignee filter
-**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C3; deliberately **not** changed in C3)
+**Status:** ✅ `FIXED` (2026-10-05) (recorded 2026-09-29 at UX-R1A C3; deliberately **not** changed in C3)
 
 ### Description
 C3 moved the field task panels rendered at `/` onto the role-correct daily-plan contract. The
