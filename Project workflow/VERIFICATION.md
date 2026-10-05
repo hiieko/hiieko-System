@@ -2560,6 +2560,15 @@ with the real API (`:4000`) and DB (`:5433`), authenticated through the real log
 
 ---
 
+## R1B.3 — ISSUE-056 final Romanian/Control Tower copy pass (2026-10-05)
+
+- Shared translations gained the Control Tower surface + drilldown RO/EN keys and the final Worker Attendance copy keys.
+- `ControlTowerSurface.tsx` and `ControlTowerDrilldownDrawer.tsx` no longer carry user-visible Romanian copy outside translation keys; currency formatting follows the active locale.
+- `WorkerAttendanceView.tsx` no longer contains the six C4 report-only diacritic rows or inline locale ternary for the site picker.
+- `WorkerDashboard.tsx` replaces `actionResult.includes('Selecteaza')` error detection with explicit `actionResultIsError`, so translated copy cannot control styling.
+- `ROLE_VISIBILITY_MATRIX.md` final `\\u2194` literal escape is replaced with the actual `↔` character.
+- Static/runtime gates are delegated to CI for the PR; no database or backend migration is part of this slice.
+
 ## R1B.2 — ISSUE-059 (`PageTutorial` locale propagation) (2026-09-30, UNCOMMITTED)
 
 ### Scope
