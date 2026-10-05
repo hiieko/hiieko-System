@@ -113,7 +113,7 @@ export class UploadService {
     entityType: string | undefined,
     entityId: string | undefined,
     user: AuthenticatedUser,
-    opts?: { documentType?: string; title?: string },
+    opts?: { documentType?: string; title?: string; projectId?: string },
   ): Promise<UploadResultDto> {
     if (!file || !file.buffer || file.buffer.length === 0) {
       throw new BadRequestException('No file uploaded');
@@ -151,6 +151,7 @@ export class UploadService {
 
     const document = await this.documents.create(
       {
+        projectId: opts?.projectId,
         documentType,
         title,
         storagePath: stored.key,
