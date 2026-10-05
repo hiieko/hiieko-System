@@ -2,45 +2,59 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
-import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../../lib/api-client';
 import { t, useLocale, type DailyReport } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { ConfirmDialog, useToast } from '../../components/ui';
-import { submitDailyReport, reviewDailyReport } from '../../features/daily-reports';
+import { submitDailyReport } from '../../features/daily-reports';
 import { useRouter } from 'next/navigation';
-import { 
-  FileText, 
-  CheckCircle2, 
-  Users, 
-  Wrench, 
-  Boxes, 
-  Image as ImageIcon, 
-  Calendar, 
-  Check, 
+import {
+  FileText,
+  CheckCircle2,
+  Users,
+  Wrench,
+  Boxes,
+  Image as ImageIcon,
+  Calendar,
+  Check,
   X,
   Loader2,
   AlertCircle,
   RefreshCw,
   Plus,
   Edit3,
-  Send
+  Send,
+  Search
 } from 'lucide-react';
+
+const REPORT_STATUS_LABEL_KEYS: Record<string, string> = {
+  DRAFT: 'daily_report.status_draft',
+  SUBMITTED: 'daily_report.status_submitted',
+  APPROVED: 'daily_report.status_approved',
+  REJECTED: 'daily_report.status_rejected',
+  CANCELLED: 'daily_report.status_cancelled',
+};
+
+const REPORT_STATUS_CLASSES: Record<string, string> = {
+  DRAFT: 'bg-amber-100 text-amber-800',
+  SUBMITTED: 'bg-blue-100 text-blue-800',
+  APPROVED: 'bg-emerald-100 text-emerald-800',
+  REJECTED: 'bg-rose-100 text-rose-800',
+  CANCELLED: 'bg-slate-100 text-slate-700',
+};
 
 function RapoartePageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reports, setReports] = useState<DailyReport[]>([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [users, setUsers] = useState<any[]>([]);
   // P4.4 — submitting a DRAFT from the list goes through the same confirmation gate as the form.
   const [submitTarget, setSubmitTarget] = useState<DailyReport | null>(null);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
-  const [reviewTarget, setReviewTarget] = useState<DailyReport | null>(null);
-  const [reviewAction, setReviewAction] = useState<'APPROVED' | 'REJECTED'>('APPROVED');
-  const [reviewComment, setReviewComment] = useState('');
-  const [reviewingId, setReviewingId] = useState<string | null>(null);
   const { user } = useAuth();
   const { selectedProjectId } = useProject();
   const { locale } = useLocale();
@@ -49,7 +63,6 @@ function RapoartePageInner() {
   const userRole = user?.role?.toLowerCase();
   const isWorker = userRole === 'worker';
   const canCreate = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician'].includes(userRole || '');
-  const canReview = ['admin', 'owner', 'manager', 'pm', 'site_manager'].includes(userRole || '');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -101,27 +114,14 @@ function RapoartePageInner() {
     }
   }, [submitTarget, submittingId, locale, toastSuccess, toastError, loadData]);
 
-  const confirmReview = useCallback(async () => {
-    const target = reviewTarget;
-    if (!target || reviewingId) return;
-    const comment = reviewComment.trim();
-    if (reviewAction === 'REJECTED' && !comment) {
-      toastError('Motivul respingerii este obligatoriu.');
-      return;
-    }
-    setReviewingId(target.id);
-    try {
-      await reviewDailyReport(target.id, reviewAction, comment || undefined);
-      toastSuccess(reviewAction === 'APPROVED' ? 'Raport aprobat.' : 'Raport respins.');
-      await loadData();
-    } catch (err: any) {
-      toastError(err?.message || 'Nu s-a putut procesa aprobarea.');
-    } finally {
-      setReviewingId(null);
-      setReviewTarget(null);
-      setReviewComment('');
-    }
-  }, [reviewTarget, reviewingId, reviewAction, reviewComment, toastError, toastSuccess, loadData]);
+  const availableStatuses = [...new Set(reports.map((report) => String(report.status || '')).filter(Boolean))];
+  const filteredReports = reports.filter((report) => {
+    const term = search.trim().toLocaleLowerCase();
+    const reportDate = String(report.report_date || '').slice(0, 10);
+    const leader = report.team_leader?.profile?.full_name || users.find((candidate) => candidate.id === report.team_leader_id)?.full_name || '';
+    const matchesSearch = !term || [report.project?.name || '', report.project?.code || '', reportDate, leader, report.general_notes || '', report.blockages || ''].some((value) => String(value).toLocaleLowerCase().includes(term));
+    return matchesSearch && (statusFilter === 'ALL' || String(report.status || '') === statusFilter);
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -130,7 +130,7 @@ function RapoartePageInner() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Rapoarte Zilnice per Echipa</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Activități finalizate de șefii de echipa, muncitori prezenți, materiale consumate și fotografii de execuție.
+            Activități finalizate de șefii de echipă, muncitori prezenți, materiale consumate și fotografii de execuție.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -142,35 +142,45 @@ function RapoartePageInner() {
           )}
           <button onClick={loadData} disabled={loading}
             className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('general.refresh', locale)}
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('daily_report.refresh', locale)}
           </button>
         </div>
       </div>
 
+      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <p className="px-1 text-xs text-slate-500">{filteredReports.length} din {reports.length} rapoarte</p>
+        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_200px]">
+          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-3"><Search className="size-4 shrink-0 text-slate-400" /><span className="sr-only">Caută rapoarte</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Proiect, cod, dată sau șef echipă" className="w-full bg-transparent text-sm outline-none" /></label>
+          <select aria-label="Filtrează după starea rapoartelor" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700"><option value="ALL">Toate stările</option>{availableStatuses.map((status) => <option key={status} value={status}>{status}</option>)}</select>
+        </div>
+      </section>
+
       {loading ? (
         <div className="py-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">Îcarcăd rapoartele zilnice...</p>
+          <p className="mt-2 text-sm text-slate-500">Se încarcă rapoartele zilnice...</p>
         </div>
       ) : error ? (
-        <div className="py-12 text-center">
-          <AlertCircle className="w-8 h-8 mx-auto text-rose-400" />
-          <p className="mt-2 text-sm text-rose-500">Eroare: {error}</p>
+        <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-10 text-center">
+          <AlertCircle className="size-8 text-rose-500" />
+          <p className="text-sm text-rose-800">Eroare: {error}</p>
+          <button type="button" onClick={loadData} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">Reîncearcă</button>
         </div>
-      ) : reports.length === 0 ? (
-        <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
-          <FileText className="w-8 h-8 mx-auto text-slate-300" />
-          <p className="mt-2 text-sm text-slate-500">Nu exista rapoarte zilnice</p>
+      ) : filteredReports.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center">
+          <FileText className="mx-auto size-8 text-slate-300" />
+          <h2 className="mt-2 text-sm font-semibold text-slate-800">{reports.length ? 'Niciun rezultat' : 'Nu există rapoarte zilnice'}</h2>
+          <p className="mt-1 text-sm text-slate-500">{reports.length ? 'Ajustează termenul de căutare sau starea selectată.' : 'Nu au fost returnate rapoarte pentru proiectul selectat.'}</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {reports.map((report) => {
-            const siteName = report.project?.name || 'Șantier';
+        <div className="flex flex-col gap-4">
+          {filteredReports.map((report) => {
+            const siteName = report.project?.name || t('daily_report.site_fallback', locale);
             const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
                              users.find(u => u.id === report.team_leader_id)?.full_name || 
                              'Necunoscut';
-            const notes = report.general_notes || report.blockages || 'Nu exista observații';
+            const notes = report.general_notes || report.blockages || t('daily_report.notes_empty', locale);
             
             // Get present workers from workers array
             const presentWorkerIds = (report.workers || []).map(w => w.worker_id);
@@ -184,6 +194,10 @@ function RapoartePageInner() {
               quantity: m.quantity_used || 0,
               unit: m.material?.unit || 'buc',
             }));
+            const reportStatus = String(report.status || 'UNKNOWN');
+            const statusLabelKey = REPORT_STATUS_LABEL_KEYS[reportStatus];
+            const statusLabel = statusLabelKey ? t(statusLabelKey, locale) : reportStatus;
+            const statusClassName = REPORT_STATUS_CLASSES[reportStatus] || 'bg-slate-100 text-slate-700';
 
           return (
             <div key={report.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -203,7 +217,7 @@ function RapoartePageInner() {
                     </span>
                     <span>•</span>
                     <span>
-                      Șef de Echipă: <strong className="text-slate-700">{leaderName}</strong>
+                      {t('daily_report.team_leader_label', locale)}: <strong className="text-slate-700">{leaderName}</strong>
                     </span>
                   </div>
                 </div>
@@ -211,12 +225,12 @@ function RapoartePageInner() {
                 <div className="flex items-center space-x-3">
                   {report.status === 'DRAFT' ? (
                     <>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                        Ciorna
+                      <span data-status={reportStatus} aria-label={`${reportStatus}: ${statusLabel}`} className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusClassName}`}>
+                        {statusLabel}
                       </span>
                       <button type="button" onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
                         className="inline-flex items-center px-3 py-1.5 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
-                        <Edit3 className="w-3.5 h-3.5 mr-1" />{t('general.edit', locale)}
+                        <Edit3 className="w-3.5 h-3.5 mr-1" />{t('daily_report.edit', locale)}
                       </button>
                       {/* P4.4 — one-click finalization for a DRAFT; confirms first, then submits. */}
                       <button type="button"
@@ -230,45 +244,14 @@ function RapoartePageInner() {
                     </>
                   ) : (
                     <>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${report.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : report.status === 'REJECTED' ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'}`}>
-                        {report.status === 'APPROVED' ? 'Aprobat' : report.status === 'REJECTED' ? 'Respins' : 'Transmis spre Aprobare'}
+                      <span data-status={reportStatus} aria-label={`${reportStatus}: ${statusLabel}`} className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${statusClassName}`}>
+                        {statusLabel}
                       </span>
-                      {report.status === 'SUBMITTED' && canReview && report.team_leader_id !== user?.id && (
-                        <div className="flex items-center gap-2">
-                          <button type="button" disabled={reviewingId === report.id}
-                            onClick={() => { setReviewAction('APPROVED'); setReviewComment(''); setReviewTarget(report); }}
-                            className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
-                            <Check className="w-3.5 h-3.5 mr-1" />Aproba
-                          </button>
-                          <button type="button" disabled={reviewingId === report.id}
-                            onClick={() => { setReviewAction('REJECTED'); setReviewComment(''); setReviewTarget(report); }}
-                            className="inline-flex items-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
-                            <X className="w-3.5 h-3.5 mr-1" />Respinge
-                          </button>
-                        </div>
-                      )}
+                      {isWorker ? null : <span className="text-xs text-slate-500">{locale === 'en' ? 'Approval action is not available in this view.' : 'Acțiunea de aprobare nu este disponibilă în această vizualizare.'}</span>}
                     </>
                   )}
                 </div>
               </div>
-
-              {report.approvals && report.approvals.length > 0 && (
-                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
-                  {report.approvals.map((approval: any) => (
-                    <div key={approval.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 text-xs">
-                      <div>
-                        <span className="font-semibold text-slate-700">
-                          {approval.action === 'APPROVED' ? 'Aprobat' : approval.action === 'REJECTED' ? 'Respins' : approval.action}
-                        </span>
-                        <span className="text-slate-500 ml-2">
-                          de {approval.reviewer?.profile?.full_name || 'Reviewer'}
-                        </span>
-                      </div>
-                      {approval.comment && <p className="text-slate-600 sm:max-w-xl">„{approval.comment}”</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
 
               {/* Body */}
               <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -287,12 +270,12 @@ function RapoartePageInner() {
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu există task-uri înregistrate</p>
+                      <p className="text-xs text-slate-400 italic py-3">{t('daily_report.tasks_empty', locale)}</p>
                     )}
                   </div>
 
                   <div className="mt-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Observații șantier:</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">{t('daily_report.site_observations', locale)}:</h4>
                     <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
                       "{notes}"
                     </p>
@@ -303,7 +286,7 @@ function RapoartePageInner() {
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <Boxes className="w-4 h-4 mr-1.5 text-amber-600" />
-                    Materiale Consumate (Scăzute din Stoc)
+                    Materiale Consumate (Scazute din Stoc)
                   </h3>
                   <div className="space-y-2">
                     {materialsUsed.length > 0 ? materialsUsed.map((m, idx) => (
@@ -317,14 +300,14 @@ function RapoartePageInner() {
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu există materiale consumate</p>
+                      <p className="text-xs text-slate-400 italic py-3">Nu exista materiale consumate</p>
                     )}
                   </div>
 
                   <div className="mt-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center">
                       <Users className="w-3.5 h-3.5 mr-1" />
-                      Echipa Prezentă ({presentWorkers.length}):
+                      Echipa Prezenta ({presentWorkers.length}):
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {presentWorkers.map(w => (
@@ -340,11 +323,11 @@ function RapoartePageInner() {
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <ImageIcon className="w-4 h-4 mr-1.5 text-amber-600" />
-                    Fotografii Execuție Șantier
+                    {t('daily_report.site_execution_photos', locale)}
                   </h3>
                   <div className="grid grid-cols-1 gap-3">
                     <p className="text-xs text-slate-400 italic py-3">
-                      Fotografiile nu sunt disponibile în această versiune.
+                      {t('daily_report.photos_unavailable', locale)}
                     </p>
                   </div>
                 </div>
@@ -367,50 +350,13 @@ function RapoartePageInner() {
         onConfirm={confirmSubmit}
         onCancel={() => { if (!submittingId) setSubmitTarget(null); }}
       />
-
-      {reviewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="review-dialog-title">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl border border-slate-200">
-            <div className="p-5 border-b border-slate-100">
-              <h2 id="review-dialog-title" className="text-lg font-bold text-slate-900">
-                {reviewAction === 'APPROVED' ? 'Aprobă raportul' : 'Respinge raportul'}
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                {reviewAction === 'APPROVED'
-                  ? 'Confirmă că raportul este verificat și poate fi închis.'
-                  : 'Explică ce trebuie corectat. Raportul rămâne înregistrat ca respins.'}
-              </p>
-            </div>
-            <div className="p-5">
-              <label htmlFor="review-comment" className="block text-sm font-semibold text-slate-700 mb-2">
-                Comentariu {reviewAction === 'REJECTED' ? '(obligatoriu)' : '(opțional)'}
-              </label>
-              <textarea id="review-comment" value={reviewComment} onChange={(e) => setReviewComment(e.target.value)}
-                rows={4} autoFocus
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-hii-500"
-                placeholder="Observații pentru audit / echipă..." />
-            </div>
-            <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
-              <button type="button" disabled={!!reviewingId} onClick={() => setReviewTarget(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
-                Anulează
-              </button>
-              <button type="button" disabled={!!reviewingId || (reviewAction === 'REJECTED' && !reviewComment.trim())}
-                onClick={confirmReview}
-                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-50 ${reviewAction === 'APPROVED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}>
-                {reviewingId ? 'Se procesează…' : reviewAction === 'APPROVED' ? 'Confirmă aprobarea' : 'Confirmă respingerea'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 export default function RapoartePage() {
   return (
-    <RoleGuard allowedRoles={ROUTE_ROLES['/rapoarte']}>
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
       <RapoartePageInner />
     </RoleGuard>
   );
