@@ -29,6 +29,12 @@ import { UserRoleEnum } from '@prisma/client';
 import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
 import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
 
+
+interface ReviewDailyReportDto {
+  action: 'APPROVED' | 'REJECTED';
+  comment?: string;
+}
+
 @ApiTags('Daily Reports')
 @Controller('api/daily-reports')
 @UseGuards(JwtAuthGuard, RolesGuard, ProjectAccessGuard)
@@ -107,6 +113,26 @@ export class DailyReportsController {
     // 200 (not 201): nothing new is created from the client's point of view — the report's
     // state changes, and a replay returns the same revision.
     return this.dailyReportsService.submit(id, user.id, user.role);
+  }
+
+
+  @Post(':id/review')
+  @RequireEntityProjectAccess('dailyReport', 'id')
+  @HttpCode(HttpStatus.OK)
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.OWNER,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.PM,
+    UserRoleEnum.SITE_MANAGER,
+  )
+  @ApiOperation({ summary: 'Approve or reject a submitted daily report' })
+  async review(
+    @Param('id') id: string,
+    @Body() dto: ReviewDailyReportDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.dailyReportsService.review(id, user.id, user.role, dto.action, dto.comment);
   }
 
   @Patch(':id')
