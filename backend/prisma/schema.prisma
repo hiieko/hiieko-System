@@ -109,7 +109,7 @@ model RateLimitBucket {
   window_start DateTime
   expires_at   DateTime
   count        Int
-  updated_at   DateTime @updatedAt
+  updated_at   DateTime @default(now()) @updatedAt
 
   @@index([expires_at])
   @@map("rate_limit_buckets")
