@@ -230,19 +230,17 @@ function RapoartePageInner() {
                     </>
                   ) : (
                     <>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                        Transmis spre Aprobare
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${report.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : report.status === 'REJECTED' ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {report.status === 'APPROVED' ? 'Aprobat' : report.status === 'REJECTED' ? 'Respins' : 'Transmis spre Aprobare'}
                       </span>
-                      {canReview && report.team_leader_id !== user?.id && (
+                      {report.status === 'SUBMITTED' && canReview && report.team_leader_id !== user?.id && (
                         <div className="flex items-center gap-2">
-                          <button type="button"
-                            disabled={reviewingId === report.id}
+                          <button type="button" disabled={reviewingId === report.id}
                             onClick={() => { setReviewAction('APPROVED'); setReviewComment(''); setReviewTarget(report); }}
                             className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
                             <Check className="w-3.5 h-3.5 mr-1" />Aproba
                           </button>
-                          <button type="button"
-                            disabled={reviewingId === report.id}
+                          <button type="button" disabled={reviewingId === report.id}
                             onClick={() => { setReviewAction('REJECTED'); setReviewComment(''); setReviewTarget(report); }}
                             className="inline-flex items-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
                             <X className="w-3.5 h-3.5 mr-1" />Respinge
