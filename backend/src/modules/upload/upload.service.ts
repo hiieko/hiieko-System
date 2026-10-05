@@ -151,7 +151,7 @@ export class UploadService {
 
     const document = await this.documents.create(
       {
-        projectId: opts?.projectId,
+        ...(opts?.projectId ? { projectId: opts.projectId } : {}),
         documentType,
         title,
         storagePath: stored.key,
