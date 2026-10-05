@@ -811,14 +811,13 @@ export class NestApiClient {
   ): Promise<ApiResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('projectId', options.projectId);
     if (options.documentType) formData.append('documentType', options.documentType);
     if (options.title) formData.append('title', options.title);
 
     const headers: Record<string, string> = {};
     if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
 
-    const response = await fetch(`${this.baseUrl}/api/upload`, {
+    const response = await fetch(`${this.baseUrl}/api/upload?projectId=${encodeURIComponent(options.projectId)}`, {
       method: 'POST',
       headers,
       body: formData,
