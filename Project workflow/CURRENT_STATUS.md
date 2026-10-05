@@ -207,7 +207,7 @@ Implemented full project-scoped authorization across all 102 routes:
 - **ISSUE-023:** a safe reconciliation script now maps the 8 legacy development users to AR-001/TM-002/CJ-003; it is dry-run by default and requires `--apply`.
 - **ISSUE-049:** concurrent next dev processes can corrupt the shared web/.next cache. A guard is being added in the current close-out branch; until merged, run only one web dev server.
 - **ISSUE-050:** an explicit development-only cleanup script now targets the four CJ-003 verification fixtures; it is dry-run by default and requires `--apply` after accepting the evidence impact.
-- **ISSUE-051:** Mobile daily-report submission still has a task-ID/draft-loss defect. Mobile is frozen for the remediation program, so this remains deferred.
+- **ISSUE-051:** Mobile daily-report code remediation is in progress: real project task UUIDs are now selected for report lines and drafts are retained until API/queue success. Device/emulator verification remains before closure.
 - **ISSUE-053:** frontend navigation and backend @Roles contracts still have documented business-rule divergences; this requires an explicit authorization decision rather than an incidental UI fix.
 - **ISSUE-056:** RESOLVED 2026-10-05; Control Tower/drilldown copy is locale-keyed, the remaining worker R1B copy coupling is removed, and the role-visibility matrix encoding debt is normalized.
 - **PermissionsGuard:** permission catalog and guard coverage are merged; endpoint metadata/role grants remain intentionally unenforced pending a complete business permission matrix.
