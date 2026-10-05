@@ -44,6 +44,8 @@ const DAILY_REPORT_DISPLAY_INCLUDE: Prisma.DailyReportInclude = {
   production: true,
   ohs_items: true,
   revisions: { orderBy: { revision_number: 'asc' } },
+  reviewer: { include: { profile: true } },
+  approvals: { orderBy: { created_at: 'asc' }, include: { reviewer: { include: { profile: true } } } },
 };
 
 /** One consumed material line of a finalization (returned to the client + written to the revision). */
@@ -190,6 +192,8 @@ export class DailyReportsService {
         materials: { include: { material: true } },
         production: true,
         ohs_items: true,
+        reviewer: { include: { profile: true } },
+        approvals: { orderBy: { created_at: 'asc' }, include: { reviewer: { include: { profile: true } } } },
       },
       orderBy: { report_date: 'desc' },
     });
