@@ -58,6 +58,35 @@ export function WorkerDashboard() {
   const taskSource = taskSourceForRole(user?.role);
   const projectRequired = taskSource === 'project-plans';
 
+  const roleHome = (() => {
+    switch (user?.role?.toLowerCase()) {
+      case 'team_leader':
+        return {
+          title: locale === 'en' ? 'Team Day' : 'Ziua echipei',
+          question: locale === 'en' ? 'What is my team doing today?' : 'Ce face echipa mea astăzi?',
+          tasksTitle: locale === 'en' ? "Today's team work" : 'Lucrările echipei de azi',
+        };
+      case 'foreman':
+        return {
+          title: locale === 'en' ? 'Site Day' : 'Ziua șantierului',
+          question: locale === 'en' ? 'What is happening across my work areas today?' : 'Ce se întâmplă astăzi în zonele mele de lucru?',
+          tasksTitle: locale === 'en' ? "Today's site work" : 'Lucrările de azi pe șantier',
+        };
+      case 'site_manager':
+        return {
+          title: locale === 'en' ? 'Site Control' : 'Control șantier',
+          question: locale === 'en' ? 'Is the site under control today?' : 'Este șantierul sub control astăzi?',
+          tasksTitle: locale === 'en' ? "Today's site plan" : 'Planul de azi al șantierului',
+        };
+      default:
+        return {
+          title: locale === 'en' ? 'My Day' : 'Ziua mea',
+          question: locale === 'en' ? 'What do I need to do today?' : 'Ce trebuie să fac astăzi?',
+          tasksTitle: locale === 'en' ? "Today's work" : 'Lucrările de azi',
+        };
+    }
+  })();
+
   const loadTasks = useCallback(async () => {
     const projectId = selectedProject?.id;
     if (projectRequired && !projectId) {
@@ -140,7 +169,10 @@ export function WorkerDashboard() {
             {(user?.fullName || 'U').slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{t('worker.greeting', locale)}, {}!</h1>
+            <div>
+            <h1 className="text-xl font-bold text-slate-900">{roleHome.title}</h1>
+            <p className="text-sm text-slate-600 mt-1">{roleHome.question}</p>
+          </div>
             <p className="text-sm text-slate-500">
               {selectedProject ? selectedProject.name + ' (' + selectedProject.code + ')' : t('worker.select_project', locale)}
             </p>
@@ -213,6 +245,10 @@ export function WorkerDashboard() {
         )}
       </div>
 
+      <section aria-labelledby="field-home-work-title">
+        <div className="mb-3">
+          <h2 id="field-home-work-title" className="text-base font-bold text-slate-900">{roleHome.tasksTitle}</h2>
+        </div>
       <WorkerTodayTasks
         rows={taskRows}
         loading={tasksLoading}
