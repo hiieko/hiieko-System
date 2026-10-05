@@ -762,6 +762,14 @@ export class NestApiClient {
   }
 
   // ============================================================================
+  // DOCUMENTS
+  // ============================================================================
+
+  async getDocuments(projectId?: string): Promise<ApiResponse<any[]>> {
+    const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
+    return this.request<ApiResponse<any[]>>(`/api/documents${query}`);
+  }
+
   // OCR & DOCUMENT PROCESSING
   // ============================================================================
 
@@ -795,6 +803,31 @@ export class NestApiClient {
       if (error instanceof ApiError) throw error;
       throw new ApiError(error instanceof Error ? error.message : 'Network error', 0);
     }
+  }
+
+  async uploadDocument(
+    file: File,
+    options: { projectId: string; documentType?: string; title?: string },
+  ): Promise<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('projectId', options.projectId);
+    if (options.documentType) formData.append('documentType', options.documentType);
+    if (options.title) formData.append('title', options.title);
+
+    const headers: Record<string, string> = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+
+    const response = await fetch(`${this.baseUrl}/api/upload`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new ApiError(data.message || data.error || 'Document upload failed', response.status, data);
+    }
+    return data;
   }
 
   // ============================================================================
@@ -1616,6 +1649,13 @@ export interface IApiClient {
   processOcrDocument(
     file: File,
     options?: { documentId?: string; expenseId?: string }
+  ): Promise<ApiResponse<any>>;
+
+  // Documents
+  getDocuments(projectId?: string): Promise<ApiResponse<any[]>>;
+  uploadDocument(
+    file: File,
+    options: { projectId: string; documentType?: string; title?: string },
   ): Promise<ApiResponse<any>>;
 
   // File Upload
