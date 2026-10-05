@@ -112,7 +112,7 @@ export function WorkerAttendanceView() {
               </span>
             )}
             <button onClick={loadShift} disabled={actionLoading}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors" title="Reimprospateaza">
+              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors" title={t('worker.refresh', locale)}>
               <RefreshCw className={'w-4 h-4 ' + (shiftStatus === 'loading' ? 'animate-spin' : '')} />
             </button>
           </div>
@@ -127,7 +127,7 @@ export function WorkerAttendanceView() {
                 <p className="text-xs text-amber-700 mt-0.5">
                   {locale === 'en'
                     ? 'Pick the site you are working at from the project selector in the top bar to clock in.'
-                    : 'Alege santierul de unde lucrezi din selectorul de proiecte din bara de sus pentru a te ponta.'}
+                    : t('worker.site_picker_hint', locale)}
                 </p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export function WorkerAttendanceView() {
                   <div className="text-lg font-bold mt-1 text-emerald-700">{formatTime(record.check_in_time)}</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Distanta GPS</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.distance_label', locale)}</div>
                   <div className="text-lg font-bold mt-1 text-slate-700">
                     {record.check_in_distance_m != null ? Math.round(record.check_in_distance_m) + 'm' : '-'}
                   </div>
@@ -195,7 +195,7 @@ export function WorkerAttendanceView() {
                   <div className="text-[10px] font-medium text-slate-400 uppercase">Stare</div>
                   <div className="text-lg font-bold mt-1">
                     {record.is_within_geofence === false ? (
-                      <span className="text-amber-700 text-sm font-bold">{locale === 'en' ? 'Outside geofence' : 'In afara perimetrului'}</span>
+                      <span className="text-amber-700 text-sm font-bold">{t('worker.geofence_outside', locale)}</span>
                     ) : (
                       <span className="text-emerald-700 text-sm font-bold">{locale === 'en' ? 'In perimeter' : 'In perimetru'}</span>
                     )}
@@ -236,7 +236,7 @@ export function WorkerAttendanceView() {
                   <div className="text-sm font-bold mt-1 text-slate-800">{formatTime(lastResult.check_out_time)}</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Distanta GPS</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.distance_label', locale)}</div>
                   <div className="text-sm font-bold mt-1 text-slate-800">
                     {lastResult.check_in_distance_m != null ? Math.round(lastResult.check_in_distance_m) + 'm' : '-'}
                   </div>
@@ -268,7 +268,7 @@ export function WorkerAttendanceView() {
               </div>
               <div>
                 <h2 className="text-sm font-bold text-slate-900">{t('worker.my_tasks', locale)}</h2>
-                <p className="text-xs text-slate-400">{locale === 'en' ? 'Work assigned to you on this site' : 'Lucrari atribuite tie pe acest santier'}</p>
+                <p className="text-xs text-slate-400">{locale === 'en' ? 'Work assigned to you on this site' : t('worker.assigned_work_site', locale)}</p>
               </div>
             </div>
             <button onClick={() => loadTasks(selectedProject.id)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
