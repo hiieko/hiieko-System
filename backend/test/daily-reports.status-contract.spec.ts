@@ -16,7 +16,7 @@
 // stripped the entire PATCH body ({}), so DRAFT edits appeared to save but persisted nothing.
 // ============================================================================
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, INestApplication, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { DailyReportsService } from '../src/modules/daily-reports/daily-reports.service';
 import { DailyReportsController } from '../src/modules/daily-reports/daily-reports.controller';
