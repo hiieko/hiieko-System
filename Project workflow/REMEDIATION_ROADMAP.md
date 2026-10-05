@@ -8,8 +8,16 @@
 > numbering.
 > Baseline when authored: branch `master`, HEAD `9e0c483`.
 
-**Last Updated:** 2026-10-01 (§9 appended — Slice 3 company timezone / day boundary implemented and
-verified; §8 = Slice 1 committed + Slice 2 implemented/verified)
+**Last Updated:** 2026-10-05 (Slices 1–7 executed; Slice 8 CI enforcement active; Slice 9 frontend contract alignment in progress)
+
+## 0. Execution status — autonomous remediation pass (2026-10-05)
+
+- **Slices 1–6:** implemented and present in the master ancestry; the earlier “not committed / not pushed” wording in handoff notes was stale.
+- **Slice 7:** complete. Authentication rate limiting is now PostgreSQL-backed and shared across API instances; Control Tower backend role enforcement and task DTO validation were added.
+- **Slice 8:** CI enforcement is active. CI now validates Prisma, checks migration/schema drift against a shadow database, applies the complete migration history to clean PostgreSQL 18, runs backend DB integrity verification, and uses Node 22.
+- **Slice 9:** active. Daily-plan date rendering and /pontaj assigned-work sourcing were aligned with backend contracts. Remaining frontend/product items are tracked explicitly in ISSUES.md.
+- **Production boundary:** no destructive production DB operation, mass logout, or frozen Mobile/OCR change is being performed autonomously.
+
 
 ---
 
