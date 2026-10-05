@@ -1,4 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Type } from 'class-transformer';
+import {
+  IsEnum,
+  IsISO8601,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { TaskStatusEnum, UserRoleEnum } from '@prisma/client';
@@ -33,23 +42,103 @@ export const TASK_STATUS_TRANSITIONS: Record<TaskStatusEnum, TaskStatusEnum[]> =
   [TaskStatusEnum.CANCELLED]: [TaskStatusEnum.PLANNED], // K-7 reopen, ADMIN/OWNER only
 };
 
-export interface CreateTaskDto {
-  projectId: string;
+export class CreateTaskDto {
+  @IsUUID()
+  projectId!: string;
+
+  @IsOptional()
+  @IsUUID()
   workPackageId?: string;
+
+  @IsOptional()
+  @IsUUID()
   zoneId?: string;
-  title: string;
-  code: string;
+
+  @IsString()
+  title!: string;
+
+  @IsString()
+  code!: string;
+
+  @IsOptional()
+  @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsISO8601()
   plannedStart?: string;
+
+  @IsOptional()
+  @IsISO8601()
   plannedEnd?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   plannedQuantity?: number;
+
+  @IsOptional()
+  @IsString()
   unitOfMeasure?: string;
 }
 
-export interface UpdateTaskDto extends Partial<CreateTaskDto> {
+export class UpdateTaskDto {
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  workPackageId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  zoneId?: string;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  plannedStart?: string;
+
+  @IsOptional()
+  @IsISO8601()
+  plannedEnd?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  plannedQuantity?: number;
+
+  @IsOptional()
+  @IsString()
+  unitOfMeasure?: string;
+
+  @IsOptional()
+  @IsEnum(TaskStatusEnum)
   status?: TaskStatusEnum;
+
+  @IsOptional()
+  @IsISO8601()
   actualStart?: string;
+
+  @IsOptional()
+  @IsISO8601()
   actualEnd?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   actualQuantity?: number;
 }
 
