@@ -209,7 +209,7 @@ Implemented full project-scoped authorization across all 102 routes:
 - **ISSUE-050:** an explicit development-only cleanup script now targets the four CJ-003 verification fixtures; it is dry-run by default and requires `--apply` after accepting the evidence impact.
 - **ISSUE-051:** Mobile daily-report submission still has a task-ID/draft-loss defect. Mobile is frozen for the remediation program, so this remains deferred.
 - **ISSUE-053:** frontend navigation and backend @Roles contracts still have documented business-rule divergences; this requires an explicit authorization decision rather than an incidental UI fix.
-- **ISSUE-056:** remaining Romanian copy cleanup remains open; the Mobile duplicate role map is now resolved, while Control Tower prose remains for the R1B pass.
+- **ISSUE-056:** RESOLVED 2026-10-05; Control Tower/drilldown copy is locale-keyed, the remaining worker R1B copy coupling is removed, and the role-visibility matrix encoding debt is normalized.
 - **PermissionsGuard:** permission catalog and guard coverage are merged; endpoint metadata/role grants remain intentionally unenforced pending a complete business permission matrix.
 - **Procurement:** `GET /api/procurement/avize/:id` is implemented and entity-project scoped.
 - **Production readiness:** health/live + health/ready probes and structured HTTP request logs are now in place. Provider-specific staging/production deployment, rollback automation, and external monitoring/alerting still require deployment-provider credentials/configuration.
