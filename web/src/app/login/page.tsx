@@ -1,40 +1,44 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
-import { apiClient, ApiError } from '../../lib/api-client';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLocale, t } from '@solar/shared';
+import { useLocale } from '@solar/shared';
+
+const ROLE_PREVIEW_STORAGE_KEY = 'hiieko_role_preview';
+
+const ROLES = [
+  {
+    role: 'admin',
+    title: 'Administrator',
+    description: 'Full system access',
+  },
+  {
+    role: 'owner',
+    title: 'Owner',
+    description: 'Organization-wide access',
+  },
+  {
+    role: 'pm',
+    title: 'Project Manager',
+    description: 'Project planning and oversight',
+  },
+  {
+    role: 'site_manager',
+    title: 'Site Manager',
+    description: 'Site operations and execution',
+  },
+] as const;
 
 export default function LoginPage() {
   const router = useRouter();
   const { refreshUser } = useAuth();
   const { locale } = useLocale();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      await apiClient.login({ email, password });
-      await refreshUser();
-      router.push('/');
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError(t('auth.login_error', locale));
-      }
-    } finally {
-      setLoading(false);
-    }
+  const enterAsRole = async (role: string) => {
+    sessionStorage.setItem(ROLE_PREVIEW_STORAGE_KEY, role);
+    await refreshUser();
+    router.replace('/');
   };
 
   return (
@@ -45,49 +49,33 @@ export default function LoginPage() {
             <span className="text-white font-extrabold text-2xl">H</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">HIIEKO</h1>
-          <p className="text-sm text-slate-500 mt-1">{t('application.subtitle', locale)}</p>
+          <p className="text-sm text-slate-500 mt-1">{locale === 'ro' ? 'Previzualizare roluri' : 'Role preview'}</p>
         </div>
 
-        <form onSubmit={handleLogin} className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 space-y-5">
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('auth.email', locale)}</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                className="hii-input pl-10"
-                placeholder={t('auth.email_placeholder', locale)} />
-            </div>
+        <div className="bg-white rounded-xl border border-amber-200 shadow-sm p-6 space-y-3">
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 mb-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+              Temporary preview mode
+            </p>
+            <p className="text-sm text-amber-700 mt-1">
+              {locale === 'ro'
+                ? 'Autentificarea este dezactivată temporar pentru verificarea UI.'
+                : 'Login is temporarily disabled for UI review.'}
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('auth.password', locale)}</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                className="hii-input pl-10"
-                placeholder={t('auth.password_placeholder', locale)} />
-            </div>
-          </div>
-
-          <button type="submit" disabled={loading}
-            className="hii-btn-primary w-full py-3">
-            {loading ? t('auth.logging_in', locale) : t('auth.login_button', locale)}
-          </button>
-
-          <p className="text-center text-sm text-slate-500">
-            {t('auth.no_account', locale)}{' '}
-            <Link href="/signup" className="font-semibold text-hii-600 hover:text-hii-700">
-              {t('auth.request_access', locale)}
-            </Link>
-          </p>
-        </form>
+          {ROLES.map(({ role, title, description }) => (
+            <button
+              key={role}
+              type="button"
+              onClick={() => enterAsRole(role)}
+              className="w-full text-left rounded-lg border border-slate-200 px-4 py-4 hover:border-hii-400 hover:bg-slate-50 transition-colors"
+            >
+              <span className="block font-semibold text-slate-900">{title}</span>
+              <span className="block text-sm text-slate-500 mt-1">{description}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
