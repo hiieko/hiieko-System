@@ -8,11 +8,12 @@
  */
 
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 
-const repoRoot = path.resolve(new URL('..', import.meta.url).pathname);
+const repoRoot = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const webRoot = path.join(repoRoot, 'web');
 const lockPath = path.join(repoRoot, '.web-dev.lock');
 
