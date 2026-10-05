@@ -174,10 +174,10 @@ Implemented full project-scoped authorization across all 102 routes:
 ### Remaining production-readiness / product gaps
 - No dedicated staging/production CI deployment pipeline or rollback automation
 - No monitoring/alerting/structured production logging beyond application error handling
-- ISSUE-039: dedicated attendance roster contract for field supervisors remains open
-- ISSUE-043: focused performance/index review remains open
-- ISSUE-054: route/role divergence decisions remain documented, not all normalized
-- ISSUE-056: remaining Romanian copy/role-map cleanup remains open
+- ISSUE-039: resolved — field-supervisor roster access is now organization-scoped and permitted
+- ISSUE-043: resolved for evidence-backed query paths; non-evidenced indexes remain intentionally absent
+- ISSUE-054: accepted design divergence; no code change warranted
+- ISSUE-056: remaining Romanian copy/role-map cleanup remains open (Mobile portion deferred by frozen-Mobile policy)
 - ISSUE-050: development fixture-task cleanup/product decision remains open
 - Broader frontend/mobile/product completion remains after the remediation slices.
 
