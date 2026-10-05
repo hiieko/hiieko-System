@@ -187,7 +187,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
 
   beforeEach(async () => {
     prisma = {
-      user: { findUnique: jest.fn(), update: jest.fn() },
+      user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
       // Slice 2 (L13): suspension revokes active sessions — these tests exercise a user
       // with no sessions, so the revocation is a no-op.
       session: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
@@ -210,7 +210,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('activates a PENDING user with { status: ACTIVE } and audits USER_ACTIVATED', async () => {
-    prisma.user.findUnique.mockResolvedValue(beforePENDING);
+    prisma.user.findFirst.mockResolvedValue(beforePENDING);
     prisma.user.update.mockResolvedValue({
       id: 'u1',
       email: 'user@hiieko.local',
@@ -219,7 +219,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
       status: UserStatusEnum.ACTIVE,
     });
 
-    const result = await service.updateStatus('u1', { status: UserStatusEnum.ACTIVE }, 'admin-1');
+    const result = await service.updateStatus('u1', { status: UserStatusEnum.ACTIVE }, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any);
 
     expect(prisma.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -240,7 +240,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   });
 
   it('records USER_STATUS_CHANGED (not USER_ACTIVATED) when the user is already ACTIVE', async () => {
-    prisma.user.findUnique.mockResolvedValue({
+    prisma.user.findFirst.mockResolvedValue({
       ...beforePENDING,
       is_active: true,
       status: UserStatusEnum.ACTIVE,
@@ -251,7 +251,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
       status: UserStatusEnum.ACTIVE,
     });
 
-    await service.updateStatus('u1', { status: UserStatusEnum.ACTIVE }, 'admin-1');
+    await service.updateStatus('u1', { status: UserStatusEnum.ACTIVE }, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any);
 
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'USER_STATUS_CHANGED' }),
@@ -259,10 +259,10 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   });
 
   it('L-1 legacy body: { isActive: true } → ACTIVE', async () => {
-    prisma.user.findUnique.mockResolvedValue(beforePENDING);
+    prisma.user.findFirst.mockResolvedValue(beforePENDING);
     prisma.user.update.mockResolvedValue({ id: 'u1', is_active: true, status: UserStatusEnum.ACTIVE });
 
-    await service.updateStatus('u1', { isActive: true }, 'admin-1');
+    await service.updateStatus('u1', { isActive: true }, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any);
 
     expect(prisma.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -272,10 +272,10 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   });
 
   it('L-1 legacy body: { isActive: false } → SUSPENDED', async () => {
-    prisma.user.findUnique.mockResolvedValue({ ...beforePENDING, is_active: true, status: UserStatusEnum.ACTIVE });
+    prisma.user.findFirst.mockResolvedValue({ ...beforePENDING, is_active: true, status: UserStatusEnum.ACTIVE });
     prisma.user.update.mockResolvedValue({ id: 'u1', is_active: false, status: UserStatusEnum.SUSPENDED });
 
-    await service.updateStatus('u1', { isActive: false }, 'admin-1');
+    await service.updateStatus('u1', { isActive: false }, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any);
 
     expect(prisma.user.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -285,13 +285,13 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   });
 
   it('L-1: `status` is authoritative when both fields are present', async () => {
-    prisma.user.findUnique.mockResolvedValue({ ...beforePENDING, is_active: true, status: UserStatusEnum.ACTIVE });
+    prisma.user.findFirst.mockResolvedValue({ ...beforePENDING, is_active: true, status: UserStatusEnum.ACTIVE });
     prisma.user.update.mockResolvedValue({ id: 'u1', is_active: false, status: UserStatusEnum.SUSPENDED });
 
     await service.updateStatus(
       'u1',
       { status: UserStatusEnum.SUSPENDED, isActive: true },
-      'admin-1',
+      { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any,
     );
 
     expect(prisma.user.update).toHaveBeenCalledWith(
@@ -302,33 +302,33 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   });
 
   it('rejects a missing body with 422 VALIDATION_ERROR (never a silent no-op)', async () => {
-    prisma.user.findUnique.mockResolvedValue(beforePENDING);
-    await expect(service.updateStatus('u1', {} as any, 'admin-1')).rejects.toThrow(
+    prisma.user.findFirst.mockResolvedValue(beforePENDING);
+    await expect(service.updateStatus('u1', {} as any, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any)).rejects.toThrow(
       UnprocessableEntityException,
     );
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
   it('rejects an undefined body with 422', async () => {
-    prisma.user.findUnique.mockResolvedValue(beforePENDING);
-    await expect(service.updateStatus('u1', undefined as any, 'admin-1')).rejects.toThrow(
+    prisma.user.findFirst.mockResolvedValue(beforePENDING);
+    await expect(service.updateStatus('u1', undefined as any, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any)).rejects.toThrow(
       UnprocessableEntityException,
     );
   });
 
   it('rejects an invalid status value with 422', async () => {
-    prisma.user.findUnique.mockResolvedValue(beforePENDING);
+    prisma.user.findFirst.mockResolvedValue(beforePENDING);
     await expect(
-      service.updateStatus('u1', { status: 'NOT_A_STATUS' as any }, 'admin-1'),
+      service.updateStatus('u1', { status: 'NOT_A_STATUS' as any }, { id: 'admin-1', email: 'admin@hiieko.local', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any),
     ).rejects.toThrow(UnprocessableEntityException);
   });
 
   it('surfaces the 422 as a VALIDATION_ERROR envelope through the global filter', async () => {
-    prisma.user.findUnique.mockResolvedValue(beforePENDING);
+    prisma.user.findFirst.mockResolvedValue(beforePENDING);
 
     let caught: unknown;
     try {
-      await service.updateStatus('u1', {} as any, 'admin-1');
+      await service.updateStatus('u1', {} as any, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any);
     } catch (err) {
       caught = err;
     }
