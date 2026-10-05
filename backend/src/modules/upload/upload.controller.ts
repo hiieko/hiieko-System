@@ -4,6 +4,7 @@ import {
   Post,
   Param,
   Body,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -51,7 +52,7 @@ export class UploadController {
         entityId: { type: 'string' },
         documentType: { type: 'string' },
         title: { type: 'string' },
-        projectId: { type: 'string' },
+
       },
     },
   })
@@ -62,7 +63,7 @@ export class UploadController {
     @Body('entityId') entityId: string,
     @Body('documentType') documentType: string,
     @Body('title') title: string,
-    @Body('projectId') projectId: string,
+    @Query('projectId') projectId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
