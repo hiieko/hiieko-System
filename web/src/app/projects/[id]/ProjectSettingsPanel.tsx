@@ -9,7 +9,7 @@ import {
 } from '../../../features/projects/types';
 import { Button } from '../../../components/ui/Button';
 import { useToast } from '../../../components/ui/Toast';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { Save, AlertCircle } from 'lucide-react';
 import { apiClient } from '../../../lib/api-client';
 
