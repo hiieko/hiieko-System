@@ -88,6 +88,11 @@ export const GIS_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'site_man
  */
 export const QA_ROLES: string[] = ['admin', 'owner', 'qa_qc', 'pm', 'site_manager'];
 
+/** Daily report creation/edit form — mirrors POST/PATCH daily-report role access. */
+export const DAILY_REPORT_CREATE_ROLES: string[] = [
+  'admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician',
+];
+
 /** `/utilizatori` — administration only, aligned with the page guard. */
 export const ADMIN_ROLES: string[] = ['admin'];
 
