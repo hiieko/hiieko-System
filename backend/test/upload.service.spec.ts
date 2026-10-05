@@ -158,7 +158,7 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
     expect(documents.create).toHaveBeenCalledWith(
       {
         projectId: 'project-1',
-        documentType: DocumentTypeEnum.OTHER,
+        documentType: DocumentTypeEnum.PLAN_TECHNIC,
         title: 'Site_plan',
         storagePath: 'receipts/2026/10/uuid-project.pdf',
         fileSize: 14,
