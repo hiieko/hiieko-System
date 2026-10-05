@@ -91,7 +91,7 @@ export function WorkerDashboard() {
                      geoStatus.state === 'timeout' ? t('worker.gps_timeout', locale) :
                      geoStatus.state === 'unavailable' ? t('worker.gps_unavailable', locale) :
                      t('worker.gps_error', locale);
-      setActionResult(errMsg); setTimeout(() => setActionResult(null), 4000);
+      setActionResult(errMsg); setActionResultIsError(true); setTimeout(() => setActionResult(null), 4000);
       return null;
     }
     return loc;
@@ -113,14 +113,14 @@ export function WorkerDashboard() {
   };
 
   const handleCheckOut = async () => {
-    setActionLoading(true); setActionResult(null);
+    setActionLoading(true); setActionResult(null); setActionResultIsError(false);
     try {
       const loc = await getLocationOrWarn();
       if (!loc) { setActionLoading(false); return; }
       await apiClient.checkOutAttendance({ projectId: selectedProject?.id || '', latitude: loc.latitude, longitude: loc.longitude });
       setActionResult(t('worker.checkout_success', locale)); setTimeout(() => setActionResult(null), 3000);
       loadAttendance();
-    } catch (err: any) { setActionResult(err.message || 'Eroare'); setTimeout(() => setActionResult(null), 3000); }
+    } catch (err: any) { setActionResult(err.message || t('worker.error_generic', locale)); setActionResultIsError(true); setTimeout(() => setActionResult(null), 3000); }
     finally { setActionLoading(false); }
   };
 
