@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Reflector } from '@nestjs/core';
+import { randomUUID } from 'crypto';
+import { PrismaService } from './common/prisma/prisma.service';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -29,6 +31,40 @@ export function parseCorsOrigins(raw?: string): string[] {
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+  const prisma = app.get(PrismaService);
+
+  // Operational endpoints intentionally bypass application auth so load balancers and
+  // orchestrators can distinguish a live process from a ready database-backed process.
+  const httpServer = app.getHttpAdapter().getInstance();
+  httpServer.get('/health/live', (_req: any, res: any) => {
+    res.status(200).json({ status: 'ok', service: 'hiieko-api' });
+  });
+  httpServer.get('/health/ready', async (_req: any, res: any) => {
+    try {
+      await prisma.$queryRawUnsafe('SELECT 1');
+      res.status(200).json({ status: 'ready', service: 'hiieko-api', database: 'ok' });
+    } catch {
+      res.status(503).json({ status: 'not_ready', service: 'hiieko-api', database: 'unavailable' });
+    }
+  });
+
+  // Structured access logs: no request bodies, cookies, authorization headers, or query values.
+  app.use((req: any, res: any, next: any) => {
+    const requestId = req.header('x-request-id') || randomUUID();
+    const startedAt = Date.now();
+    res.setHeader('x-request-id', requestId);
+    res.on('finish', () => {
+      logger.log(JSON.stringify({
+        type: 'http_request',
+        requestId,
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        durationMs: Date.now() - startedAt,
+      }));
+    });
+    next();
+  });
 
   // Slice 2 (L4): credentialed requests are now part of the contract (the httpOnly
   // `hiieko_rt` refresh cookie), and `Access-Control-Allow-Origin: *` is ILLEGAL together
