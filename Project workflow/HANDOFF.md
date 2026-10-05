@@ -17,7 +17,7 @@
 - CI enforcement: active.
 - Daily report approval workflow: complete (PR #25).
 - Mobile offline-sync correctness hardening: complete (PR #27, merged).
-- Frontend permission UX reconciliation: active in PR #26.
+- Frontend permission UX reconciliation: complete (PR #26 merged).
 - OCR: intentionally frozen/deferred.
 - Granular PermissionsGuard runtime activation: intentionally deferred.
 - Production deployment verification: still required.
@@ -35,7 +35,7 @@
 
 - PR #20 — closed; superseded by the merged Netlify configuration work.
 - PR #21 — closed; superseded by the merged frontend v0 work.
-- PR #26 — remains open and is the current frontend permission UX change; merge only after CI is green.
+- PR #26 — merged; frontend permission UX reconciliation is complete.
 
 ## Mobile acceptance still outstanding
 
@@ -53,7 +53,6 @@ Do not claim device acceptance until it is actually run.
 
 ## Next priority
 
-1. Finish PR #26 after CI passes.
-2. Verify canonical Netlify production deployment/domain.
-3. Perform the final Mobile emulator/device acceptance pass.
+1. Verify canonical Netlify production deployment/domain.
+2. Perform the final Mobile emulator/device acceptance pass.
 4. Keep OCR and granular permission activation frozen unless explicitly reopened.
