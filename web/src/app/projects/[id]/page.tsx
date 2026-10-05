@@ -198,7 +198,7 @@ function ProjectDetailPageInner() {
             {address && <p className="text-sm text-slate-500 mt-0.5">{address}</p>}
           </div>
         </div>
-        <button onClick={() => { loadProject(); loadMembers(); }} className="p-2 hover:bg-slate-100 rounded-lg" title={locale === 'en' ? 'Refresh' : 'Reîmprospătează'}>
+        <button onClick={() => { loadProject(); loadMembers(); }} className="p-2 hover:bg-slate-100 rounded-lg" title={t('projects.refresh', locale)}>
           <RefreshCw className="w-4 h-4 text-slate-500" />
         </button>
       </div>
@@ -287,7 +287,7 @@ function ProjectDetailPageInner() {
                 <div className="flex gap-2">
                   <button onClick={handleAddMember} disabled={!selectedUserId || addingMember}
                     className="flex-1 px-3 py-2 bg-hii-500 hover:bg-hii-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">
-                    {addingMember ? (locale === 'en' ? 'Adding...' : 'Se adaugă...') : (locale === 'en' ? 'Add' : 'Adaugă')}
+                    {addingMember ? (t('projects.adding', locale)) : (t('projects.add', locale))}
                   </button>
                   <button onClick={() => setShowAddMember(false)}
                     className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg"><X className="w-4 h-4" /></button>
@@ -333,8 +333,8 @@ function ProjectDetailPageInner() {
                             onCancel={() => setConfirmRemove(null)}
                             title="Elimina membru"
                             message={(locale === 'en' ? 'Remove ' : 'Sigur dorești să elimini pe ') + displayName(m.user) + (locale === 'en' ? ' from the project?' : ' din proiect?')}
-                            confirmLabel={locale === 'en' ? 'Remove' : 'Elimină'}
-                            cancelLabel={locale === 'en' ? 'Cancel' : 'Anulează'}
+                            confirmLabel={t('projects.remove', locale)}
+                            cancelLabel={t('projects.cancel', locale)}
                             variant="danger"
                           />
                         </>
