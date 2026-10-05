@@ -52,7 +52,7 @@ export function ProjectStagesPanel({ projectId }: Props) {
         endDate: form.endDate || undefined,
       };
       await apiClient.post(`/api/projects/${projectId}/stages`, dto);
-      success(locale === 'en' ? 'Stage created' : 'Etapa creata');
+      success(t('projects.stage_created', locale));
       setForm({ name: '', startDate: '', endDate: '' });
       setShowCreate(false);
       loadStages();
@@ -101,8 +101,8 @@ export function ProjectStagesPanel({ projectId }: Props) {
       {showCreate && (
         <div className="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
           <div>
-            <label className={labelCls}>{locale === 'en' ? 'Stage Name *' : 'Nume etapă *'}</label>
-            <input className={inputCls} placeholder={locale === 'en' ? 'e.g. Foundation' : 'ex. Fundație'} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            <label className={labelCls}>{t('projects.stage_name', locale)}</label>
+            <input className={inputCls} placeholder={t('projects.stage_placeholder', locale)} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
