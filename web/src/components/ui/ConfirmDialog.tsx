@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { AlertTriangle, Trash2, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -30,9 +30,11 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const messageId = useId();
 
   const resolvedConfirmLabel = confirmLabel ?? 'Confirm';
-  const resolvedCancelLabel = cancelLabel ?? 'Anulează';
+  const resolvedCancelLabel = cancelLabel ?? 'Anuleaza';
 
   useFocusTrap(dialogRef, open);
 
@@ -88,8 +90,8 @@ export function ConfirmDialog({
         ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
-        aria-label={title}
-        aria-describedby="confirm-dialog-message"
+        aria-labelledby={titleId}
+        aria-describedby={messageId}
         tabIndex={-1}
         className={clsx(
           'relative z-10 w-full max-w-sm mx-4',
@@ -114,11 +116,11 @@ export function ConfirmDialog({
           </div>
 
           {/* Title */}
-          <h2 className="text-base font-semibold text-slate-900 text-center">{title}</h2>
+          <h2 id={titleId} className="text-base font-semibold text-slate-900 text-center">{title}</h2>
 
           {/* Message */}
           <p
-            id="confirm-dialog-message"
+            id={messageId}
             className="mt-2 text-sm text-slate-600 text-center leading-relaxed"
           >
             {message}
