@@ -116,7 +116,7 @@ export function ControlTowerSurface() {
         setRefreshing(false);
       }
     },
-    [selectedProjectId],
+    [selectedProjectId, locale],
   );
 
   useEffect(() => {
@@ -151,7 +151,7 @@ export function ControlTowerSurface() {
   if (loading && !overview) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+        <Loader2 className="w-10 h-10 animate-spin text-amber-500" aria-hidden="true" />
         <div className="text-center">
           <h3 className="text-base font-semibold text-slate-800">
             {t('control_tower.loading', locale)}
@@ -217,7 +217,9 @@ export function ControlTowerSurface() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           {/* Project selector filter */}
           <div className="relative">
+            <label htmlFor="control-tower-project" className="sr-only">{t('control_tower.project_filter', locale)}</label>
             <select
+              id="control-tower-project"
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
               className="w-full sm:w-auto bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
