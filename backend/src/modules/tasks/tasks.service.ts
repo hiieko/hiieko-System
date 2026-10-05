@@ -150,7 +150,7 @@ export class TasksService {
   ) {}
 
   async findAll(projectId?: string, projectScopeWhere?: Record<string, any>) {
-    const where: any = { ...projectScopeWhere };
+    const where: any = { is_archived: false, ...projectScopeWhere };
     if (projectId) {
       where.project_id = projectId;
     }
