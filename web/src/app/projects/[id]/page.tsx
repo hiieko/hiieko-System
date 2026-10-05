@@ -12,7 +12,7 @@ import {
   Check, AlertTriangle,
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { canCreateProjects, getRoleLabel, useLocale } from '@solar/shared';
+import { canCreateProjects, getRoleLabel, t, useLocale } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
