@@ -19,7 +19,7 @@ export interface RateLimitRule {
 }
 
 /**
- * Declares rate-limit rules for a handler (Slice 1, L-2 — SEC-001 / SEC-003).
+ * Declares rate-limit rules for a handler (Slice 7 (shared PostgreSQL limiter) — SEC-001 / SEC-003).
  *
  * When several rules are declared, the request is rejected as soon as **any** of them is
  * exceeded (e.g. `login` is limited per-IP *and* per-normalized-email).
