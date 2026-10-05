@@ -5,12 +5,13 @@ import {
   Clock, Loader2, RefreshCw, CheckCheck, LogOut, MapPin,
   ClipboardList, AlertTriangle, Info, Timer, CheckCircle2,
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { t, useLocale } from '@solar/shared';
 import { useProject } from '../contexts/ProjectContext';
 import { useToast } from './ui/Toast';
-import * as attendanceApi from '../features/attendance/api';
+import { getMyPlanTasks } from '../features/planning/api';
+import { todayCompanyIso } from '../lib/company-time';
 import type { AssignedTask } from '../features/attendance/types';
+import type { DailyPlan } from '../features/planning/types';
 import { TASK_STATUS_LABELS } from '../features/attendance/types';
 import { useWorkerShift } from '../hooks/useWorkerShift';
 
@@ -19,7 +20,6 @@ import { useWorkerShift } from '../hooks/useWorkerShift';
  * → assigned work → check-out → hours → result.
  */
 export function WorkerAttendanceView() {
-  const { user } = useAuth();
   const { selectedProject } = useProject();
   const { locale } = useLocale();
   const { success, error: showError } = useToast();
@@ -46,19 +46,41 @@ export function WorkerAttendanceView() {
     setTasksLoading(true);
     setTasksError(null);
     try {
-      const res = await attendanceApi.getProjectTasks(projectId);
-      const all = (res.data || []) as AssignedTask[];
-      const mine = user ? all.filter((task) =>
-        (task.assignments || []).some((a) => a.user_id === user.id)
-      ) : all;
-      setTasks(mine);
+      const res = await getMyPlanTasks(todayCompanyIso());
+      const plans = (res.data || []) as DailyPlan[];
+      const projectPlans = plans.filter(
+        (plan) => plan.project?.id === projectId || plan.project_id === projectId,
+      );
+
+      const scopedTasks: AssignedTask[] = projectPlans.flatMap((plan) =>
+        (plan.tasks || [])
+          .filter((planTask) => planTask.task)
+          .map((planTask) => ({
+            id: planTask.task!.id,
+            project_id: plan.project_id,
+            title: planTask.task!.title,
+            code: planTask.task!.code,
+            status: planTask.task!.status,
+            planned_quantity: null,
+            actual_quantity: planTask.actual_quantity ?? null,
+            unit_of_measure: planTask.task!.unit_of_measure ?? null,
+            assignments: planTask.task!.assignments,
+            work_package: null,
+            zone: null,
+          })),
+      );
+
+      const deduped = Array.from(
+        new Map(scopedTasks.map((task) => [task.id, task])).values(),
+      );
+      setTasks(deduped);
     } catch (err: unknown) {
       setTasksError(err instanceof Error ? err.message : t('worker.error_generic', locale));
       setTasks([]);
     } finally {
       setTasksLoading(false);
     }
-  }, [user, locale]);
+  }, [locale]);
 
   useEffect(() => {
     if (selectedProject) loadTasks(selectedProject.id);
