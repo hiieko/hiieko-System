@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { SessionService } from '../auth/session.service';
 import { SESSION_REVOKE_REASON } from '../auth/auth.constants';
+import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 
 @Injectable()
@@ -13,11 +19,14 @@ export class UsersService {
     private readonly sessionService: SessionService,
   ) {}
 
-  async findAll(organizationId?: string) {
+  async findAll(actor: AuthenticatedUser) {
+    const organizationId = this.requireOrganization(actor);
+
     return this.prisma.user.findMany({
-      where: organizationId ? { organization_id: organizationId } : undefined,
+      where: { organization_id: organizationId },
       select: {
         id: true,
+        organization_id: true,
         email: true,
         role: true,
         is_active: true,
@@ -36,9 +45,10 @@ export class UsersService {
     });
   }
 
-  async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+  async findOne(id: string, actor: AuthenticatedUser) {
+    const organizationId = this.requireOrganization(actor);
+    const user = await this.prisma.user.findFirst({
+      where: { id, organization_id: organizationId },
       select: {
         id: true,
         organization_id: true,
@@ -70,22 +80,32 @@ export class UsersService {
     return user;
   }
 
-  async updateRole(id: string, newRole: UserRoleEnum, actorId?: string) {
-    const before = await this.findOne(id);
+  async updateRole(id: string, newRole: UserRoleEnum, actor: AuthenticatedUser) {
+    const before = await this.findOne(id, actor);
+
+    if (id === actor.id) {
+      throw new ForbiddenException('You cannot change your own role.');
+    }
+
+    this.assertValidRole(newRole);
+
     const updated = await this.prisma.user.update({
       where: { id },
       data: { role: newRole },
       select: {
         id: true,
+        organization_id: true,
         email: true,
         role: true,
         is_active: true,
+        status: true,
         profile: true,
       },
     });
 
     await this.auditService.record({
-      actorId,
+      organizationId: before.organization_id,
+      actorId: actor.id,
       action: 'USER_ROLE_UPDATED',
       entity: 'User',
       entityId: id,
@@ -96,17 +116,16 @@ export class UsersService {
     return updated;
   }
 
-  /**
-   * Account lifecycle (Slice 1, K-2 / L-1). `status` is authoritative; the legacy
-   * `{ isActive: boolean }` body is honoured only when `status` is absent
-   * (`true → ACTIVE`, `false → SUSPENDED`). An invalid or missing body is a 422.
-   */
   async updateStatus(
     id: string,
     input: { status?: UserStatusEnum; isActive?: boolean },
-    actorId?: string,
+    actor: AuthenticatedUser,
   ) {
-    const before = await this.findOne(id);
+    const before = await this.findOne(id, actor);
+
+    if (id === actor.id) {
+      throw new ForbiddenException('You cannot change your own account status.');
+    }
 
     const targetStatus = this.resolveStatus(input);
 
@@ -114,11 +133,11 @@ export class UsersService {
       where: { id },
       data: {
         status: targetStatus,
-        // Keep the legacy compatibility flag in lock-step with the authoritative status.
         is_active: targetStatus === UserStatusEnum.ACTIVE,
       },
       select: {
         id: true,
+        organization_id: true,
         email: true,
         role: true,
         is_active: true,
@@ -130,9 +149,6 @@ export class UsersService {
     const activated =
       targetStatus === UserStatusEnum.ACTIVE && before.status !== UserStatusEnum.ACTIVE;
 
-    // Slice 2 (L13): suspending an account revokes every active session immediately, so an
-    // already-issued access token or refresh token stops working. Reactivation does NOT
-    // restore those sessions — the user has to log in again.
     if (targetStatus === UserStatusEnum.SUSPENDED && before.status !== UserStatusEnum.SUSPENDED) {
       const revokedSessions = await this.sessionService.revokeAllSessionsForUser(
         id,
@@ -141,7 +157,8 @@ export class UsersService {
 
       if (revokedSessions > 0) {
         await this.auditService.record({
-          actorId,
+          organizationId: before.organization_id,
+          actorId: actor.id,
           action: 'SESSION_REVOKED',
           entity: 'User',
           entityId: id,
@@ -151,7 +168,8 @@ export class UsersService {
     }
 
     await this.auditService.record({
-      actorId,
+      organizationId: before.organization_id,
+      actorId: actor.id,
       action: activated ? 'USER_ACTIVATED' : 'USER_STATUS_CHANGED',
       entity: 'User',
       entityId: id,
@@ -160,6 +178,58 @@ export class UsersService {
     });
 
     return updated;
+  }
+
+  async updateProfile(
+    id: string,
+    data: { fullName?: string; phone?: string; language?: string },
+    actor: AuthenticatedUser,
+  ) {
+    if (id !== actor.id) {
+      throw new ForbiddenException('You can only update your own profile.');
+    }
+
+    const profile = await this.prisma.userProfile.upsert({
+      where: { user_id: id },
+      update: {
+        full_name: data.fullName,
+        phone: data.phone,
+        language: data.language,
+      },
+      create: {
+        user_id: id,
+        full_name: data.fullName || '',
+        phone: data.phone,
+        language: data.language || 'ro',
+      },
+    });
+
+    await this.auditService.record({
+      organizationId: actor.organizationId,
+      actorId: actor.id,
+      action: 'USER_PROFILE_UPDATED',
+      entity: 'UserProfile',
+      entityId: profile.id,
+      after: data,
+    });
+
+    return profile;
+  }
+
+  private requireOrganization(actor: AuthenticatedUser): string {
+    if (!actor.organizationId) {
+      throw new ForbiddenException('User organization is required for user management.');
+    }
+    return actor.organizationId;
+  }
+
+  private assertValidRole(role: UserRoleEnum): void {
+    const validRoles = Object.values(UserRoleEnum) as string[];
+    if (typeof role !== 'string' || !validRoles.includes(role)) {
+      throw new UnprocessableEntityException(
+        `Invalid role '${role}'. Expected one of: ${validRoles.join(', ')}.`,
+      );
+    }
   }
 
   private resolveStatus(
@@ -184,32 +254,5 @@ export class UsersService {
     throw new UnprocessableEntityException(
       "Provide either 'status' (PENDING|ACTIVE|SUSPENDED) or the legacy 'isActive' (boolean).",
     );
-  }
-
-  async updateProfile(id: string, data: { fullName?: string; phone?: string; language?: string }, actorId?: string) {
-    const profile = await this.prisma.userProfile.upsert({
-      where: { user_id: id },
-      update: {
-        full_name: data.fullName,
-        phone: data.phone,
-        language: data.language,
-      },
-      create: {
-        user_id: id,
-        full_name: data.fullName || '',
-        phone: data.phone,
-        language: data.language || 'ro',
-      },
-    });
-
-    await this.auditService.record({
-      actorId,
-      action: 'USER_PROFILE_UPDATED',
-      entity: 'UserProfile',
-      entityId: profile.id,
-      after: data,
-    });
-
-    return profile;
   }
 }
