@@ -177,7 +177,7 @@ Implemented full project-scoped authorization across all 102 routes:
 - ISSUE-039: resolved — field-supervisor roster access is now organization-scoped and permitted
 - ISSUE-043: resolved for evidence-backed query paths; non-evidenced indexes remain intentionally absent
 - ISSUE-054: accepted design divergence; no code change warranted
-- ISSUE-056: remaining Romanian copy/role-map cleanup remains open (Mobile portion deferred by frozen-Mobile policy)
+- ISSUE-056: RESOLVED 2026-10-05; Romanian copy/role-map cleanup is complete for the R1B scope; Mobile role-map duplication was already resolved and frozen-Mobile runtime behavior was not changed.
 - ISSUE-050: development fixture-task cleanup/product decision remains open
 - Broader frontend/mobile/product completion remains after the remediation slices.
 
@@ -240,7 +240,7 @@ Project-scoped. GET /api/procurement/purchase-orders accepts optional projectId.
 - **Deployment:** no dedicated staging/production CI deployment pipeline or automated rollback.
 - **Observability:** no production-grade monitoring, alerting, or structured logging beyond application error handling.
 - **Governance:** PermissionsGuard is not activated and its permission tables are unseeded.
-- **Product/UX:** ISSUE-050, ISSUE-051, ISSUE-053, and ISSUE-056 remain open/deferred as described above.
+- **Product/UX:** ISSUE-050, ISSUE-051 and other explicitly deferred items remain as described above; ISSUE-056 is RESOLVED.
 - **Security status:** authentication rate limiting is implemented and shared across API instances (Slice 7); refresh-token rotation/revocation is implemented (Slice 2); the Control Tower role boundary is implemented (PR #5 / ISSUE-052 resolved).
 ## 11. Supabase future
 
