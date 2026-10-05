@@ -1681,6 +1681,30 @@ Object.assign(d, {
   'worker.refresh': T('Reîmprospătează', 'Refresh'),
   'worker.site_picker_hint': T('Alege șantierul de unde lucrezi din selectorul de proiecte din bara de sus pentru a te ponta.', 'Pick the site you are working at from the project selector in the top bar to clock in.'),
   'worker.assigned_work_site': T('Lucrări atribuite ție pe acest șantier', 'Work assigned to you on this site'),
+
+  // --- R1B final inline-copy cleanup ---
+  'auth.access_denied': T('Acces Interzis', 'Access Denied'),
+  'auth.go_back': T('Înapoi', 'Go Back'),
+  'workforce.search_placeholder': T('Caută angajați...', 'Search employees...'),
+  'workforce.no_account': T('Fără cont', 'No account'),
+  'general.saving': T('Se salvează...', 'Saving...'),
+  'general.create': T('Creează', 'Create'),
+  'notifications.subtitle': T('Centrul de notificări pentru evenimentele din sistem.', 'The notification centre for system events.'),
+  'worker.elapsed_since_checkin': T('scurs de la pontarea de intrare', 'elapsed since check-in'),
+  'worker.geofence_inside': T('În perimetru', 'In perimeter'),
+  'projects.stage_created': T('Etapă creată', 'Stage created'),
+  'projects.stage_name': T('Nume etapă *', 'Stage Name *'),
+  'projects.stage_placeholder': T('ex. Fundație', 'e.g. Foundation'),
+  'projects.updated': T('Proiect actualizat', 'Project updated'),
+  'projects.start_date': T('Data început', 'Start Date'),
+  'issues.subtitle': T('Raportează problemele întâlnite pe șantier și urmărește rezolvarea lor', 'Report the issues found on site and track their resolution'),
+  'issues.created_success': T('Problema a fost raportată!', 'Issue was reported!'),
+  'issues.description_placeholder': T('Descrie problema în detaliu...', 'Describe the issue in detail...'),
+  'projects.refresh': T('Reîmprospătează', 'Refresh'),
+  'projects.adding': T('Se adaugă...', 'Adding...'),
+  'projects.add': T('Adaugă', 'Add'),
+  'projects.remove': T('Elimină', 'Remove'),
+  'projects.cancel': T('Anulează', 'Cancel'),
 });
 
 export function t(key: string, locale: Locale = 'ro'): string {
