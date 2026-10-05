@@ -21,6 +21,7 @@ export class RolesController {
   }
 
   @Get(':code')
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER)
   @ApiOperation({ summary: 'Get role details by code' })
   async findByCode(@Param('code') code: UserRoleEnum) {
     return this.rolesService.findByCode(code);
