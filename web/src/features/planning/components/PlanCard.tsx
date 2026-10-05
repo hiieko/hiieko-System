@@ -7,7 +7,8 @@ import { ChevronDown, ChevronUp, ClipboardList } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { PlanTaskRow } from './PlanTaskRow';
-import { formatDateLong, formatDateTimeLocal } from '../summary';
+import { formatDateTimeLocal } from '../summary';
+import { formatPlanDate } from '../dayDerivations';
 import type { DailyPlan, DailyPlanTask } from '../types';
 
 interface PlanCardProps {
