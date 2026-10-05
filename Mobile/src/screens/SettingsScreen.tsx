@@ -19,7 +19,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Alert, ActivityIndicator } from 'react-native';
 import { Check, Globe2, LogOut, User } from 'lucide-react-native';
-import { useLocale, t as translate, getRoleLabel } from '@solar/shared';
+import { useLocale, t as translate, getRoleLabel, Locale } from '@solar/shared';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LangOption {
