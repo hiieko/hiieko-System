@@ -844,7 +844,21 @@ describe('Slice 2 — AuthController cookie transport', () => {
 // Refresh rate limiting — 60 / 60 s per IP (Slice 2)
 // ===========================================================================
 describe('Slice 2 — POST /api/auth/refresh rate limiting', () => {
-  beforeEach(() => RateLimitGuard.reset());
+  let prisma: any;
+
+  beforeEach(() => {
+    RateLimitGuard.reset();
+    const counts = new Map<string, number>();
+    prisma = {
+      $executeRaw: jest.fn().mockResolvedValue(0),
+      $queryRaw: jest.fn().mockImplementation(async (query: any) => {
+        const key = String(query?.values?.[0] ?? 'unknown');
+        const count = (counts.get(key) ?? 0) + 1;
+        counts.set(key, count);
+        return [{ count }];
+      }),
+    };
+  });
   afterAll(() => RateLimitGuard.reset());
 
   function context(ip: string) {
@@ -855,16 +869,16 @@ describe('Slice 2 — POST /api/auth/refresh rate limiting', () => {
     } as any;
   }
 
-  it('allows 60 refreshes from one IP and rejects the 61st with 429 TOO_MANY_REQUESTS', () => {
-    const guard = new RateLimitGuard(new Reflector());
+  it('allows 60 refreshes from one IP and rejects the 61st with 429 TOO_MANY_REQUESTS', async () => {
+    const guard = new RateLimitGuard(new Reflector(), prisma);
 
     for (let i = 0; i < 60; i++) {
-      expect(guard.canActivate(context('10.1.1.1'))).toBe(true);
+      expect(await guard.canActivate(context('10.1.1.1'))).toBe(true);
     }
 
     let caught: unknown;
     try {
-      guard.canActivate(context('10.1.1.1'));
+      await guard.canActivate(context('10.1.1.1'));
     } catch (err) {
       caught = err;
     }
