@@ -204,15 +204,15 @@ Implemented full project-scoped authorization across all 102 routes:
 
 ## 8. Known carried-over gaps
 
-- **ISSUE-023:** 8 non-global development users remain unassigned to a project (3 TEAM_LEADER, 5 WORKER); this is a data/product assignment decision, not a Phase 1 authorization defect.
+- **ISSUE-023:** a safe reconciliation script now maps the 8 legacy development users to AR-001/TM-002/CJ-003; it is dry-run by default and requires `--apply`.
 - **ISSUE-049:** concurrent next dev processes can corrupt the shared web/.next cache. A guard is being added in the current close-out branch; until merged, run only one web dev server.
-- **ISSUE-050:** four pre-existing CJ-003 verification fixture tasks remain in the development DB. Deletion is intentionally not autonomous because the fixtures are referenced by verification evidence.
+- **ISSUE-050:** an explicit development-only cleanup script now targets the four CJ-003 verification fixtures; it is dry-run by default and requires `--apply` after accepting the evidence impact.
 - **ISSUE-051:** Mobile daily-report submission still has a task-ID/draft-loss defect. Mobile is frozen for the remediation program, so this remains deferred.
 - **ISSUE-053:** frontend navigation and backend @Roles contracts still have documented business-rule divergences; this requires an explicit authorization decision rather than an incidental UI fix.
 - **ISSUE-056:** remaining Romanian copy cleanup remains open; the Mobile duplicate role map is now resolved, while Control Tower prose remains for the R1B pass.
 - **PermissionsGuard:** permission catalog and guard coverage are merged; endpoint metadata/role grants remain intentionally unenforced pending a complete business permission matrix.
 - **Procurement:** `GET /api/procurement/avize/:id` is implemented and entity-project scoped.
-- **Production readiness:** staging/production CI deployment, rollback automation, monitoring/alerting, and structured production logging are not yet in place.
+- **Production readiness:** health/live + health/ready probes and structured HTTP request logs are now in place. Provider-specific staging/production deployment, rollback automation, and external monitoring/alerting still require deployment-provider credentials/configuration.
 
 ## 9. Project authorization
 
