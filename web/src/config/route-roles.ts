@@ -88,6 +88,11 @@ export const GIS_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'site_man
  */
 export const QA_ROLES: string[] = ['admin', 'owner', 'qa_qc', 'pm', 'site_manager'];
 
+/** Daily report creation/edit form — mirrors POST/PATCH daily-report role access. */
+export const DAILY_REPORT_CREATE_ROLES: string[] = [
+  'admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician',
+];
+
 /** `/utilizatori` — administration only, aligned with the page guard. */
 export const ADMIN_ROLES: string[] = ['admin'];
 
@@ -154,6 +159,7 @@ export type AppRoute =
   | '/issues'
   | '/pontaj'
   | '/rapoarte'
+  | '/rapoarte/form'
   | '/avize'
   | '/stocuri'
   | '/cheltuieli'
@@ -187,6 +193,7 @@ export const ROUTE_ROLES = {
   '/issues': OPERATIONAL_ROLES,
   '/pontaj': OPERATIONAL_ROLES,
   '/rapoarte': OPERATIONAL_ROLES,
+  '/rapoarte/form': DAILY_REPORT_CREATE_ROLES,
   '/avize': [...OPERATIONAL_ROLES, 'procurement'],
   '/stocuri': OPERATIONAL_ROLES,
   '/cheltuieli': [...OPERATIONAL_ROLES, 'finance'],
