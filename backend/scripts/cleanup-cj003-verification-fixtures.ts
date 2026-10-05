@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 const FIXTURE_CODES = ['SMOKE-40926', 'PH2-VER-01', 'P3-GATE-T1', 'P3-GATE-T2'];
 
 async function main() {
-  if (process.env.NODE_ENV === 'production') throw new Error('Refusing verification-fixture cleanup in production.');
+  if (process.env.NODE_ENV !== 'development') throw new Error('Refusing verification-fixture cleanup unless NODE_ENV=development.');
   const apply = process.argv.includes('--apply');
   const project = await prisma.project.findUnique({ where: { code: 'CJ-003' }, select: { id: true } });
   if (!project) throw new Error('CJ-003 project not found.');
