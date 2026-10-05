@@ -99,6 +99,14 @@ class FakeDb {
           null;
         return found ? structuredClone(found) : null;
       },
+      findFirst: async ({ where }: any) => {
+        const found = this.users.find(
+          (u) =>
+            u.id === where.id &&
+            (!where.organization_id || u.organization_id === where.organization_id),
+        );
+        return found ? structuredClone(found) : null;
+      },
     },
 
     session: {
