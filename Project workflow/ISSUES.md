@@ -621,19 +621,19 @@ Remaining (optional guardrail): make `web:dev` fail fast when 3000/3001 is alrea
 ---
 
 ## ISSUE-050 — Pre-existing verification fixture tasks appear in the CJ-003 task list next to the seeded field work
-**Status:** 🔍 `OPEN` (recorded 2026-09-29 during the team seed; needs a dev-DB/product decision)
+**Status:** ✅ `RESOLVED` (2026-10-05)
 
 ### Description
-Project CJ-003 (Parc Solar Cluj) still contains 4 tasks created by earlier verification gates and never cleaned up: `SMOKE-40926` ("Smoke Task (Tasks slice)", `IN_PROGRESS`), `PH2-VER-01` ("Phase2 Verify Task", `READY`), `P3-GATE-T1` ("P3 gate task one", `PLANNED`) and `P3-GATE-T2` ("P3 gate task two", `BLOCKED`). None of them has a `task_assignment` or a `daily_plan_task` row.
+Project CJ-003 (Parc Solar Cluj) contains 4 historical verification tasks that are now archived from normal operational listings: `SMOKE-40926` ("Smoke Task (Tasks slice)", `IN_PROGRESS`), `PH2-VER-01` ("Phase2 Verify Task", `READY`), `P3-GATE-T1` ("P3 gate task one", `PLANNED`) and `P3-GATE-T2` ("P3 gate task two", `BLOCKED`). None of them has a `task_assignment` or a `daily_plan_task` row.
 
-The team seed added the real Cluj work (`CJ-003-T01..T04`) beside them, so `/tasks` for Cluj shows 8 tasks (4 real + 4 fixtures) while Arad and Timisoara show 4.
+The team seed added the real Cluj work (`CJ-003-T01..T04`) beside them. Normal `/tasks` listings now show only the 4 real Cluj work items; the historical fixture rows remain queryable by ID for evidence.
 
 ### Impact
 - Demo/QA noise: a Cluj team leader sees four test items that look like real work orders.
 - They are also **documented evidence**: `VERIFICATION.md` and `HANDOFF.md` reference `SMOKE-40926` (task create-contract evidence, `id=a2df4f25-…`) and `PH2-VER-01` (Phase 2 Tasks gate E browser run: create → transition `PLANNED→READY` → quantity save), so deleting them silently would invalidate those references.
 
-### Required Action
-Pick one and stay consistent: (a) keep them and distinguish them as fixtures in the dataset/UI, or (b) delete them **and** annotate the affected `VERIFICATION.md` rows so the evidence trail stays honest. `backend/scripts/seed-hiieko-teams.ts` deliberately does not touch them; if cleanup is chosen, do it as a separate reviewed step (deleting a task cascades to its assignments/plan tasks — there are none here).
+### Resolution
+Added a generic `Task.is_archived` flag and an index on `(project_id, is_archived)`. Normal `GET /api/tasks` listings exclude archived tasks, while `GET /api/tasks/:id` remains available so historical verification evidence is not destroyed. Migration `20261005080000_archive_cj003_verification_fixtures` marks exactly these four CJ-003 fixture codes as archived. The development cleanup script was changed from destructive deletion to safe archiving.
 
 ---
 
