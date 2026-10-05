@@ -264,7 +264,7 @@ export function ControlTowerSurface() {
                   openDrilldown(
                     t('control_tower.overdue_projects', locale),
                     'PROJECTS',
-                    t('control_tower.overdue_projects_rule', locale),
+                    t('control_tower.overdue_rule', locale),
                     overview.projects.overdueProjectsList,
                   )
                 }
