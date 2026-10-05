@@ -58,7 +58,7 @@ export function ControlTowerDrilldownDrawer({
               {data.category}
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              {filteredItems.length} {t(filteredItems.length === 1 ? 'control_tower.drawer.record' : 'control_tower.drawer.records', locale)}
+              {filteredItems.length} {filteredItems.length === 1 ? t('control_tower.drawer.record', locale) : t('control_tower.drawer.records', locale)}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-md">
@@ -96,7 +96,7 @@ export function ControlTowerDrilldownDrawer({
               </div>
             ) : (
               filteredItems.map((item, idx) => (
-                <DrilldownItemCard key={item.id || idx} item={item} category={data.category} />
+                <DrilldownItemCard key={item.id || idx} item={item} category={data.category} locale={locale} />
               ))
             )}
           </div>
@@ -115,7 +115,7 @@ export function ControlTowerDrilldownDrawer({
   );
 }
 
-function DrilldownItemCard({ item, category }: { item: any; category: string }) {
+function DrilldownItemCard({ item, category, locale }: { item: any; category: string; locale: 'ro' | 'en' }) {
   // 1. BLOCKED TASKS
   if (item.blockedReason !== undefined || category === 'PRODUCTION_BLOCKED') {
     return (
