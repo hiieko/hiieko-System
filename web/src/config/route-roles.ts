@@ -159,6 +159,7 @@ export type AppRoute =
   | '/issues'
   | '/pontaj'
   | '/rapoarte'
+  | '/rapoarte/form'
   | '/avize'
   | '/stocuri'
   | '/cheltuieli'
