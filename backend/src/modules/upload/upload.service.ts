@@ -11,6 +11,7 @@ import { StorageService } from '../../common/storage/storage.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { DocumentsService } from '../documents/documents.service';
+import { isGlobalProjectScopeRole } from '../../common/auth/project-scope';
 
 /**
  * MIME allowlist for uploaded receipts/documents. Matches the set accepted by
@@ -207,21 +208,45 @@ export class UploadService {
   }
 
   /**
-   * Authenticated retrieval of a stored receipt blob. Only the original
-   * uploader (or an elevated role) may download a file.
+   * Authenticated retrieval of a stored document blob. Project members may
+   * download project-scoped documents; unscoped documents remain uploader/elevated-only.
    */
   async readFile(documentId: string, user: AuthenticatedUser): Promise<StoredFileResult> {
     const document = await this.prisma.document.findUnique({
       where: { id: documentId },
-      include: { versions: { orderBy: { version: 'desc' } } },
+      include: {
+        versions: { orderBy: { version: 'desc' } },
+        project: { select: { id: true, organization_id: true } },
+      },
     });
     if (!document) throw new NotFoundException('Document not found');
 
     const version = document.versions[0];
     if (!version) throw new NotFoundException('Document has no stored file');
 
-    if (version.uploaded_by !== user.id && !ELEVATED_ROLES.includes(user.role)) {
-      throw new ForbiddenException('You do not have access to this file');
+    const isUploader = version.uploaded_by === user.id;
+    const isElevated = ELEVATED_ROLES.includes(user.role);
+    const hasGlobalProjectScope = isGlobalProjectScopeRole(user.role);
+
+    if (!isUploader && !isElevated) {
+      if (!document.project_id) {
+        throw new ForbiddenException('You do not have access to this file');
+      }
+
+      if (!hasGlobalProjectScope && !user.projectRoles?.[document.project_id]) {
+        const member = await this.prisma.projectMember.findUnique({
+          where: {
+            project_id_user_id: {
+              project_id: document.project_id,
+              user_id: user.id,
+            },
+          },
+          select: { user_id: true },
+        });
+        if (!member) {
+          throw new ForbiddenException('You do not have access to this file');
+        }
+      }
     }
 
     const content = await this.storage.read(version.storage_path);
