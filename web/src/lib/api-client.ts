@@ -1657,6 +1657,27 @@ export interface IApiClient {
     file: File,
     options: { projectId: string; documentType?: string; title?: string },
   ): Promise<ApiResponse<any>>;
+  downloadDocument(documentId: string): Promise<Blob>;
+
+  async downloadDocument(documentId: string): Promise<Blob> {
+    const headers: Record<string, string> = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    const response = await fetch(`${this.baseUrl}/api/upload/${encodeURIComponent(documentId)}`, {
+      method: 'GET',
+      headers,
+    });
+    if (!response.ok) {
+      let message = 'Document download failed';
+      try {
+        const data = await response.json();
+        message = data.message || data.error || message;
+      } catch {
+        // Binary/error response was not JSON.
+      }
+      throw new ApiError(message, response.status);
+    }
+    return response.blob();
+  }
 
   // File Upload
   uploadFile(
