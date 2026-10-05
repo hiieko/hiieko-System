@@ -1689,22 +1689,18 @@ Object.assign(d, {
   'workforce.no_account': T('Fără cont', 'No account'),
   'general.saving': T('Se salvează...', 'Saving...'),
   'general.create': T('Creează', 'Create'),
-  'notifications.subtitle': T('Centrul de notificări pentru evenimentele din sistem.', 'The notification centre for system events.'),
   'worker.elapsed_since_checkin': T('scurs de la pontarea de intrare', 'elapsed since check-in'),
-  'worker.geofence_inside': T('În perimetru', 'In perimeter'),
   'projects.stage_created': T('Etapă creată', 'Stage created'),
   'projects.stage_name': T('Nume etapă *', 'Stage Name *'),
   'projects.stage_placeholder': T('ex. Fundație', 'e.g. Foundation'),
   'projects.updated': T('Proiect actualizat', 'Project updated'),
-  'projects.start_date': T('Data început', 'Start Date'),
-  'issues.subtitle': T('Raportează problemele întâlnite pe șantier și urmărește rezolvarea lor', 'Report the issues found on site and track their resolution'),
   'issues.created_success': T('Problema a fost raportată!', 'Issue was reported!'),
   'issues.description_placeholder': T('Descrie problema în detaliu...', 'Describe the issue in detail...'),
+  'notifications.system_subtitle': T('Centrul de notificări pentru evenimentele din sistem.', 'The notification centre for system events.'),
   'projects.refresh': T('Reîmprospătează', 'Refresh'),
   'projects.adding': T('Se adaugă...', 'Adding...'),
   'projects.add': T('Adaugă', 'Add'),
   'projects.remove': T('Elimină', 'Remove'),
-  'projects.cancel': T('Anulează', 'Cancel'),
 });
 
 export function t(key: string, locale: Locale = 'ro'): string {
