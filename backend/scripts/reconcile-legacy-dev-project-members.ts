@@ -14,7 +14,7 @@ const ASSIGNMENTS: Array<{ email: string; projectCode: string }> = [
 ];
 
 async function main() {
-  if (process.env.NODE_ENV === 'production') throw new Error('Refusing development-user reconciliation in production.');
+  if (process.env.NODE_ENV !== 'development') throw new Error('Refusing development-user reconciliation unless NODE_ENV=development.');
   const apply = process.argv.includes('--apply');
   const projects = await prisma.project.findMany({
     where: { code: { in: ['AR-001', 'TM-002', 'CJ-003'] } },
