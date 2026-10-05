@@ -124,6 +124,9 @@ export interface IMobileApiClient {
     notes?: string;
   }): Promise<ApiResponse<any>>;
 
+  // Tasks
+  getTasks(projectId?: string): Promise<ApiResponse<any[]>>;
+
   // Daily Reports (P4.2 aligned with backend CreateDailyReportDto)
   createDailyReport(data: {
     projectId: string;
@@ -375,6 +378,15 @@ export class NestMobileApiClient {
     return this.request<ApiResponse<any[]>>(
       `/api/attendance${queryString ? `?${queryString}` : ''}`
     );
+  }
+
+  // ============================================================================
+  // TASKS
+  // ============================================================================
+
+  async getTasks(projectId?: string): Promise<ApiResponse<any[]>> {
+    const query = projectId ? '?projectId=' + encodeURIComponent(projectId) : '';
+    return this.request<ApiResponse<any[]>>('/api/tasks' + query);
   }
 
   // ============================================================================
