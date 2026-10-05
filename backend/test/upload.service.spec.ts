@@ -137,6 +137,37 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
     expect(audit.record).toHaveBeenCalled();
   });
 
+  it('persists project scope for project document uploads', async () => {
+    storage.save.mockResolvedValue({
+      key: 'receipts/2026/10/uuid-project.pdf',
+      originalName: 'site-plan.pdf',
+      mimeType: 'application/pdf',
+      size: 14,
+      checksum: 'project-checksum',
+    });
+    documents.create.mockResolvedValue({ id: 'doc-project-1' });
+
+    await service.uploadFile(
+      file({ mimetype: 'application/pdf', originalname: 'site-plan.pdf' }),
+      undefined,
+      undefined,
+      worker,
+      { documentType: 'plan_tehnic', title: 'Site plan', projectId: 'project-1' },
+    );
+
+    expect(documents.create).toHaveBeenCalledWith(
+      {
+        projectId: 'project-1',
+        documentType: DocumentTypeEnum.OTHER,
+        title: 'Site_plan',
+        storagePath: 'receipts/2026/10/uuid-project.pdf',
+        fileSize: 14,
+        checksum: 'project-checksum',
+      },
+      'worker-1',
+    );
+  });
+
   it('forbids attaching a document to an expense the user did not submit', async () => {
     prisma.expense.findUnique.mockResolvedValue({ id: 'e-1', submitted_by_id: 'someone-else' });
     await expect(service.uploadFile(file(), 'expense', 'e-1', worker)).rejects.toThrow(
