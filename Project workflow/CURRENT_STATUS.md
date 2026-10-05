@@ -2,8 +2,8 @@
 | **OCR** | **\xf0\x9f\xa7\x8a FROZEN / DEFERRED** | OCR is not a current workstream. Deferred to final milestone per CLINE_MASTER_ROADMAP.md section 17. |
 # HIIEKO — Current Status
 
-**Last Updated:** 2026-09-26 (Phase 12 — Worker Final Defect Pass COMPLETE; Phase 11 — Team Leader Mutation Acceptance COMPLETE; 25 suites / 202 tests, 23 web pages, PostgreSQL 18)
-**Version:** pre-1.0 (NOT production-ready)
+**Last Updated:** 2026-10-05 (Phase 1 acceptance/security closure after PR #1 + PR #2; both merged to `master`, CI green, Vercel deployment successful)
+**Version:** pre-1.0 (Phase 1 authorization hardening accepted; broader production-readiness gaps remain)
 
 ---
 
@@ -161,7 +161,24 @@ Implemented full project-scoped authorization across all 102 routes:
 
 8. **Tests** — 13 guard unit tests (global roles, member access, fail-closed, entity-derived, unauthenticated). E2E test at `e2e/project-access.js`.
 
-## 6. Next development step
+## 6. Phase 1 acceptance / closure
+
+**Phase 1 authorization hardening: COMPLETE (2026-10-05).**
+
+- PR #1 (`fix: restore production document upload`) merged to `master` after correcting the document-type enum in the upload test; post-fix Typecheck, Tests, and Build all passed.
+- PR #2 (`fix: harden users roles and organization boundaries`) merged to `master` after correcting stale test doubles for the `AuthenticatedUser` contract and organization-scoped `findFirst`; post-fix Typecheck, Tests, and Build all passed.
+- Authorization review confirmed organization scoping in `UsersService.findAll/findOne`, ADMIN/OWNER-only role/status mutation, session revocation on suspension, document project guards, entity-derived document project checks, and PM exclusion from the global project-scope allowlist.
+- Vercel deployment for the final `master` merge commit completed successfully.
+- No live backend HTTP smoke test was claimed here because the available deployment integration exposes Vercel deployment status but not an authenticated runtime API test harness. Code-level acceptance and CI evidence are green.
+
+### Remaining production-readiness gaps
+- No staging/production CI pipeline configured
+- No monitoring, alerting, or structured logging at production level
+- No authentication rate limiting (ISSUE-021, OPEN)
+- No refresh-token rotation or revocation (ISSUE-022, OPEN)
+- These are follow-up hardening items, not blockers for the completed Phase 1 authorization work.
+
+## 7. Next development step
 
 **Solar Configurator integration COMPLETE.** The solar feature branch has been merged and verified.
 
@@ -182,10 +199,9 @@ Implemented full project-scoped authorization across all 102 routes:
 6. Fix known gaps (missing route, missing role decorators, activate PermissionsGuard)
 7. Perform frontend audit (web + mobile coverage against backend modules)
 
-## 7. Known carried-over gaps
+## 8. Known carried-over gaps
 
-- `GET /api/users/:id` — No organization-scope enforcement (ISSUE-018, OPEN)
-- `GET /api/users/:id` — Global-role users can access any user by ID regardless of organization (ISSUE-019, OPEN)
+- ISSUE-018 / ISSUE-019: **RESOLVED by PR #2** — `GET /api/users/:id` and related user lookups are organization-scoped through the authenticated actor's `organizationId`.
 - `POST /api/inventory/transfer` — Guard checks both sourceProjectId and targetProjectId (P5 GAP1 fixed); global-role users bypass membership checks by design (see ISSUE-019)
 - No authentication rate limiting (ISSUE-021, OPEN)
 - No refresh-token rotation or revocation (ISSUE-022, OPEN)
@@ -195,12 +211,13 @@ Implemented full project-scoped authorization across all 102 routes:
 - `GET /api/users/:id` — No organization-scope enforcement. Deferred from P5.
 - `POST /api/inventory/transfer` — Uses sourceProjectId/targetProjectId; guard checks both (fixed in P5). Residual: global-role bypass by design.
 
-## 8. Project authorization
+## 9. Project authorization
 
 **R2.1 P5: COMPLETE** — Full project-scoped authorization enforced.
 
 ### Global-scope roles (membership-exempt)
-- ADMIN, OWNER, PM, MANAGER — bypass membership checks, retain organization-level access.
+- ADMIN, OWNER, MANAGER — bypass project membership checks.
+- PM is **not** global-scope; PM project access requires a `ProjectMember` assignment.
 
 ### Membership lifecycle
 - **Provisioning:** Auto-created on project creation. Manual via `POST /api/projects/:projectId/members`.
@@ -214,7 +231,7 @@ The guard resolves project_id from entity ID for: tasks, daily plans, daily repo
 ### Purchase orders
 Project-scoped. `GET /api/procurement/purchase-orders` accepts optional `projectId`. When omitted, returns all POs (filtered by global-scope role or membership).
 
-## 9. Known production-readiness gaps
+## 10. Known production-readiness gaps
 
 - Pre-1.0; not ready for production deployment
 - No staging/production CI pipeline configured
@@ -222,7 +239,7 @@ Project-scoped. `GET /api/procurement/purchase-orders` accepts optional `project
 - No authentication rate limiting (ISSUE-021, OPEN)
 - No refresh-token rotation or revocation (ISSUE-022, OPEN)
 
-## 10. Supabase future
+## 11. Supabase future
 
 **No new Supabase functionality will be introduced.** The migration from Supabase to NestJS+PostgreSQL is complete. Any future changes will use the existing architecture.
 
