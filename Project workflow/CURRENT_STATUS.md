@@ -2,7 +2,7 @@
 | **OCR** | **\xf0\x9f\xa7\x8a FROZEN / DEFERRED** | OCR is not a current workstream. Deferred to final milestone per CLINE_MASTER_ROADMAP.md section 17. |
 # HIIEKO — Current Status
 
-**Last Updated:** 2026-10-05 (documentation reconciliation after Mobile sync hardening; PR #27 merged; PRs #20/#21 closed as obsolete; PR #26 remains active)
+**Last Updated:** 2026-10-05 (documentation reconciliation after Mobile sync hardening; PR #27 merged; PRs #20/#21 closed as obsolete; PR #26 merged)
 **Version:** pre-1.0 (Phase 1 authorization hardening accepted; broader production-readiness gaps remain)
 
 ---
@@ -183,7 +183,7 @@ Implemented full project-scoped authorization across all 102 routes:
 
 ## 7. Remaining remediation / product work
 
-**Core remediation slices 1–7: COMPLETE.** Slice 8 CI enforcement is active in the repository. Slice 9 frontend contract alignment is represented by the active frontend permission UX PR (#26).
+**Core remediation slices 1–7: COMPLETE.** Slice 8 CI enforcement is active in the repository. Slice 9 frontend contract alignment is complete with PR #26 merged.
 
 **R2.6 — Core Operations Completion (Implementation Audit).** R2.1 Sites→Projects is fully complete across all 6 phases. See `IMPLEMENTATION_ROADMAP.md` for the next milestones.
 
