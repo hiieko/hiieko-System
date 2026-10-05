@@ -46,6 +46,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle, roles: ROUTE_ROLES['/issues'] },
       { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock, roles: ROUTE_ROLES['/pontaj'] },
       { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText, roles: ROUTE_ROLES['/rapoarte'] },
+      { href: '/documente', i18nKey: 'nav.documente', label: 'Documente', icon: FileText, roles: ROUTE_ROLES['/documente'] },
       { href: '/avize', i18nKey: 'nav.avize', label: 'Livrări & Avize', icon: Truck, roles: ROUTE_ROLES['/avize'] },
       { href: '/stocuri', i18nKey: 'nav.stocuri', label: 'Materiale & Stoc', icon: Boxes, roles: ROUTE_ROLES['/stocuri'] },
       { href: '/cheltuieli', i18nKey: 'nav.cheltuieli', label: 'Cheltuieli', icon: Euro, roles: ROUTE_ROLES['/cheltuieli'] },
