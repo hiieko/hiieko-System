@@ -204,6 +204,7 @@ export const ROUTE_ROLES = {
   '/qa': QA_ROLES,
   '/aprobare': APPROVAL_ROLES,
   '/utilizatori': ADMIN_ROLES,
+  '/documente': null,
   '/notificari': null,
   '/profil': null,
 } satisfies Record<AppRoute, string[] | null>;
