@@ -9,7 +9,7 @@ import { t, useLocale, type DailyReport } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { ConfirmDialog, useToast } from '../../components/ui';
-import { submitDailyReport } from '../../features/daily-reports';
+import { submitDailyReport, reviewDailyReport } from '../../features/daily-reports';
 import { useRouter } from 'next/navigation';
 import { 
   FileText, 
@@ -37,6 +37,10 @@ function RapoartePageInner() {
   // P4.4 — submitting a DRAFT from the list goes through the same confirmation gate as the form.
   const [submitTarget, setSubmitTarget] = useState<DailyReport | null>(null);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<DailyReport | null>(null);
+  const [reviewAction, setReviewAction] = useState<'APPROVED' | 'REJECTED'>('APPROVED');
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
   const { user } = useAuth();
   const { selectedProjectId } = useProject();
   const { locale } = useLocale();
@@ -45,6 +49,7 @@ function RapoartePageInner() {
   const userRole = user?.role?.toLowerCase();
   const isWorker = userRole === 'worker';
   const canCreate = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician'].includes(userRole || '');
+  const canReview = ['admin', 'owner', 'manager', 'pm', 'site_manager'].includes(userRole || '');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -95,6 +100,28 @@ function RapoartePageInner() {
       setSubmitTarget(null);
     }
   }, [submitTarget, submittingId, locale, toastSuccess, toastError, loadData]);
+
+  const confirmReview = useCallback(async () => {
+    const target = reviewTarget;
+    if (!target || reviewingId) return;
+    const comment = reviewComment.trim();
+    if (reviewAction === 'REJECTED' && !comment) {
+      toastError('Motivul respingerii este obligatoriu.');
+      return;
+    }
+    setReviewingId(target.id);
+    try {
+      await reviewDailyReport(target.id, reviewAction, comment || undefined);
+      toastSuccess(reviewAction === 'APPROVED' ? 'Raport aprobat.' : 'Raport respins.');
+      await loadData();
+    } catch (err: any) {
+      toastError(err?.message || 'Nu s-a putut procesa aprobarea.');
+    } finally {
+      setReviewingId(null);
+      setReviewTarget(null);
+      setReviewComment('');
+    }
+  }, [reviewTarget, reviewingId, reviewAction, reviewComment, toastError, toastSuccess, loadData]);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -203,14 +230,45 @@ function RapoartePageInner() {
                     </>
                   ) : (
                     <>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                        Transmis spre Aprobare
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${report.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : report.status === 'REJECTED' ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {report.status === 'APPROVED' ? 'Aprobat' : report.status === 'REJECTED' ? 'Respins' : 'Transmis spre Aprobare'}
                       </span>
-                      {isWorker ? null : (<button type="button" className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors"><Check className="w-3.5 h-3.5 mr-1" />Aproba Raport</button>)}
+                      {report.status === 'SUBMITTED' && canReview && report.team_leader_id !== user?.id && (
+                        <div className="flex items-center gap-2">
+                          <button type="button" disabled={reviewingId === report.id}
+                            onClick={() => { setReviewAction('APPROVED'); setReviewComment(''); setReviewTarget(report); }}
+                            className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
+                            <Check className="w-3.5 h-3.5 mr-1" />Aproba
+                          </button>
+                          <button type="button" disabled={reviewingId === report.id}
+                            onClick={() => { setReviewAction('REJECTED'); setReviewComment(''); setReviewTarget(report); }}
+                            className="inline-flex items-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
+                            <X className="w-3.5 h-3.5 mr-1" />Respinge
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
               </div>
+
+              {report.approvals && report.approvals.length > 0 && (
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+                  {report.approvals.map((approval: any) => (
+                    <div key={approval.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 text-xs">
+                      <div>
+                        <span className="font-semibold text-slate-700">
+                          {approval.action === 'APPROVED' ? 'Aprobat' : approval.action === 'REJECTED' ? 'Respins' : approval.action}
+                        </span>
+                        <span className="text-slate-500 ml-2">
+                          de {approval.reviewer?.profile?.full_name || 'Reviewer'}
+                        </span>
+                      </div>
+                      {approval.comment && <p className="text-slate-600 sm:max-w-xl">„{approval.comment}”</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Body */}
               <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -309,6 +367,43 @@ function RapoartePageInner() {
         onConfirm={confirmSubmit}
         onCancel={() => { if (!submittingId) setSubmitTarget(null); }}
       />
+
+      {reviewTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="review-dialog-title">
+          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl border border-slate-200">
+            <div className="p-5 border-b border-slate-100">
+              <h2 id="review-dialog-title" className="text-lg font-bold text-slate-900">
+                {reviewAction === 'APPROVED' ? 'Aprobă raportul' : 'Respinge raportul'}
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">
+                {reviewAction === 'APPROVED'
+                  ? 'Confirmă că raportul este verificat și poate fi închis.'
+                  : 'Explică ce trebuie corectat. Raportul rămâne înregistrat ca respins.'}
+              </p>
+            </div>
+            <div className="p-5">
+              <label htmlFor="review-comment" className="block text-sm font-semibold text-slate-700 mb-2">
+                Comentariu {reviewAction === 'REJECTED' ? '(obligatoriu)' : '(opțional)'}
+              </label>
+              <textarea id="review-comment" value={reviewComment} onChange={(e) => setReviewComment(e.target.value)}
+                rows={4} autoFocus
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-hii-500"
+                placeholder="Observații pentru audit / echipă..." />
+            </div>
+            <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+              <button type="button" disabled={!!reviewingId} onClick={() => setReviewTarget(null)}
+                className="px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
+                Anulează
+              </button>
+              <button type="button" disabled={!!reviewingId || (reviewAction === 'REJECTED' && !reviewComment.trim())}
+                onClick={confirmReview}
+                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-50 ${reviewAction === 'APPROVED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}>
+                {reviewingId ? 'Se procesează…' : reviewAction === 'APPROVED' ? 'Confirmă aprobarea' : 'Confirmă respingerea'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -26,8 +26,20 @@ import { ProjectScope } from '../../common/auth/decorators/project-scope.decorat
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { UserRoleEnum } from '@prisma/client';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
 import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
+
+
+class ReviewDailyReportDto {
+  @IsIn(['APPROVED', 'REJECTED'])
+  action!: 'APPROVED' | 'REJECTED';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  comment?: string;
+}
 
 @ApiTags('Daily Reports')
 @Controller('api/daily-reports')
@@ -107,6 +119,26 @@ export class DailyReportsController {
     // 200 (not 201): nothing new is created from the client's point of view — the report's
     // state changes, and a replay returns the same revision.
     return this.dailyReportsService.submit(id, user.id, user.role);
+  }
+
+
+  @Post(':id/review')
+  @RequireEntityProjectAccess('dailyReport', 'id')
+  @HttpCode(HttpStatus.OK)
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.OWNER,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.PM,
+    UserRoleEnum.SITE_MANAGER,
+  )
+  @ApiOperation({ summary: 'Approve or reject a submitted daily report' })
+  async review(
+    @Param('id') id: string,
+    @Body() dto: ReviewDailyReportDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.dailyReportsService.review(id, user.id, user.role, dto.action, dto.comment);
   }
 
   @Patch(':id')

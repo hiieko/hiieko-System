@@ -41,3 +41,17 @@ export async function submitDailyReport(id: string): Promise<DailyReportSubmitRe
   // Defensive: an envelope that carries only the updated report (no revision wrapper).
   return { report: payload as DailyReport, alreadySubmitted: false };
 }
+
+
+export async function reviewDailyReport(
+  id: string,
+  action: 'APPROVED' | 'REJECTED',
+  comment?: string,
+): Promise<DailyReport> {
+  const res = await apiClient.request<any>(`/api/daily-reports/${id}/review`, {
+    method: 'POST',
+    body: JSON.stringify({ action, comment }),
+  });
+  const payload: any = res?.data ?? res;
+  return payload as DailyReport;
+}

@@ -44,6 +44,8 @@ const DAILY_REPORT_DISPLAY_INCLUDE: Prisma.DailyReportInclude = {
   production: true,
   ohs_items: true,
   revisions: { orderBy: { revision_number: 'asc' } },
+  reviewer: { include: { profile: true } },
+  approvals: { orderBy: { created_at: 'asc' }, include: { reviewer: { include: { profile: true } } } },
 };
 
 /** One consumed material line of a finalization (returned to the client + written to the revision). */
@@ -190,6 +192,8 @@ export class DailyReportsService {
         materials: { include: { material: true } },
         production: true,
         ohs_items: true,
+        reviewer: { include: { profile: true } },
+        approvals: { orderBy: { created_at: 'asc' }, include: { reviewer: { include: { profile: true } } } },
       },
       orderBy: { report_date: 'desc' },
     });
@@ -673,6 +677,78 @@ export class DailyReportsService {
     });
   }
 
+  /**
+   * Review a submitted daily report. Approval decisions are immutable audit events.
+   * Submission already finalized inventory and created an immutable revision, so a
+   * rejected report is not silently reopened into the stock-consuming submit path.
+   */
+  async review(
+    reportId: string,
+    reviewerId: string,
+    reviewerRole: string,
+    action: 'APPROVED' | 'REJECTED',
+    comment?: string,
+  ) {
+    const normalizedComment = comment?.trim() || undefined;
+    if (action === 'REJECTED' && !normalizedComment) {
+      throw new BadRequestException('A rejection comment is required.');
+    }
+
+    const allowedRoles = ['ADMIN', 'OWNER', 'MANAGER', 'PM', 'SITE_MANAGER'];
+    if (!allowedRoles.includes(reviewerRole)) {
+      throw new ForbiddenException('Only management roles may review daily reports.');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const report = await tx.dailyReport.findUnique({
+        where: { id: reportId },
+        select: { id: true, status: true, team_leader_id: true, project_id: true },
+      });
+      if (!report) throw new NotFoundException('Daily report ' + reportId + ' not found');
+      if (report.status !== DAILY_REPORT_SUBMITTED_STATUS) {
+        throw new BadRequestException(
+          'Cannot review report ' + reportId + ': status is ' + report.status + '. Only SUBMITTED reports can be reviewed.',
+        );
+      }
+
+      const existingApproval = await tx.dailyReportApproval.findFirst({
+        where: { daily_report_id: reportId },
+        orderBy: { created_at: 'desc' },
+      });
+      if (existingApproval) {
+        throw new ConflictException('Daily report ' + reportId + ' has already been reviewed.');
+      }
+
+      if (report.team_leader_id === reviewerId) {
+        throw new ForbiddenException('The report author cannot review their own report.');
+      }
+
+      const approval = await tx.dailyReportApproval.create({
+        data: { daily_report_id: reportId, reviewer_id: reviewerId, action, comment: normalizedComment },
+        include: { reviewer: { include: { profile: true } } },
+      });
+
+      const updated = await tx.dailyReport.update({
+        where: { id: reportId },
+        data: { status: action, reviewed_by: reviewerId, reviewed_at: new Date() },
+        include: DAILY_REPORT_DISPLAY_INCLUDE,
+      });
+
+      await this.auditService.record(
+        {
+          actorId: reviewerId,
+          action: action === 'APPROVED' ? 'DAILY_REPORT_APPROVED' : 'DAILY_REPORT_REJECTED',
+          entity: 'DailyReport',
+          entityId: reportId,
+          before: { status: report.status },
+          after: { status: action, reviewerId, comment: normalizedComment ?? null, approvalId: approval.id, projectId: report.project_id },
+        },
+        tx,
+      );
+
+      return updated;
+    });
+  }
   /**
    * P4.4 — THE trusted finalization core, shared by `submit()` (web DRAFT → SUBMITTED) and by
    * `create()` when the persisted status is already SUBMITTED (Mobile's status-less POST).

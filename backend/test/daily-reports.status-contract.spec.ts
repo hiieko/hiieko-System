@@ -16,7 +16,7 @@
 // stripped the entire PATCH body ({}), so DRAFT edits appeared to save but persisted nothing.
 // ============================================================================
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, INestApplication, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { DailyReportsService } from '../src/modules/daily-reports/daily-reports.service';
 import { DailyReportsController } from '../src/modules/daily-reports/daily-reports.controller';
@@ -321,5 +321,103 @@ describe('Daily Report HTTP contract (P4.3.1)', () => {
     const dto = serviceMock.create.mock.calls[0][1];
     expect(dto).toEqual(body);
     expect(dto.status).toBeUndefined();
+  });
+});
+
+// ── 3. Review workflow ──────────────────────────────────────────────────────
+
+describe('DailyReportsService — approval workflow', () => {
+  let service: DailyReportsService;
+  let prisma: any;
+  let audit: any;
+
+  beforeEach(async () => {
+    prisma = {
+      dailyReport: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'report-1',
+          status: 'SUBMITTED',
+          team_leader_id: 'leader-1',
+          project_id: 'project-1',
+        }),
+        update: jest.fn().mockResolvedValue({
+          id: 'report-1',
+          status: 'APPROVED',
+          approvals: [],
+          revisions: [],
+        }),
+      },
+      dailyReportApproval: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        create: jest.fn().mockResolvedValue({
+          id: 'approval-1',
+          daily_report_id: 'report-1',
+          reviewer_id: 'manager-1',
+          action: 'APPROVED',
+        }),
+      },
+      $transaction: jest.fn(async (callback: any) => callback(prisma)),
+    };
+    audit = { record: jest.fn().mockResolvedValue(true) };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        DailyReportsService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: AuditService, useValue: audit },
+        { provide: InventoryService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get(DailyReportsService);
+  });
+
+  it('approves a submitted report and records the approval and audit event', async () => {
+    const result = await service.review('report-1', 'manager-1', 'MANAGER', 'APPROVED');
+
+    expect(prisma.dailyReportApproval.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        daily_report_id: 'report-1',
+        reviewer_id: 'manager-1',
+        action: 'APPROVED',
+      }),
+    }));
+    expect(prisma.dailyReport.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'report-1' },
+      data: expect.objectContaining({ status: 'APPROVED', reviewed_by: 'manager-1' }),
+    }));
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'DAILY_REPORT_APPROVED',
+        entity: 'DailyReport',
+        entityId: 'report-1',
+      }),
+      prisma,
+    );
+    expect(result.status).toBe('APPROVED');
+  });
+
+  it('requires a comment when rejecting', async () => {
+    await expect(service.review('report-1', 'manager-1', 'MANAGER', 'REJECTED'))
+      .rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.dailyReportApproval.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects self-review', async () => {
+    await expect(service.review('report-1', 'leader-1', 'MANAGER', 'APPROVED'))
+      .rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.dailyReportApproval.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects duplicate review decisions', async () => {
+    prisma.dailyReportApproval.findFirst.mockResolvedValueOnce({ id: 'existing' });
+    await expect(service.review('report-1', 'manager-1', 'MANAGER', 'APPROVED'))
+      .rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('rejects review by a non-reviewer role', async () => {
+    await expect(service.review('report-1', 'worker-1', 'WORKER', 'APPROVED'))
+      .rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.dailyReport.findUnique).not.toHaveBeenCalled();
   });
 });
