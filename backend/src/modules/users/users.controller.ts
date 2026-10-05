@@ -16,7 +16,14 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MANAGER, UserRoleEnum.PM)
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.PM,
+    UserRoleEnum.SITE_MANAGER,
+    UserRoleEnum.FOREMAN,
+    UserRoleEnum.TEAM_LEADER,
+  )
   @ApiOperation({ summary: 'List users in the current organization' })
   async findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.usersService.findAll(user);
