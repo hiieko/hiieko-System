@@ -319,7 +319,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   it('rejects an invalid status value with 422', async () => {
     prisma.user.findFirst.mockResolvedValue(beforePENDING);
     await expect(
-      service.updateStatus('u1', { status: 'NOT_A_STATUS' as any }, 'admin-1'),
+      service.updateStatus('u1', { status: 'NOT_A_STATUS' as any }, { id: 'admin-1', email: 'admin@hiieko.local', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any),
     ).rejects.toThrow(UnprocessableEntityException);
   });
 
