@@ -499,7 +499,7 @@ propagation (ISSUE-059)` — 5 files, +242/−15: `web/src/components/PageTutori
 The `UNCOMMITTED` wording in the R1B.2 and R1B.1 entries below is **historical** (R1B.1 = `e0c1caf`,
 R1B.2 = `9e6a503`); the earlier Phase-1 `UNCOMMITTED - AWAITING CHECKPOINT` wording is historical too
 (Phase 1 = `0ec084a`, see the Phase-1 entry).
-**ISSUE-059 stays `FIXED`; R1B continues (ISSUE-055 untouched, ISSUE-056 deferred); the visual redesign
+**ISSUE-059 stays `FIXED`; R1B continues (ISSUE-055 untouched, ISSUE-056 RESOLVED 2026-10-05); the visual redesign
 remains PENDING.**
 
 ### 2026-09-30 - R1B.2: ISSUE-059 `PageTutorial` locale propagation (GREEN, UNCOMMITTED)
@@ -518,7 +518,7 @@ changed, no second i18n mechanism.
 | **FAIL-first (`HEAD`)** | 375 px × 17 routes × {RO, EN} = **34 records / 17 PASS / 17 FAIL** — every EN record rendered RO copy (`lang="en"`, `Panou Principal`, `Plan Zilnic`, `Forță de Muncă`, `Cum funcționează?`), 17/17 RO PASS (the fix must not change RO) |
 | **After the fix** | **46 records / 46 PASS** = 375 px × 17 routes × {RO, EN} + 768 px and 1440 px × {planning, teams, workforce} × {RO, EN}. Title/short/purpose/steps/role notes/important note/toggle labels asserted equal to values computed from `shared/src/translations.ts` + `shared/src/tutorials.ts` (1009 keys, 21/21 sections); `documentElement.lang` correct **46/46**; **0** raw `tutorial.*` keys (text + aria); **0** RO-only strings in EN; real login form + real header switcher + reload; real headless Chrome 154 over CDP against a production `next start` on `:3100` with the live API and DB |
 | **Gates** | `i18n:check` **PASS** (194 files, 1009/1009 keys), `guards:check` **PASS**, `typecheck` **exit 0** (shared + web + Mobile + backend), `web:typecheck` **exit 0**, `web:build` **exit 0** (25/25 pages), `npm test` **31 suites / 320 tests PASS**, root `db:verify` **41/41**, `db:verify --workspace=backend` **TOTAL 71 / FAILED 0** |
-| **ISSUE-057 / ISSUE-058** | untouched and still `FIXED`; `/` and `/control-tower` remain `375/375` at 375 px, ≥ 640 px unchanged. ISSUE-055 untouched, ISSUE-056 still deferred |
+| **ISSUE-057 / ISSUE-058** | untouched and still `FIXED`; `/` and `/control-tower` remain `375/375` at 375 px, ≥ 640 px unchanged. ISSUE-055 untouched, ISSUE-056 RESOLVED 2026-10-05 |
 | **Not claimed / observed** | `/pontaj` at 375 px: `main 405/375` (RO) / `378/375` (EN) — pre-existing at `HEAD` (also with the pre-fix bundle), inner scroller (`documentElement.scrollWidth` 375 = `innerWidth`), outside ISSUE-058's scope → reported, not fixed. Only `admin` swept. No pixel diff, no design review, no commit, no push |
 
 **R1B.2 DONE and uncommitted (1 tracked source file + 4 workflow docs). The R1B copy pass continues; the visual redesign remains PENDING.**
