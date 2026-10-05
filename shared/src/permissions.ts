@@ -44,6 +44,7 @@ export const canViewAllAttendance = (role: UserRole): boolean =>
   role === 'admin' ||
   role === 'owner' ||
   role === 'manager' ||
+  role === 'pm' ||
   role === 'site_manager' ||
   role === 'team_leader' ||
   role === 'foreman' ||
