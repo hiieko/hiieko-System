@@ -17,15 +17,15 @@ export class UsersController {
 
   @Get()
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.MANAGER, UserRoleEnum.PM)
-  @ApiOperation({ summary: 'List all users' })
+  @ApiOperation({ summary: 'List users in the current organization' })
   async findAll(@CurrentUser() user: AuthenticatedUser) {
-    return this.usersService.findAll(user.organizationId);
+    return this.usersService.findAll(user);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID' })
-  async findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
+  @ApiOperation({ summary: 'Get a user in the current organization' })
+  async findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.findOne(id, user);
   }
 
   @Patch(':id/role')
@@ -36,7 +36,7 @@ export class UsersController {
     @Body('role') role: UserRoleEnum,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.usersService.updateRole(id, role, user.id);
+    return this.usersService.updateRole(id, role, user);
   }
 
   @Patch(':id/status')
@@ -50,7 +50,7 @@ export class UsersController {
     @Body() body: { status?: UserStatusEnum; isActive?: boolean },
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.usersService.updateStatus(id, body, user.id);
+    return this.usersService.updateStatus(id, body, user);
   }
 
   @Patch('profile')
@@ -59,6 +59,6 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() data: { fullName?: string; phone?: string; language?: string },
   ) {
-    return this.usersService.updateProfile(user.id, data, user.id);
+    return this.usersService.updateProfile(user.id, data, user);
   }
 }
