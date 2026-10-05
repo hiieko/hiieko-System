@@ -1137,6 +1137,10 @@ after verification), the six pre-existing untracked entries (`.hiiEko/`, `BonFis
 was written is **historical** (pre-commit state); it was reconciled to this checkpoint by the docs-only
 commit *docs: record checkpoint commit 37c7e63*.
 
+### 2026-10-05 — ISSUE-056 R1B copy close-out
+
+**ISSUE-056 is RESOLVED.** Control Tower and drilldown user-visible copy now resolves through shared RO/EN translation keys; Control Tower currency formatting follows the active locale; Worker Attendance's remaining copy/diacritic debt is translated; Worker Dashboard no longer infers error styling from translated strings; and `ROLE_VISIBILITY_MATRIX.md` no longer contains the final literal `\\u2194` escape. No backend, Prisma, DB, permission, or Mobile runtime behavior changed.
+
 ## Next Actions
 
 1. **Vertical Slice 4 — Planning** (`/planning`) — audit DailyPlan controller/service before building.
