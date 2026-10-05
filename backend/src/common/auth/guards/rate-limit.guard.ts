@@ -83,7 +83,7 @@ export class RateLimitGuard implements CanActivate {
   ): Promise<boolean> {
     const windowStartMs = Math.floor(now / rule.windowMs) * rule.windowMs;
     const expiresAtMs = windowStartMs + rule.windowMs;
-    const key = `${route}|\${rule.scope}:${subject}`;
+    const key = `${route}|${rule.scope}:${subject}`;
 
     const rows = await this.prisma.$queryRaw<Array<{ count: number }>>(
       Prisma.sql`
