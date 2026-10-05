@@ -192,7 +192,7 @@ export function CreatePlanModal({
       title={t('planning.create_modal_title', locale)}
       size="full"
     >
-      <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
+      <div className="flex flex-col gap-4">
         {validationError && (
           <div
             role="alert"
@@ -264,11 +264,11 @@ export function CreatePlanModal({
           />
         </label>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
+        <div className="sticky bottom-0 -mx-5 mt-1 flex flex-col-reverse gap-2 border-t border-border-light bg-surface px-5 py-3 sm:-mx-6 sm:flex-row sm:justify-end sm:px-6">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting} className="min-h-11 sm:min-w-28">
             {t('planning.cancel', locale)}
           </Button>
-          <Button type="button" onClick={handleSubmit} disabled={submitting || !projectId} loading={submitting}>
+          <Button type="button" onClick={handleSubmit} disabled={submitting || !projectId} loading={submitting} className="min-h-11 sm:min-w-36">
             {submitting ? t('planning.submit_creating', locale) : t('planning.create', locale)}
           </Button>
         </div>

@@ -3,6 +3,8 @@ import type { Metadata } from 'next';
 import { LocaleProviderClient } from '../components/LocaleProviderClient';
 import { AuthProvider } from '../contexts/AuthContext';
 import { AppShell } from '../components/AppShell';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'HIIEKO — Sistem Opera\u021bional EPC',
@@ -15,13 +17,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ro" className="h-full">
+    <html lang="ro" className="h-full" suppressHydrationWarning>
+      <head>
+        <Script id="hiieko-theme-init" strategy="beforeInteractive">
+          {`(()=>{try{const s=localStorage.getItem('hiieko-theme-preference');const t=s==='light'||s==='dark'?s:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch{document.documentElement.dataset.theme='light'}})()`}
+        </Script>
+      </head>
       <body className="h-full hii-shell-canvas antialiased">
-        <LocaleProviderClient>
-          <AuthProvider>
-            <AppShell>{children}</AppShell>
-          </AuthProvider>
-        </LocaleProviderClient>
+        <ThemeProvider>
+          <LocaleProviderClient>
+            <AuthProvider>
+              <AppShell>{children}</AppShell>
+            </AuthProvider>
+          </LocaleProviderClient>
+        </ThemeProvider>
       </body>
     </html>
   );

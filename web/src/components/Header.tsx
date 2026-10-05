@@ -12,6 +12,7 @@ import { t, useLocale } from '@solar/shared';
 import { NAV_GROUPS } from '../config/navigation';
 import { GlobalQuickSearch } from './GlobalQuickSearch';
 import { usePathname } from 'next/navigation';
+import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -74,7 +75,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
-          className="lg:hidden"
+          className="min-h-11 min-w-11 lg:hidden"
           aria-label={t('header.menu', locale) || 'Deschide meniul'}
         >
           <Menu className="w-5 h-5" />
@@ -86,10 +87,10 @@ export function Header({ onMenuClick }: HeaderProps) {
         </nav>
 
         {/* Project selector */}
-        <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
+        <div className="flex min-w-0 max-w-[min(52vw,20rem)] items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm sm:px-3">
           <MapPin className="w-4 h-4 text-hii-500 shrink-0" aria-hidden="true" />
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 font-medium leading-tight">
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-[10px] font-medium leading-tight text-slate-400">
               {selectedProject
                 ? t('header.current_project', locale) || 'Proiect curent'
                 : t('header.all_projects', locale) || 'Toate proiectele'}
@@ -99,7 +100,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               onChange={(e) =>
                 setSelectedProjectId(e.target.value === 'all' ? '' : e.target.value)
               }
-              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-xs -mt-0.5 p-0"
+              className="max-w-full bg-transparent p-0 text-xs font-semibold -mt-0.5 text-slate-800 focus:outline-none cursor-pointer"
               disabled={projectsLoading}
               aria-label={t('header.select_project', locale) || 'Selectează proiect'}
             >
@@ -117,7 +118,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       {/* Right section */}
-      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
         <GlobalQuickSearch />
 
         <div className="relative">
@@ -143,17 +144,21 @@ export function Header({ onMenuClick }: HeaderProps) {
           )}
         </div>
 
-        <LanguageSwitcher />
+        <div className="hidden sm:block"><LanguageSwitcher /></div>
+
+        <div className="hidden sm:block">
+          <ThemeToggle />
+        </div>
 
         <Link
           href="/notificari"
           aria-label={t('nav.notificari', locale) || 'Notificări'}
-          className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full relative"
+          className="relative hidden rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 sm:inline-flex"
         >
           <Bell className="w-5 h-5" />
         </Link>
 
-        <div className="h-6 w-px bg-slate-200" aria-hidden="true" />
+        <div className="hidden h-6 w-px bg-slate-200 sm:block" aria-hidden="true" />
 
         {/* User dropdown menu */}
         <DropdownMenu

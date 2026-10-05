@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useId, useRef } from 'react';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { t, useLocale } from '@solar/shared';
 
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -15,6 +16,7 @@ interface ModalProps {
   size?: ModalSize;
   showClose?: boolean;
   className?: string;
+  closeOnBackdrop?: boolean;
 }
 
 const sizeStyles: Record<ModalSize, string> = {
@@ -33,8 +35,11 @@ export function Modal({
   size = 'md',
   showClose = true,
   className,
+  closeOnBackdrop = true,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const { locale } = useLocale();
 
   useFocusTrap(dialogRef, open);
 
@@ -68,34 +73,36 @@ export function Modal({
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-        onClick={onClose}
+        onClick={() => { if (closeOnBackdrop) onClose(); }}
         aria-hidden="true"
       />
       {/* Modal panel */}
       <div
         ref={dialogRef}
         className={clsx(
-          'relative w-full bg-white rounded-xl shadow-2xl border border-slate-200',
+          'relative flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-xl border border-border bg-surface text-content shadow-2xl',
           'animate-in fade-in zoom-in-95 duration-200',
           sizeStyles[size],
           className,
         )}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={!title ? t('a11y.dialog', locale) : undefined}
         tabIndex={-1}
       >
         {/* Header */}
         {(title || showClose) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border-light px-5 py-4 sm:px-6">
             {title && (
-              <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+              <h2 id={titleId} className="text-lg font-semibold text-content">{title}</h2>
             )}
             {showClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500"
-                aria-label="Inchide"
+                type="button"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-content-muted transition-colors hover:bg-surface-alt hover:text-content focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hii-500"
+                aria-label={t('general.close', locale)}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -103,7 +110,7 @@ export function Modal({
           </div>
         )}
         {/* Content */}
-        <div className="px-6 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">{children}</div>
       </div>
     </div>
   );

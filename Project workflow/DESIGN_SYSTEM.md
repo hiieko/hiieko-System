@@ -5,9 +5,9 @@
 >
 > Design reference: **OpenConstructionERP** (`datadrivenconstruction/OpenConstructionERP`) — pattern re-implementation only (see DEC-011).
 >
-> Fixed dark chrome (navy `#111827`), the `#F59E0B` accent and the `#49C89E` positive state are a
-> **product decision, not a theme** — Tailwind `darkMode` stays `off`, no `dark:` utility exists and there
-> is no user-facing theme switch (see **DEC-012**).
+> Fixed dark chrome (navy `#111827`), the `#F59E0B` accent and the `#49C89E` positive state are product
+> identity and remain unchanged in either content theme. Light/dark content surfaces are user-selectable
+> under **DEC-017**; shell palette and status meanings remain governed by **DEC-012**.
 
 ---
 
@@ -33,9 +33,9 @@
 
 ### 1.1 Chrome / accent / positive — Phase 1 shell + Worker "My Day" (DEC-012)
 
-*Fixed branding, **not** a theme: `darkMode` stays `off`, no `dark:` utility exists, and these values are
-reached only through the semantic aliases below — never through a media query, a user toggle or a
-per-role/per-page variant. A re-tint is a token/class change plus a new DEC.*
+*Fixed branding in both content themes: shell values are reached only through the semantic aliases below,
+never through a per-role/per-page variant. The user's theme preference changes content surfaces only
+(DEC-017). A shell re-tint still requires a new DEC.*
 
 | Role | HIIEKO token | CSS variable | Value | Used for |
 |---|---|---|---|---|
@@ -256,7 +256,7 @@ ignored by design.
 
 - **Do not** import OpenConstructionERP source files into the tree (AGPL-3.0; see DEC-011).
 - **Do not** add Radix UI, Headless UI, or any component library dependency — dual-author from OCE patterns.
-- **Do not** enable Tailwind dark mode or add any `dark:` utility/`prefers-color-scheme` rule: the navy chrome is **fixed branding, not a theme** (DEC-012). The token layer already has one palette; a second one needs a new decision.
+- **Do not** add page-specific dark palettes or freely mix `dark:` overrides into routes. The user-selected content theme is expressed through semantic tokens and the root `data-theme` attribute (DEC-017); shell chrome remains fixed brand identity (DEC-012).
 - **Do not** re-tint the shell per page, per role or per user, and do not swap the `#F59E0B` accent or the `#49C89E` positive state for another hue without a new DEC — every page's chrome must look identical.
 - **Do not** use the chrome accent/positive tokens as the content primary or as status badge colours: content surfaces keep `hii-500/600` and the semantic `success`/`warning`/`critical`/`info` tokens (DEC-012 §5).
 - **Do not** renumber roadmap phases; use `DESIGN_SYSTEM.md` for design-phase labeling, not `PROGRESS.md`.
@@ -313,4 +313,12 @@ tree. Until that date `web/tailwind.config.js` listed `./src/pages/**`, `./src/c
 | `Button` forwardRef | `web/src/components/ui/Button.tsx` | `frontend/src/shared/ui/Button.tsx` | pre-2026-09-27 |
 | `Modal` focus trap | `web/src/components/ui/Modal.tsx` | `frontend/src/shared/ui/Modal.tsx` | pre-2026-09-27 |
 | `EmptyState` dual-action | `web/src/components/ui/EmptyState.tsx` | `frontend/src/shared/ui/EmptyState.tsx` | pre-2026-09-27 |
+
+## 10. User-selectable content theme (DEC-017)
+
+The root `data-theme` is `light` or `dark`. First visit follows `prefers-color-scheme`; a user's explicit
+choice is stored as an appearance preference. The branded shell stays navy with the same amber accent in
+both modes. `--hii-surface*`, `--hii-border*`, `--hii-text*`, and semantic status tokens supply the content
+palette. Status chips retain their meaning and must also include text or an icon. The switch lives in the
+desktop utility area and mobile drawer; bottom navigation stays limited to core tasks.
 

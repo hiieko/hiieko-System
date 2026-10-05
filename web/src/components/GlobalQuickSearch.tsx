@@ -52,7 +52,7 @@ export function GlobalQuickSearch() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={locale === 'en' ? 'Search pages' : 'Caută pagini'}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-800 focus-visible:outline-offset-2"
+        className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-800 focus-visible:outline-offset-2"
       >
         <Search className="h-4 w-4" aria-hidden="true" />
         <span className="hidden xl:inline">{locale === 'en' ? 'Quick search' : 'Căutare rapidă'}</span>

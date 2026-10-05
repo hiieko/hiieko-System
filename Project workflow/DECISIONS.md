@@ -635,6 +635,41 @@ global bypass.
 
 ---
 
+# DEC-017 — User-selectable content theme with fixed product chrome
+
+**Date:** 2026-10-05
+**Status:** ACCEPTED (user-requested UX direction)
+**Supersedes:** DEC-012's prohibition on a user-selectable theme and theme toggle; DEC-012's fixed shell palette and content/status color roles remain in force.
+
+## Decision
+
+1. Add a user-selectable light/dark content theme to the web application. The existing `system` preference follows the operating-system setting; an explicit user choice is stored as the `hiieko-theme-preference` appearance preference in browser storage.
+2. Keep the branded shell fixed in both modes: navy chrome, amber active-navigation accent, and the existing positive/success palette. Do not create a per-role or per-page shell color variant.
+3. Drive page surfaces, borders, text, form controls, cards, overlays, and charts from semantic theme tokens. Do not make dark mode a database setting or change user/project authorization behavior.
+4. Place the switch in the desktop utility area and the mobile navigation drawer. The bottom navigation remains focused on the five high-frequency operational destinations.
+5. Status meaning remains stable across themes and is communicated by text/icon as well as color.
+
+## Why
+
+The product needs the requested comfortable low-light option while retaining its recognizable EPC shell. A semantic content palette lets existing routes adopt the mode consistently without turning role or page identity into a color choice.
+
+## Impact
+
+- `web/src/contexts/ThemeContext.tsx` and `web/src/components/ThemeToggle.tsx` own the appearance preference and control.
+- `web/src/app/globals.css` provides theme tokens and a compatibility layer while existing route classes move to semantic tokens.
+- `web/src/app/layout.tsx`, `Header.tsx`, and `Sidebar.tsx` expose and initialize the preference.
+- `shared/src/translations.ts` provides Romanian and English control labels.
+- Modal and confirmation primitives use semantic surfaces and safe viewport sizing.
+
+## Verification requirements
+
+- Review all page families in both modes at phone, tablet, and desktop sizes.
+- Check normal text contrast, status chips, maps/charts, dialogs, and native select options.
+- Confirm the theme persists after navigation/reload and still works when browser storage is unavailable.
+- Confirm the shell and role-filtered route access remain unchanged.
+
+---
+
 # Superseded Decisions
 Never silently delete old decisions. Mark them SUPERSEDED.
 

@@ -4,7 +4,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-:root {
+  :root {
   /* HIIEKO Brand Tokens */
   --hii-brand: #188C51;
   --hii-brand-hover: #0f7040;
@@ -402,4 +402,124 @@
   .v0-title { font-size:22px; }
   .v0-project-banner { align-items:flex-start; }
   .v0-project-status { margin-left:auto; grid-template-columns:1fr; row-gap:3px; }
+}
+
+/* User-selected content theme. Fixed navy shell and amber brand accent remain unchanged. */
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --hii-surface: #111827;
+  --hii-surface-muted: #0b1220;
+  --hii-surface-alt: #1f2937;
+  --hii-border: #374151;
+  --hii-border-light: #273449;
+  --hii-text: #f3f4f6;
+  --hii-text-secondary: #cbd5e1;
+  --hii-text-muted: #9ca3af;
+  --hii-success: #4ade80;
+  --hii-warning: #fbbf24;
+  --hii-critical: #f87171;
+  --hii-info: #60a5fa;
+  --hii-shell-content-bg: #0b1220;
+  --hii-brand-soft: #123323;
+  --hii-brand-light: #10251a;
+}
+
+html[data-theme='dark'] body {
+  color: var(--hii-text);
+  background: var(--hii-shell-content-bg);
+}
+
+/* Keep the many existing Tailwind neutral utilities readable while pages move
+   toward semantic tokens. These rules only affect the optional dark palette. */
+html[data-theme='dark'] .bg-white,
+html[data-theme='dark'] .bg-white\/95 { background-color: var(--hii-surface) !important; }
+html[data-theme='dark'] .bg-slate-50,
+html[data-theme='dark'] .bg-gray-50 { background-color: var(--hii-surface-muted) !important; }
+html[data-theme='dark'] .bg-slate-100,
+html[data-theme='dark'] .bg-gray-100,
+html[data-theme='dark'] .bg-slate-200 { background-color: var(--hii-surface-alt) !important; }
+html[data-theme='dark'] .text-slate-950,
+html[data-theme='dark'] .text-slate-900,
+html[data-theme='dark'] .text-slate-800,
+html[data-theme='dark'] .text-gray-900 { color: var(--hii-text) !important; }
+html[data-theme='dark'] .text-slate-700,
+html[data-theme='dark'] .text-slate-600,
+html[data-theme='dark'] .text-gray-700,
+html[data-theme='dark'] .text-gray-600 { color: var(--hii-text-secondary) !important; }
+html[data-theme='dark'] .text-slate-500,
+html[data-theme='dark'] .text-slate-400,
+html[data-theme='dark'] .text-gray-500 { color: var(--hii-text-muted) !important; }
+html[data-theme='dark'] .border-slate-50,
+html[data-theme='dark'] .border-slate-100,
+html[data-theme='dark'] .border-slate-200,
+html[data-theme='dark'] .border-slate-300,
+html[data-theme='dark'] .border-gray-200 { border-color: var(--hii-border) !important; }
+html[data-theme='dark'] .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html[data-theme='dark'] .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: var(--hii-border) !important; }
+html[data-theme='dark'] .hover\:bg-slate-50:hover,
+html[data-theme='dark'] .hover\:bg-slate-100:hover,
+html[data-theme='dark'] .hover\:bg-white:hover { background-color: var(--hii-surface-alt) !important; }
+html[data-theme='dark'] input:not([type='checkbox']):not([type='radio']),
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] select {
+  color: var(--hii-text);
+  border-color: var(--hii-border);
+}
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder { color: var(--hii-text-muted); }
+html[data-theme='dark'] option { color: #f3f4f6; background: #111827; }
+
+/* Preserve semantic status meaning with softer dark-surface fills. */
+html[data-theme='dark'] .bg-emerald-50,
+html[data-theme='dark'] .bg-emerald-100,
+html[data-theme='dark'] .bg-green-50,
+html[data-theme='dark'] .bg-green-100 { background-color: #123323 !important; }
+html[data-theme='dark'] .text-emerald-700,
+html[data-theme='dark'] .text-emerald-800,
+html[data-theme='dark'] .text-green-700,
+html[data-theme='dark'] .text-green-800 { color: #86efac !important; }
+html[data-theme='dark'] .bg-amber-50,
+html[data-theme='dark'] .bg-amber-100 { background-color: #392b12 !important; }
+html[data-theme='dark'] .text-amber-700,
+html[data-theme='dark'] .text-amber-800 { color: #fcd34d !important; }
+html[data-theme='dark'] .bg-red-50,
+html[data-theme='dark'] .bg-red-100 { background-color: #3a1d24 !important; }
+html[data-theme='dark'] .text-red-600,
+html[data-theme='dark'] .text-red-700,
+html[data-theme='dark'] .text-red-800 { color: #fca5a5 !important; }
+html[data-theme='dark'] .bg-blue-50,
+html[data-theme='dark'] .bg-blue-100 { background-color: #172c45 !important; }
+html[data-theme='dark'] .text-blue-700,
+html[data-theme='dark'] .text-blue-800 { color: #93c5fd !important; }
+html[data-theme='dark'] .text-hii-700 { color: #86efac !important; }
+html[data-theme='dark'] .bg-success-soft { background-color: #123323 !important; }
+html[data-theme='dark'] .text-success-foreground { color: #86efac !important; }
+html[data-theme='dark'] .bg-warning-soft { background-color: #392b12 !important; }
+html[data-theme='dark'] .text-warning-foreground { color: #fcd34d !important; }
+html[data-theme='dark'] .bg-critical-soft { background-color: #3a1d24 !important; }
+html[data-theme='dark'] .text-critical-foreground { color: #fca5a5 !important; }
+html[data-theme='dark'] .bg-info-soft { background-color: #172c45 !important; }
+html[data-theme='dark'] .text-info-foreground { color: #93c5fd !important; }
+
+/* Prototype-derived dashboard classes remain legible in either theme. */
+html[data-theme='dark'] .v0-title,
+html[data-theme='dark'] .v0-project-name,
+html[data-theme='dark'] .v0-progress-value,
+html[data-theme='dark'] .v0-card-header h2 { color: var(--hii-text) !important; }
+html[data-theme='dark'] .v0-subtitle,
+html[data-theme='dark'] .v0-project-meta,
+html[data-theme='dark'] .v0-system-status { color: var(--hii-text-secondary) !important; }
+html[data-theme='dark'] .v0-project-banner,
+html[data-theme='dark'] .v0-metric-card,
+html[data-theme='dark'] .v0-card,
+html[data-theme='dark'] .v0-project-progress-card,
+html[data-theme='dark'] .v0-quick-link { background: var(--hii-surface); border-color: var(--hii-border); }
+html[data-theme='dark'] .v0-card-header,
+html[data-theme='dark'] .v0-activity-row,
+html[data-theme='dark'] .v0-card-footer-link { border-color: var(--hii-border); }
+html[data-theme='dark'] .v0-queue-row:hover,
+html[data-theme='dark'] .v0-quick-link:hover { background: var(--hii-surface-alt); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
