@@ -32,6 +32,7 @@ import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { Modal } from '../../components/ui/Modal';
 import { useToast } from '../../components/ui/Toast';
 import { useLocale } from '@solar/shared';
 
@@ -509,62 +510,54 @@ function ProjectsPageInner() {
       )}
 
       {/* Create Wizard Modal */}
-      {wizardOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !wizardSaving && setWizardOpen(false)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            {/* Wizard Header */}
-            <div className="px-6 py-4 border-b border-slate-200">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-slate-900">
-                  {locale === 'en' ? 'Create New Project' : 'Creaza Proiect Nou'}
-                </h2>
-                <button onClick={() => !wizardSaving && setWizardOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex gap-1">
-                {WIZARD_STEPS.map((s, i) => (
-                  <div key={s.id} className={`flex-1 h-1.5 rounded-full ${i <= wizardStep ? 'bg-hii-500' : 'bg-slate-200'}`} />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs font-medium text-hii-600">
-                  {locale === 'en' ? 'Step' : 'Pasul'} {wizardStep + 1} / {WIZARD_STEPS.length}
-                </span>
-                <span className="text-xs text-slate-400">{WIZARD_STEPS[wizardStep]?.title}</span>
-              </div>
+      <Modal
+        open={wizardOpen}
+        onClose={() => { if (!wizardSaving) setWizardOpen(false); }}
+        title={locale === 'en' ? 'Create New Project' : 'Creează proiect nou'}
+        size="lg"
+        closeOnBackdrop={!wizardSaving}
+        showClose={!wizardSaving}
+        headerContent={(
+          <div className="mt-3" role="group" aria-label={locale === 'en' ? 'Project creation progress' : 'Progres creare proiect'}>
+            <div className="flex gap-1" aria-hidden="true">
+              {WIZARD_STEPS.map((step, index) => (
+                <div key={step.id} className={`h-1.5 flex-1 rounded-full ${index <= wizardStep ? 'bg-hii-500' : 'bg-surface-muted'}`} />
+              ))}
             </div>
-
-            <div className="px-6 py-5">
-              {renderWizardStep()}
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
-              <div>
-                {wizardStep > 0 && (
-                  <Button variant="outline" size="sm" icon={<ArrowLeft className="w-4 h-4" />} onClick={prevStep} disabled={wizardSaving}>
-                    {locale === 'en' ? 'Back' : 'Inapoi'}
-                  </Button>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {wizardError && <span className="text-xs text-red-500">{wizardError}</span>}
-                {wizardStep < WIZARD_STEPS.length - 1 ? (
-                  <Button variant="primary" size="sm" icon={<ArrowRight className="w-4 h-4" />} onClick={nextStep} disabled={wizardSaving}>
-                    {locale === 'en' ? 'Next' : 'Următorul'}
-                  </Button>
-                ) : (
-                  <Button variant="primary" size="sm" icon={<Save className="w-4 h-4" />} onClick={handleCreate} loading={wizardSaving} disabled={wizardSaving}>
-                    {wizardSaving
-                      ? (locale === 'en' ? 'Creating...' : 'Se creează...')
-                      : (locale === 'en' ? 'Create Project' : 'Creează Proiect')}
-                  </Button>
-                )}
-              </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-xs font-semibold text-hii-700" aria-live="polite">
+                {locale === 'en' ? 'Step' : 'Pasul'} {wizardStep + 1} / {WIZARD_STEPS.length}
+              </span>
+              <span className="text-xs text-content-muted">{WIZARD_STEPS[wizardStep]?.title}</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
+        footer={(
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2">
+              {wizardStep > 0 && (
+                <Button variant="outline" size="sm" className="min-h-11 sm:min-h-0" icon={<ArrowLeft className="w-4 h-4" />} onClick={prevStep} disabled={wizardSaving}>
+                  {locale === 'en' ? 'Back' : 'Înapoi'}
+                </Button>
+              )}
+              {wizardError && <span className="min-w-0 text-xs text-red-600" role="alert">{wizardError}</span>}
+            </div>
+            {wizardStep < WIZARD_STEPS.length - 1 ? (
+              <Button variant="primary" size="sm" className="min-h-11 sm:min-h-0" icon={<ArrowRight className="w-4 h-4" />} onClick={nextStep} disabled={wizardSaving}>
+                {locale === 'en' ? 'Next' : 'Următorul'}
+              </Button>
+            ) : (
+              <Button variant="primary" size="sm" className="min-h-11 sm:min-h-0" icon={<Save className="w-4 h-4" />} onClick={handleCreate} loading={wizardSaving} disabled={wizardSaving}>
+                {wizardSaving
+                  ? (locale === 'en' ? 'Creating...' : 'Se creează...')
+                  : (locale === 'en' ? 'Create Project' : 'Creează proiectul')}
+              </Button>
+            )}
+          </div>
+        )}
+      >
+        {renderWizardStep()}
+      </Modal>
     </div>
   );
 }

@@ -839,6 +839,12 @@ Object.assign(d, {
   'task.expand_details': T('Arată detaliile task-ului', 'Show task details'),
   'task.collapse_details': T('Ascunde detaliile task-ului', 'Hide task details'),
   'task.list_updated': T('Lista de task-uri a fost actualizată.', 'Task list updated.'),
+  'task.summary_total': T('Total task-uri', 'Total tasks'),
+  'task.summary_active': T('În lucru', 'In progress'),
+  'task.summary_blocked': T('Blocate', 'Blocked'),
+  'task.summary_complete': T('Finalizate', 'Completed'),
+  'task.list_heading': T('Lista de task-uri', 'Task list'),
+  'task.clear_filters': T('Șterge filtrele', 'Clear filters'),
 
   // --- Tasks: empty states ---
   'task.empty_none': T('Niciun task găsit', 'No tasks found'),

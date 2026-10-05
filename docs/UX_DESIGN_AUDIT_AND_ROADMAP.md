@@ -98,6 +98,66 @@ Keep one reusable modal frame for short, focused create/edit workflows and one d
 
 The table covers every production route family present in PR #33. “Review” means compare the live PR preview and v0 concept, then check the implementation against the design contract above; it does not assert that every breakpoint and overlay has already been visually verified.
 
+### Verified source comparison and decisions
+
+This comparison uses the checked-out source trees for `v0/hiieko-frontend-prototyping-1609cf94` and PR #33. It distinguishes code facts from design recommendations; it does not claim that every route has received screenshot review at every viewport.
+
+| Area | What the code comparison shows | Best choice for production |
+|---|---|---|
+| Shared modal frame | The v0 modal uses a centered white panel with a fixed content region. PR #33 adds a focus trap, labelled dialog semantics, semantic surface tokens, and a viewport-limited scrolling panel. | Keep PR #33's accessible, scrollable frame. Expose header and footer slots so long forms keep their progress and actions visible. |
+| Task create / assign dialogs | `TaskCreateModal.tsx` and `TaskAssignModal.tsx` are present in both branches and have no branch diff. The form workflow is already shared. | Preserve the real project stage/zone options, assignment permissions, and validation. Improve the frame and action reachability; do not replace the form with v0 demo fields. |
+| Project creation | PR #33 has a bespoke seven-step overlay outside the shared modal component. Its progress and review steps are useful, but its backdrop, close behavior, and footer differ from other dialogs. | Keep the seven-step workflow and mount it in the shared modal frame, with a fixed mobile footer. This is now applied on PR #33. |
+| Quick search | `GlobalQuickSearch.tsx` is a PR #33 addition, not a v0 search pattern. It filters role-visible navigation destinations only; it does not search projects or records. | Label it honestly as page navigation, show the section for each result, and keep record search inside the relevant task/project pages until a permission-safe search API exists. |
+| Task list | Existing cards already expose status, schedule, work package, zone, assignment, measured quantity, dependencies, and the workflow. The first render could be blank before the loading effect runs. | Keep the richer production task card and backend lifecycle; show immediate loading, real status totals, a useful empty state, and search across fields available in the permitted task response. This is now applied on PR #33. |
+| Project progress | Project detail previously showed project metadata and workspace links, but no task-derived completion summary. | Show completion as completed/verified tasks divided by tasks returned for this project. Label the measure, and show an explicit empty or API-error state instead of inventing a percentage. This is now applied on PR #33. |
+| Operations home | PR #33 already promotes the API-backed v0-style operations home and preserves drilldown behavior. | Keep that page as the production base; refine its hierarchy only where real project/date scoped data supports it. Do not re-add illustrative v0 KPIs. |
+| Page-specific production forms | PR #33 adds live Aviz, inspection, supplier, and warehouse forms that were absent as matching production components in the v0 tree. | Keep the production endpoints, authorization, and validation; reuse the modal frame and form layout patterns rather than importing prototype-only persistence. |
+
+### Overlay decisions by workflow
+
+| Route / workflow | Preferred pattern | Keep from the current production flow | Change / avoid |
+|---|---|---|---|
+| `/tasks` create | Centered shared modal; one-column fields on phones; persistent footer | Task code/title validation, actual project stages and zones, API submission | Do not add fake users, sample assignments, or prototype-only fields. |
+| `/tasks` assign | Compact modal or bottom sheet on narrow screens | Project-member lookup, role checks, assignment result handling | Explain the no-members state and preserve the task context in the dialog heading. |
+| `/projects` create | Shared modal with step progress in the fixed header and Back/Next/Create footer | Existing seven-step identity/location/technical/date/budget/members/review flow | Avoid a second hand-built backdrop/panel; keep errors next to the action and buttons reachable on phones. |
+| `/planning` create | Shared modal with project/date context and scrollable task selection | API-backed task selection, validation, plan creation | Keep submit actions fixed; do not let a nested scroll area hide the footer. |
+| `/issues` create/detail | Centered short create modal; drawer for long evidence/history | Severity, project/task links, server lifecycle | Do not put a long detail record in a small centered dialog. |
+| `/pontaj` session | Drawer / bottom sheet for a session; focused confirmation only for consequential actions | GPS and server-owned attendance session state | Do not claim successful clock-in when location or API actions fail. |
+| `/control-tower` drilldown | Drawer containing the source rows behind the selected metric | API-derived figures and existing drilldown routes | Every KPI needs its source and scope; do not invent demo values. |
+| `/avize`, `/qa-qc`, `/suppliers`, `/depozite` create | Shared modal with short sections and a fixed action row | Production forms and their existing API contracts | Avoid duplicate overlay markup; keep units, evidence, and validation visible. |
+| `/projects/[id]` member removal / other irreversible actions | Shared confirmation dialog | Existing authorization and server response | State the exact project/member consequence; keep routine navigation out of confirmation dialogs. |
+| Long forms and editors | Dedicated page or full-height sheet when the task needs sustained work | Domain-specific controls and drafts | Do not force the solar canvas or a multi-section report into a cramped centered modal. |
+
+### Page-level design choices
+
+Use these choices as the route review checklist. “Adopt” means borrow the visual/workflow pattern only; production data and role rules remain authoritative.
+
+| Route family | Best page composition | Adopt from v0 | Production-specific decision |
+|---|---|---|---|
+| `/`, `/control-tower` | Project-scoped health summary, completion, schedule risk, blockers, then actionable queues | Strong operations hierarchy and compact KPI cards | Preserve real API source links and loading/error states; no sample metrics. |
+| `/planning` | Selected day/project summary, readiness and blockers, then a scannable task table | Day-first workflow and visible progress | Keep plan state distinct from task state; mobile rows become cards. |
+| `/tasks` | Real status summary, fast filters/search, task cards with owner, due date, quantity progress, and next status action | Clear status grouping and compact task cards | This phase adds API-derived totals, record-aware filtering, and a visible first-load/empty state. |
+| `/projects` | Searchable portfolio cards with status, date range, client, people count, and a clearly sourced progress indicator | Portfolio scanability and project identity | Do not invent completion; show progress only when backed by task records. Creation keeps its seven steps in the common modal. |
+| `/projects/[id]` | Header with phase/status and dates, task completion summary, then Overview / Stages / Members / Settings | Clear project header and progress emphasis | This phase adds task-derived completion; no financial or physical completion estimate without its own source. |
+| `/issues` | Filterable issue queue with severity, age, affected work, owner, and next action | Severity-led scanning and compact rows | Long evidence and history belongs in a drawer; preserve current workflow transitions. |
+| `/qa-qc`, `/qa` | Inspection queue with result, evidence, responsible person, and follow-up | Inspection status hierarchy | Keep checklist/evidence server-backed and review whether `/qa` should route to the canonical page. |
+| `/pontaj` | Site/day selector, who is present, hours, and exceptions; focused worker clock-in card | Clear attendance status at a glance | Keep geolocation/session requirements explicit; stack summaries on phones. |
+| `/rapoarte`, `/rapoarte/form` | Review queue plus a guided report flow with work, people, materials, safety, evidence | Sectioned entry and status cues | Keep project/date context persistent; review before submission. |
+| `/avize` | Delivery queue with supplier/date/project and item quantities; discrepancies surfaced | Structured delivery summary | Keep each quantity next to its unit and delivery evidence. |
+| `/stocuri`, `/depozite` | Stock overview by warehouse/material, unit-aware low-stock cues, then movement history | At-a-glance material state | Do not aggregate unlike units; use a drawer for movement detail. |
+| `/cheltuieli`, `/aprobare` | Amount, currency, receipt, requester, due age, and decision state | Approval queue clarity | Keep approve/reject consequence and reason explicit; no status color without a label. |
+| `/solar-configurator` | Full-width technical canvas with compact project/tool controls | Spatial editing and clear tool grouping | Keep editor-specific undo/save/validation; do not apply a dashboard card grid to the canvas. |
+| `/santiere` | Map/list split with a strong site identity and location state | Map-led site navigation | Provide a usable list alternative and phone map/list switch. |
+| `/customers`, `/teams`, `/workforce`, `/utilizatori` | Searchable directory cards with relationship, role, current assignment, and status | Compact identity cards and role hierarchy | Respect role visibility; avoid duplicate people lists and prototype roles. |
+| `/documents`, `/documente` | Canonical project document list with type, owner, date, and access state | File-type and project cues | Resolve the duplicate route; upload/preview errors must be honest. |
+| `/notificari` | Urgency/date groups with source project and direct next action | Clear unread/priority grouping | Prefer a deep link to the record over a modal for routine detail. |
+| `/profil`, `/login`, `/signup` | Account/preferences form; simple auth form outside the app shell | Clear forms and account identity | Keep theme preference separate from security and preserve all auth/session behavior. |
+| `/design-review/**` | Isolated internal design lab | Prototype-only explorations | Keep out of normal navigation and never treat sample data as production records. |
+
+### Implementation status
+
+The current PR now includes an execution summary on `/tasks`, a task-derived progress panel on `/projects/[id]`, page-only search wording and grouped results, and the shared project-creation dialog frame. The remaining rows below are page design decisions and review targets; they are not claims that every listed page has already been redesigned.
+
 | Page / routes | Keep or use as base | Audit focus and planned improvement | Overlay / icon / responsive notes |
 |---|---|---|---|
 | Home / Control Tower `/`, `/control-tower` | PR #33's production-backed operations home and drilldown behavior | Make project health and completion progress easy to scan: headline status, completed/total work, schedule risk, blockers, next actions, last-updated context. Each KPI must link to its source detail. Avoid duplicated statistics pages. | Use drawer for KPI drilldown; use concise metric icons with labels; stack KPI cards on phone without squeezing chart labels. |

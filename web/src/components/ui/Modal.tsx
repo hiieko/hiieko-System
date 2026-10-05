@@ -13,6 +13,8 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  headerContent?: React.ReactNode;
+  footer?: React.ReactNode;
   size?: ModalSize;
   showClose?: boolean;
   className?: string;
@@ -32,6 +34,8 @@ export function Modal({
   onClose,
   title,
   children,
+  headerContent,
+  footer,
   size = 'md',
   showClose = true,
   className,
@@ -92,11 +96,12 @@ export function Modal({
         tabIndex={-1}
       >
         {/* Header */}
-        {(title || showClose) && (
+        {(title || showClose || headerContent) && (
           <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border-light px-5 py-4 sm:px-6">
-            {title && (
-              <h2 id={titleId} className="text-lg font-semibold text-content">{title}</h2>
-            )}
+            <div className="min-w-0 flex-1">
+              {title && <h2 id={titleId} className="text-lg font-semibold text-content">{title}</h2>}
+              {headerContent}
+            </div>
             {showClose && (
               <button
                 onClick={onClose}
@@ -111,6 +116,7 @@ export function Modal({
         )}
         {/* Content */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">{children}</div>
+        {footer && <div className="shrink-0 border-t border-border-light bg-surface px-5 py-4 sm:px-6">{footer}</div>}
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ import { displayName, formatDate, formatDecimal } from '../../../lib/formatters'
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
 import { ProjectStagesPanel } from './ProjectStagesPanel';
+import { ProjectExecutionProgress } from './ProjectExecutionProgress';
 
 interface ProjectMember {
   id: string; project_id: string; user_id: string; role: string;
@@ -240,6 +241,7 @@ function ProjectDetailPageInner() {
 
       {tab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ProjectExecutionProgress projectId={id} />
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Building2 className="w-4 h-4 text-hii-500" />Informatii Generale
