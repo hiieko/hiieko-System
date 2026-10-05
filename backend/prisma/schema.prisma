@@ -351,6 +351,7 @@ model Task {
   daily_plan_tasks   DailyPlanTask[]
   verified_by_user   User?            @relation("TaskVerifiedBy", fields: [verified_by], references: [id])
   verified_by        String?
+  is_archived        Boolean           @default(false)
   verified_at        DateTime?
   daily_report_tasks DailyReportTask[]
   assignments        TaskAssignment[]
