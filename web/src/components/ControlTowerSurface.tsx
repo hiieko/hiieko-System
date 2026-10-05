@@ -39,6 +39,8 @@ import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilld
 import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
 import { PageTutorial } from './PageTutorial';
 import { useProject } from '../contexts/ProjectContext';
+import { useAuth } from '../contexts/AuthContext';
+import { CONTROL_TOWER_ROLES } from '../config/route-roles';
 
 export function ControlTowerSurface() {
   const [overview, setOverview] = useState<ControlTowerOverviewDto | null>(null);
@@ -47,7 +49,34 @@ export function ControlTowerSurface() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const { locale } = useLocale();
+  const { user } = useAuth();
   const { selectedProjectId, setSelectedProjectId } = useProject();
+  const role = user?.role?.toLowerCase() || 'viewer';
+  const roleProfile = (() => {
+    switch (role) {
+      case 'admin':
+        return { title: t('nav.utilizatori', locale), focus: t('control_tower.focus_admin', locale), links: [['/utilizatori', 'nav.utilizatori'], ['/projects', 'nav.projects'], ['/teams', 'nav.teams']] };
+      case 'pm':
+        return { title: t('nav.projects', locale), focus: t('control_tower.focus_pm', locale), links: [['/projects', 'nav.projects'], ['/planning', 'nav.planning'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
+      case 'manager':
+        return { title: t('nav.projects', locale), focus: t('control_tower.focus_manager', locale), links: [['/projects', 'nav.projects'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
+      case 'procurement':
+        return { title: t('nav.avize', locale), focus: t('control_tower.focus_procurement', locale), links: [['/avize', 'nav.avize'], ['/furnizori', 'nav.furnizori'], ['/depozite', 'nav.depozite'], ['/stocuri', 'nav.stocuri']] };
+      case 'finance':
+        return { title: t('nav.cheltuieli', locale), focus: t('control_tower.focus_finance', locale), links: [['/cheltuieli', 'nav.cheltuieli'], ['/aprobare', 'nav.aprobare'], ['/projects', 'nav.projects']] };
+      case 'qa_qc':
+        return { title: t('nav.qa_qc', locale), focus: t('control_tower.focus_quality', locale), links: [['/qa', 'nav.qa_qc'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
+      case 'site_logistics':
+        return { title: t('nav.avize', locale), focus: t('control_tower.focus_logistics', locale), links: [['/avize', 'nav.avize'], ['/stocuri', 'nav.stocuri'], ['/issues', 'nav.issues']] };
+      case 'maintenance_director':
+        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_maintenance', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/issues', 'nav.issues']] };
+      case 'technical_director':
+        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_technical', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/qa', 'nav.qa_qc'], ['/rapoarte', 'nav.rapoarte']] };
+      default:
+        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_viewer', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/rapoarte', 'nav.rapoarte']] };
+    }
+  })();
+  const roleHasControlTower = CONTROL_TOWER_ROLES.includes(role);
 
   // Drilldown Drawer State
   const [drilldown, setDrilldown] = useState<DrilldownData>({
@@ -147,6 +176,22 @@ export function ControlTowerSurface() {
   return (
     <div className="space-y-6 pb-12">
       <PageTutorial sectionId="dashboard" />
+
+      <section aria-labelledby="role-focus-title" className="bg-slate-900 rounded-2xl p-5 text-white shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-400">{roleProfile.title}</p>
+            <h2 id="role-focus-title" className="mt-1 text-lg font-bold tracking-tight">{roleProfile.focus}</h2>
+          </div>
+          <nav aria-label={t('control_tower.role_actions', locale)} className="flex flex-wrap gap-2">
+            {roleProfile.links.filter(([href]) => href !== '/control-tower' || roleHasControlTower).map(([href, key]) => (
+              <Link key={href} href={href} className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 transition-colors hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+                {t(key, locale)}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </section>
 
       {/* Control Tower Header & Global Filter Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
