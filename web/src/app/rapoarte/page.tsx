@@ -252,6 +252,24 @@ function RapoartePageInner() {
                 </div>
               </div>
 
+              {report.approvals && report.approvals.length > 0 && (
+                <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+                  {report.approvals.map((approval: any) => (
+                    <div key={approval.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 text-xs">
+                      <div>
+                        <span className="font-semibold text-slate-700">
+                          {approval.action === 'APPROVED' ? 'Aprobat' : approval.action === 'REJECTED' ? 'Respins' : approval.action}
+                        </span>
+                        <span className="text-slate-500 ml-2">
+                          de {approval.reviewer?.profile?.full_name || 'Reviewer'}
+                        </span>
+                      </div>
+                      {approval.comment && <p className="text-slate-600 sm:max-w-xl">„{approval.comment}”</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Body */}
               <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Column 1: Tasks & Progress */}
