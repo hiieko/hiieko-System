@@ -50,7 +50,7 @@ const d: Record<string, { ro: string; en: string }> = {
   'avize.toast_success': { ro: 'Aviz înregistrat', en: 'Aviz recorded' },
   'avize.toast_success_message': { ro: 'Avizul a fost înregistrat, iar stocul a fost actualizat.', en: 'The aviz was recorded and stock was updated.' },
   'avize.toast_error': { ro: 'Eroare la înregistrarea avizului', en: 'Failed to record aviz' },
-  'avize.load_error': { ro: 'Nu s-au putut încărca avizele', en: 'Failed to load avize' },
+  'avize.load_error': T('Nu s-au putut încărca avizele', 'Failed to load avize'),
   'avize.form_error_required': { ro: 'Numărul avizului, data livrării și cel puțin un material cu cantitate sunt obligatorii.', en: 'Aviz number, delivery date and at least one material with quantity are required.' },
   'avize.form_error_no_project': { ro: 'Selectează un proiect pentru a înregistra un aviz.', en: 'Select a project to record an aviz.' },
   'avize.materials_unavailable': { ro: 'Niciun material disponibil', en: 'No materials available' },
