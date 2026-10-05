@@ -118,7 +118,7 @@ hidden / 102 px rows / 5-up counters**, while 375 px stays mobile and `/tasks`, 
 screenshots are preserved as `%TEMP%\hii-glob-fix\planning-shots-before\*.png`.
 
 ## ISSUE-062 — My-work card prints the raw `plan_date` timestamp instead of a localized date
-**Status:** 🟡 `OPEN` (opened 2026-09-30 during the Daily Planning day-surface verification; **pre-existing**, not a regression of that slice)
+**Status:** ✅ `FIXED` (2026-10-05) (opened 2026-09-30 during the Daily Planning day-surface verification; **pre-existing**, not a regression of that slice)
 
 ### Description
 `DailyPlan.plan_date` is a Prisma `DateTime`, and the API serialises it as a full ISO timestamp
@@ -314,7 +314,7 @@ Decide the intended model first (one field for the whole report vs. two distinct
 - `gate-issue048-browser.js` (NEW verification harness; git-ignored like the other gates)
 
 ## ISSUE-043 — P4.1 migration dropped 8 manually-created indexes (idx_aviz_items_*, idx_stock_balances_*, idx_stock_movements_*)
-**Status:** 🔍 `OPEN` (2026-09-29 — recorded during P4.1 verification)
+**Status:** ✅ `FIXED` (2026-10-05 — evidence-backed subset) (2026-09-29 — recorded during P4.1 verification)
 
 ### Description
 During P4.1 migration `20260929073840_add_daily_report_approval_revision`, Prisma dropped 8 manually-created indexes that were not declared in `schema.prisma`:
@@ -327,8 +327,8 @@ These indexes were created outside Prisma (likely via raw SQL) and are not part 
 ### Impact
 Unknown. May degrade query performance on aviz items, stock balances, and stock movements if these indexes were actually used by query paths.
 
-### Required Action
-A focused performance/index review must inspect whether these indexes are still required by actual query paths. If needed, they should be declared in `schema.prisma` via `@@index([...])` so Prisma manages them. Do NOT randomly recreate them — verify query plans first.
+### Resolution
+Implemented in PR #9 after query-path review. Restored only `AvizItem.aviz_id`, `StockBalance.project_id`, and `StockMovement(project_id, created_at)`. The unused `movement_type`, `created_by`, `reference`, and standalone `material_id` indexes were intentionally not recreated without query evidence.
 
 ---
 
@@ -524,7 +524,7 @@ Implemented in Slice 5: `PATCH /api/attendance/:id` is project-scoped, restricte
 ---
 
 ## ISSUE-039 — `GET /api/users` restricted to ADMIN/MANAGER/PM blocks field-supervisor panels
-**Status:** 🟡 `OPEN` — documented backend gap (Pontaj slice, 2026-09-27)
+**Status:** ✅ `FIXED` (2026-10-05)
 
 ### Description
 `UsersController.findAll` (`GET /api/users`) is `@Roles(ADMIN, MANAGER, PM)` (plus OWNER bypass). SITE_MANAGER, FOREMAN and TEAM_LEADER receive **403**. The Pontaj supervisor panels (missing-attendance list, monthly matrix roster) need the org user directory to compute "who did not check in" and to render a full monthly grid.
@@ -534,7 +534,7 @@ Implemented in Slice 5: `PATCH /api/attendance/:id` is project-scoped, restricte
 - The monthly matrix renders only rows derivable from attendance records.
 
 ### Resolution
-Not started — either widen `GET /api/users` to field-supervisor roles (with org-scoping) or add a purpose-built `GET /api/attendance/roster` endpoint returning only field users.
+Implemented in PR #10: `GET /api/users` now permits SITE_MANAGER, FOREMAN, and TEAM_LEADER while `UsersService.findAll` remains organization-scoped. Mutation endpoints remain ADMIN/OWNER-only.
 
 ---
 
@@ -721,7 +721,7 @@ a dedicated authorization change, not inside a navigation checkpoint.
 ---
 
 ## ISSUE-054 — `RoleGuard` admin/owner superset, unguarded routes and sub-route role gaps
-**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C2)
+**Status:** WONT FIX / ACCEPTED DESIGN (2026-10-05) (recorded 2026-09-29 at UX-R1A C2)
 
 ### Description
 1. **`/utilizatori` owner bypass.** Navigation and page guard are both `['admin']`, but `RoleGuard`
