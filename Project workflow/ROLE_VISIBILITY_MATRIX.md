@@ -20,7 +20,9 @@
 ## 2. Role Hierarchy & Global Scope
 
 ### Global-scope roles (no ProjectMember row required)
-ADMIN, OWNER, PM, MANAGER
+ADMIN, OWNER, MANAGER
+
+> **Phase 1 update (2026-10-05):** PM is project-scoped and requires a `ProjectMember` row.
 
 ### Membership-scope roles (require ProjectMember row per project)
 SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FINANCE, QA_QC, SITE_LOGISTICS, MAINTENANCE_DIRECTOR, TECHNICAL_DIRECTOR
