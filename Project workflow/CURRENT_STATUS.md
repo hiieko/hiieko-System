@@ -2,7 +2,7 @@
 | **OCR** | **\xf0\x9f\xa7\x8a FROZEN / DEFERRED** | OCR is not a current workstream. Deferred to final milestone per CLINE_MASTER_ROADMAP.md section 17. |
 # HIIEKO — Current Status
 
-**Last Updated:** 2026-10-05 (Phase 1 acceptance/security closure after PR #1 + PR #2; both merged to `master`, CI green, Vercel deployment successful)
+**Last Updated:** 2026-10-05 (Phase 1 closure + Slice 7 hardening + Pontaj/task contract cleanup; all merged to `master`, CI/database gates green, Vercel deployment successful)
 **Version:** pre-1.0 (Phase 1 authorization hardening accepted; broader production-readiness gaps remain)
 
 ---
@@ -171,16 +171,19 @@ Implemented full project-scoped authorization across all 102 routes:
 - Vercel deployment for the final `master` merge commit completed successfully.
 - No live backend HTTP smoke test was claimed here because the available deployment integration exposes Vercel deployment status but not an authenticated runtime API test harness. Code-level acceptance and CI evidence are green.
 
-### Remaining production-readiness gaps
-- No staging/production CI pipeline configured
-- No monitoring, alerting, or structured logging at production level
-- No authentication rate limiting (ISSUE-021, OPEN)
-- No refresh-token rotation or revocation (ISSUE-022, OPEN)
-- These are follow-up hardening items, not blockers for the completed Phase 1 authorization work.
+### Remaining production-readiness / product gaps
+- No dedicated staging/production CI deployment pipeline or rollback automation
+- No monitoring/alerting/structured production logging beyond application error handling
+- ISSUE-039: dedicated attendance roster contract for field supervisors remains open
+- ISSUE-043: focused performance/index review remains open
+- ISSUE-054: route/role divergence decisions remain documented, not all normalized
+- ISSUE-056: remaining Romanian copy/role-map cleanup remains open
+- ISSUE-050: development fixture-task cleanup/product decision remains open
+- Broader frontend/mobile/product completion remains after the remediation slices.
 
-## 7. Next development step
+## 7. Remaining remediation / product work
 
-**Solar Configurator integration COMPLETE.** The solar feature branch has been merged and verified.
+**Core remediation slices 1–7: COMPLETE.** Slice 8 CI enforcement is active in the repository, and Slice 9 frontend contract alignment is ongoing.
 
 **R2.6 — Core Operations Completion (Implementation Audit).** R2.1 Sites→Projects is fully complete across all 6 phases. See `IMPLEMENTATION_ROADMAP.md` for the next milestones.
 
@@ -203,8 +206,8 @@ Implemented full project-scoped authorization across all 102 routes:
 
 - ISSUE-018 / ISSUE-019: **RESOLVED by PR #2** — `GET /api/users/:id` and related user lookups are organization-scoped through the authenticated actor's `organizationId`.
 - `POST /api/inventory/transfer` — Guard checks both sourceProjectId and targetProjectId; ADMIN/OWNER/MANAGER global project scope remains intentional.
-- No authentication rate limiting (ISSUE-021, OPEN)
-- No refresh-token rotation or revocation (ISSUE-022, OPEN)
+- Authentication rate limiting is now shared across API instances via PostgreSQL (Slice 7; ISSUE-021 resolved)
+- Refresh-token rotation/revocation is implemented (Slice 2; ISSUE-022 resolved)
 - 8 non-global users (3 TEAM_LEADER, 5 WORKER) currently unassigned to any project (ISSUE-023, OPEN)
 - `PermissionsGuard` not activated; permission tables unseeded
 - `GET /api/procurement/avize/:id` route absent from controller (documented in HANDOFF.md)
