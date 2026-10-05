@@ -170,6 +170,7 @@ export type AppRoute =
   | '/qa'
   | '/aprobare'
   | '/utilizatori'
+  | '/documente'
   | '/notificari'
   | '/profil';
 
