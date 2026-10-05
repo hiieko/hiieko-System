@@ -22,6 +22,10 @@ export class RateLimitGuard implements CanActivate {
   private static readonly CLEANUP_INTERVAL_MS = 5 * 60_000;
   private static lastCleanupAt = 0;
 
+  static reset(): void {
+    RateLimitGuard.lastCleanupAt = 0;
+  }
+
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
