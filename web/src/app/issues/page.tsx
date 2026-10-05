@@ -96,7 +96,7 @@ function IssuesPageInner() {
     try {
       await apiClient.createIssue({ projectId: selectedProjectId!, title: formTitle.trim(), description: formDescription.trim(), severity: formSeverity });
       setShowCreate(false); setFormTitle(''); setFormDescription(''); setFormSeverity('MEDIUM');
-      setSuccessMsg('Problema a fost raportata!');
+      setSuccessMsg(t('issues.created_success', locale));
       setTimeout(() => setSuccessMsg(null), 3000);
       loadIssues();
     } catch (err: any) { setFormError(err.message || 'Eroare la raportare'); }
@@ -115,7 +115,7 @@ function IssuesPageInner() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t('issues.title', locale)}</h1>
-          <p className="text-sm text-slate-500 mt-1">{locale === 'en' ? 'Report the issues found on site and track their resolution' : 'Raportează problemele întâlnite pe șantier și urmărește rezolvarea lor'}</p>
+          <p className="text-sm text-slate-500 mt-1">{t('issues.subtitle', locale)}</p>
         </div>
         <div className="flex items-center gap-2">
           {canReport && (
@@ -219,7 +219,7 @@ function IssuesPageInner() {
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Descriere *</label>
                 <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={3}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none"
-                  placeholder={locale === 'en' ? 'Describe the issue in detail...' : 'Descrie problema în detaliu...'} />
+                  placeholder={t('issues.description_placeholder', locale)} />
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1">Severitate</label>

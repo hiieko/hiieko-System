@@ -9,7 +9,7 @@ import {
 } from '../../../features/projects/types';
 import { Button } from '../../../components/ui/Button';
 import { useToast } from '../../../components/ui/Toast';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { Save, AlertCircle } from 'lucide-react';
 import { apiClient } from '../../../lib/api-client';
 
@@ -49,7 +49,7 @@ export function ProjectSettingsPanel({ project, onUpdate }: Props) {
       };
       const res = await apiClient.patch(`/api/projects/${project.id}`, updates);
       onUpdate(res.data);
-      success(locale === 'en' ? 'Project updated' : 'Proiect actualizat');
+      success(t('projects.updated', locale));
     } catch (err: any) {
       const msg = err instanceof Error ? err.message : 'Eroare la actualizare';
       setErr(msg);
@@ -77,7 +77,7 @@ export function ProjectSettingsPanel({ project, onUpdate }: Props) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-        <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data început'}</label>
+        <label className={labelCls}>{t('projects.start_date', locale)}</label>
             <input className={inputCls} type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} />
           </div>
           <div>

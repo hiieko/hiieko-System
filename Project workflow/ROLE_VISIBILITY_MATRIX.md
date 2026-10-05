@@ -167,7 +167,7 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 
 | Decision | Value | Rationale |
 |----------|-------|-----------|
-| OWNER sidebar tier | **Management** (global) | Backend treats OWNER as global scope; frontend must match. Resolves UI \u2194 API mismatch. |
+| OWNER sidebar tier | **Management** (global) | Backend treats OWNER as global scope; frontend must match. Resolves UI ↔ API mismatch. |
 | FOREMAN Planning | **Create/Edit/Complete** (not Publish/Cancel) | FOREMAN is operational; lifecycle authority (publish/cancel) requires SITE_MANAGER+. |
 | Public registration roles | **WORKER, VIEWER** only | All privileged roles must be assigned by ADMIN via admin panel. ISSUE-034. |
 

@@ -15,6 +15,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Drawer } from './ui/Drawer';
+import { t, useLocale } from '@solar/shared';
 
 export interface DrilldownData {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export function ControlTowerDrilldownDrawer({
   onClose,
 }: ControlTowerDrilldownDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const { locale } = useLocale();
 
   if (!data || !data.isOpen) {
     return null;
@@ -56,11 +58,11 @@ export function ControlTowerDrilldownDrawer({
               {data.category}
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              {filteredItems.length} {filteredItems.length === 1 ? 'înregistrare' : 'înregistrări'}
+              {filteredItems.length} {filteredItems.length === 1 ? t('control_tower.drawer.record', locale) : t('control_tower.drawer.records', locale)}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-md">
-            <span className="font-semibold text-slate-300">Regulă Deterministică:</span>{' '}
+            <span className="font-semibold text-slate-300">{t('control_tower.drawer.rule', locale)}</span>{' '}
             {data.ruleExplanation}
           </p>
         </div>
@@ -74,7 +76,7 @@ export function ControlTowerDrilldownDrawer({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Filtrează înregistrările după cod, nume, responsabil..."
+                placeholder={t('control_tower.drawer.search', locale)}
                 className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
               />
             </div>
@@ -86,34 +88,34 @@ export function ControlTowerDrilldownDrawer({
               <div className="text-center py-16">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
                 <h3 className="text-base font-semibold text-slate-900">
-                  Nicio problemă detectată
+                  {t('control_tower.drawer.none_title', locale)}
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  Nu există înregistrări care să încalce această regulă operațională.
+                  {t('control_tower.drawer.none_desc', locale)}
                 </p>
               </div>
             ) : (
               filteredItems.map((item, idx) => (
-                <DrilldownItemCard key={item.id || idx} item={item} category={data.category} />
+                <DrilldownItemCard key={item.id || idx} item={item} category={data.category} locale={locale} />
               ))
             )}
           </div>
 
           {/* Footer */}
           <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-            <span>Sursă date: API NestJS & PostgreSQL HIIEKO Master DB</span>
+            <span>{t('control_tower.drawer.source', locale)}</span>
             <button
               onClick={onClose}
               className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition-colors"
             >
-              Închide
+              {t('control_tower.drawer.close', locale)}
             </button>
           </div>
     </Drawer>
   );
 }
 
-function DrilldownItemCard({ item, category }: { item: any; category: string }) {
+function DrilldownItemCard({ item, category, locale }: { item: any; category: string; locale: 'ro' | 'en' }) {
   // 1. BLOCKED TASKS
   if (item.blockedReason !== undefined || category === 'PRODUCTION_BLOCKED') {
     return (
@@ -131,7 +133,7 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.title}</h4>
           </div>
           <span className="px-2 py-0.5 text-xs font-semibold bg-rose-600 text-white rounded uppercase">
-            Blocat
+            {t('control_tower.drawer.blocked', locale)}
           </span>
         </div>
 
@@ -142,7 +144,7 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
           </div>
           {item.blockingTasks && item.blockingTasks.length > 0 && (
             <div className="text-slate-600 pl-6">
-              <span className="font-semibold text-slate-700">Blocat de sarcinile:</span>{' '}
+              <span className="font-semibold text-slate-700">{t('control_tower.drawer.blocked_by', locale)}</span>{' '}
               {item.blockingTasks.join(', ')}
             </div>
           )}
@@ -150,12 +152,12 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
 
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
           <div>
-            <span className="font-medium text-slate-700">Responsabil:</span>{' '}
+            <span className="font-medium text-slate-700">{t('control_tower.drawer.responsible', locale)}</span>{' '}
             {item.responsiblePerson || 'Nealocat'}
           </div>
           {item.assignedWorkers && item.assignedWorkers.length > 0 && (
             <div>
-              <span className="font-medium text-slate-700">Muncitori alocați:</span>{' '}
+              <span className="font-medium text-slate-700">{t('control_tower.drawer.assigned_workers', locale)}</span>{' '}
               {item.assignedWorkers.join(', ')}
             </div>
           )}
@@ -181,13 +183,13 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.projectName}</h4>
           </div>
           <span className="px-2.5 py-1 text-xs font-bold bg-rose-600 text-white rounded-full">
-            +{item.daysOverdue} zile întârziere
+            {t('control_tower.drawer.overdue', locale).replace('{days}', String(item.daysOverdue))}
           </span>
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
           <div>
-            <span className="font-semibold text-slate-700">Termen limită inițial:</span>{' '}
+            <span className="font-semibold text-slate-700">{t('control_tower.drawer.original_deadline', locale)}</span>{' '}
             {item.targetEndDate ? item.targetEndDate.split('T')[0] : 'Nespecificat'}
           </div>
           <div>
@@ -211,13 +213,13 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.projectName}</h4>
           </div>
           <span className="px-2.5 py-1 text-xs font-bold bg-amber-500 text-slate-950 rounded-full">
-            {item.daysUntilDeadline} zile rămase
+            {t('control_tower.drawer.deadline_remaining', locale).replace('{days}', String(item.daysUntilDeadline))}
           </span>
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
           <div>
-            <span className="font-semibold text-slate-700">Data țintă:</span>{' '}
+            <span className="font-semibold text-slate-700">{t('control_tower.drawer.target_date', locale)}</span>{' '}
             {item.targetDate ? item.targetDate.split('T')[0] : ''}
           </div>
           <div>
@@ -237,22 +239,22 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
           <div>
             <h4 className="text-sm font-semibold text-slate-900">{item.fullName}</h4>
             <p className="text-xs text-slate-500 mt-0.5">
-              Rol: <span className="font-medium text-slate-700">{item.role}</span> &bull; Șantier:{' '}
+              {t('control_tower.drawer.role', locale)} <span className="font-medium text-slate-700">{item.role}</span> &bull; {t('control_tower.drawer.site', locale)}{' '}
               <span className="font-medium text-slate-700">{item.projectName}</span>
             </p>
           </div>
           <span className="px-2 py-0.5 text-xs font-semibold bg-rose-100 text-rose-700 rounded">
-            Lipsă la pontaj
+            {t('control_tower.drawer.missing_attendance', locale)}
           </span>
         </div>
 
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Ora așteptată de sosire:{' '}
+            {t('control_tower.drawer.expected_arrival', locale)}{' '}
             <strong className="text-slate-700">{item.expectedAt}</strong>
           </span>
           <span>
-            Responsabil raportare:{' '}
+            {t('control_tower.drawer.reporting_owner', locale)}{' '}
             <strong className="text-slate-700">{item.responsiblePerson}</strong>
           </span>
         </div>
@@ -268,7 +270,7 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
           <div>
             <h4 className="text-sm font-semibold text-slate-900">{item.fullName}</h4>
             <p className="text-xs text-slate-500 mt-0.5">
-              Șantier: <span className="font-medium text-slate-700">{item.projectName}</span>
+              {t('control_tower.drawer.site', locale)} <span className="font-medium text-slate-700">{item.projectName}</span>
             </p>
           </div>
           <span className="px-2.5 py-1 text-xs font-bold bg-blue-600 text-white rounded-full">
@@ -290,7 +292,7 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
                 {item.materialCode}
               </span>
               <span className="text-xs text-slate-500">
-                {item.warehouseName || item.projectName || 'Depozit'}
+                {item.warehouseName || item.projectName || t('control_tower.drawer.warehouse', locale)}
               </span>
             </div>
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.materialName}</h4>
@@ -302,11 +304,11 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
           <div>
-            <span className="font-semibold text-slate-700">Stoc curent:</span>{' '}
+            <span className="font-semibold text-slate-700">{t('control_tower.drawer.current_stock', locale)}</span>{' '}
             <strong className="text-rose-600">{item.currentQuantity}</strong> {item.unit}
           </div>
           <div>
-            <span className="font-semibold text-slate-700">Prag minim de siguranță:</span>{' '}
+            <span className="font-semibold text-slate-700">{t('control_tower.drawer.min_threshold', locale)}</span>{' '}
             <strong>{item.minThreshold}</strong> {item.unit}
           </div>
         </div>
@@ -335,7 +337,7 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
 
         {item.items && item.items.length > 0 && (
           <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600 space-y-1">
-            <span className="font-semibold text-slate-700">Materiale recepționate:</span>
+            <span className="font-semibold text-slate-700">{t('control_tower.drawer.received_materials', locale)}</span>
             {item.items.map((it: any, i: number) => (
               <div key={i} className="flex justify-between pl-2">
                 <span>{it.materialName}</span>
@@ -362,17 +364,17 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
             </p>
           </div>
           <span className="px-2 py-0.5 text-xs font-bold bg-rose-600 text-white rounded uppercase">
-            Inspecție Eșuată
+            {t('control_tower.drawer.failed_inspection', locale)}
           </span>
         </div>
 
         <div className="mt-3 p-3 bg-white rounded-lg border border-rose-200 text-xs space-y-1">
-          <span className="font-semibold text-rose-900">Parametri sub pragul de toleranță:</span>
+          <span className="font-semibold text-rose-900">{t('control_tower.drawer.below_tolerance', locale)}</span>
           {item.failedParameters.map((param: any, pIdx: number) => (
             <div key={pIdx} className="flex justify-between text-rose-700">
               <span>{param.parameter}</span>
               <span className="font-mono font-bold">
-                {param.value} {param.unit} (RESPINS)
+                {param.value} {param.unit} ({t('control_tower.drawer.rejected', locale)})
               </span>
             </div>
           ))}
@@ -398,8 +400,8 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
         </div>
         <p className="mt-2 text-xs text-slate-700">{item.description}</p>
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-          <span>Data: {item.createdAt ? item.createdAt.split('T')[0] : ''}</span>
-          <span>Responsabil: {item.responsiblePerson}</span>
+          <span>{t('control_tower.drawer.date', locale)} {item.createdAt ? item.createdAt.split('T')[0] : ''}</span>
+          <span>{t('control_tower.drawer.responsible_inline', locale)} {item.responsiblePerson}</span>
         </div>
       </div>
     );
@@ -418,11 +420,11 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
             <p className="text-xs text-slate-500">{item.projectName}</p>
           </div>
           <span className="px-2.5 py-1 text-xs font-bold bg-amber-500 text-slate-950 rounded-full">
-            Versiune v{item.currentVersion} (disponibil v{item.latestVersion})
+            {t('control_tower.drawer.version', locale).replace('{current}', String(item.currentVersion)).replace('{latest}', String(item.latestVersion))}
           </span>
         </div>
         <div className="mt-3 text-xs text-slate-600">
-          Documentul din șantier a fost înlocuit cu o revizie nouă aprobată. Necesită actualizare imediată.
+          {t('control_tower.drawer.replaced_note', locale)}
         </div>
       </div>
     );
@@ -464,10 +466,10 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
 
         <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
           <span>
-            Responsabil: <strong className="text-slate-700">{item.responsiblePerson}</strong>
+            {t('control_tower.drawer.responsible_inline', locale)} <strong className="text-slate-700">{item.responsiblePerson}</strong>
           </span>
           <span>
-            Sursă: <span className="font-mono">{item.sourceRecord}</span>
+            {t('control_tower.drawer.source_inline', locale)} <span className="font-mono">{item.sourceRecord}</span>
           </span>
         </div>
       </div>
@@ -493,7 +495,7 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
       {item.progressPercent !== undefined && (
         <div className="mt-3">
           <div className="flex justify-between text-xs text-slate-600 mb-1">
-            <span>Progres Lucrări</span>
+            <span>{t('control_tower.drawer.progress', locale)}</span>
             <span>{item.progressPercent}%</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">

@@ -166,7 +166,7 @@ function WorkforcePageInner() {
       </div>
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" placeholder={locale === 'en' ? 'Search employees...' : 'Caută angajați...'} value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" placeholder={t('workforce.search_placeholder', locale)} value={search} onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
         {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
       </div>
@@ -254,7 +254,7 @@ function WorkforcePageInner() {
               <div><label className="text-xs font-semibold text-slate-700 block mb-1">Utilizator asociat</label>
                 <select value={editUserId} onChange={(e) => setEditUserId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">{locale === 'en' ? 'No account' : 'Fără cont'}</option>
+                  <option value="">{t('workforce.no_account', locale)}</option>
                   {users.filter((u: any) => u.is_active !== false).map((u: any) => (
                     <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
                   ))}
@@ -266,7 +266,7 @@ function WorkforcePageInner() {
                 className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">{t('general.cancel', locale)}</button>
               <button onClick={handleEditSave} disabled={editSaving || !editFirstName.trim() || !editLastName.trim()}
                 className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {editSaving ? (locale === 'en' ? 'Saving...' : 'Se salvează...') : <><Save className="w-4 h-4 inline mr-1" />{t('general.save', locale)}</>}
+                {editSaving ? (t('general.saving', locale)) : <><Save className="w-4 h-4 inline mr-1" />{t('general.save', locale)}</>}
               </button>
             </div>
           </div>
@@ -328,7 +328,7 @@ function WorkforcePageInner() {
               <div><label className="text-xs font-semibold text-slate-700 block mb-1">Utilizator asociat</label>
                 <select value={createUserId} onChange={(e) => setCreateUserId(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">{locale === 'en' ? 'No account' : 'Fără cont'}</option>
+                  <option value="">{t('workforce.no_account', locale)}</option>
                   {users.filter((u: any) => u.is_active !== false).map((u: any) => (
                     <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
                   ))}
@@ -340,7 +340,7 @@ function WorkforcePageInner() {
                 className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">{t('general.cancel', locale)}</button>
               <button onClick={handleCreate} disabled={createSaving || !createFirstName.trim() || !createLastName.trim()}
                 className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {createSaving ? (locale === 'en' ? 'Saving...' : 'Se salvează...') : <><Plus className="w-4 h-4 inline mr-1" />{locale === 'en' ? 'Create' : 'Creează'}</>}
+                {createSaving ? (t('general.saving', locale)) : <><Plus className="w-4 h-4 inline mr-1" />{t('general.create', locale)}</>}
               </button>
             </div>
           </div>

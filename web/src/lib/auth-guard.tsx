@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 
 /**
  * AuthGuard — wraps pages that require authentication.
@@ -79,7 +79,7 @@ export function RoleGuard({
               <span className="text-2xl">🔒</span>
             </div>
             <h2 className="text-lg font-bold text-slate-900 mb-2">
-              {locale === 'en' ? 'Access Denied' : 'Acces Interzis'}
+              {t('auth.access_denied', locale)}
             </h2>
             <p className="text-sm text-slate-500 mb-4">
               {locale === 'en'
@@ -90,7 +90,7 @@ export function RoleGuard({
               onClick={() => router.back()}
               className="px-4 py-2 text-sm font-medium text-hii-600 hover:text-hii-700"
             >
-              ← {locale === 'en' ? 'Go Back' : 'Înapoi'}
+              ← {t('auth.go_back', locale)}
             </button>
           </div>
         </div>

@@ -785,7 +785,7 @@ would break the colour logic. Both move with this issue.
 ---
 
 ## ISSUE-056 — Remaining RO copy / role-map debt outside the UX-R1A C4 scope (report-only)
-**Status:** 🟡 `PARTIALLY RESOLVED` (2026-10-05 — shared role map centralized; remaining Control Tower prose deferred)
+**Status:** ✅ `RESOLVED` (2026-10-05 — Control Tower copy and remaining R1B translation debt completed)
 
 ### Description
 C4 normalised the shared vocabulary (nav/page titles, the 16-role `role.*` set, 175 diacritic defects).
@@ -807,7 +807,7 @@ still look different from the rest of the product, and a future term change coul
 role vocabulary on Mobile.
 
 ### Required Action
-Finish the remaining Control Tower RO prose and re-encode `ROLE_VISIBILITY_MATRIX.md` when the copy pass is resumed. Mobile role-map duplication is resolved.
+Completed in the ISSUE-056 R1B close-out: Control Tower and drilldown copy now uses locale keys, worker inline locale/copy debt is removed, and `ROLE_VISIBILITY_MATRIX.md` is UTF-8 normalized. Mobile role-map duplication remains resolved.
 
 ---
 

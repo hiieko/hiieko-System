@@ -34,7 +34,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
 import { PageTutorial } from './PageTutorial';
@@ -73,14 +73,14 @@ export function ControlTowerSurface() {
           setOverview(response.data);
           setLastUpdated(new Date());
         } else {
-          setError(response.error || 'Nu s-au putut încărca datele din Turnul de Control.');
+          setError(response.error || t('control_tower.load_error', locale));
         }
       } catch (err: unknown) {
         // Fallback: If backend is booting, show informative Romanian state
         setError(
           err instanceof Error
-            ? `Eroare conexiune Turn de Control: ${err.message}`
-            : 'Eroare la comunicarea cu serverul NestJS.',
+            ? `${t('control_tower.connection_error', locale)}: ${err.message}`
+            : t('control_tower.server_error', locale),
         );
       } finally {
         setLoading(false);
@@ -112,7 +112,7 @@ export function ControlTowerSurface() {
 
   const openRedFlagInspect = (flag: RedFlag) => {
     openDrilldown(
-      `Alertă Critică: ${flag.affectedEntity}`,
+      `${t('control_tower.critical_alert', locale)}: ${flag.affectedEntity}`,
       flag.category,
       flag.reason,
       [flag],
@@ -125,10 +125,10 @@ export function ControlTowerSurface() {
         <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
         <div className="text-center">
           <h3 className="text-base font-semibold text-slate-800">
-            Se încarcă Turnul de Control...
+            {t('control_tower.loading', locale)}
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            Se agregă datele operaționale în timp real din baza de date centrală.
+            {t('control_tower.loading_detail', locale)}
           </p>
         </div>
       </div>
@@ -137,7 +137,7 @@ export function ControlTowerSurface() {
 
   // Format currency
   const formatCurrency = (val: number, cur = 'RON') => {
-    return new Intl.NumberFormat('ro-RO', {
+    return new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'ro-RO', {
       style: 'currency',
       currency: cur,
       maximumFractionDigits: 0,
@@ -153,17 +153,17 @@ export function ControlTowerSurface() {
         <div>
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500 text-slate-950 uppercase tracking-wide">
-              Turn de Control HIIEKO
+              {t('control_tower.badge', locale)}
             </span>
             <span className="text-xs text-slate-400 font-medium">
-              Ultima actualizare: {lastUpdated.toLocaleTimeString('ro-RO')}
+              {t('control_tower.last_updated', locale)}: {lastUpdated.toLocaleTimeString(locale === 'en' ? 'en-GB' : 'ro-RO')}
             </span>
           </div>
           <h1 className="text-2xl font-black text-slate-950 mt-1 tracking-tight">
-            Panou Operațional de Management
+            {t('control_tower.title', locale)}
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Decizii bazate pe reguli deterministe, date reale și trasabilitate completă
+            {t('control_tower.subtitle', locale)}
           </p>
         </div>
 
@@ -177,7 +177,7 @@ export function ControlTowerSurface() {
               onChange={(e) => setSelectedProjectId(e.target.value)}
               className="w-full sm:w-auto bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
             >
-              <option value="">Toate Șantierele Active</option>
+              <option value="">{t('control_tower.all_active_sites', locale)}</option>
               {overview?.projects.activeProjectsList.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.code} — {p.name}
@@ -192,7 +192,7 @@ export function ControlTowerSurface() {
             className="flex items-center space-x-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>Actualizează</span>
+            <span>{t('control_tower.refresh', locale)}</span>
           </button>
         </div>
       </div>
@@ -207,7 +207,7 @@ export function ControlTowerSurface() {
             onClick={() => loadControlTower(true)}
             className="font-bold underline ml-4 hover:text-amber-950"
           >
-            Reîncearcă
+            {t('control_tower.retry', locale)}
           </button>
         </div>
       )}
@@ -231,7 +231,7 @@ export function ControlTowerSurface() {
                   <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                     <Briefcase className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">Proiecte Active</h3>
+                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.active_projects', locale)}</h3>
                 </div>
                 <span className="text-xl font-black text-slate-900">
                   {overview.projects.activeProjects}
@@ -241,7 +241,7 @@ export function ControlTowerSurface() {
               {/* Stage breakdown */}
               <div className="mt-4 space-y-2">
                 <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  Proiecte după Fază
+                  {t('control_tower.projects_by_stage', locale)}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(overview.projects.projectsByStage).map(
@@ -262,15 +262,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Proiecte Întârziate',
+                    t('control_tower.overdue_projects', locale),
                     'PROJECTS',
-                    'Data țintă de finalizare este depășită, iar proiectul nu este finalizat.',
+                    t('control_tower.overdue_rule', locale),
                     overview.projects.overdueProjectsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
               >
-                <span className="font-medium">Proiecte Întârziate:</span>
+                <span className="font-medium">{t('control_tower.overdue_projects_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-rose-200 text-rose-900 rounded">
                   {overview.projects.overdueProjects}
                 </span>
@@ -279,15 +279,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Termene Limită Viitoare (14 zile)',
+                    t('control_tower.upcoming_deadlines', locale),
                     'PROJECTS',
-                    'Proiecte a căror dată țintă se împlinește în următoarele 14 zile.',
+                    t('control_tower.upcoming_deadlines_rule', locale),
                     overview.projects.upcomingDeadlinesList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
               >
-                <span className="font-medium">Termene Limită (≤14 zile):</span>
+                <span className="font-medium">{t('control_tower.upcoming_deadlines_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
                   {overview.projects.upcomingDeadlines}
                 </span>
@@ -303,7 +303,7 @@ export function ControlTowerSurface() {
                   <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                     <Users className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">Personal & Pontaj</h3>
+                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.workforce', locale)}</h3>
                 </div>
                 <div className="text-right">
                   <span className="text-xl font-black text-slate-900">
@@ -317,13 +317,13 @@ export function ControlTowerSurface() {
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Programați Astăzi</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.scheduled_today', locale)}</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.workforce.scheduledToday}
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Pontaj Valid (GPS)</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.valid_attendance', locale)}</span>
                   <strong className="text-emerald-600 text-sm font-mono">
                     {overview.workforce.checkedIn}
                   </strong>
@@ -335,15 +335,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Personal Lipsă la Pontaj',
+                    t('control_tower.missing_attendance', locale),
                     'WORKFORCE',
-                    'Muncitori alocați la șantiere care nu au efectuat pontajul de intrare astăzi.',
+                    t('control_tower.missing_attendance_rule', locale),
                     overview.workforce.missingList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
               >
-                <span className="font-medium">Lipsă / Neprezentare:</span>
+                <span className="font-medium">{t('control_tower.missing_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-rose-200 text-rose-900 rounded">
                   {overview.workforce.missing}
                 </span>
@@ -352,17 +352,17 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Ore Suplimentare Înregistrate Astăzi',
+                    t('control_tower.overtime_today', locale),
                     'WORKFORCE',
-                    'Muncitori cu ore suplimentare calculate automat conform orelor de pontaj.',
+                    t('control_tower.overtime_rule', locale),
                     overview.workforce.overtimeList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-blue-50/50 hover:bg-blue-100/60 text-blue-900 transition-colors text-left"
               >
-                <span className="font-medium">Ore Suplimentare:</span>
+                <span className="font-medium">{t('control_tower.overtime_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-blue-200 text-blue-950 rounded">
-                  {(overview.workforce.overtimeMinutes / 60).toFixed(1)} ore
+                  {(overview.workforce.overtimeMinutes / 60).toFixed(1)} {t('control_tower.hours', locale)}
                 </span>
               </button>
             </div>
@@ -376,7 +376,7 @@ export function ControlTowerSurface() {
                   <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
                     <Layers className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">Producție & Execuție</h3>
+                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.production', locale)}</h3>
                 </div>
                 <span className="text-xl font-black text-amber-600 font-mono">
                   {overview.production.completionPercentage}%
@@ -392,8 +392,8 @@ export function ControlTowerSurface() {
                   />
                 </div>
                 <div className="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
-                  <span>Realizat: {overview.production.actualToday} sarcini</span>
-                  <span>Plan: {overview.production.plannedToday}</span>
+                  <span>{t('control_tower.actual', locale)}: {overview.production.actualToday} {t('control_tower.tasks', locale)}</span>
+                  <span>{t('control_tower.plan', locale)}: {overview.production.plannedToday}</span>
                 </div>
               </div>
             </div>
@@ -402,32 +402,32 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Lucrări Blocate pe Șantier',
+                    t('control_tower.blocked_work', locale),
                     'PRODUCTION_BLOCKED',
-                    'Sarcini marcate cu status BLOCKED din cauza dependențelor, lipsei de materiale sau problemelor din teren.',
+                    t('control_tower.blocked_work_rule', locale),
                     overview.production.blockedTasksList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
               >
-                <span className="font-medium">Lucrări Blocate:</span>
+                <span className="font-medium">{t('control_tower.blocked_work_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-rose-600 text-white rounded">
-                  {overview.production.blockedProduction} sarcini
+                  {overview.production.blockedProduction} {t('control_tower.tasks', locale)}
                 </span>
               </button>
 
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Sarcini Planificate Astăzi',
+                    t('control_tower.planned_tasks', locale),
                     'PRODUCTION',
-                    'Sarcini incluse în planificarea activă de execuție.',
+                    t('control_tower.planned_tasks_rule', locale),
                     overview.production.plannedTasksList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
               >
-                <span className="font-medium">Producție Planificată:</span>
+                <span className="font-medium">{t('control_tower.planned_production_label', locale)}</span>
                 <span className="font-bold font-mono text-slate-900">
                   {overview.production.plannedToday}
                 </span>
@@ -443,7 +443,7 @@ export function ControlTowerSurface() {
                   <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
                     <Boxes className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">Materiale & Stocuri</h3>
+                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.materials', locale)}</h3>
                 </div>
                 <span className="text-xl font-black text-slate-900">
                   {overview.materials.pendingDeliveries} avize
@@ -452,7 +452,7 @@ export function ControlTowerSurface() {
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Materiale Lipsă</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.missing_materials', locale)}</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.materials.missingRequired}
                   </strong>
@@ -470,32 +470,32 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Materiale cu Stoc Redus (< Prag Siguranță)',
+                    t('control_tower.low_stock', locale),
                     'MATERIALS',
-                    'Cantitatea din stoc este inferioară pragului minim de siguranță definit pentru material.',
+                    t('control_tower.low_stock_rule', locale),
                     overview.materials.lowStockList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
               >
-                <span className="font-medium">Stoc Redus (Deficit):</span>
+                <span className="font-medium">{t('control_tower.low_stock_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
-                  {overview.materials.lowStock} articole
+                  {overview.materials.lowStock} {t('control_tower.items', locale)}
                 </span>
               </button>
 
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Livrări și Avize de Însoțire a Mărfii',
+                    t('control_tower.deliveries', locale),
                     'MATERIALS',
-                    'Livrări furnizori recepționate cu aviz de însoțire.',
+                    t('control_tower.deliveries_rule', locale),
                     overview.materials.pendingDeliveriesList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
               >
-                <span className="font-medium">Livrări în Așteptare:</span>
+                <span className="font-medium">{t('control_tower.pending_deliveries', locale)}</span>
                 <span className="font-bold font-mono text-slate-900">
                   {overview.materials.pendingDeliveries}
                 </span>
@@ -511,7 +511,7 @@ export function ControlTowerSurface() {
                   <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
                     <Euro className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">Finanțe & Bugete</h3>
+                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.finance', locale)}</h3>
                 </div>
                 <span
                   className={`text-xs font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
@@ -537,19 +537,19 @@ export function ControlTowerSurface() {
                   </strong>
                 </div>
                 <div className="flex justify-between text-slate-500">
-                  <span>Cost Actual:</span>
+                  <span>{t('control_tower.actual_cost', locale)}</span>
                   <strong className="text-slate-900 font-mono">
                     {formatCurrency(overview.finance.actual)}
                   </strong>
                 </div>
                 <div className="flex justify-between text-slate-500">
-                  <span>Cost Angajat:</span>
+                  <span>{t('control_tower.committed_cost', locale)}</span>
                   <strong className="text-slate-900 font-mono">
                     {formatCurrency(overview.finance.committed)}
                   </strong>
                 </div>
                 <div className="flex justify-between text-slate-500">
-                  <span>Prognoză (Forecast):</span>
+                  <span>{t('control_tower.forecast', locale)}</span>
                   <strong className="text-slate-900 font-mono">
                     {formatCurrency(overview.finance.forecast)}
                   </strong>
@@ -561,15 +561,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Situație Financiară pe Proiecte',
+                    t('control_tower.finance_by_project', locale),
                     'FINANCE',
-                    'Comparație între bugetul aprobat, costul efectiv consumat și angajamentele contractuale.',
+                    t('control_tower.finance_rule', locale),
                     overview.finance.budgetByProject,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
               >
-                <span className="font-medium">Detalii Bugete Proiecte</span>
+                <span className="font-medium">{t('control_tower.budget_details', locale)}</span>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
               </button>
             </div>
@@ -583,7 +583,7 @@ export function ControlTowerSurface() {
                   <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">Calitate & QA/QC</h3>
+                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.quality', locale)}</h3>
                 </div>
                 <span className="text-xl font-black text-slate-900">
                   {overview.quality.openNCRs} NCR
@@ -592,13 +592,13 @@ export function ControlTowerSurface() {
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Inspecții Eșuate</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.failed_inspections', locale)}</span>
                   <strong className="text-rose-600 text-sm font-mono">
                     {overview.quality.failedInspections}
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Corecții Active</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.active_corrections', locale)}</span>
                   <strong className="text-amber-600 text-sm font-mono">
                     {overview.quality.pendingCorrections}
                   </strong>
@@ -610,15 +610,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Neconformități Deschise (Open NCRs)',
+                    t('control_tower.open_ncr', locale),
                     'QUALITY',
-                    'Raport de neconformitate deschis în urma inspecțiilor din teren fără acțiune corectivă finalizată.',
+                    t('control_tower.open_ncr_rule', locale),
                     overview.quality.openNCRsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
               >
-                <span className="font-medium">NCR-uri Deschise:</span>
+                <span className="font-medium">{t('control_tower.open_ncr_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-rose-200 text-rose-900 rounded">
                   {overview.quality.openNCRs}
                 </span>
@@ -627,15 +627,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Inspecții Eșuate',
+                    t('control_tower.failed_inspections', locale),
                     'QUALITY',
-                    'Fișe de verificare în care cel puțin un parametru măsurat a fost sub nivelul admis.',
+                    t('control_tower.failed_inspections_rule', locale),
                     overview.quality.failedInspectionsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
               >
-                <span className="font-medium">Inspecții Eșuate:</span>
+                <span className="font-medium">{t('control_tower.failed_inspections', locale)}:</span>
                 <span className="font-bold font-mono text-slate-900">
                   {overview.quality.failedInspections}
                 </span>
@@ -651,22 +651,22 @@ export function ControlTowerSurface() {
                   <div className="p-2 bg-teal-50 text-teal-600 rounded-lg">
                     <FileCheck className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900">Documentație</h3>
+                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.documentation', locale)}</h3>
                 </div>
                 <span className="text-xl font-black text-slate-900">
-                  {overview.documentation.supersededDocuments} înlocuite
+                  {overview.documentation.supersededDocuments} {t('control_tower.replaced_count', locale)}
                 </span>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Documente Lipsă</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.missing_documents', locale)}</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.documentation.missingDocuments}
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">În Așteptare Aprobare</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.awaiting_approval', locale)}</span>
                   <strong className="text-amber-600 text-sm font-mono">
                     {overview.documentation.awaitingApproval}
                   </strong>
@@ -678,15 +678,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Documente Înlocuite (Versiuni Vechi în Șantier)',
+                    t('control_tower.replaced_documents', locale),
                     'DOCUMENTATION',
-                    'Documente la care există o versiune superioară aprobată, dar pe șantier figurează o versiune veche.',
+                    t('control_tower.replaced_documents_rule', locale),
                     overview.documentation.supersededDocumentsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
               >
-                <span className="font-medium">Documente Înlocuite:</span>
+                <span className="font-medium">{t('control_tower.replaced_documents_label', locale)}</span>
                 <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
                   {overview.documentation.supersededDocuments}
                 </span>
@@ -695,15 +695,15 @@ export function ControlTowerSurface() {
               <button
                 onClick={() =>
                   openDrilldown(
-                    'Documente în Așteptarea Aprobării',
+                    t('control_tower.awaiting_documents', locale),
                     'DOCUMENTATION',
-                    'Documente depuse pentru avizare tehnică.',
+                    t('control_tower.awaiting_documents_rule', locale),
                     overview.documentation.awaitingApprovalList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
               >
-                <span className="font-medium">În Așteptare:</span>
+                <span className="font-medium">{t('control_tower.awaiting_label', locale)}</span>
                 <span className="font-bold font-mono text-slate-900">
                   {overview.documentation.awaitingApproval}
                 </span>
@@ -718,10 +718,10 @@ export function ControlTowerSurface() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">
-              Module Operaționale de Șantier
+              {t('control_tower.quick_modules', locale)}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Accesează direct fluxurile de pontaj, recepție avize, cheltuieli și rapoarte de teren
+              {t('control_tower.quick_modules_detail', locale)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -729,31 +729,31 @@ export function ControlTowerSurface() {
               href="/pontaj"
               className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
             >
-              Pontaj & Ore
+              {t('control_tower.hours', locale)}
             </Link>
             <Link
               href="/rapoarte"
               className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
             >
-              Rapoarte Zilnice
+              {t('control_tower.daily_reports', locale)}
             </Link>
             <Link
               href="/avize"
               className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
             >
-              Avize & Recepție
+              {t('control_tower.delivery_intake', locale)}
             </Link>
             <Link
               href="/stocuri"
               className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
             >
-              Stocuri
+              {t('control_tower.stock', locale)}
             </Link>
             <Link
               href="/cheltuieli"
               className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
             >
-              Cheltuieli & OCR
+              {t('control_tower.expenses_ocr', locale)}
             </Link>
           </div>
         </div>

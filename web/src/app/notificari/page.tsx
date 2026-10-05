@@ -101,7 +101,7 @@ export default function NotificariPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{t('notifications.title', locale)}</h1>
-          <p className="text-sm text-slate-500 mt-1">{locale === 'en' ? 'The notification centre for system events.' : 'Centrul de notificări pentru evenimentele din sistem.'}</p>
+          <p className="text-sm text-slate-500 mt-1">{t('notifications.system_subtitle', locale)}</p>
         </div>
         <div className="flex items-center space-x-3">
           {unreadCount > 0 && (

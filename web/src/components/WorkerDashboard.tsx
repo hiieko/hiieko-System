@@ -29,6 +29,7 @@ export function WorkerDashboard() {
   const [attError, setAttError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionResult, setActionResult] = useState<string | null>(null);
+  const [actionResultIsError, setActionResultIsError] = useState(false);
   const [taskRows, setTaskRows] = useState<FieldTaskRow[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
   const [tasksError, setTasksError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function WorkerDashboard() {
                      geoStatus.state === 'timeout' ? t('worker.gps_timeout', locale) :
                      geoStatus.state === 'unavailable' ? t('worker.gps_unavailable', locale) :
                      t('worker.gps_error', locale);
-      setActionResult(errMsg); setTimeout(() => setActionResult(null), 4000);
+      setActionResult(errMsg); setActionResultIsError(true); setTimeout(() => setActionResult(null), 4000);
       return null;
     }
     return loc;
@@ -98,28 +99,28 @@ export function WorkerDashboard() {
 
   const handleCheckIn = async () => {
     if (!selectedProject) {
-      setActionResult('Selecteaza un proiect mai intai.'); setTimeout(() => setActionResult(null), 3000); return;
+      setActionResult(t('worker.select_project_first', locale)); setActionResultIsError(true); setTimeout(() => setActionResult(null), 3000); return;
     }
-    setActionLoading(true); setActionResult(null);
+    setActionLoading(true); setActionResult(null); setActionResultIsError(false);
     try {
       const loc = await getLocationOrWarn();
       if (!loc) { setActionLoading(false); return; }
       await apiClient.checkInAttendance({ projectId: selectedProject.id, latitude: loc.latitude, longitude: loc.longitude });
       setActionResult(t('worker.checkin_success', locale)); setTimeout(() => setActionResult(null), 3000);
       loadAttendance();
-    } catch (err: any) { setActionResult(err.message || 'Eroare'); setTimeout(() => setActionResult(null), 3000); }
+    } catch (err: any) { setActionResult(err.message || t('worker.error_generic', locale)); setActionResultIsError(true); setTimeout(() => setActionResult(null), 3000); }
     finally { setActionLoading(false); }
   };
 
   const handleCheckOut = async () => {
-    setActionLoading(true); setActionResult(null);
+    setActionLoading(true); setActionResult(null); setActionResultIsError(false);
     try {
       const loc = await getLocationOrWarn();
       if (!loc) { setActionLoading(false); return; }
       await apiClient.checkOutAttendance({ projectId: selectedProject?.id || '', latitude: loc.latitude, longitude: loc.longitude });
       setActionResult(t('worker.checkout_success', locale)); setTimeout(() => setActionResult(null), 3000);
       loadAttendance();
-    } catch (err: any) { setActionResult(err.message || 'Eroare'); setTimeout(() => setActionResult(null), 3000); }
+    } catch (err: any) { setActionResult(err.message || t('worker.error_generic', locale)); setActionResultIsError(true); setTimeout(() => setActionResult(null), 3000); }
     finally { setActionLoading(false); }
   };
 
@@ -148,7 +149,7 @@ export function WorkerDashboard() {
       </div>
 
       {actionResult && (
-        <div className={'p-3 rounded-lg text-sm font-medium ' + (actionResult.includes('Eroare') || actionResult.includes('Selecteaza') ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700')}>{actionResult}</div>
+        <div className={'p-3 rounded-lg text-sm font-medium ' + (actionResultIsError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700')}>{actionResult}</div>
       )}
 
       {geoStatus.state !== 'idle' && geoStatus.state !== 'loading' && (
