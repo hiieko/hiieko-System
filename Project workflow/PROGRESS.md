@@ -1,5 +1,9 @@
 ﻿﻿﻿﻿# Project Progress
 
+## AUTONOMOUS REMEDIATION HANDOFF CORRECTION — 2026-10-05
+
+Slices 2–6 were previously described below as “uncommitted / not pushed”. That statement is stale: those slice commits are already ancestors of the merged PR #1/#2 history on `master`. Slice 7 is now also merged. Slice 8 CI enforcement is active, and Slice 9 frontend contract alignment is in progress. Historical slice sections below are retained as evidence and should not be interpreted as current working-tree state.
+
 > **Canonical current status document.**
 > Historical material has been moved to `archive/PROGRESS_HISTORY.md`.
 
