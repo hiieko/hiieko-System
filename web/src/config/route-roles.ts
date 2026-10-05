@@ -192,6 +192,7 @@ export const ROUTE_ROLES = {
   '/issues': OPERATIONAL_ROLES,
   '/pontaj': OPERATIONAL_ROLES,
   '/rapoarte': OPERATIONAL_ROLES,
+  '/rapoarte/form': DAILY_REPORT_CREATE_ROLES,
   '/avize': [...OPERATIONAL_ROLES, 'procurement'],
   '/stocuri': OPERATIONAL_ROLES,
   '/cheltuieli': [...OPERATIONAL_ROLES, 'finance'],
