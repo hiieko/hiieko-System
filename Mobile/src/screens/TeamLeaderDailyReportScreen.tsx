@@ -63,7 +63,6 @@ export function TeamLeaderDailyReportScreen({
   const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [loadingTasks, setLoadingTasks] = useState(false);
-  const [newTaskDesc, setNewTaskDesc] = useState('');
   const [newTaskQty, setNewTaskQty] = useState('');
   
   const [materialsUsed, setMaterialsUsed] = useState<FormMaterial[]>([
@@ -158,7 +157,6 @@ export function TeamLeaderDailyReportScreen({
     }]);
     setSelectedTaskId('');
     setNewTaskQty('');
-    setNewTaskDesc('');
   };
 
   const handleSubmit = async () => {
