@@ -363,6 +363,7 @@ model Task {
 
   @@unique([project_id, code])
   @@index([verified_by])
+  @@index([project_id, is_archived])
   @@map("tasks")
 }
 
