@@ -48,6 +48,7 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
       expense: { findUnique: jest.fn() },
       document: { findUnique: jest.fn() },
       attachment: { create: jest.fn() },
+      projectMember: { findUnique: jest.fn() },
     };
     config = { get: jest.fn((key: string, def?: string) => (key === 'MAX_FILE_SIZE' ? def : def)) };
 
@@ -203,13 +204,39 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
     await expect(service.readFile('doc-404', worker)).rejects.toThrow(NotFoundException);
   });
 
-  it('forbids retrieval by a user who did not upload the file', async () => {
+  it('forbids retrieval by a user who is neither the uploader nor a project member', async () => {
     prisma.document.findUnique.mockResolvedValue({
       id: 'doc-1',
       title: 'fuel-receipt.jpg',
+      project_id: 'project-1',
       versions: [{ uploaded_by: 'other-user', storage_path: 'k.jpg' }],
+      project: { id: 'project-1', organization_id: 'org-1' },
     });
+    prisma.projectMember.findUnique.mockResolvedValue(null);
     await expect(service.readFile('doc-1', worker)).rejects.toThrow(ForbiddenException);
+  });
+
+  it('allows a project member to retrieve a project document', async () => {
+    prisma.document.findUnique.mockResolvedValue({
+      id: 'doc-1',
+      title: 'site-plan.pdf',
+      project_id: 'project-1',
+      versions: [{ uploaded_by: 'other-user', storage_path: 'receipts/site-plan.pdf' }],
+      project: { id: 'project-1', organization_id: 'org-1' },
+    });
+    prisma.projectMember.findUnique.mockResolvedValue({ user_id: worker.id });
+    storage.read.mockResolvedValue({
+      buffer: Buffer.from('data'),
+      mimeType: 'application/pdf',
+      size: 4,
+      key: 'receipts/site-plan.pdf',
+    });
+
+    await expect(service.readFile('doc-1', worker)).resolves.toMatchObject({
+      mimeType: 'application/pdf',
+      size: 4,
+      fileName: 'site-plan.pdf',
+    });
   });
 
   it('returns the stored blob to the original uploader', async () => {
