@@ -6,44 +6,28 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { RATE_LIMIT_KEY, RateLimitRule } from '../decorators/rate-limit.decorator';
 
-interface WindowCounter {
-  /** End of the fixed-window bucket this counter belongs to (ms epoch). */
-  expiresAt: number;
-  /** Attempts recorded inside the window. */
-  count: number;
-}
-
 /**
- * Dependency-free, in-memory fixed-window rate limiter (Slice 1, L-2).
+ * PostgreSQL-backed fixed-window rate limiter.
  *
- * Deliberately minimal: no `@nestjs/throttler`, no Redis, and no `X-Forwarded-For` parsing.
- * Counters live in a single process-wide `Map` keyed by `route|scope:subject`, so
- * multi-instance / shared limiting is explicitly deferred to Slice 7.
- *
- * Every attempt is counted (successful logins included) and a window is a fixed bucket — it
- * never resets early on success. Over-limit requests get a **429** which the global exception
- * filter maps to `TOO_MANY_REQUESTS` (L-3), never `INTERNAL_ERROR`.
+ * Slice 7 replaces the Slice 1 process-local Map with an atomic database counter so
+ * concurrent API instances share the same IP/email windows. No X-Forwarded-For parsing
+ * is introduced: the limiter continues to trust only req.ip.
  */
 @Injectable()
 export class RateLimitGuard implements CanActivate {
-  /**
-   * Process-wide window store. Static so the limiter shares one store even if Nest
-   * materializes the guard more than once (multiple modules / enhancer instances).
-   */
-  private static readonly counters = new Map<string, WindowCounter>();
-  /** Upper bound before stale windows are pruned, so the map cannot grow unbounded. */
-  private static readonly MAX_ENTRIES = 10_000;
+  private static readonly CLEANUP_INTERVAL_MS = 5 * 60_000;
+  private static lastCleanupAt = 0;
 
-  /** Test-only helper: clears the shared window store between cases. */
-  static reset(): void {
-    RateLimitGuard.counters.clear();
-  }
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  constructor(private readonly reflector: Reflector) {}
-
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const rules = this.reflector.getAllAndOverride<RateLimitRule[]>(RATE_LIMIT_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -56,17 +40,18 @@ export class RateLimitGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const route = `${context.getClass().name}.${context.getHandler().name}`;
     const now = Date.now();
-    this.prune(now);
+
+    await this.cleanupExpired(now);
 
     let exceeded = false;
     for (const rule of rules) {
       const subject = this.subjectFor(rule, request);
-      // A rule whose subject cannot be derived (e.g. an `email` rule on a request without a
-      // usable body email) is skipped — the remaining rules still apply.
       if (subject === undefined) {
         continue;
       }
-      if (!this.register(route, rule, subject, now)) {
+
+      const allowed = await this.register(route, rule, subject, now);
+      if (!allowed) {
         exceeded = true;
       }
     }
@@ -90,30 +75,48 @@ export class RateLimitGuard implements CanActivate {
     return email.trim().toLowerCase();
   }
 
-  /**
-   * Records one attempt against `route|scope:subject` in the current fixed window and returns
-   * `true` while the attempt stays within `rule.limit`. The attempt is always counted, so a
-   * rejected request still advances the window.
-   */
-  private register(route: string, rule: RateLimitRule, subject: string, now: number): boolean {
-    const key = `${route}|${rule.scope}:${subject}`;
-    const expiresAt = (Math.floor(now / rule.windowMs) + 1) * rule.windowMs;
-    const current = RateLimitGuard.counters.get(key);
+  private async register(
+    route: string,
+    rule: RateLimitRule,
+    subject: string,
+    now: number,
+  ): Promise<boolean> {
+    const windowStartMs = Math.floor(now / rule.windowMs) * rule.windowMs;
+    const expiresAtMs = windowStartMs + rule.windowMs;
+    const key = `${route}|\${rule.scope}:${subject}`;
 
-    const count = current && current.expiresAt === expiresAt ? current.count + 1 : 1;
-    RateLimitGuard.counters.set(key, { expiresAt, count });
+    const rows = await this.prisma.$queryRaw<Array<{ count: number }>>(
+      Prisma.sql`
+        INSERT INTO "rate_limit_buckets"
+          ("id", "window_start", "expires_at", "count", "updated_at")
+        VALUES
+          (${key}, ${new Date(windowStartMs)}, ${new Date(expiresAtMs)}, 1, NOW())
+        ON CONFLICT ("id") DO UPDATE
+        SET
+          "count" = CASE
+            WHEN "rate_limit_buckets"."expires_at" = EXCLUDED."expires_at"
+              THEN "rate_limit_buckets"."count" + 1
+            ELSE 1
+          END,
+          "window_start" = EXCLUDED."window_start",
+          "expires_at" = EXCLUDED."expires_at",
+          "updated_at" = NOW()
+        RETURNING "count"
+      `,
+    );
 
+    const count = Number(rows[0]?.count ?? 1);
     return count <= rule.limit;
   }
 
-  private prune(now: number): void {
-    if (RateLimitGuard.counters.size < RateLimitGuard.MAX_ENTRIES) {
+  private async cleanupExpired(now: number): Promise<void> {
+    if (now - RateLimitGuard.lastCleanupAt < RateLimitGuard.CLEANUP_INTERVAL_MS) {
       return;
     }
-    for (const [key, counter] of RateLimitGuard.counters) {
-      if (counter.expiresAt <= now) {
-        RateLimitGuard.counters.delete(key);
-      }
-    }
+
+    RateLimitGuard.lastCleanupAt = now;
+    await this.prisma.$executeRaw(
+      Prisma.sql`DELETE FROM "rate_limit_buckets" WHERE "expires_at" <= ${new Date(now)}`,
+    );
   }
 }
