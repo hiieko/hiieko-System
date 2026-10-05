@@ -1677,6 +1677,10 @@ Object.assign(d, {
   'control_tower.drawer.responsible_inline': T('Responsabil:', 'Responsible:'),
   'control_tower.drawer.source_inline': T('Sursă:', 'Source:'),
   'control_tower.drawer.progress': T('Progres Lucrări', 'Work Progress'),
+
+  'worker.refresh': T('Reîmprospătează', 'Refresh'),
+  'worker.site_picker_hint': T('Alege șantierul de unde lucrezi din selectorul de proiecte din bara de sus pentru a te ponta.', 'Pick the site you are working at from the project selector in the top bar to clock in.'),
+  'worker.assigned_work_site': T('Lucrări atribuite ție pe acest șantier', 'Work assigned to you on this site'),
 });
 
 export function t(key: string, locale: Locale = 'ro'): string {
