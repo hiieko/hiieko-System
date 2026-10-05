@@ -8,8 +8,6 @@ Last Updated: 2026-10-05
 
 - [ ] **Production deployment verification** — verify the canonical Netlify production deployment/domain and document the result.
 - [ ] **Mobile acceptance** — run the Android/iOS emulator or physical-device smoke test, including offline → reconnect → sync, GPS, and hardware-dependent flows.
-- [ ] **Frontend permission UX** — finish PR #26 and merge only after CI is green.
-- [ ] **Documentation reconciliation** — keep CURRENT_STATUS / HANDOFF / PROGRESS / VERIFICATION aligned with the current tree after substantive work.
 
 ## Deferred / Explicitly Frozen
 
@@ -23,7 +21,8 @@ Last Updated: 2026-10-05
 - [x] **Daily report approval workflow** — PR #25 merged.
 - [x] **Frontend role-oriented v0 home** — PR #23/PR #24 merged; obsolete PR #21 closed.
 - [x] **Netlify runtime configuration** — PR #22 merged; obsolete PR #20 closed.
-- [x] **Frontend permission UX reconciliation** — PR #26 opened and remains active.
+- [x] **Frontend permission UX reconciliation** — PR #26 merged after green CI.
+- [x] **Documentation reconciliation** — current status, handoff, progress, verification, and TODO reconciled.
 
 ## Historical Records
 
