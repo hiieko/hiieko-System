@@ -674,6 +674,7 @@ model StockBalance {
   warehouse         Warehouse? @relation(fields: [warehouse_id], references: [id], onDelete: Cascade)
 
   @@unique([material_id, project_id, warehouse_id])
+  @@index([project_id])
   @@map("stock_balances")
 }
 
@@ -697,6 +698,7 @@ model StockMovement {
   warehouse       Warehouse?            @relation(fields: [warehouse_id], references: [id])
 
   @@index([material_id, created_at])
+  @@index([project_id, created_at])
   @@map("stock_movements")
 }
 
@@ -847,6 +849,7 @@ model AvizItem {
   aviz        Aviz     @relation(fields: [aviz_id], references: [id], onDelete: Cascade)
   material    Material @relation(fields: [material_id], references: [id], onDelete: Cascade)
 
+  @@index([aviz_id])
   @@map("aviz_items")
 }
 
