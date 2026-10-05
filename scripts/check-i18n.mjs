@@ -224,7 +224,7 @@ for (const [key, lines] of [...linesByKey.entries()].filter(([, l]) => l.length 
 }
 
 // --- scan every source file -------------------------------------------------
-const files = SOURCE_ROOTS.flatMap(collectSourceFiles).filter((file) => rel(file) !== TRANSLATIONS_FILE);
+const files = SOURCE_ROOTS.flatMap(collectSourceFiles).filter((file) => !file.endsWith(`/${TRANSLATIONS_FILE}`) && !file.endsWith(`\\${TRANSLATIONS_FILE.replaceAll('/', '\\')}`));
 
 const referencedKeys = new Set();
 const undefinedRefCandidates = [];
