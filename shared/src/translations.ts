@@ -1702,10 +1702,6 @@ Object.assign(d, {
   'projects.remove': T('Elimină', 'Remove'),
 });
 
-Object.assign(d, {
-  'avize.load_error': T('Nu s-au putut încărca avizele', 'Failed to load avize'),
-});
-
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;
