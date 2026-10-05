@@ -57,6 +57,13 @@
   --hii-sidebar-active-text: #ffffff;
   --hii-sidebar-width: 16rem;
   --hii-header-height: 4rem;
+  --hii-chrome: #111827;
+  --hii-chrome-elevated: #374151;
+  --hii-chrome-hover: #1f2937;
+  --hii-chrome-border: #1f2937;
+  --hii-chrome-text: #f9fafb;
+  --hii-chrome-text-muted: #9ca3af;
+  --hii-shell-content-bg: #f3f4f6;
 }
 
 @layer base {
@@ -326,5 +333,23 @@
   }
   .hii-shell-header {
     height: var(--hii-header-height);
+  }
+}
+
+
+@layer utilities {
+  .hii-shell-chrome {
+    background-color: var(--hii-chrome);
+    color: var(--hii-chrome-text);
+  }
+  .hii-shell-band {
+    background-color: var(--hii-chrome-elevated);
+  }
+  .hii-shell-canvas {
+    background-color: var(--hii-shell-content-bg);
+  }
+  .hii-shell-chrome :focus-visible,
+  .hii-shell-band :focus-visible {
+    outline-color: var(--hii-accent, #f59e0b);
   }
 }
