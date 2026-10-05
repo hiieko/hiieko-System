@@ -202,14 +202,12 @@ Implemented full project-scoped authorization across all 102 routes:
 ## 8. Known carried-over gaps
 
 - ISSUE-018 / ISSUE-019: **RESOLVED by PR #2** — `GET /api/users/:id` and related user lookups are organization-scoped through the authenticated actor's `organizationId`.
-- `POST /api/inventory/transfer` — Guard checks both sourceProjectId and targetProjectId (P5 GAP1 fixed); global-role users bypass membership checks by design (see ISSUE-019)
+- `POST /api/inventory/transfer` — Guard checks both sourceProjectId and targetProjectId; ADMIN/OWNER/MANAGER global project scope remains intentional.
 - No authentication rate limiting (ISSUE-021, OPEN)
 - No refresh-token rotation or revocation (ISSUE-022, OPEN)
 - 8 non-global users (3 TEAM_LEADER, 5 WORKER) currently unassigned to any project (ISSUE-023, OPEN)
 - `PermissionsGuard` not activated; permission tables unseeded
 - `GET /api/procurement/avize/:id` route absent from controller (documented in HANDOFF.md)
-- `GET /api/users/:id` — No organization-scope enforcement. Deferred from P5.
-- `POST /api/inventory/transfer` — Uses sourceProjectId/targetProjectId; guard checks both (fixed in P5). Residual: global-role bypass by design.
 
 ## 9. Project authorization
 
