@@ -647,7 +647,7 @@ describe('Slice 2 — Suspension revokes every active session (L13)', () => {
       replaced_by_id: null,
     });
 
-    await service.updateStatus('u1', { status: UserStatusEnum.SUSPENDED }, 'admin-1');
+    await service.updateStatus('u1', { status: UserStatusEnum.SUSPENDED }, { id: 'admin-1', email: 'admin@hiieko.local', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any);
 
     expect(db.sessions.every((s) => s.revoked_at !== null)).toBe(true);
     expect(db.sessions.every((s) => s.revoked_reason === 'SUSPENDED')).toBe(true);
