@@ -270,7 +270,7 @@ function DrilldownItemCard({ item, category }: { item: any; category: string }) 
           <div>
             <h4 className="text-sm font-semibold text-slate-900">{item.fullName}</h4>
             <p className="text-xs text-slate-500 mt-0.5">
-              Șantier: <span className="font-medium text-slate-700">{item.projectName}</span>
+              {t('control_tower.drawer.site', locale)} <span className="font-medium text-slate-700">{item.projectName}</span>
             </p>
           </div>
           <span className="px-2.5 py-1 text-xs font-bold bg-blue-600 text-white rounded-full">
