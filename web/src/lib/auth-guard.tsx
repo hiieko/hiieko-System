@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 
 /**
  * AuthGuard — wraps pages that require authentication.
