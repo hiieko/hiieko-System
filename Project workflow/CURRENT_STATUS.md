@@ -209,9 +209,9 @@ Implemented full project-scoped authorization across all 102 routes:
 - **ISSUE-050:** four pre-existing CJ-003 verification fixture tasks remain in the development DB. Deletion is intentionally not autonomous because the fixtures are referenced by verification evidence.
 - **ISSUE-051:** Mobile daily-report submission still has a task-ID/draft-loss defect. Mobile is frozen for the remediation program, so this remains deferred.
 - **ISSUE-053:** frontend navigation and backend @Roles contracts still have documented business-rule divergences; this requires an explicit authorization decision rather than an incidental UI fix.
-- **ISSUE-056:** remaining Romanian copy/role-map cleanup remains open; Mobile portions are deferred by the frozen-Mobile policy.
-- **PermissionsGuard:** not activated and permission tables are not seeded; this is broader governance work, not required for the completed Phase 1 role boundary.
-- **Procurement:** GET /api/procurement/avize/:id remains absent from the controller and is documented in HANDOFF.md.
+- **ISSUE-056:** remaining Romanian copy cleanup remains open; the Mobile duplicate role map is now resolved, while Control Tower prose remains for the R1B pass.
+- **PermissionsGuard:** permission catalog and guard coverage are merged; endpoint metadata/role grants remain intentionally unenforced pending a complete business permission matrix.
+- **Procurement:** `GET /api/procurement/avize/:id` is implemented and entity-project scoped.
 - **Production readiness:** staging/production CI deployment, rollback automation, monitoring/alerting, and structured production logging are not yet in place.
 
 ## 9. Project authorization
