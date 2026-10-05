@@ -13,10 +13,10 @@ Last Updated: 2026-10-05
 - Control Tower / role-oriented frontend work.
 - Netlify deployment configuration.
 - Mobile offline-sync correctness hardening (PR #27).
+- Frontend permission UX reconciliation (PR #26).
 
 ## Active
 
-- PR #26 — frontend permission UX consistency.
 - Production deployment verification on Netlify.
 - Final Mobile emulator/device acceptance.
 
