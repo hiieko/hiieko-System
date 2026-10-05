@@ -561,6 +561,7 @@ Object.assign(d, {
 
   // --- B4 Projects ---
   'nav.projects': T('Proiecte', 'Projects'),
+  'nav.documente': T('Documente', 'Documents'),
   'nav.teams': T('Echipe', 'Teams'),
   'nav.workforce': T('Forță de Muncă', 'Workforce'),
   // `/control-tower` is the canonical destination (UX-R1A C2 redirects `/statistici` to it),
