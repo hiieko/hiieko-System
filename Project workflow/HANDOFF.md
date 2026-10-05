@@ -182,7 +182,7 @@ gotcha stands (**ISSUE-049**): `npm run web:build` needs the dev server stopped,
 was restarted afterwards.
 
 **Next:** the ISSUE-062 one-line fix when a slice touches `MyWorkList`, then the remaining R1B copy pass
-ISSUE-059 `FIXED`, ISSUE-055 untouched, ISSUE-056 deferred) and the visual redesign - still PENDING. Full
+ISSUE-059 `FIXED`, ISSUE-055 untouched, ISSUE-056 RESOLVED 2026-10-05) and the visual redesign - still PENDING. Full
 detail: `VERIFICATION.md` -> *Daily Planning - supervisor day surface* and *Tailwind `content` globs -
 feature-only utilities were never emitted*; `ISSUES.md` -> ISSUE-062, ISSUE-063.
 
@@ -259,7 +259,7 @@ keys), `guards:check` **PASS** (194 files), `typecheck` / `web:typecheck` / `web
 The `UNCOMMITTED` wording in the R1B.2 and R1B.1 sections below is **historical** - it records the state
 when each section was written (R1B.1 = `e0c1caf`, R1B.2 = `9e6a503`); the Phase-1 top section was
 reconciled the same way (Phase 1 = `0ec084a`, see *PHASE 1 VERIFIED + COMMITTED* above). **Next:** continue the R1B copy
-pass (ISSUE-055 untouched, ISSUE-056 still deferred) and then the visual redesign.
+pass (ISSUE-055 untouched, ISSUE-056 RESOLVED 2026-10-05) and then the visual redesign.
 
 ## R1B.2 DONE — ISSUE-059 fixed, UNCOMMITTED (2026-09-30) — HEAD = `e0c1caf`
 
