@@ -1,21 +1,19 @@
 'use client';
 
 import { PageTutorial } from '../../components/PageTutorial';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { apiClient } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { RoleGuard } from '../../lib/auth-guard';
-import { ROUTE_ROLES } from '../../config/route-roles';
 import { 
   Boxes, 
   AlertTriangle, 
   ArrowUpRight, 
   ArrowDownRight, 
   History, 
-  Plus, 
-  Search, 
-  ShieldAlert,
+  Search,
+  RefreshCw,
   Loader2,
   AlertCircle
 } from 'lucide-react';
@@ -29,6 +27,14 @@ interface Material {
   barcode?: string;
   category?: string;
   min_stock_threshold?: number;
+}
+
+interface StockRow {
+  id: string;
+  material?: Material;
+  balance?: StockBalance;
+  quantity: number | null;
+  threshold: number | null;
 }
 
 interface StockBalance {
@@ -61,6 +67,9 @@ function StocuriPageInner() {
   const [stockBalances, setStockBalances] = useState<StockBalance[]>([]);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { locale } = useLocale();
   const { selectedProjectId } = useProject();
 
@@ -95,19 +104,60 @@ function StocuriPageInner() {
     };
 
     loadData();
-  }, [selectedProjectId]);
+  }, [selectedProjectId, refreshKey]);
+
+  const stockRows = useMemo(() => {
+    const rows: StockRow[] = materials.map((material) => {
+      const balance = stockBalances.find((item) => item.material_id === material.id);
+      return {
+        id: balance?.id || material.id,
+        material: balance?.material || material,
+        balance,
+        quantity: balance ? Number(balance.current_quantity) : null,
+        threshold: material.min_stock_threshold == null ? null : Number(material.min_stock_threshold),
+      };
+    });
+    const knownMaterialIds = new Set(materials.map((material) => material.id));
+    stockBalances.filter((balance) => !knownMaterialIds.has(balance.material_id)).forEach((balance) => rows.push({
+      id: balance.id,
+      material: balance.material,
+      balance,
+      quantity: Number(balance.current_quantity),
+      threshold: balance.material?.min_stock_threshold == null ? null : Number(balance.material.min_stock_threshold),
+    }));
+    return rows;
+  }, [materials, stockBalances]);
+
+  const filteredStockRows = stockRows.filter(({ material, quantity, threshold }) => {
+    const term = search.trim().toLocaleLowerCase();
+    const matchesSearch = !term || [material?.code || '', material?.name || '', material?.category || '', material?.barcode || ''].some((value) => value.toLocaleLowerCase().includes(term));
+    const isLowStock = quantity !== null && threshold !== null && quantity <= threshold;
+    return matchesSearch && (!lowStockOnly || isLowStock);
+  });
+  const filteredMovements = stockMovements.filter((movement) => {
+    const term = search.trim().toLocaleLowerCase();
+    const material = movement.material || materials.find((item) => item.id === movement.material_id);
+    return !term || [material?.name || '', movement.movement_type, movement.notes || ''].some((value) => value.toLocaleLowerCase().includes(term));
+  });
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <PageTutorial sectionId="stock" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Gestiune Stocuri & Mișcări Materiale</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Controlul inventarului pe fiecare șantier, calculat strict din intrările de pe avize și ieșirile din rapoartele zilnice.
-          </p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Gestiune stocuri &amp; mișcări materiale</h1>
+          <p className="mt-1 text-sm text-slate-500">Balanțe de inventar și registrul mișcărilor înregistrate pentru proiect.</p>
         </div>
+        <button type="button" onClick={() => setRefreshKey((key) => key + 1)} disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"><RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />Reîncarcă</button>
       </div>
+
+      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <p className="px-1 text-xs text-slate-500">{filteredStockRows.length} materiale · {filteredMovements.length} mișcări</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-slate-300 px-3 sm:w-72"><Search className="size-4 shrink-0 text-slate-400" /><span className="sr-only">Caută materiale sau mișcări</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cod, material sau referință" className="w-full bg-transparent text-sm outline-none" /></label>
+          <button type="button" aria-pressed={lowStockOnly} onClick={() => setLowStockOnly((value) => !value)} className={`min-h-11 rounded-lg border px-3 text-sm font-semibold ${lowStockOnly ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-slate-300 bg-white text-slate-700'}`}>Sub prag minim</button>
+        </div>
+      </section>
 
       {loading ? (
         <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
@@ -115,9 +165,10 @@ function StocuriPageInner() {
           <p className="mt-2 text-sm text-slate-500">Îcarcăd datele de stoc...</p>
         </div>
       ) : error ? (
-        <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
-          <AlertCircle className="w-8 h-8 mx-auto text-rose-400" />
-          <p className="mt-2 text-sm text-rose-500">Eroare: {error}</p>
+        <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-10 text-center">
+          <AlertCircle className="size-8 text-rose-500" />
+          <p className="text-sm text-rose-800">Eroare: {error}</p>
+          <button type="button" onClick={() => setRefreshKey((key) => key + 1)} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">Reîncearcă</button>
         </div>
       ) : (
         <>
@@ -133,7 +184,7 @@ function StocuriPageInner() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold uppercase text-slate-500">
@@ -147,64 +198,31 @@ function StocuriPageInner() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {stockBalances.length === 0 && materials.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 text-sm">
-                    Nu exista materiale â stoc
-                  </td>
-                </tr>
-              ) : stockBalances.length > 0 ? (
-                stockBalances.map((balance) => {
-                  const mat = balance.material || materials.find(m => m.id === balance.material_id);
-                  const currentQty = Number(balance.current_quantity || 0);
-                  const minThreshold = Number(mat?.min_stock_threshold || 10);
-                  const isCritical = currentQty <= minThreshold;
-                  const unit = mat?.unit || 'buc';
-
-                  return (
-                    <tr key={balance.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{mat?.code || '—'}</td>
-                      <td className="py-3.5 px-4 font-medium text-slate-800">{mat?.name || 'Material Necunoscut'}</td>
-                      <td className="py-3.5 px-4 text-xs text-slate-500">{mat?.category || '—'}</td>
-                      <td className="py-3.5 px-4 font-mono text-xs text-slate-600">{mat?.barcode || '—'}</td>
-                      <td className="py-3.5 px-4 text-right text-xs text-slate-500">{minThreshold} {unit}</td>
-                      <td className="py-3.5 px-4 text-right font-extrabold text-base text-slate-900">
-                        {currentQty} <span className="text-xs font-normal text-slate-500">{unit}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {isCritical ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            Stoc Critic
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                            Optim
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                materials.map((material) => (
-                  <tr key={material.id} className="hover:bg-slate-50 transition-colors opacity-60">
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{material.code}</td>
-                    <td className="py-3.5 px-4 font-medium text-slate-800">{material.name}</td>
-                    <td className="py-3.5 px-4 text-xs text-slate-500">{material.category || '—'}</td>
-                    <td className="py-3.5 px-4 font-mono text-xs text-slate-600">{material.barcode || '—'}</td>
-                    <td className="py-3.5 px-4 text-right text-xs text-slate-500">{material.min_stock_threshold || 0} {material.unit}</td>
-                    <td className="py-3.5 px-4 text-right font-extrabold text-base text-slate-900">
-                      0 <span className="text-xs font-normal text-slate-500">{material.unit}</span>
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-          <span className="text-xs text-slate-400">Fără stoc</span>
-                    </td>
-                  </tr>
-                ))
-              )}
+              {filteredStockRows.length === 0 ? (
+                <tr><td colSpan={7} className="py-10 text-center text-sm text-slate-500">{stockRows.length ? 'Niciun material nu corespunde filtrelor.' : 'Nu au fost returnate materiale sau balanțe.'}</td></tr>
+              ) : filteredStockRows.map(({ id, material, balance, quantity, threshold }) => {
+                const isLow = quantity !== null && threshold !== null && quantity <= threshold;
+                return <tr key={id} className="hover:bg-slate-50">
+                  <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{material?.code || '—'}</td>
+                  <td className="py-3.5 px-4 font-medium text-slate-800">{material?.name || 'Material indisponibil'}</td>
+                  <td className="py-3.5 px-4 text-xs text-slate-500">{material?.category || '—'}</td>
+                  <td className="py-3.5 px-4 font-mono text-xs text-slate-600">{material?.barcode || '—'}</td>
+                  <td className="py-3.5 px-4 text-right text-xs text-slate-500">{threshold === null ? '—' : `${threshold} ${material?.unit || ''}`}</td>
+                  <td className="py-3.5 px-4 text-right font-extrabold text-base text-slate-900">{quantity === null ? '—' : <>{quantity} <span className="text-xs font-normal text-slate-500">{material?.unit || ''}</span></>}</td>
+                  <td className="py-3.5 px-4 text-center">{!balance ? <span className="text-xs text-slate-500">Balanță indisponibilă</span> : threshold === null ? <span className="text-xs text-slate-500">Prag nespecificat</span> : isLow ? <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-800"><AlertTriangle className="mr-1 size-3" />La/sub prag</span> : <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">Peste prag</span>}</td>
+                </tr>;
+              })}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-col divide-y divide-slate-100 md:hidden">
+          {filteredStockRows.length === 0 ? <p className="px-4 py-8 text-center text-sm text-slate-500">{stockRows.length ? 'Niciun material nu corespunde filtrelor.' : 'Nu au fost returnate materiale sau balanțe.'}</p> : filteredStockRows.map(({ id, material, balance, quantity, threshold }) => {
+            const isLow = quantity !== null && threshold !== null && quantity <= threshold;
+            return <article key={id} className="flex flex-col gap-3 p-4">
+              <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="font-mono text-xs font-semibold text-slate-500">{material?.code || '—'}</p><h3 className="mt-1 text-sm font-bold text-slate-900">{material?.name || 'Material indisponibil'}</h3><p className="mt-1 text-xs text-slate-500">{material?.category || 'Fără categorie'}</p></div><span className="shrink-0 text-right text-lg font-extrabold text-slate-900">{quantity === null ? '—' : quantity}<span className="ml-1 text-xs font-medium text-slate-500">{material?.unit || ''}</span></span></div>
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">Prag minim: {threshold === null ? 'nespecificat' : `${threshold} ${material?.unit || ''}`}</span>{!balance ? <span className="text-slate-500">Balanță indisponibilă</span> : threshold === null ? <span className="text-slate-500">Prag nespecificat</span> : isLow ? <span className="rounded-full bg-rose-100 px-2 py-1 font-semibold text-rose-800">La/sub prag</span> : <span className="rounded-full bg-emerald-100 px-2 py-1 font-semibold text-emerald-800">Peste prag</span>}</div>
+            </article>;
+          })}
         </div>
       </div>
 
@@ -213,32 +231,28 @@ function StocuriPageInner() {
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
             <History className="w-4 h-4 text-amber-600" />
-            <span>Jurnal Imutabil Mișcări de Stoc (Audit Trail)</span>
+            <span>{t('stock.audit_immutable_title', locale)}</span>
           </div>
-          <span className="text-xs text-slate-500">Conformitate Regula 11: Fiecare mișcare are autor, timestamp și sursa</span>
+          <span className="text-xs text-slate-500">{t('stock.audit_immutable_note', locale)}</span>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
                 <th className="py-3 px-4">Data & Ora</th>
-                <th className="py-3 px-4">Tip Operațiune</th>
+                <th className="py-3 px-4">{t('stock.movement_type', locale)}</th>
                 <th className="py-3 px-4">Material</th>
                 <th className="py-3 px-4 text-right">Cantitate</th>
                 <th className="py-3 px-4">Executat De</th>
-                <th className="py-3 px-4">Referința Document</th>
+                <th className="py-3 px-4">{t('stock.document_reference', locale)}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {stockMovements.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 text-sm">
-                    Nu exista mișcări de stoc înregistrate
-                  </td>
-                </tr>
+              {filteredMovements.length === 0 ? (
+                <tr><td colSpan={6} className="py-8 text-center text-sm text-slate-500">{stockMovements.length ? 'Nicio mișcare nu corespunde căutării.' : 'Nu au fost returnate mișcări de stoc.'}</td></tr>
               ) : (
-                stockMovements.map((mv) => {
+                filteredMovements.map((mv) => {
                   const material = mv.material || materials.find(m => m.id === mv.material_id);
                   const user = users.find(u => u.id === mv.created_by_id);
                   const qty = Number(mv.quantity || 0);
@@ -251,10 +265,10 @@ function StocuriPageInner() {
                                     (movType === 'ADJUSTMENT' && qty >= 0);
                   const displayQty = qty;
 
-                  let operationLabel = 'Mișcare';
-                  if (movType === 'RECEIPT') operationLabel = 'Recepție Aviz';
-                  else if (movType === 'CONSUMPTION') operationLabel = 'Consum Șantier';
-                  else if (movType === 'TRANSFER_OUT') operationLabel = 'Transfer Ieșire';
+                  let operationLabel = 'Miscare';
+                  if (movType === 'RECEIPT') operationLabel = 'Receptie Aviz';
+                  else if (movType === 'CONSUMPTION') operationLabel = 'Consum Santier';
+                  else if (movType === 'TRANSFER_OUT') operationLabel = 'Transfer Iesire';
                   else if (movType === 'TRANSFER_IN') operationLabel = 'Transfer Intrare';
                   else if (movType === 'ADJUSTMENT') operationLabel = 'Ajustare';
                   else if (movType === 'RETURN') operationLabel = 'Returnare';
@@ -288,6 +302,13 @@ function StocuriPageInner() {
             </tbody>
           </table>
         </div>
+        <div className="flex flex-col divide-y divide-slate-100 md:hidden">
+          {filteredMovements.length === 0 ? <p className="px-4 py-8 text-center text-sm text-slate-500">{stockMovements.length ? 'Nicio mișcare nu corespunde căutării.' : 'Nu au fost returnate mișcări de stoc.'}</p> : filteredMovements.map((movement) => {
+            const material = movement.material || materials.find((item) => item.id === movement.material_id);
+            const createdBy = users.find((item) => item.id === movement.created_by_id);
+            return <article key={movement.id} className="flex flex-col gap-2 p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900">{material?.name || 'Material indisponibil'}</h3><p className="mt-1 text-xs text-slate-500">{movement.movement_type.replaceAll('_', ' ')}</p></div><span className="shrink-0 font-mono text-sm font-bold text-slate-900">{movement.quantity} {material?.unit || ''}</span></div><div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-xs text-slate-500"><span>{new Date(movement.created_at).toLocaleString('ro-RO')}</span><span>{createdBy?.full_name || createdBy?.profile?.full_name || 'Utilizator indisponibil'}</span></div>{movement.notes && <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">{movement.notes}</p>}</article>;
+          })}
+        </div>
         </div>
         </>
       )}
@@ -297,7 +318,7 @@ function StocuriPageInner() {
 
 export default function StocuriPage() {
   return (
-    <RoleGuard allowedRoles={ROUTE_ROLES['/stocuri']}>
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
       <StocuriPageInner />
     </RoleGuard>
   );
