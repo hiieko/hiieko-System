@@ -22,8 +22,7 @@ describe('ControlTowerController authorization metadata', () => {
     (method) => {
       const roles = Reflect.getMetadata(
         ROLES_KEY,
-        ControlTowerController.prototype,
-        method,
+        (ControlTowerController.prototype as any)[method],
       );
 
       expect(roles).toEqual(expectedRoles);
