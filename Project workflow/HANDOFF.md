@@ -296,7 +296,7 @@ pre-existing at `HEAD`, an inner scroller (`documentElement.scrollWidth` 375 = `
 ISSUE-058 (the Control Tower surfaces stay `375/375`).
 
 **Next:** commit `PageTutorial.tsx` + the 4 documents once approved, then continue the R1B copy pass
-(ISSUE-055 / ISSUE-056 still deferred) and the visual redesign.
+(ISSUE-055 remains deferred; ISSUE-056 RESOLVED 2026-10-05) and the visual redesign.
 
 ## R1B.1 DONE — ISSUE-057 + ISSUE-058 fixed, UNCOMMITTED (2026-09-30)
 
@@ -401,7 +401,7 @@ renamed and `Task-uri` was NOT rewritten to `Sarcini`).
   Full detail: `VERIFICATION.md` → *UX-R1A C4*; summary: `PROGRESS.md` → Recent Work 2026-09-29.
 - **Deliberately NOT done in C4:** `WorkerAttendanceView.tsx` and `WorkerDashboard.tsx:101/151`
   (ISSUE-055), `ControlTowerSurface` copy, Mobile `SettingsScreen.formatRole()`, established copy
-  (`Materiale & Stoc`, `Cheltuieli Companie`, prose `sarcini`), and the R1B prose sweep → **ISSUE-056**.
+  (`Materiale & Stoc`, `Cheltuieli Companie`, prose `sarcini`), and the R1B prose sweep → **ISSUE-056 RESOLVED 2026-10-05**.
   No browser pass was run (no driver in this environment) and no `site_manager` / PM / manager / admin
   account exists, so that coverage is not claimed.
   **Statement of record:** *C4 automated/static verification complete; browser RO/EN content sweep
@@ -450,7 +450,7 @@ unchanged; **not pushed, so no GitHub Actions run is claimed**.
   harness (`%TEMP%\c5_sweep.cjs`) and its result JSON are temp-only by design and are not committed.
 - **NOT claimed:** no `site_manager` / PM / manager / owner browser coverage (no such account exists in
   this database), no visual/design review, no remote CI execution.
-- **Next:** R1B first (ISSUE-057 keys, ISSUE-056 copy debt and the full RO prose sweep), then the
+- **Next:** R1B close-out recorded for ISSUE-056; remaining work is limited to separately tracked items, then the
   visual redesign. ISSUE-055, ISSUE-058 and the authorization reconciliation (ISSUE-052/053/054) stay
   open.
 
