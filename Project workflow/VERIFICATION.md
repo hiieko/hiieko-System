@@ -8,7 +8,7 @@ Last Updated: 2026-10-05
 
 | Gate | Current evidence |
 |---|---|
-| CI | GitHub Actions run #109 passed for Mobile PR #27 |
+| CI | GitHub Actions run #111 passed for this documentation reconciliation; PR #26 CI run #108 also passed |
 | Mobile sync hardening | PR #27 merged to `master` |
 | Netlify preview | Passed on current Mobile PR; canonical deployment path |
 | Vercel | External GitHub check only; not deployment authority |
@@ -18,7 +18,7 @@ Last Updated: 2026-10-05
 - Backend authorization and project scoping: implemented and guarded.
 - Daily report approval workflow: implemented and merged.
 - Frontend role-home/v0 refinement: implemented and merged.
-- Frontend permission UX consistency: active PR #26.
+- Frontend permission UX consistency: implemented and merged (PR #26).
 - Mobile offline sync correctness: implemented and merged.
 - OCR: frozen/deferred by product decision.
 - Granular permission runtime activation: deferred by governance decision.
