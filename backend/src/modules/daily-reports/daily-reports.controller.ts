@@ -26,12 +26,18 @@ import { ProjectScope } from '../../common/auth/decorators/project-scope.decorat
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { UserRoleEnum } from '@prisma/client';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
 import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
 
 
-interface ReviewDailyReportDto {
-  action: 'APPROVED' | 'REJECTED';
+class ReviewDailyReportDto {
+  @IsIn(['APPROVED', 'REJECTED'])
+  action!: 'APPROVED' | 'REJECTED';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
   comment?: string;
 }
 
