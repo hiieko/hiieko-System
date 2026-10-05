@@ -20,7 +20,7 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { LocaleProvider, useLocale } from './src/components/LocaleProvider';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { getOfflineQueue } from './src/services/storage';
+import { getSyncQueueStats } from './src/services/syncQueue';
 import { getProjects, getMaterials, saveProjects, saveMaterials, Project as LocalProject, Material as LocalMaterial } from './src/services/localData';
 import { syncAllOperations } from './src/services/syncQueue';
 import { apiClient } from './src/services/apiClient';
@@ -211,8 +211,8 @@ function AppShell() {
   // ==========================================================================
   useEffect(() => {
     const updateQueueCount = async () => {
-      const q = await getOfflineQueue();
-      setPendingQueueCount(q.length);
+      const stats = await getSyncQueueStats();
+      setPendingQueueCount(stats.pending + stats.failed + stats.syncing);
     };
     updateQueueCount();
     const interval = setInterval(updateQueueCount, 3000);

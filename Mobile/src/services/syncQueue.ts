@@ -173,9 +173,9 @@ async function syncMaterialConsumption(item: SyncQueueItem): Promise<void> {
   await apiClient.recordMaterialConsumption(item.payload, item.idempotency_key);
 }
 
-async function syncIssue(item: SyncQueueItem): Promise<void> {
-  // Implement issue sync when backend endpoint is ready
-  console.warn('Issue sync not yet implemented');
+async function syncIssue(_item: SyncQueueItem): Promise<void> {
+  // Never acknowledge an issue as synced until the backend write exists.
+  throw new Error('Issue sync is not implemented');
 }
 
 async function syncAviz(item: SyncQueueItem): Promise<void> {
