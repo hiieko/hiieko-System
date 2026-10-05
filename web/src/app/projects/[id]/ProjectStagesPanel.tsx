@@ -5,7 +5,7 @@ import type { ProjectStage, CreateStageDto } from '../../../features/projects/ty
 import { apiClient } from '../../../lib/api-client';
 import { Button } from '../../../components/ui/Button';
 import { useToast } from '../../../components/ui/Toast';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { Plus, Loader2, Layers, AlertCircle, Save, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 
