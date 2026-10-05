@@ -1568,6 +1568,7 @@ Object.assign(d, {
   'control_tower.title': T('Panou Operațional de Management', 'Operational Management Dashboard'),
   'control_tower.subtitle': T('Decizii bazate pe reguli deterministe, date reale și trasabilitate completă', 'Decisions based on deterministic rules, real data and full traceability'),
   'control_tower.role_actions': T('Acțiuni pentru rol', 'Role actions'),
+  'control_tower.project_filter': T('Filtrează după proiect sau șantier', 'Filter by project or site'),
   'control_tower.focus_admin': T('Administrează organizația și accesul fără a pierde contextul operațional.', 'Administer the organization and access without losing operational context.'),
   'control_tower.focus_pm': T('Concentrează-te pe proiecte, planul de azi, riscuri și raportarea execuției.', 'Focus on projects, today’s plan, risks and execution reporting.'),
   'control_tower.focus_manager': T('Vezi portofoliul, excepțiile și rapoartele care cer intervenție.', 'See the portfolio, exceptions and reports that need intervention.'),
