@@ -2,7 +2,7 @@
 | **OCR** | **\xf0\x9f\xa7\x8a FROZEN / DEFERRED** | OCR is not a current workstream. Deferred to final milestone per CLINE_MASTER_ROADMAP.md section 17. |
 # HIIEKO — Current Status
 
-**Last Updated:** 2026-10-05 (Phase 1 closure + Slice 7 hardening + Pontaj/task contract cleanup; all merged to `master`, CI/database gates green, Vercel deployment successful)
+**Last Updated:** 2026-10-05 (documentation reconciliation after Mobile sync hardening; PR #27 merged; PRs #20/#21 closed as obsolete; PR #26 remains active)
 **Version:** pre-1.0 (Phase 1 authorization hardening accepted; broader production-readiness gaps remain)
 
 ---
@@ -168,7 +168,7 @@ Implemented full project-scoped authorization across all 102 routes:
 - PR #1 (`fix: restore production document upload`) merged to `master` after correcting the document-type enum in the upload test; post-fix Typecheck, Tests, and Build all passed.
 - PR #2 (`fix: harden users roles and organization boundaries`) merged to `master` after correcting stale test doubles for the `AuthenticatedUser` contract and organization-scoped `findFirst`; post-fix Typecheck, Tests, and Build all passed.
 - Authorization review confirmed organization scoping in `UsersService.findAll/findOne`, ADMIN/OWNER-only role/status mutation, session revocation on suspension, document project guards, entity-derived document project checks, and PM exclusion from the global project-scope allowlist.
-- Vercel deployment for the final `master` merge commit completed successfully.
+- Netlify is the canonical web deployment path. Netlify preview deployments are the deployment evidence used for current web changes; Vercel remains an external GitHub check and is not the deployment authority.
 - No live backend HTTP smoke test was claimed here because the available deployment integration exposes Vercel deployment status but not an authenticated runtime API test harness. Code-level acceptance and CI evidence are green.
 
 ### Remaining production-readiness / product gaps
@@ -183,7 +183,7 @@ Implemented full project-scoped authorization across all 102 routes:
 
 ## 7. Remaining remediation / product work
 
-**Core remediation slices 1–7: COMPLETE.** Slice 8 CI enforcement is active in the repository, and Slice 9 frontend contract alignment is ongoing.
+**Core remediation slices 1–7: COMPLETE.** Slice 8 CI enforcement is active in the repository. Slice 9 frontend contract alignment is represented by the active frontend permission UX PR (#26).
 
 **R2.6 — Core Operations Completion (Implementation Audit).** R2.1 Sites→Projects is fully complete across all 6 phases. See `IMPLEMENTATION_ROADMAP.md` for the next milestones.
 
@@ -207,7 +207,7 @@ Implemented full project-scoped authorization across all 102 routes:
 - **ISSUE-023:** a safe reconciliation script now maps the 8 legacy development users to AR-001/TM-002/CJ-003; it is dry-run by default and requires `--apply`.
 - **ISSUE-049:** concurrent next dev processes can corrupt the shared web/.next cache. A guard is being added in the current close-out branch; until merged, run only one web dev server.
 - **ISSUE-050:** an explicit development-only cleanup script now targets the four CJ-003 verification fixtures; it is dry-run by default and requires `--apply` after accepting the evidence impact.
-- **ISSUE-051:** Mobile daily-report code remediation is in progress: real project task UUIDs are now selected for report lines and drafts are retained until API/queue success. Device/emulator verification remains before closure.
+- **ISSUE-051:** Mobile daily-report code remediation is complete on the repository side; PR #27 also hardened the offline sync queue. Physical device/emulator verification remains the only Mobile acceptance step before final closure.
 - **ISSUE-053:** frontend navigation and backend @Roles contracts still have documented business-rule divergences; this requires an explicit authorization decision rather than an incidental UI fix.
 - **ISSUE-056:** RESOLVED 2026-10-05; Control Tower/drilldown copy is locale-keyed, the remaining worker R1B copy coupling is removed, and the role-visibility matrix encoding debt is normalized.
 - **PermissionsGuard:** permission catalog and guard coverage are merged; endpoint metadata/role grants remain intentionally unenforced pending a complete business permission matrix.
@@ -237,7 +237,7 @@ Project-scoped. GET /api/procurement/purchase-orders accepts optional projectId.
 ## 10. Current production-readiness gaps
 
 - **Pre-1.0:** the repository is not yet declared production-ready.
-- **Deployment:** no dedicated staging/production CI deployment pipeline or automated rollback.
+- **Deployment:** Netlify is the canonical web deployment path; production-domain/deployment verification and automated rollback remain deployment-provider configuration work.
 - **Observability:** no production-grade monitoring, alerting, or structured logging beyond application error handling.
 - **Governance:** PermissionsGuard is not activated and its permission tables are unseeded.
 - **Product/UX:** ISSUE-050, ISSUE-051 and other explicitly deferred items remain as described above; ISSUE-056 is RESOLVED.
