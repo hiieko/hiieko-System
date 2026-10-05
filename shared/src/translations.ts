@@ -1714,6 +1714,13 @@ Object.assign(d, {
   'projects.remove': T('Elimină', 'Remove'),
 });
 
+
+// Global design-review controls.
+Object.assign(d, {
+  'language': T('Limbă', 'Language'),
+  'theme': T('Temă', 'Theme'),
+});
+
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;
