@@ -33,6 +33,12 @@ jobs:
       - name: Build shared package (for @solar/shared type resolution)
         run: npm run build --workspace=shared
       
+      - name: Validate Prisma schema
+        run: npx prisma validate --schema backend/prisma/schema.prisma
+
+      - name: Verify Prisma migrations match schema
+        run: npx prisma migrate diff --exit-code --from-migrations backend/prisma/migrations --to-schema-datamodel backend/prisma/schema.prisma
+
       - name: Run typecheck
         run: npm run typecheck
 
@@ -68,11 +74,57 @@ jobs:
       - name: Run backend tests
         run: npm run test
 
+  # Job 3: Apply every migration to a clean PostgreSQL 18 instance and run integrity checks
+  database:
+    name: Database integrity
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hiieko_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hiieko_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hiieko_ci?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate --workspace=backend
+
+      - name: Validate Prisma schema
+        run: npx prisma validate --schema backend/prisma/schema.prisma
+
+      - name: Apply migrations to clean PostgreSQL 18
+        run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
+
+      - name: Run database integrity verification
+        run: npm run db:verify --workspace=backend
+
   # Job 3: Build all packages
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [typecheck, test]  # Build only after typecheck and tests pass
+    needs: [typecheck, test, database]  # Build only after code and database gates pass
     
     steps:
       - uses: actions/checkout@v4
