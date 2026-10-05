@@ -350,6 +350,7 @@ model Task {
   zone               LocationZone?     @relation(fields: [zone_id], references: [id])
 
   @@unique([project_id, code])
+  @@index([verified_by])
   @@map("tasks")
 }
 
