@@ -21,22 +21,25 @@ import {
 import { Express } from 'express';
 import { UploadService } from './upload.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
+import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { SkipEnvelope } from '../../common/decorators/skip-envelope.decorator';
+import { RequireProjectAccess, RequireEntityProjectAccess } from '../../common/auth/decorators/auth-metadata.decorator';
 
 /** Hard server-side memory cap, aligned with MAX_FILE_SIZE (10 MB default). */
 const UPLOAD_MAX_BYTES = Number(process.env.MAX_FILE_SIZE || 10 * 1024 * 1024) || 10 * 1024 * 1024;
 
 @ApiTags('Upload')
 @Controller('api/upload')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ProjectAccessGuard)
 @ApiBearerAuth()
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post()
+  @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({ summary: 'Upload a receipt/invoice and persist its blob + metadata' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -48,6 +51,7 @@ export class UploadController {
         entityId: { type: 'string' },
         documentType: { type: 'string' },
         title: { type: 'string' },
+        projectId: { type: 'string' },
       },
     },
   })
@@ -58,6 +62,7 @@ export class UploadController {
     @Body('entityId') entityId: string,
     @Body('documentType') documentType: string,
     @Body('title') title: string,
+    @Body('projectId') projectId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
@@ -71,11 +76,12 @@ export class UploadController {
       entityType || undefined,
       entityId || undefined,
       user,
-      { documentType: documentType || undefined, title: title || undefined },
+      { documentType: documentType || undefined, title: title || undefined, projectId: projectId || undefined },
     );
   }
 
   @Get(':documentId')
+  @RequireEntityProjectAccess('document', 'documentId')
   @SkipEnvelope()
   @ApiOperation({ summary: 'Retrieve an uploaded receipt blob (authenticated)' })
   async download(
