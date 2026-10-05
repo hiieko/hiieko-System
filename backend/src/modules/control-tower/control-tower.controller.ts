@@ -18,6 +18,8 @@ import { RequireProjectAccess } from '../../common/auth/decorators/auth-metadata
 import { ProjectScope } from '../../common/auth/decorators/project-scope.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
+import { Roles } from '../../common/auth/decorators/auth-metadata.decorator';
+import { UserRoleEnum } from '@prisma/client';
 import { ProjectScope as ProjectScopeType } from '../../common/auth/project-scope.filter';
 import { buildScopedProjectWhere } from '../../common/auth/project-scope.filter';
 import { DrillDownParams } from './interfaces/control-tower.interface';
@@ -30,6 +32,19 @@ export class ControlTowerController {
   constructor(private readonly controlTowerService: ControlTowerService) {}
 
   @Get('overview')
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.OWNER,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.PM,
+    UserRoleEnum.PROCUREMENT,
+    UserRoleEnum.FINANCE,
+    UserRoleEnum.QA_QC,
+    UserRoleEnum.VIEWER,
+    UserRoleEnum.SITE_LOGISTICS,
+    UserRoleEnum.MAINTENANCE_DIRECTOR,
+    UserRoleEnum.TECHNICAL_DIRECTOR,
+  )
   @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({
     summary:
@@ -55,6 +70,19 @@ export class ControlTowerController {
   }
 
   @Get('drilldown')
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.OWNER,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.PM,
+    UserRoleEnum.PROCUREMENT,
+    UserRoleEnum.FINANCE,
+    UserRoleEnum.QA_QC,
+    UserRoleEnum.VIEWER,
+    UserRoleEnum.SITE_LOGISTICS,
+    UserRoleEnum.MAINTENANCE_DIRECTOR,
+    UserRoleEnum.TECHNICAL_DIRECTOR,
+  )
   @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({
     summary: 'Drill down into specific operational domain details',
@@ -106,6 +134,19 @@ export class ControlTowerController {
   }
 
   @Get('red-flags')
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.OWNER,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.PM,
+    UserRoleEnum.PROCUREMENT,
+    UserRoleEnum.FINANCE,
+    UserRoleEnum.QA_QC,
+    UserRoleEnum.VIEWER,
+    UserRoleEnum.SITE_LOGISTICS,
+    UserRoleEnum.MAINTENANCE_DIRECTOR,
+    UserRoleEnum.TECHNICAL_DIRECTOR,
+  )
   @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({
     summary: 'Get active cross-functional red flags and rule-based alerts',
