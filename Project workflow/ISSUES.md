@@ -696,8 +696,8 @@ PR #5 (`fix(security): enforce Control Tower roles and task input validation`) a
 
 ---
 
-## ISSUE-053 — Navigation vs backend `@Roles` mismatches (front-end kept safe, backend unchanged)
-**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C2)
+## ISSUE-053 — Navigation vs backend `@Roles` mismatches
+**Status:** ✅ `RESOLVED` (2026-10-05 — authorization reconciliation)
 
 ### Description
 The C2 canonical map (`web/src/config/route-roles.ts`) records the **front-end** contract. Backend
@@ -785,7 +785,7 @@ would break the colour logic. Both move with this issue.
 ---
 
 ## ISSUE-056 — Remaining RO copy / role-map debt outside the UX-R1A C4 scope (report-only)
-**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C4)
+**Status:** 🟡 `PARTIALLY RESOLVED` (2026-10-05 — shared role map centralized; remaining Control Tower prose deferred)
 
 ### Description
 C4 normalised the shared vocabulary (nav/page titles, the 16-role `role.*` set, 175 diacritic defects).
@@ -795,8 +795,7 @@ report-only guard row *"Romanian copy missing diacritics"* in `scripts/check-fro
 1. `web/src/components/ControlTowerSurface.tsx` + `ControlTowerDrilldownDrawer.tsx` (20 rows) — the
    Control Tower surface was out of scope in C4 and still uses ASCII-only RO copy (`Sarcini`,
    `Realizat`, `Astazi`…).
-2. `Mobile/src/screens/SettingsScreen.tsx` `formatRole()` (lines 185-193) — the last duplicate role
-   map (`'Sef Echipa'`, `'Vizualizare'`); it should call `getRoleLabel()` like web does.
+2. `Mobile/src/screens/SettingsScreen.tsx` no longer carries a duplicate role map; `formatRole()` now delegates to shared `getRoleLabel()`.
 3. Full RO prose (long tutorial sentences in `shared/src/translations.ts`, remaining
    `locale === 'en' ? … : …` literals as an artefact of the same copy) — the R1B translation pass.
 4. `ROLE_VISIBILITY_MATRIX.md` still stores some labels as literal `\uXXXX` escapes and shows
@@ -808,8 +807,7 @@ still look different from the rest of the product, and a future term change coul
 role vocabulary on Mobile.
 
 ### Required Action
-Close 1 and 2 in the C5/UX-R1B pass (same file sets that need their own refactor), and re-encode
-`ROLE_VISIBILITY_MATRIX.md` when it is next edited.
+Finish the remaining Control Tower RO prose and re-encode `ROLE_VISIBILITY_MATRIX.md` when the copy pass is resumed. Mobile role-map duplication is resolved.
 
 ---
 
@@ -1099,7 +1097,7 @@ error is the pre-existing `/favicon.ico` 404). The temporary Phase-1 plan
 - **`MOBILE_MIGRATION_PROGRESS.md` and other migration docs** — Historical migration documents that reference Supabase. These are archival/planning docs, not runtime dependencies.
 - **`ocr-service/README.md`** — References Supabase as part of the historical architecture description. This is a standalone OCR service, not an active runtime dependency.
 - **`PermissionsGuard` not activated** — The `PermissionsGuard` exists but is not wired into any controller. Permission tables are unseeded. Deferred from P5.
-- **`GET /api/procurement/avize/:id` route missing** — The procurement controller lacks this single-aviz retrieval endpoint. Documented in HANDOFF.md.
+- **`GET /api/procurement/avize/:id`** — implemented with entity-level project authorization and `findAvizById`; older limitation notes are historical.
 - **RoleGuard on 15 pages (16 with `/rapoarte/form`)** — Client-side route guard blocks direct URL access for unauthorized roles. Since UX-R1A C2 every guard reads its role list from `web/src/config/route-roles.ts` (`ROUTE_ROLES`), i.e. the same source the sidebar uses, so the advertised link set and the guard can no longer drift. `/statistici` no longer exists as a page (307 redirect to `/control-tower`), and `/control-tower` redirects unauthorized roles to `/` instead of rendering them a denial panel.
 - **ISSUE-033/034/035 FIXED** — Project-scope query filtering, registration role whitelist, and tasks controller @Roles all resolved during Phase 3.2.
 - **Santiere page**: "Modifica Parametri" button now opens functional edit modal (FIXED 2026-09-26).
