@@ -181,6 +181,16 @@ describe('TasksService (Slice 6 — Task Lifecycle + Verification)', () => {
     service = module.get<TasksService>(TasksService);
   });
 
+  describe('normal task listing excludes archived fixtures', () => {
+    it('adds is_archived=false to the list filter', async () => {
+      prisma.task.findMany.mockResolvedValue([]);
+      await service.findAll('proj-1', { project_id: 'proj-1' });
+      expect(prisma.task.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { is_archived: false, project_id: 'proj-1' },
+      }));
+    });
+  });
+
   describe('legal transitions → PASS', () => {
     it.each([
       ['PLANNED', 'READY'],
