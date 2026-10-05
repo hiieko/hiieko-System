@@ -269,7 +269,6 @@ for (const file of files) {
     // 6 + reports. translation calls and inline locale ternaries
     for (const match of line.matchAll(STATIC_CALL)) {
       const literal = match[2];
-      if (literal === 'avize.load_error') console.log(`DEBUG avize.load_error source=${display}:${lineNumber} line=${trimmed}`);
       if (KEY_SHAPE.test(literal)) {
         referencedKeys.add(literal);
         undefinedRefCandidates.push({ literal, display, lineNumber });
