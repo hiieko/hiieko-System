@@ -104,6 +104,17 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+model RateLimitBucket {
+  id           String   @id @db.VarChar(512)
+  window_start DateTime
+  expires_at   DateTime
+  count        Int
+  updated_at   DateTime @default(now()) @updatedAt
+
+  @@index([expires_at])
+  @@map("rate_limit_buckets")
+}
+
 model UserProfile {
   id            String   @id @default(uuid())
   user_id       String   @unique
