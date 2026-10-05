@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Bell, LogOut, MapPin, Menu, User, Settings, ChevronDown } from 'lucide-react';
+import { Bell, CircleHelp, LogOut, MapPin, Menu, User, Settings, ChevronDown } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Button } from './ui/Button';
 import { DropdownMenu, type DropdownMenuItem } from './ui/DropdownMenu';
@@ -19,6 +19,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, loading, signOut } = useAuth();
+  const [helpOpen, setHelpOpen] = useState(false);
   const {
     projects,
     selectedProjectId,
@@ -118,6 +119,30 @@ export function Header({ onMenuClick }: HeaderProps) {
       {/* Right section */}
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
         <GlobalQuickSearch />
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setHelpOpen((open) => !open)}
+            aria-expanded={helpOpen}
+            aria-haspopup="menu"
+            className="hidden sm:inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            <CircleHelp className="h-4 w-4" />
+            Ajutor
+          </button>
+          {helpOpen && (
+            <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+              <div className="px-3 py-2">
+                <div className="text-xs font-bold text-slate-900">Ajutor și suport</div>
+                <div className="mt-1 text-[11px] leading-4 text-slate-500">Navigare rapidă și raportarea problemelor din contextul curent.</div>
+              </div>
+              <Link href="/notificari" onClick={() => setHelpOpen(false)} className="flex items-center rounded-lg px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">Vezi notificările</Link>
+              <Link href="/issues" onClick={() => setHelpOpen(false)} className="flex items-center rounded-lg px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">Raportează o problemă</Link>
+            </div>
+          )}
+        </div>
+
         <LanguageSwitcher />
 
         <Link
