@@ -25,7 +25,7 @@ describe('RateLimitGuard (Slice 7, distributed fixed windows)', () => {
   let sharedPrisma: {
     $queryRaw: jest.Mock;
     $executeRaw: jest.Mock;
-    counts: Map<string, number>;
+    counts: Map<string, any>;
   };
 
   beforeEach(() => {
@@ -34,9 +34,12 @@ describe('RateLimitGuard (Slice 7, distributed fixed windows)', () => {
       counts: new Map(),
       $executeRaw: jest.fn().mockResolvedValue(0),
       $queryRaw: jest.fn().mockImplementation(async (query: any) => {
-        const key = String(query?.values?.[0] ?? 'unknown');
-        const count = (sharedPrisma.counts.get(key) ?? 0) + 1;
-        sharedPrisma.counts.set(key, count);
+        const values = query?.values ?? [];
+        const key = String(values[0] ?? 'unknown');
+        const expiresAt = String(values[2] ?? '');
+        const previous = sharedPrisma.counts.get(key);
+        const count = previous?.expiresAt === expiresAt ? previous.count + 1 : 1;
+        sharedPrisma.counts.set(key, { expiresAt, count } as any);
         return [{ count }];
       }),
     };
