@@ -22,7 +22,9 @@
                     "test:e2e:stock":  "node e2e/stock-avize.js",
                     "test:e2e:access":  "node e2e/project-access.js",
                     "db:verify":  "ts-node --transpile-only scripts/db-verify.ts",
-                    "seed:teams":  "ts-node --transpile-only scripts/seed-hiieko-teams.ts"
+                    "seed:teams":  "ts-node --transpile-only scripts/seed-hiieko-teams.ts",
+                    "reconcile:legacy-members":  "ts-node --transpile-only scripts/reconcile-legacy-dev-project-members.ts",
+                    "cleanup:cj003-fixtures":  "ts-node --transpile-only scripts/cleanup-cj003-verification-fixtures.ts"
                 },
     "dependencies":  {
                          "@nestjs/common":  "^10.3.8",

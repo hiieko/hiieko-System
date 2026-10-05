@@ -57,11 +57,8 @@ export const PROJECT_ROLES: string[] = [
 export const SOLAR_CONFIGURATOR_ROLES: string[] = [
   'admin',
   'owner',
-  'manager',
   'pm',
   'site_manager',
-  'foreman',
-  'technician',
 ];
 
 /**
@@ -69,14 +66,14 @@ export const SOLAR_CONFIGURATOR_ROLES: string[] = [
  * `GET /api/employees` (`@Roles(ADMIN, MANAGER, PM, FINANCE)`) answers 403 for
  * them; the sidebar must not advertise a link that fails. See ISSUES.md.
  */
-export const WORKFORCE_ROLES: string[] = ['admin', 'owner', 'manager', 'pm'];
+export const WORKFORCE_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'finance'];
 
 /**
  * `/aprobare`. `owner` is kept (current page guard + role superset) and
  * `procurement` / `finance` are NOT added: the expense approval contract has
  * not been verified as an intended organisational permission. See ISSUES.md.
  */
-export const APPROVAL_ROLES: string[] = ['admin', 'owner', 'manager', 'pm'];
+export const APPROVAL_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'finance'];
 
 /** `/santiere` (GIS). Matches the current page guard exactly. */
 export const GIS_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'site_manager'];
@@ -190,9 +187,9 @@ export const ROUTE_ROLES = {
   '/issues': OPERATIONAL_ROLES,
   '/pontaj': OPERATIONAL_ROLES,
   '/rapoarte': OPERATIONAL_ROLES,
-  '/avize': OPERATIONAL_ROLES,
+  '/avize': [...OPERATIONAL_ROLES, 'procurement'],
   '/stocuri': OPERATIONAL_ROLES,
-  '/cheltuieli': OPERATIONAL_ROLES,
+  '/cheltuieli': [...OPERATIONAL_ROLES, 'finance'],
   '/projects': PROJECT_ROLES,
   // Detail route mirrors its list route (same guard on both pages today).
   '/projects/[id]': PROJECT_ROLES,

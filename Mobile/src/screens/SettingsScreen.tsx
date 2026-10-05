@@ -19,7 +19,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Alert, ActivityIndicator } from 'react-native';
 import { Check, Globe2, LogOut, User } from 'lucide-react-native';
-import { useLocale, t as translate, type Locale } from '@solar/shared';
+import { useLocale, t as translate, getRoleLabel, Locale } from '@solar/shared';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LangOption {
@@ -182,15 +182,8 @@ export function SettingsScreen() {
   );
 }
 
-function formatRole(role: string, locale: Locale): string {
-  const roleMap: Record<string, { ro: string; en: string }> = {
-    admin: { ro: 'Administrator', en: 'Administrator' },
-    manager: { ro: 'Manager', en: 'Manager' },
-    team_leader: { ro: 'Șef Echipă', en: 'Team Leader' },
-    worker: { ro: 'Muncitor', en: 'Worker' },
-    owner: { ro: 'Proprietar', en: 'Owner' },
-  };
-  return roleMap[role]?.[locale] || role;
+function formatRole(role: string, locale: Parameters<typeof getRoleLabel>[1]): string {
+  return getRoleLabel(role, locale) || role;
 }
 
 const styles = StyleSheet.create({

@@ -1,7 +1,7 @@
 ﻿# Role / Sidebar / Action Visibility Matrix
 
 > Source of truth: comprehensive backend (31 controllers) + frontend (21 routes + Sidebar.tsx + AppShell.tsx) audit.
-> Last Updated: 2026-09-29 (UX-R1A C4 corrected two rows: `/control-tower` is the `Turn de Control` destination - `/statistici` is a C2 redirect and no longer a page - and `/avize` reads `Livrări & Avize`. See the notes below the table.)
+> Last Updated: 2026-10-05 (UX-R1A C4 corrected two rows: `/control-tower` is the `Turn de Control` destination - `/statistici` is a C2 redirect and no longer a page - and `/avize` reads `Livrări & Avize`. See the notes below the table.)
 
 ---
 
@@ -9,11 +9,11 @@
 
 | Symbol | Meaning |
 |--------|---------|
-| âœ… | Full access (create/read/update/delete) |
-| ðŸ‘ï¸ | Read-only |
-| âœï¸ | Create + update (no delete) |
-| ðŸ”’ | No access (role not in @Roles, not in sidebar, or blocked by guard) |
-| âš ï¸ | Mismatch between UI and backend (documented below) |
+| ✅ | Full access (create/read/update/delete) |
+| 👁️ | Read-only |
+| 🖉 | Create + update (no delete) |
+| 🔒 | No access (role not in @Roles, not in sidebar, or blocked by guard) |
+| ⚠️ | Mismatch between UI and backend (documented below) |
 
 ---
 
@@ -33,40 +33,40 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 
 | Menu | Route | ADMIN | OWNER | MANAGER | PM | SITE_MGR | FOREMAN | TEAM_LEAD | TECH | WORKER | VIEWER | PROCURE | FINANCE | QA_QC | SITE_LOG | MAINT_DIR | TECH_DIR |
 |------|-------|-------|-------|---------|----|----------|---------|-----------|------|--------|--------|---------|---------|-------|----------|-----------|----------|
-| **Opera\u021biuni** | | | | | | | | | | | | | | | | | |
-| Dashboard | / | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
-| Pontaj & Ore | /pontaj | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
-| Rapoarte Zilnice | /rapoarte | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
-| Livrări & Avize | /avize | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
-| Materiale & Stoc | /stocuri | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… | âœ… |
-| Cheltuieli | /cheltuieli | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | ðŸ‘ï¸ | ðŸ‘ï¸ | âœ… | âœ… |
+| **Operațiuni** | | | | | | | | | | | | | | | | | |
+| Dashboard | / | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Pontaj & Ore | /pontaj | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
+| Rapoarte Zilnice | /rapoarte | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
+| Livrări & Avize | /avize | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | ✅ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
+| Materiale & Stoc | /stocuri | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
+| Cheltuieli | /cheltuieli | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | ✅ | 👁️ | 👁️ | ✅ | ✅ |
 | **Management** | | | | | | | | | | | | | | | | | |
-| Proiecte | /projects | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| Echipe | /teams | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| For\u021b\u0103 de Munc\u0103 | /workforce | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| \u0218antiere (GIS) | /santiere | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| Aprob\u0103ri | /aprobare | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| Turn de Control | /control-tower | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
+| Proiecte | /projects | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Echipe | /teams | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Forță de Muncă | /workforce | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Șantiere (GIS) | /santiere | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Aprobări | /aprobare | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 |
+| Turn de Control | /control-tower | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
 | **Administrare** | | | | | | | | | | | | | | | | | |
-| Utilizatori | /utilizatori | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
+| Utilizatori | /utilizatori | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
 | **Personal** | | | | | | | | | | | | | | | | | |
-| Notific\u0103ri | /notificari | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
-| Profil | /profil | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
+| Notificări | /notificari | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Profil | /profil | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-### C4 notes (2026-09-29)
+### Authorization reconciliation notes (2026-10-05)
 - **Row corrected:** `Statistici | /statistici` → `Turn de Control | /control-tower`. The sidebar item
   has pointed at `/control-tower` since UX-R1A C2 (the `/statistici` page was replaced by a 307
   redirect) and now carries its own `nav.control_tower` key instead of the temporary `nav.statistici`.
 - **Row corrected:** `Procurement / Avize` → `Livrări & Avize` (the RO column is Romanian; the EN
   label is `Deliveries`).
 - **Encoding debt (not fixed here):** this file still stores several labels as literal `\uXXXX`
-  escapes (`For\u021b\u0103 de Munc\u0103`, `\u0218antiere (GIS)`, `Aprob\u0103ri`,
-  `Notific\u0103ri`, `Opera\u021biuni`) and the legend emoji render as mojibake. The two rows above
+  escapes (`Forță de Muncă`, `Șantiere (GIS)`, `Aprobări`,
+  `Notificări`, `Operațiuni`) and the legend emoji render as mojibake. The two rows above
   now contain real characters; a full re-encode should happen when this document is next revised
   (ISSUE-056).
 
 ### Sidebar Group Visibility Rules
-- **Opera\u021biuni**: All authenticated users (no role filter)
+- **Operațiuni**: All authenticated users (no role filter)
 - **Management**: admin, owner, manager, pm
 - **Administrare**: admin only
 - **Personal**: All authenticated users (no role filter)
@@ -79,87 +79,87 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 | Action | ADMIN | OWNER | MANAGER | PM | Others |
 |--------|-------|-------|---------|----|--------|
 | POST /api/auth/register | N/A (public) | N/A | N/A | N/A | WORKER/VIEWER only (ISSUE-034 FIXED) |
-| POST /api/auth/login | âœ… | âœ… | âœ… | âœ… | âœ… |
-| GET /api/auth/me | âœ… | âœ… | âœ… | âœ… | âœ… |
+| POST /api/auth/login | ✅ | ✅ | ✅ | ✅ | ✅ |
+| GET /api/auth/me | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### 4.2 Projects
 | Action | ADMIN | OWNER | MANAGER | PM | Others |
 |--------|-------|-------|---------|----|--------|
-| GET /api/projects | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
-| POST /api/projects | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
-| PATCH /api/projects/:id | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
-| DELETE /api/projects/:id | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ |
+| GET /api/projects | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
+| POST /api/projects | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| PATCH /api/projects/:id | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| DELETE /api/projects/:id | ✅ | ✅ | 🔒 | 🔒 | 🔒 |
 
 ### 4.3 Tasks
 | Action | ADMIN | OWNER | PM | MANAGER | SITE_MGR | FOREMAN | TEAM_LEAD | TECH | WORKER | QA_QC | VIEWER |
 |--------|-------|-------|----|---------|----------|---------|-----------|------|--------|-------|--------|
-| GET /api/tasks | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
-| POST /api/tasks | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| PATCH /api/tasks/:id | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
-| POST /api/tasks/:id/assign | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
+| GET /api/tasks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| POST /api/tasks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 |
+| PATCH /api/tasks/:id | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| POST /api/tasks/:id/assign | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 |
 
 ### 4.4 Daily Plans
 | Action | ADMIN | OWNER | MANAGER | PM | SITE_MGR | FOREMAN | TEAM_LEAD | Others |
 |--------|-------|-------|---------|----|----------|---------|-----------|--------|
-| GET /api/daily-plans | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
-| POST /api/daily-plans | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
-| POST :id/publish | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| POST :id/complete | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
-| POST :id/cancel | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| PATCH tasks/:id/progress | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (assigned) |
+| GET /api/daily-plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| POST /api/daily-plans | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| POST :id/publish | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 |
+| POST :id/complete | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| POST :id/cancel | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 |
+| PATCH tasks/:id/progress | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (assigned) |
 
 ### 4.5 Daily Reports
 | Action | ADMIN | OWNER | MANAGER | PM | SITE_MGR | FOREMAN | TEAM_LEAD | TECH | Others |
 |--------|-------|-------|---------|----|----------|---------|-----------|------|--------|
-| GET /api/daily-reports | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ‘ï¸ |
-| POST /api/daily-reports | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
+| GET /api/daily-reports | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ |
+| POST /api/daily-reports | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
 
 ### 4.6 Expenses
 | Action | ADMIN | OWNER | MANAGER | PM | FINANCE | SITE_MGR | Others |
 |--------|-------|-------|---------|----|---------|----------|--------|
-| GET /api/expenses | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (own) |
-| POST /api/expenses | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… |
-| POST :id/approve | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ |
+| GET /api/expenses | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (own) |
+| POST /api/expenses | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| POST :id/approve | ✅ | 🔒 | ✅ | ✅ | ✅ | 🔒 | 🔒 |
 
 ### 4.7 Inventory / Stock
 | Action | ADMIN | OWNER | MANAGER | PROCURE | SITE_MGR | TEAM_LEAD | Others |
 |--------|-------|-------|---------|---------|----------|-----------|--------|
-| GET /api/inventory/balance | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
-| POST /api/inventory/receive | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
-| POST /api/inventory/consume | âœ… | ðŸ”’ | âœ… | ðŸ”’ | âœ… | âœ… | ðŸ”’ |
-| POST /api/inventory/transfer | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ |
-| GET /api/inventory/movements | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
+| GET /api/inventory/balance | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
+| POST /api/inventory/receive | ✅ | 🔒 | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| POST /api/inventory/consume | ✅ | 🔒 | ✅ | 🔒 | ✅ | ✅ | 🔒 |
+| POST /api/inventory/transfer | ✅ | 🔒 | ✅ | ✅ | ✅ | 🔒 | 🔒 |
+| GET /api/inventory/movements | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
 
 ### 4.8 Procurement
 | Action | ADMIN | OWNER | MANAGER | PROCURE | SITE_MGR | TEAM_LEAD | Others |
 |--------|-------|-------|---------|---------|----------|-----------|--------|
-| GET /api/procurement/purchase-orders | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
-| POST /api/procurement/purchase-orders | âœ… | ðŸ”’ | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| GET /api/procurement/avize | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
-| POST /api/procurement/avize | âœ… | ðŸ”’ | ðŸ”’ | âœ… | âœ… | âœ… | ðŸ”’ |
+| GET /api/procurement/purchase-orders | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
+| POST /api/procurement/purchase-orders | ✅ | 🔒 | ✅ | ✅ | 🔒 | 🔒 | 🔒 |
+| GET /api/procurement/avize | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
+| POST /api/procurement/avize | ✅ | 🔒 | 🔒 | ✅ | ✅ | ✅ | 🔒 |
 
 ### 4.9 QA/QC
 | Action | ADMIN | OWNER | PM | QA_QC | SITE_MGR | Others |
 |--------|-------|-------|----|-------|----------|--------|
-| GET /api/qa-qc/inspections | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
-| POST /api/qa-qc/inspections | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | ðŸ”’ |
+| GET /api/qa-qc/inspections | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
+| POST /api/qa-qc/inspections | ✅ | 🔒 | ✅ | ✅ | ✅ | 🔒 |
 
 ### 4.10 Issues / NCRs
 | Action | ADMIN | OWNER | PM | QA_QC | Others |
 |--------|-------|-------|----|-------|--------|
-| GET /api/issues | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
-| POST /api/issues | âœ… | âœ… | âœ… | âœ… | âœ… |
-| POST /api/issues/ncrs | âœ… | ðŸ”’ | âœ… | âœ… | ðŸ”’ |
+| GET /api/issues | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
+| POST /api/issues | ✅ | ✅ | ✅ | ✅ | ✅ |
+| POST /api/issues/ncrs | ✅ | 🔒 | ✅ | ✅ | 🔒 |
 
 ### 4.11 Teams
 | Action | ADMIN | OWNER | MANAGER | PM | SITE_MGR | FOREMAN | TEAM_LEAD | Others |
 |--------|-------|-------|---------|----|----------|---------|-----------|--------|
-| GET /api/teams | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… | âœ… (scoped) |
-| POST /api/teams | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| PATCH /api/teams/:id | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| DELETE /api/teams/:id | âœ… | ðŸ”’ | âœ… | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ | ðŸ”’ |
-| POST :id/members | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
-| DELETE :id/members/:userId | âœ… | ðŸ”’ | âœ… | âœ… | âœ… | âœ… | âœ… | ðŸ”’ |
+| GET /api/teams | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (scoped) |
+| POST /api/teams | ✅ | 🔒 | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 |
+| PATCH /api/teams/:id | ✅ | 🔒 | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 |
+| DELETE /api/teams/:id | ✅ | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| POST :id/members | ✅ | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
+| DELETE :id/members/:userId | ✅ | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 |
 
 ---
 
@@ -177,13 +177,13 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 
 | # | Route / Action | UI Says | Backend Says | Impact |
 |---|----------------|---------|-------------|--------|
-| 1 | /projects | MANAGER can see | MANAGER can CRUD | âœ… Aligned |
+| 1 | /projects | MANAGER can see | MANAGER can CRUD | ✅ Aligned |
 | 2 | /projects create | ADMIN only | ADMIN/OWNER/MANAGER/PM | Low: UI too restrictive |
-| 3 | /avize (Procurement) | Only PROCUREMENT | ADMIN/PROCUREMENT/SITE_MGR/TEAM_LEAD | Low: UI too restrictive |
-| 4 | /cheltuieli approve | FINANCE only | ADMIN/MANAGER/PM/FINANCE | Low: UI too restrictive |
+| 3 | /avize (Procurement) | Operational roles + PROCUREMENT | ADMIN/PROCUREMENT/SITE_MGR/TEAM_LEAD | Resolved: frontend now includes PROCUREMENT |
+| 4 | /cheltuieli approve | Operational roles + FINANCE | ADMIN/MANAGER/PM/FINANCE | Resolved: frontend now includes FINANCE |
 | 5 | /teams create | ADMIN only | ADMIN/MANAGER/PM/SITE_MGR | Low: UI too restrictive |
 | 6 | /teams add member | ADMIN only | ADMIN/MANAGER/PM/SITE_MGR/TEAM_LEAD | Low: FIXED in Phase 11 — Sidebar and RoleGuard updated for team_leader |
-| 7 | /santiere | ADMIN/MANAGER/PM | ADMIN/OWNER/MANAGER/PM | Low: OWNER missing from UI |
+| 7 | /santiere | ADMIN/OWNER/MANAGER/PM | ADMIN/OWNER/MANAGER/PM | Resolved: OWNER is in the canonical GIS route contract |
 | 8 | Pontaj/Ore list | All roles | Backend scoped | Medium: no @Roles (scoped by project) |
 | 9 | FOREMAN daily plans | Not in UI | Create/Edit/Complete | Medium: needs UI update |
 | 10 | OWNER admin section | Hidden | Should see management | Low: FIXED in this audit |
