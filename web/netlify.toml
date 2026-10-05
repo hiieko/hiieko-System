@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build --workspace=web"
+  publish = "web/.next"
+
+[build.environment]
+  NODE_VERSION = "22"
