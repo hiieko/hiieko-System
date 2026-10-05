@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="ro" className="h-full" suppressHydrationWarning>
       <head>
         <Script id="hiieko-theme-init" strategy="beforeInteractive">
-          {`(()=>{try{const s=localStorage.getItem('hiieko-theme-preference');const t=s==='light'||s==='dark'?s:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch{document.documentElement.dataset.theme='light'}})()`}
+          {`(()=>{try{const s=localStorage.getItem('hiieko-theme-preference');let t='light';if(s==='light'||s==='dark')t=s;else if(matchMedia('(prefers-color-scheme: dark)').matches)t='dark';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t}catch{document.documentElement.dataset.theme='light'}})()`}
         </Script>
       </head>
       <body className="h-full hii-shell-canvas antialiased">
