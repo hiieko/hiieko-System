@@ -20,7 +20,23 @@ import { useAuth } from '../contexts/AuthContext';
  * like the Sidebar, so this bar can never reveal an item the role cannot use.
  * All labels go through the shared RO/EN translation system.
  */
-const PRIMARY_HREFS = ['/', '/planning', '/tasks', '/issues', '/pontaj'];
+const PRIMARY_HREFS_BY_ROLE: Record<string, string[]> = {
+  worker: ['/', '/tasks', '/pontaj', '/notificari', '/profil'],
+  technician: ['/', '/planning', '/tasks', '/issues', '/pontaj'],
+  team_leader: ['/', '/planning', '/tasks', '/issues', '/pontaj'],
+  foreman: ['/', '/planning', '/tasks', '/issues', '/rapoarte'],
+  site_manager: ['/', '/planning', '/tasks', '/issues', '/stocuri'],
+  pm: ['/', '/projects', '/planning', '/issues', '/rapoarte'],
+  manager: ['/', '/projects', '/issues', '/rapoarte', '/control-tower'],
+  admin: ['/', '/utilizatori', '/projects', '/teams', '/control-tower'],
+  procurement: ['/', '/avize', '/furnizori', '/depozite', '/stocuri'],
+  finance: ['/', '/cheltuieli', '/aprobare', '/projects', '/rapoarte'],
+  qa_qc: ['/', '/qa', '/issues', '/rapoarte', '/control-tower'],
+  viewer: ['/', '/control-tower', '/projects', '/rapoarte', '/notificari'],
+  site_logistics: ['/', '/avize', '/stocuri', '/projects', '/issues'],
+  maintenance_director: ['/', '/control-tower', '/projects', '/issues', '/rapoarte'],
+  technical_director: ['/', '/control-tower', '/projects', '/qa', '/rapoarte'],
+};
 
 export function MobilePrimaryNav() {
   const pathname = usePathname();
@@ -29,7 +45,8 @@ export function MobilePrimaryNav() {
   const role = user?.role?.toLowerCase();
 
   const navItems = NAV_GROUPS.flatMap((group) => group.items);
-  const items = PRIMARY_HREFS.flatMap((href) => {
+  const primaryHrefs = PRIMARY_HREFS_BY_ROLE[role || ''] ?? ['/', '/notificari', '/profil'];
+  const items = primaryHrefs.flatMap((href) => {
     const item = navItems.find((candidate) => candidate.href === href);
     if (!item) return [];
     // Same visibility rule as the Sidebar: an item without roles (or an empty
