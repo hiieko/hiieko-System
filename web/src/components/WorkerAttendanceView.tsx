@@ -125,9 +125,7 @@ export function WorkerAttendanceView() {
               <div>
                 <p className="text-sm font-semibold text-amber-800">{t('worker.select_project', locale)}</p>
                 <p className="text-xs text-amber-700 mt-0.5">
-                  {locale === 'en'
-                    ? 'Pick the site you are working at from the project selector in the top bar to clock in.'
-                    : t('worker.site_picker_hint', locale)}
+                  {t('worker.site_picker_hint', locale)}
                 </p>
               </div>
             </div>
