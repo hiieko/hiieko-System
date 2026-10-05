@@ -137,7 +137,7 @@ export function ControlTowerSurface() {
 
   // Format currency
   const formatCurrency = (val: number, cur = 'RON') => {
-    return new Intl.NumberFormat('ro-RO', {
+    return new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'ro-RO', {
       style: 'currency',
       currency: cur,
       maximumFractionDigits: 0,
