@@ -16,18 +16,17 @@ async function main() {
   console.log(`${apply ? '[APPLY]' : '[DRY-RUN]'} Found ${tasks.length}/${FIXTURE_CODES.length} fixture tasks.`);
   for (const task of tasks) console.log(` - ${task.code}: ${task.title}`);
   if (!apply) {
-    console.log('No rows changed. Re-run with --apply only after accepting the verification-evidence impact.');
+    console.log('No rows changed. Re-run with --apply only when you want to archive these fixtures from normal task listings.');
     return;
   }
 
   const ids = tasks.map((t) => t.id);
-  await prisma.$transaction(async (tx) => {
-    await tx.dailyPlanTask.deleteMany({ where: { task_id: { in: ids } } });
-    await tx.taskAssignment.deleteMany({ where: { task_id: { in: ids } } });
-    await tx.task.deleteMany({ where: { id: { in: ids } } });
+  await prisma.task.updateMany({
+    where: { id: { in: ids } },
+    data: { is_archived: true },
   });
-  console.log(`Deleted ${ids.length} CJ-003 verification fixture tasks.`);
-  console.log('Audit/evidence documents are intentionally not rewritten by this script.');
+  console.log(`Archived ${ids.length} CJ-003 verification fixture tasks from normal task listings.`);
+  console.log('Task rows and verification evidence remain preserved.');
 }
 
 main().catch((e) => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
