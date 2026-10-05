@@ -38,9 +38,6 @@ jobs:
       - name: Validate Prisma schema
         run: npx prisma validate --schema backend/prisma/schema.prisma
 
-      - name: Verify Prisma migrations match schema
-        run: npx prisma migrate diff --exit-code --from-migrations backend/prisma/migrations --to-schema-datamodel backend/prisma/schema.prisma
-
       - name: Run typecheck
         run: npm run typecheck
 
@@ -115,6 +112,12 @@ jobs:
 
       - name: Validate Prisma schema
         run: npx prisma validate --schema backend/prisma/schema.prisma
+
+      - name: Create Prisma shadow database
+        run: psql postgresql://postgres:postgres@localhost:5432/postgres -c "CREATE DATABASE hiieko_shadow;"
+
+      - name: Verify Prisma migrations match schema
+        run: npx prisma migrate diff --exit-code --from-migrations backend/prisma/migrations --to-schema-datamodel backend/prisma/schema.prisma --shadow-database-url postgresql://postgres:postgres@localhost:5432/hiieko_shadow?schema=public
 
       - name: Apply migrations to clean PostgreSQL 18
         run: npx prisma migrate deploy --schema backend/prisma/schema.prisma
