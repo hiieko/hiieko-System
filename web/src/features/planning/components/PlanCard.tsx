@@ -7,7 +7,8 @@ import { ChevronDown, ChevronUp, ClipboardList } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { PlanTaskRow } from './PlanTaskRow';
-import { formatDateLong, formatDateTimeLocal } from '../summary';
+import { formatDateTimeLocal } from '../summary';
+import { formatPlanDate } from '../dayDerivations';
 import type { DailyPlan, DailyPlanTask } from '../types';
 
 interface PlanCardProps {
@@ -87,7 +88,7 @@ export function PlanCard({ plan, expanded, onToggleExpanded, editableTaskIds, on
             </div>
 
             <h3 className="text-base font-semibold text-content mb-1">
-              {formatDateLong(plan.plan_date, locale)}
+              {formatPlanDate(plan.plan_date, locale) ?? '—'}
             </h3>
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">

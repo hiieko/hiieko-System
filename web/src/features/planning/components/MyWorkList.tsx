@@ -6,7 +6,7 @@ import { ClipboardList, Users } from 'lucide-react';
 import { Card } from '@/components/ui';
 import { PlanStatusBadge } from './PlanStatusBadge';
 import { PlanTaskRow } from './PlanTaskRow';
-import { formatDateLong } from '../summary';
+import { formatPlanDate } from '../dayDerivations';
 import type { DailyPlan, DailyPlanTask } from '../types';
 
 interface MyWorkListProps {
@@ -64,7 +64,7 @@ export function MyWorkList({
               </div>
 
               <h3 className="text-base font-semibold text-content">
-                {formatDateLong(plan.plan_date, locale)}
+                {formatPlanDate(plan.plan_date, locale) ?? '—'}
               </h3>
 
               {plan.project?.name && (
