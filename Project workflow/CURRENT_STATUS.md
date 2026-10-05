@@ -204,13 +204,15 @@ Implemented full project-scoped authorization across all 102 routes:
 
 ## 8. Known carried-over gaps
 
-- ISSUE-018 / ISSUE-019: **RESOLVED by PR #2** — `GET /api/users/:id` and related user lookups are organization-scoped through the authenticated actor's `organizationId`.
-- `POST /api/inventory/transfer` — Guard checks both sourceProjectId and targetProjectId; ADMIN/OWNER/MANAGER global project scope remains intentional.
-- Authentication rate limiting is now shared across API instances via PostgreSQL (Slice 7; ISSUE-021 resolved)
-- Refresh-token rotation/revocation is implemented (Slice 2; ISSUE-022 resolved)
-- 8 non-global users (3 TEAM_LEADER, 5 WORKER) currently unassigned to any project (ISSUE-023, OPEN)
-- `PermissionsGuard` not activated; permission tables unseeded
-- `GET /api/procurement/avize/:id` route absent from controller (documented in HANDOFF.md)
+- **ISSUE-023:** 8 non-global development users remain unassigned to a project (3 TEAM_LEADER, 5 WORKER); this is a data/product assignment decision, not a Phase 1 authorization defect.
+- **ISSUE-049:** concurrent next dev processes can corrupt the shared web/.next cache. A guard is being added in the current close-out branch; until merged, run only one web dev server.
+- **ISSUE-050:** four pre-existing CJ-003 verification fixture tasks remain in the development DB. Deletion is intentionally not autonomous because the fixtures are referenced by verification evidence.
+- **ISSUE-051:** Mobile daily-report submission still has a task-ID/draft-loss defect. Mobile is frozen for the remediation program, so this remains deferred.
+- **ISSUE-053:** frontend navigation and backend @Roles contracts still have documented business-rule divergences; this requires an explicit authorization decision rather than an incidental UI fix.
+- **ISSUE-056:** remaining Romanian copy/role-map cleanup remains open; Mobile portions are deferred by the frozen-Mobile policy.
+- **PermissionsGuard:** not activated and permission tables are not seeded; this is broader governance work, not required for the completed Phase 1 role boundary.
+- **Procurement:** GET /api/procurement/avize/:id remains absent from the controller and is documented in HANDOFF.md.
+- **Production readiness:** staging/production CI deployment, rollback automation, monitoring/alerting, and structured production logging are not yet in place.
 
 ## 9. Project authorization
 
@@ -218,28 +220,28 @@ Implemented full project-scoped authorization across all 102 routes:
 
 ### Global-scope roles (membership-exempt)
 - ADMIN, OWNER, MANAGER — bypass project membership checks.
-- PM is **not** global-scope; PM project access requires a `ProjectMember` assignment.
+- PM is not global-scope; PM project access requires a ProjectMember assignment.
 
 ### Membership lifecycle
-- **Provisioning:** Auto-created on project creation. Manual via `POST /api/projects/:projectId/members`.
-- **Management:** `GET` (list), `PATCH :userId` (change role), `DELETE :userId` (remove) — restricted to ADMIN/OWNER/PM/MANAGER roles.
-- **Backfill:** `backend/scripts/backfill-project-members.ts` (evidence-derived, idempotent, `--dry-run` support).
-- **Last-member protection:** Removal blocked when project would have zero members.
+- **Provisioning:** Auto-created on project creation. Manual via POST /api/projects/:projectId/members.
+- **Management:** GET, PATCH :userId, DELETE :userId — restricted to ADMIN/OWNER/PM/MANAGER roles.
+- **Backfill:** backend/scripts/backfill-project-members.ts (evidence-derived, idempotent, --dry-run support).
+- **Last-member protection:** Removal blocked when a project would have zero members.
 
 ### Entity-derived resolution
-The guard resolves project_id from entity ID for: tasks, daily plans, daily reports, teams, documents, expenses, change orders, inspections, issues, OCR jobs, purchase orders, and avize. Returns 404 if entity not found, 403 if unauthorized.
+The guard resolves project_id from entities including tasks, daily plans, daily reports, teams, documents, expenses, change orders, inspections, issues, OCR jobs, purchase orders, and avize. Returns 404 if an entity is not found and 403 if unauthorized.
 
 ### Purchase orders
-Project-scoped. `GET /api/procurement/purchase-orders` accepts optional `projectId`. When omitted, returns all POs (filtered by global-scope role or membership).
+Project-scoped. GET /api/procurement/purchase-orders accepts optional projectId. When omitted, results are filtered by global-scope role or project membership.
 
-## 10. Known production-readiness gaps
+## 10. Current production-readiness gaps
 
-- Pre-1.0; not ready for production deployment
-- No staging/production CI pipeline configured
-- No monitoring, alerting, or structured logging at production level
-- No authentication rate limiting (ISSUE-021, OPEN)
-- No refresh-token rotation or revocation (ISSUE-022, OPEN)
-
+- **Pre-1.0:** the repository is not yet declared production-ready.
+- **Deployment:** no dedicated staging/production CI deployment pipeline or automated rollback.
+- **Observability:** no production-grade monitoring, alerting, or structured logging beyond application error handling.
+- **Governance:** PermissionsGuard is not activated and its permission tables are unseeded.
+- **Product/UX:** ISSUE-050, ISSUE-051, ISSUE-053, and ISSUE-056 remain open/deferred as described above.
+- **Security status:** authentication rate limiting is implemented and shared across API instances (Slice 7); refresh-token rotation/revocation is implemented (Slice 2); the Control Tower role boundary is implemented (PR #5 / ISSUE-052 resolved).
 ## 11. Supabase future
 
 **No new Supabase functionality will be introduced.** The migration from Supabase to NestJS+PostgreSQL is complete. Any future changes will use the existing architecture.

@@ -674,8 +674,8 @@ Two defects in `Mobile/src/screens/TeamLeaderDailyReportScreen.tsx` `handleSubmi
 
 ---
 
-## ISSUE-052 — Control Tower API has no `@Roles` at all (the UI is the only boundary)
-**Status:** 🔍 `OPEN` (recorded 2026-09-29 at UX-R1A C2; deliberately **not** changed in C2)
+## ISSUE-052 — Control Tower API had no `@Roles` at all (the UI was the only boundary)
+**Status:** ✅ `RESOLVED` (2026-10-05 — PR #5 / commit `2f33b3a9`; role metadata + regression coverage added to all three endpoints)
 
 ### Description
 `backend/src/modules/control-tower/control-tower.controller.ts` guards the controller with
@@ -691,10 +691,8 @@ financial/KPI aggregate to a `worker` token as well.
   11 non-field roles; `worker` → `WorkerMyDay`; `technician` / `team_leader` / `foreman` /
   `site_manager` → `WorkerDashboard`.
 
-### Required Action
-Decide the intended Control Tower role set, then add `@Roles(...)` to the three endpoints in one
-reviewed authorization change and re-align the frontend list against it. C2 must not change backend
-authorization.
+### Resolution
+PR #5 (`fix(security): enforce Control Tower roles and task input validation`) added the intended management-role boundary to `overview`, `drilldown`, and `red-flags`, covering ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DIRECTOR, and TECHNICAL_DIRECTOR. Focused controller metadata tests were added. The backend role boundary is now enforced independently of the frontend route guard.
 
 ---
 
