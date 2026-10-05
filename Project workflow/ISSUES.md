@@ -638,7 +638,7 @@ Added a generic `Task.is_archived` flag and an index on `(project_id, is_archive
 ---
 
 # ISSUE-051 — Mobile daily report screen sends a free-text `taskId` and deletes its draft before a successful submit
-**Status:** 🔍 `OPEN` (found 2026-09-29 while verifying P4.4; the web + API finalization path is verified, the Mobile screen is not)
+**Status:** 🟡 `IN PROGRESS` (2026-10-05 — code fix implemented; device/emulator verification remains before this issue is fully closed)
 
 ### Description
 Two defects in `Mobile/src/screens/TeamLeaderDailyReportScreen.tsx` `handleSubmit()`:
@@ -665,12 +665,16 @@ Two defects in `Mobile/src/screens/TeamLeaderDailyReportScreen.tsx` `handleSubmi
 - Neither defect is exercised by the P4.4 gate (which drives the browser and calls the Mobile
   contract over HTTP), so the P4.4 report must not be read as "Mobile verified".
 
-### Required Action
-- Send the real task id: choose a `Task` for the selected project (e.g. from `/api/tasks`) instead of
-  the description, and keep the description in `notes`.
-- Remove the draft only after the API call succeeded or after the payload is durably queued by
-  `enqueueOperation()` — the offline branch is the intended "saved on the phone" path.
-- Re-run the P4.4 gate plus a device/emulator pass before the Mobile daily report is called verified.
+### Resolution — code fix implemented (2026-10-05)
+- `Mobile/src/services/apiClient.ts` now exposes `getTasks(projectId)` against the existing `GET /api/tasks?projectId=` endpoint.
+- `Mobile/src/screens/TeamLeaderDailyReportScreen.tsx` loads the selected project's real tasks while online and makes each new report line carry the real task UUID. The description remains display/notes text; no free-text value is sent as `taskId`.
+- Existing drafts are preserved. A submit now removes `@solar:daily_report_draft` only after the online API call succeeds or the offline payload is successfully persisted to the SQLite sync queue. If either operation throws, the draft remains available.
+- Drafts created by the old screen that have no task UUID are retained but are fail-closed at submit time until each line is linked to a real project task.
+- No database, backend, or schema change was required.
+
+### Verification status
+- Root `npm run typecheck` / CI must pass for this branch.
+- A real Mobile device/emulator pass is still required before ISSUE-051 is marked fully `RESOLVED`; the existing P4.4 HTTP contract does not exercise the React Native screen itself.
 
 ---
 

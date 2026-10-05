@@ -18,7 +18,16 @@ import { PageIntro } from '../components/PageIntro';
 const DRAFT_KEY = '@solar:daily_report_draft';
 
 // Local form types for the team leader daily report screen (P4.2: separated from API types)
+interface ProjectTask {
+  id: string;
+  title?: string;
+  name?: string;
+  code?: string;
+  unit_of_measure?: string;
+}
+
 interface FormTask {
+  taskId: string;
   description: string;
   quantity: number;
   unit: string;
@@ -50,11 +59,10 @@ export function TeamLeaderDailyReportScreen({
   locale = 'ro',
 }: Props) {
   const [presentWorkerIds, setPresentWorkerIds] = useState<string[]>(teamWorkers.map(w => w.id));
-  const [tasks, setTasks] = useState<FormTask[]>([
-    { description: 'Montat panouri fotovoltaice', quantity: 3, unit: 'buc' },
-    { description: 'Montat cabluri (stringuri)', quantity: 7, unit: 'cabluri' },
-  ]);
-  const [newTaskDesc, setNewTaskDesc] = useState('');
+  const [tasks, setTasks] = useState<FormTask[]>([]);
+  const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState('');
+  const [loadingTasks, setLoadingTasks] = useState(false);
   const [newTaskQty, setNewTaskQty] = useState('');
   
   const [materialsUsed, setMaterialsUsed] = useState<FormMaterial[]>([
@@ -63,7 +71,7 @@ export function TeamLeaderDailyReportScreen({
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Load draft on mount
+  // Load draft once. Existing drafts without task IDs are retained but cannot be submitted until each line is linked.
   useEffect(() => {
     async function loadDraft() {
       try {
@@ -81,6 +89,34 @@ export function TeamLeaderDailyReportScreen({
     }
     loadDraft();
   }, []);
+
+  // Load the real project task identities while online. Offline submission can still use task IDs stored in a draft.
+  useEffect(() => {
+    if (isOffline) return;
+
+    let cancelled = false;
+    async function loadProjectTasks() {
+      setLoadingTasks(true);
+      try {
+        const response = await apiClient.getTasks(project.id);
+        if (!cancelled) {
+          setProjectTasks(Array.isArray(response.data) ? response.data : []);
+        }
+      } catch (err) {
+        console.error('Error loading project tasks:', err);
+        if (!cancelled) {
+          Alert.alert('Eroare', 'Nu s-au putut încărca lucrările proiectului. Poți păstra ciorna și reîncerca după reconectare.');
+        }
+      } finally {
+        if (!cancelled) setLoadingTasks(false);
+      }
+    }
+
+    loadProjectTasks();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOffline, project.id]);
 
   const saveDraft = async () => {
     try {
@@ -105,15 +141,33 @@ export function TeamLeaderDailyReportScreen({
   };
 
   const addTask = () => {
-    if (!newTaskDesc.trim()) return;
-    setTasks(prev => [...prev, { description: newTaskDesc.trim(), quantity: Number(newTaskQty) || 1, unit: 'buc' }]);
-    setNewTaskDesc('');
+    const selectedTask = projectTasks.find(task => task.id === selectedTaskId);
+    if (!selectedTask) {
+      Alert.alert('Atenție', 'Selectează o lucrare reală din proiect.');
+      return;
+    }
+
+    const description = selectedTask.title || selectedTask.name || selectedTask.code || 'Lucrare';
+    const unit = selectedTask.unit_of_measure || 'buc';
+    setTasks(prev => [...prev, {
+      taskId: selectedTask.id,
+      description,
+      quantity: Number(newTaskQty) || 1,
+      unit,
+    }]);
+    setSelectedTaskId('');
     setNewTaskQty('');
   };
 
   const handleSubmit = async () => {
     if (tasks.length === 0) {
       Alert.alert('Atenție', 'Adaugă cel puțin o sarcină executată.');
+      return;
+    }
+
+    const missingTaskId = tasks.some(task => !task.taskId);
+    if (missingTaskId) {
+      Alert.alert('Atenție', 'Fiecare lucrare din raport trebuie asociată unei lucrări reale din proiect. Deschide proiectul online și selectează lucrarea.');
       return;
     }
 
@@ -132,9 +186,9 @@ export function TeamLeaderDailyReportScreen({
           hoursWorked: 8,
           overtimeHours: 0,
         })),
-        // Map tasks (use description as identifier)
-        tasks: tasks.map((task, idx) => ({
-          taskId: task.description.substring(0, 50) || `task_${idx}`,
+        // Send the real backend task UUID, never free-text task descriptions.
+        tasks: tasks.map(task => ({
+          taskId: task.taskId,
           quantityDone: task.quantity,
           notes: task.description,
         })),
@@ -146,15 +200,15 @@ export function TeamLeaderDailyReportScreen({
       };
       const idemKey = generateIdempotencyKey('daily_report', 'create');
 
-      await AsyncStorage.removeItem(DRAFT_KEY);
-
       if (isOffline) {
-        // Enqueue for later sync (SQLite-based queue)
+        // Persist the queue item first. The draft is removed only after the queue write succeeds.
         await enqueueOperation('daily_report', 'create', reportPayload, idemKey);
+        await AsyncStorage.removeItem(DRAFT_KEY);
         Alert.alert('Salvat Local (Offline)', 'Raportul zilnic al echipei a fost salvat pe telefon și se va transmite automat la reconectare.');
       } else {
-        // Submit directly to API
+        // Delete the local draft only after the server has accepted the report.
         await apiClient.createDailyReport(reportPayload, idemKey);
+        await AsyncStorage.removeItem(DRAFT_KEY);
         Alert.alert('Raport Transmis!', 'Raportul zilnic a fost trimis cu succes către Manager.');
       }
     } catch (e: any) {
@@ -204,19 +258,40 @@ export function TeamLeaderDailyReportScreen({
         <Text style={styles.cardTitle}>2. LUCRĂRI EXECUTATE (EX: MONTAT 3 PANOURI)</Text>
         {tasks.map((t, idx) => (
           <View key={idx} style={styles.taskRow}>
-            <Text style={styles.taskText}>• {t.description}</Text>
+            <View style={styles.taskDescription}>
+              <Text style={styles.taskText}>• {t.description}</Text>
+              <Text style={styles.taskIdText}>{t.taskId ? 'ID proiect asociat' : 'Lucrare neasociată — selectează o lucrare din proiect'}</Text>
+            </View>
             <Text style={styles.taskQty}>{t.quantity} {t.unit}</Text>
           </View>
         ))}
 
+        <View style={styles.projectTaskList}>
+          <Text style={styles.taskPickerLabel}>
+            {loadingTasks ? 'Se încarcă lucrările proiectului...' : 'Selectează lucrarea din proiect'}
+          </Text>
+          {projectTasks.map(task => {
+            const label = task.title || task.name || task.code || task.id;
+            const selected = selectedTaskId === task.id;
+            return (
+              <TouchableOpacity
+                key={task.id}
+                style={[styles.projectTaskChip, selected && styles.projectTaskChipActive]}
+                onPress={() => setSelectedTaskId(task.id)}
+                disabled={loadingTasks}
+              >
+                <Text style={[styles.projectTaskText, selected && styles.projectTaskTextActive]}>
+                  {task.code ? task.code + ' — ' : ''}{label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          {!loadingTasks && projectTasks.length === 0 && (
+            <Text style={styles.noTasksText}>Nu există lucrări disponibile pentru acest proiect.</Text>
+          )}
+        </View>
+
         <View style={styles.addTaskBox}>
-          <TextInput
-            style={[styles.input, { flex: 2 }]}
-            placeholder="Descriere lucrare..."
-            placeholderTextColor="#64748b"
-            value={newTaskDesc}
-            onChangeText={setNewTaskDesc}
-          />
           <TextInput
             style={[styles.input, { flex: 1 }]}
             placeholder="Cantitate"
@@ -225,7 +300,7 @@ export function TeamLeaderDailyReportScreen({
             value={newTaskQty}
             onChangeText={setNewTaskQty}
           />
-          <TouchableOpacity style={styles.addButton} onPress={addTask}>
+          <TouchableOpacity style={styles.addButton} onPress={addTask} disabled={!selectedTaskId || loadingTasks}>
             <Text style={styles.addButtonText}>+ Adaugă</Text>
           </TouchableOpacity>
         </View>
@@ -352,9 +427,52 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#334155',
   },
+  taskDescription: {
+    flex: 1,
+    paddingRight: 8,
+  },
   taskText: {
     color: '#f8fafc',
     fontSize: 13,
+  },
+  taskIdText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  taskPickerLabel: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  projectTaskList: {
+    marginTop: 10,
+    gap: 6,
+  },
+  projectTaskChip: {
+    backgroundColor: '#0f172a',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  projectTaskChipActive: {
+    backgroundColor: '#f59e0b',
+    borderColor: '#f59e0b',
+  },
+  projectTaskText: {
+    color: '#cbd5e1',
+    fontSize: 12,
+  },
+  projectTaskTextActive: {
+    color: '#0f172a',
+    fontWeight: '800',
+  },
+  noTasksText: {
+    color: '#94a3b8',
+    fontSize: 11,
   },
   taskQty: {
     color: '#f59e0b',
