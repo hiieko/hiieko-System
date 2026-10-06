@@ -56,7 +56,7 @@
   --hii-sidebar-active-bg: #188C51;
   --hii-sidebar-active-text: #ffffff;
   --hii-sidebar-width: 16rem;
-  --hii-header-height: 4rem;
+  --hii-header-height: 3.5rem;
   --hii-chrome: #111827;
   --hii-chrome-elevated: #374151;
   --hii-chrome-hover: #1f2937;
@@ -69,6 +69,10 @@
 @layer base {
   * {
     border-color: var(--hii-border);
+  }
+
+  html {
+    color-scheme: light;
   }
 
   body {
@@ -351,5 +355,31 @@
   .hii-shell-chrome :focus-visible,
   .hii-shell-band :focus-visible {
     outline-color: var(--hii-accent, #f59e0b);
+  }
+}
+
+
+@media (min-width: 640px) {
+  :root {
+    --hii-header-height: 4rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .mobile-primary-nav {
+    min-height: 4.5rem;
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+
+  .mobile-primary-nav ul {
+    min-height: 3.5rem;
+  }
+
+  .mobile-primary-nav a {
+    min-height: 3.25rem;
+  }
+
+  #main-content {
+    padding-bottom: 0.5rem;
   }
 }
