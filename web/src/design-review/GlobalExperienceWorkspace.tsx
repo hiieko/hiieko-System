@@ -677,7 +677,35 @@ function ThemeControl({ theme, setTheme, t, compact = false }: { theme: Theme; s
 }
 
 
-.g-project-selection-head{margin-bottom:18px}
+.g-project-module{margin:0 0 16px;padding:18px;border:1px solid var(--g-border);border-radius:14px;background:var(--g-surface)}
+.g-project-module-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:15px}
+.g-project-module-head h2{margin:3px 0 4px;font-size:18px;color:var(--g-text)}
+.g-project-module-head p:not(.g-eyebrow){margin:0;color:var(--g-text-muted);font-size:12px}
+.g-project-table{display:grid;gap:8px}
+.g-project-table>article,.g-project-planning-list>article,.g-project-attendance-list>article,.g-project-report-list>article,.g-project-material-table>article,.g-project-qa-list>article,.g-project-document-table>article{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--g-border);border-radius:10px;background:var(--g-surface-muted)}
+.g-project-table-main{min-width:0;flex:1;display:grid;gap:4px}
+.g-project-table-main small,.g-project-table-main em{font-size:10px;color:var(--g-text-muted);font-style:normal}
+.g-project-table-main b{font-size:13px;color:var(--g-text)}
+.g-project-table-main>span{height:5px;border-radius:99px;background:var(--g-border);overflow:hidden;margin-top:2px}
+.g-project-table-main>span i{display:block;height:100%;background:var(--g-accent);border-radius:inherit}
+.g-project-stat-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.g-project-stat-strip>div{padding:12px;border:1px solid var(--g-border);border-radius:10px;background:var(--g-surface-muted)}
+.g-project-stat-strip b{display:block;font-size:20px;color:var(--g-text)}
+.g-project-stat-strip span{display:block;margin-top:3px;font-size:10px;color:var(--g-text-muted)}
+.g-project-planning-list,.g-project-attendance-list,.g-project-report-list,.g-project-qa-list,.g-project-document-table{display:grid;gap:8px}
+.g-project-planning-list>article>svg,.g-project-report-list>article>svg,.g-project-qa-list>article>svg{color:var(--g-accent)}
+.g-project-planning-list article>div,.g-project-attendance-list article>div,.g-project-report-list article>div,.g-project-qa-list article>div,.g-project-document-table article>div{min-width:0;flex:1}
+.g-project-planning-list b,.g-project-attendance-list b,.g-project-report-list b,.g-project-qa-list b,.g-project-document-table b{display:block;font-size:12px;color:var(--g-text)}
+.g-project-planning-list small,.g-project-attendance-list small,.g-project-report-list small,.g-project-qa-list small,.g-project-document-table small{display:block;margin-top:3px;font-size:10px;color:var(--g-text-muted)}
+.g-project-attendance-list article>span:not(.g-status){font-size:11px;color:var(--g-text-muted)}
+.g-demo-warning{color:var(--g-danger)!important;font-weight:700}
+.g-project-material-table{display:grid;gap:8px}
+.g-project-material-table article>div:first-child{flex:1}
+.g-project-material-table article>div:nth-child(2){width:100px}
+.g-project-material-table b{display:block;font-size:12px;color:var(--g-text)}
+.g-project-material-table small{font-size:10px;color:var(--g-text-muted)}
+.g-project-document-table article>span{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--g-accent-soft);color:var(--g-accent)}
+@media (max-width:760px){.g-project-module{padding:13px}.g-project-module-head{flex-direction:column}.g-project-stat-strip{grid-template-columns:repeat(2,1fr)}.g-project-table>article,.g-project-planning-list>article,.g-project-attendance-list>article,.g-project-report-list>article,.g-project-material-table>article,.g-project-qa-list>article,.g-project-document-table>article{align-items:flex-start;flex-wrap:wrap}.g-project-table>article>.g-status,.g-project-planning-list>article>.g-status,.g-project-report-list>article>.g-status,.g-project-material-table>article>.g-status,.g-project-qa-list>article>.g-status,.g-project-document-table>article>.g-status{margin-left:auto}}\n.g-project-selection-head{margin-bottom:18px}
 .g-project-selection-card{padding:18px}
 .g-project-selection-note{display:flex;align-items:center;gap:9px;padding:11px 13px;border:1px solid var(--g-border);background:var(--g-surface-muted);border-radius:10px;color:var(--g-text-muted);font-size:12px;margin-bottom:16px}
 .g-project-selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
