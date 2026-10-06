@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { MobilePrimaryNav } from './MobilePrimaryNav';
 import { ProjectProvider } from '../contexts/ProjectContext';
+import { ThemeProvider } from '../contexts/ThemeContext';
 import { AuthGuard } from '../lib/auth-guard';
 import { ToastProvider } from './ui/Toast';
 
@@ -20,7 +21,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isAuthPage || isDesignReviewPage) return <>{children}</>;
 
   return (
-    <AuthGuard>
+    <ThemeProvider>
+      <AuthGuard>
       <ProjectProvider>
         <ToastProvider>
           <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -44,6 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </ToastProvider>
       </ProjectProvider>
-    </AuthGuard>
+      </AuthGuard>
+    </ThemeProvider>
   );
 }
