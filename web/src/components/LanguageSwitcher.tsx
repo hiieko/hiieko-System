@@ -32,9 +32,9 @@ export function LanguageSwitcher() {
       role="group"
       aria-label="Language"
       data-testid="language-switcher"
-      className="flex items-center space-x-1 bg-slate-100 rounded-lg border border-slate-200 p-0.5"
+      className="flex shrink-0 items-center space-x-0.5 sm:space-x-1 bg-slate-100 rounded-lg border border-slate-200 p-0.5"
     >
-      <Languages className="w-4 h-4 text-slate-400 ml-1.5" aria-hidden="true" />
+      <Languages className="hidden sm:block w-4 h-4 text-slate-400 ml-1.5" aria-hidden="true" />
       {OPTIONS.map((opt) => {
         const active = opt.value === locale;
         return (
@@ -46,7 +46,7 @@ export function LanguageSwitcher() {
             aria-label={opt.label}
             data-locale={opt.value}
             className={
-              'min-w-[40px] px-2 py-1 rounded-md text-xs font-semibold transition-colors ' +
+              'min-w-[32px] sm:min-w-[40px] px-1.5 sm:px-2 py-1 rounded-md text-xs font-semibold transition-colors ' +
               (active
                 ? 'bg-white text-hii-700 shadow-sm border border-hii-200'
                 : 'text-slate-500 hover:text-slate-700 border border-transparent')
