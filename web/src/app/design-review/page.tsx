@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DesignReviewWorkspace } from '../../components/DesignReviewWorkspace';
+import { DesignReviewWorkspace } from '../../design-review/DesignReviewWorkspace';
 
 export const metadata: Metadata = {
   title: 'HIIEKO — Frontend Design Review',
