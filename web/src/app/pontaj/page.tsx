@@ -4,6 +4,7 @@ import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
 import { WorkerAttendanceView } from '../../components/WorkerAttendanceView';
+import { AttendanceCorrectionDialog } from '../../features/attendance/components/AttendanceCorrectionDialog';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
@@ -14,7 +15,7 @@ import {
   Loader2, RefreshCw, Users, Timer, Info, CheckCircle2,
 } from 'lucide-react';
 import * as attendanceApi from '../../features/attendance/api';
-import type { AttendanceRecord, TodaySummary } from '../../features/attendance/types';
+import type { AttendanceRecord, TodaySummary, CorrectAttendanceDto } from '../../features/attendance/types';
 
 /** Roles that see the supervisor experience (team attendance, corrections context). */
 const SUPERVISOR_ROLES = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'];
@@ -35,6 +36,7 @@ function PontajPageInner() {
   const role = (user?.role || '').toLowerCase();
   const isSupervisor = SUPERVISOR_ROLES.includes(role);
   const canReadUsers = USER_DIRECTORY_ROLES.includes(role);
+  const canCorrectAttendance = ['admin', 'owner', 'manager', 'pm'].includes(role);
   const { selectedProjectId } = useProject();
 
   const [activeTab, setActiveTab] = useState<'daily' | 'monthly'>('daily');
@@ -46,6 +48,8 @@ function PontajPageInner() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [users, setUsers] = useState<AppUser[]>([]);
   const [todaySummary, setTodaySummary] = useState<TodaySummary | null>(null);
+  const [correctionTarget, setCorrectionTarget] = useState<AttendanceRecord | null>(null);
+  const [savingCorrection, setSavingCorrection] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!isSupervisor) return;
@@ -110,6 +114,20 @@ function PontajPageInner() {
 
   const displayName = (u?: AppUser) =>
     u?.full_name || u?.profile?.full_name || u?.email || 'Necunoscut';
+
+  const saveCorrection = useCallback(async (dto: CorrectAttendanceDto) => {
+    if (!correctionTarget) return;
+    setSavingCorrection(true);
+    try {
+      await attendanceApi.correctAttendance(correctionTarget.id, dto);
+      setCorrectionTarget(null);
+      await Promise.all([loadData(), loadToday()]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : (locale === 'en' ? 'Failed to correct attendance' : 'Corecția pontajului a eșuat'));
+    } finally {
+      setSavingCorrection(false);
+    }
+  }, [correctionTarget, loadData, loadToday, locale]);
 
   const exportAttendance = () => {
     const header = ['Nume', 'Șantier', 'Sosire', 'Plecare', 'Distanță GPS (m)', 'Ore normale', 'Ore suplimentare', 'Stare'];
@@ -336,15 +354,16 @@ function PontajPageInner() {
         </div>
       </div>
 
-      {/* Corrections — documented backend gap, honest note */}
-      <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-        <Info className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-slate-500">
-          {locale === 'en'
-            ? 'Hours corrections are not exposed by the backend yet — there is no PATCH endpoint for attendance records. Until it ships, corrections should be handled by the site manager through an approved process.'
-            : 'Corecțiile de ore nu sunt încă expuse de backend — nu există niciun endpoint PATCH pentru înregistrările de pontaj. Până atunci, corecțiile trebuie gestionate de șeful de șantier printr-un proces aprobat.'}
-        </p>
-      </div>
+      {canCorrectAttendance && (
+        <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          <Info className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-500">
+            {locale === 'en'
+              ? 'Corrections are audited. Changing check-in/out times recalculates regular and overtime hours on the server; a correction reason is required.'
+              : 'Corecțiile sunt auditate. Modificarea orelor de sosire/plecare recalculează orele normale și suplimentare pe server; motivul corecției este obligatoriu.'}
+          </p>
+        </div>
+      )}
 
 
       {/* Tabs: daily / monthly */}
@@ -379,13 +398,13 @@ function PontajPageInner() {
                   <th className="py-3.5 px-4">{locale === 'en' ? 'GPS' : 'Verificare GPS'}</th>
                   <th className="py-3.5 px-4">{locale === 'en' ? 'Regular hours' : 'Ore Normale'}</th>
                   <th className="py-3.5 px-4">{locale === 'en' ? 'Overtime' : 'Ore Suplimentare'}</th>
-                  <th className="py-3.5 px-4 text-right">{locale === 'en' ? 'Status' : 'Stare'}</th>
+                  <th className="py-3.5 px-4 text-right">{locale === 'en' ? 'Status' : 'Stare'}</th>\n                  {canCorrectAttendance && <th className="py-3.5 px-4 text-right">{locale === 'en' ? 'Actions' : 'Acțiuni'}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={canCorrectAttendance ? 9 : 8} className="py-12 text-center">
                       <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
                       <p className="mt-2 text-sm text-slate-500">{locale === 'en' ? 'Loading attendance...' : 'Se incarca datele de pontaj...'}</p>
                     </td>
@@ -455,6 +474,14 @@ function PontajPageInner() {
                             </span>
                           )}
                         </td>
+                        {canCorrectAttendance && (
+                          <td className="py-3.5 px-4 text-right">
+                            <button type="button" onClick={() => setCorrectionTarget(log)}
+                              className="inline-flex items-center px-2.5 py-1.5 text-xs font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
+                              {locale === 'en' ? 'Correct' : 'Corectează'}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })
@@ -562,6 +589,12 @@ function PontajPageInner() {
           </div>
         </div>
       )}
+      <AttendanceCorrectionDialog
+        record={correctionTarget}
+        saving={savingCorrection}
+        onClose={() => { if (!savingCorrection) setCorrectionTarget(null); }}
+        onSave={saveCorrection}
+      />
     </div>
   );
 }
