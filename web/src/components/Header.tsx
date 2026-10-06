@@ -38,10 +38,6 @@ export function Header({ onMenuClick }: HeaderProps) {
     ? t('general.loading', locale)
     : user?.fullName || user?.email || 'Vizitator';
 
-  const currentProjectLabel = selectedProject
-    ? `${selectedProject.name} (${selectedProject.code})`
-    : t('header.all_sites', locale);
-
   const userMenuItems: DropdownMenuItem[] = [
     {
       key: 'profile',
@@ -65,30 +61,34 @@ export function Header({ onMenuClick }: HeaderProps) {
   ];
 
   return (
-    <header className="h-[var(--hii-header-height)] bg-white border-b border-slate-200 px-4 lg:px-6 flex items-center justify-between sticky top-0 z-header shadow-sm">
-      {/* Left section */}
-      <div className="flex min-w-0 items-center gap-3">
-        {/* Mobile menu trigger */}
+    <header className="h-[var(--hii-header-height)] shrink-0 bg-white border-b border-slate-200 px-2.5 sm:px-4 lg:px-6 flex items-center justify-between sticky top-0 z-header shadow-sm">
+      {/* Left section: on phones the project selector gets the remaining width,
+          so it can never slide underneath the language/notification controls. */}
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
-          className="lg:hidden"
+          className="lg:hidden shrink-0"
           aria-label={t('header.menu', locale) || 'Deschide meniul'}
         >
           <Menu className="w-5 h-5" />
         </Button>
 
-        <nav className="hidden min-w-0 items-center gap-2 text-sm sm:flex" aria-label={locale === 'en' ? 'Breadcrumb' : 'Navigare'}>
+        <nav
+          className="hidden min-w-0 items-center gap-2 text-sm sm:flex"
+          aria-label={locale === 'en' ? 'Breadcrumb' : 'Navigare'}
+        >
           {pathname !== '/' && <span className="text-slate-300" aria-hidden="true">/</span>}
-          <span className="max-w-36 truncate font-semibold text-slate-700">{pathname === '/' ? (locale === 'en' ? 'Operations' : 'Operațiuni') : activeTitle}</span>
+          <span className="max-w-36 truncate font-semibold text-slate-700">
+            {pathname === '/' ? (locale === 'en' ? 'Operations' : 'Operațiuni') : activeTitle}
+          </span>
         </nav>
 
-        {/* Project selector */}
-        <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
+        <div className="min-w-0 max-w-[calc(100vw-14rem)] sm:max-w-none flex-1 sm:flex-none flex items-center gap-1.5 sm:gap-2 bg-slate-50 px-2 sm:px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
           <MapPin className="w-4 h-4 text-hii-500 shrink-0" aria-hidden="true" />
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 font-medium leading-tight">
+          <div className="min-w-0 flex flex-col">
+            <span className="hidden sm:block text-[10px] text-slate-400 font-medium leading-tight">
               {selectedProject
                 ? t('header.current_project', locale) || 'Proiect curent'
                 : t('header.all_projects', locale) || 'Toate proiectele'}
@@ -98,13 +98,11 @@ export function Header({ onMenuClick }: HeaderProps) {
               onChange={(e) =>
                 setSelectedProjectId(e.target.value === 'all' ? '' : e.target.value)
               }
-              className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-xs -mt-0.5 p-0"
+              className="block w-full max-w-full bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-xs sm:-mt-0.5 p-0 truncate"
               disabled={projectsLoading}
               aria-label={t('header.select_project', locale) || 'Selectează proiect'}
             >
-              <option value="all">
-                {t('header.all_sites', locale)}
-              </option>
+              <option value="all">{t('header.all_sites', locale)}</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({p.code})
@@ -115,25 +113,27 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
       </div>
 
-      {/* Right section */}
-      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
-        <GlobalQuickSearch />
+      {/* Right section: search is intentionally removed from the phone header;
+          the selector, language, bell and avatar retain usable touch targets. */}
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-2.5">
+        <div className="hidden sm:block">
+          <GlobalQuickSearch />
+        </div>
         <LanguageSwitcher />
 
         <Link
           href="/notificari"
           aria-label={t('nav.notificari', locale) || 'Notificări'}
-          className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full relative"
+          className="flex h-10 w-10 items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full relative shrink-0"
         >
           <Bell className="w-5 h-5" />
         </Link>
 
-        <div className="h-6 w-px bg-slate-200" aria-hidden="true" />
+        <div className="hidden sm:block h-6 w-px bg-slate-200" aria-hidden="true" />
 
-        {/* User dropdown menu */}
         <DropdownMenu
           trigger={
-            <div className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1.5 transition-colors">
+            <div className="flex h-10 w-10 sm:h-auto sm:w-auto items-center justify-center sm:justify-start gap-2 cursor-pointer hover:bg-slate-50 rounded-lg sm:px-2 sm:py-1.5 transition-colors shrink-0">
               <div className="w-8 h-8 rounded-full bg-hii-600 text-white flex items-center justify-center font-bold text-xs">
                 {loading ? '..' : currentUser.slice(0, 2).toUpperCase()}
               </div>
@@ -156,5 +156,3 @@ export function Header({ onMenuClick }: HeaderProps) {
     </header>
   );
 }
-
-
