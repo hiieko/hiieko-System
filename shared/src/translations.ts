@@ -133,7 +133,6 @@ const d: Record<string, { ro: string; en: string }> = {
 'sidebar.collapse': { ro: 'Restrânge meniul', en: 'Collapse menu' },
 'sidebar.expand': { ro: 'Extinde meniul', en: 'Expand menu' },
 'sidebar.close': { ro: 'Închide meniul', en: 'Close menu' },
-'sidebar.navigation': { ro: 'Navigare principală', en: 'Main navigation' },
 'auth.login': { ro: 'Autentificare', en: 'Login' },
 'auth.signup': { ro: 'Solicita Cont', en: 'Apply' },
 'auth.logout': { ro: 'Deconectare', en: 'Logout' },
@@ -897,12 +896,6 @@ Object.assign(d, {
   'task.confirm_cancel_message': T('Task-ul va fi marcat ca anulat. Această tranziție nu poate fi reversată.', 'The task will be marked as cancelled. This transition cannot be reversed.'),
   'task.confirm_cancel_confirm': T('Anulează task-ul', 'Cancel task'),
   'task.confirm_cancel_dismiss': T('Păstrează task-ul', 'Keep task'),
-  'task.summary_total': T('Total task-uri', 'Total tasks'),
-  'task.summary_active': T('În lucru', 'Active'),
-  'task.summary_blocked': T('Blocate', 'Blocked'),
-  'task.summary_complete': T('Finalizate', 'Completed'),
-  'task.list_heading': T('Task-uri', 'Tasks'),
-  'task.clear_filters': T('Resetează filtrele', 'Clear filters'),
   'task.created': T('Task creat', 'Task created'),
   'task.status_updated': T('Status actualizat', 'Status updated'),
   'task.quantity_updated': T('Cantitate actualizată', 'Quantity updated'),
@@ -1720,6 +1713,43 @@ Object.assign(d, {
   'projects.add': T('Adaugă', 'Add'),
   'projects.remove': T('Elimină', 'Remove'),
 });
+
+
+// Global design-review controls.
+Object.assign(d, {
+  'language': T('Limbă', 'Language'),
+  'theme': T('Temă', 'Theme'),
+});
+
+
+// v0 production surface labels.
+Object.assign(d, {
+  'daily_report.site_fallback': T('Șantier', 'Site'),
+  'daily_report.notes_empty': T('Nu există observații', 'No notes recorded'),
+  'daily_report.team_leader_label': T('Șef echipă', 'Team lead'),
+  'daily_report.edit': T('Editează', 'Edit'),
+  'daily_report.refresh': T('Reîmprospătează', 'Refresh'),
+  'daily_report.tasks_empty': T('Nu există sarcini înregistrate', 'No tasks recorded'),
+  'daily_report.site_observations': T('Observații șantier', 'Site observations'),
+  'daily_report.site_execution_photos': T('Fotografii execuție șantier', 'Site execution photos'),
+  'daily_report.photos_unavailable': T('Fotografiile nu sunt disponibile în această versiune.', 'Photos are unavailable in this version.'),
+  'stock.audit_immutable_title': T('Jurnal imuabil · Mișcări de stoc (audit trail)', 'Immutable stock movement log (audit trail)'),
+  'stock.audit_immutable_note': T('Conformitate Regula 11: fiecare mișcare are autor, marcaj temporal și sursă', 'Rule 11 compliance: each movement has an author, timestamp and source'),
+  'stock.movement_type': T('Tip operațiune', 'Movement type'),
+  'stock.document_reference': T('Referință document', 'Document reference'),
+});
+
+// Production task navigation and summary labels.
+Object.assign(d, {
+  'task.summary_total': T('Total task-uri', 'Total tasks'),
+  'task.summary_active': T('În lucru', 'Active'),
+  'task.summary_blocked': T('Blocate', 'Blocked'),
+  'task.summary_complete': T('Finalizate', 'Completed'),
+  'task.list_heading': T('Task-uri', 'Tasks'),
+  'task.clear_filters': T('Resetează filtrele', 'Clear filters'),
+  'sidebar.navigation': T('Navigare principală', 'Main navigation'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
