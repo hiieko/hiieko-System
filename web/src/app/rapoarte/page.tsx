@@ -3,7 +3,7 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '../../lib/api-client';
 import { t, useLocale, type DailyReport } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
@@ -49,7 +49,32 @@ function RapoartePageInner() {
   const userRole = user?.role?.toLowerCase();
   const isWorker = userRole === 'worker';
   const canCreate = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician'].includes(userRole || '');
+  const canEditOrSubmit = ['admin', 'owner'].includes(userRole || '') || reports.some(r => r.team_leader_id === user?.id && r.status === 'DRAFT');
   const canReview = ['admin', 'owner', 'manager', 'pm', 'site_manager'].includes(userRole || '');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const statusOptions = useMemo(() => ['ALL', ...Array.from(new Set(reports.map(r => r.status).filter(Boolean)))], [reports]);
+  const filteredReports = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase(locale);
+    return reports.filter(report => {
+      const statusMatches = statusFilter === 'ALL' || report.status === statusFilter;
+      if (!statusMatches) return false;
+      if (!query) return true;
+      const haystack = [
+        report.project?.name,
+        report.project?.code,
+        report.team_leader?.profile?.full_name,
+        report.general_notes,
+        report.blockages,
+        report.proposed_work,
+        report.report_date,
+        ...(report.tasks || []).map((x: any) => x.task?.title || x.notes),
+        ...(report.materials || []).map((x: any) => x.material?.name || x.material?.code),
+      ].filter(Boolean).join(' ').toLocaleLowerCase(locale);
+      return haystack.includes(query);
+    });
+  }, [reports, searchQuery, statusFilter, locale]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -147,6 +172,28 @@ function RapoartePageInner() {
         </div>
       </div>
 
+      {!loading && !error && reports.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3 bg-white border border-slate-200 rounded-xl p-4">
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={locale === 'en' ? 'Search site, team leader, notes, tasks, materials…' : 'Caută șantier, șef de echipă, observații, task-uri, materiale…'}
+            className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-hii-500"
+            aria-label={locale === 'en' ? 'Search daily reports' : 'Caută rapoarte zilnice'}
+          />
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
+            {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? (locale === 'en' ? 'All statuses' : 'Toate stările') : status}</option>)}
+          </select>
+          {(searchQuery || statusFilter !== 'ALL') && (
+            <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }}
+              className="px-3 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
+              {locale === 'en' ? 'Clear filters' : 'Șterge filtrele'}
+            </button>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="py-12 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
@@ -164,7 +211,15 @@ function RapoartePageInner() {
         </div>
       ) : (
         <div className="space-y-6">
-          {reports.map((report) => {
+          {filteredReports.length === 0 ? (
+            <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
+              <FileText className="w-8 h-8 mx-auto text-slate-300" />
+              <p className="mt-2 text-sm text-slate-500">{locale === 'en' ? 'No reports match the current filters.' : 'Niciun raport nu corespunde filtrelor curente.'}</p>
+              <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }} className="mt-3 text-sm font-semibold text-hii-700 hover:underline">
+                {locale === 'en' ? 'Clear filters' : 'Șterge filtrele'}
+              </button>
+            </div>
+          ) : filteredReports.map((report) => {
             const siteName = report.project?.name || 'Șantier';
             const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
@@ -214,19 +269,19 @@ function RapoartePageInner() {
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
                         Ciorna
                       </span>
-                      <button type="button" onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
+                      {canEditOrSubmit && (report.team_leader_id === user?.id || ['admin', 'owner'].includes(userRole || '')) && <button type="button" onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
                         className="inline-flex items-center px-3 py-1.5 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
                         <Edit3 className="w-3.5 h-3.5 mr-1" />{t('general.edit', locale)}
-                      </button>
+                      </button>}
                       {/* P4.4 — one-click finalization for a DRAFT; confirms first, then submits. */}
-                      <button type="button"
+                      {canEditOrSubmit && (report.team_leader_id === user?.id || ['admin', 'owner'].includes(userRole || '')) && <button type="button"
                         data-testid={`submit-report-${report.id}`}
                         disabled={submittingId === report.id}
                         onClick={() => setSubmitTarget(report)}
                         className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         <Send className="w-3.5 h-3.5 mr-1" />
                         {submittingId === report.id ? t('daily_report.submitting', locale) : t('daily_report.submit_report', locale)}
-                      </button>
+                      </button>}
                     </>
                   ) : (
                     <>
