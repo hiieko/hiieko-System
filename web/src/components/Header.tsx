@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Bell, CircleHelp, LogOut, MapPin, Menu, User, Settings, ChevronDown } from 'lucide-react';
+import { Bell, CircleHelp, LogOut, MapPin, Menu, User, ChevronDown } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Button } from './ui/Button';
 import { DropdownMenu, type DropdownMenuItem } from './ui/DropdownMenu';
