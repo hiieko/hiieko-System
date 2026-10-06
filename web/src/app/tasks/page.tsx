@@ -353,7 +353,7 @@ function TasksPageInner() {
             <div key={label} className="rounded-xl border border-chrome-line bg-surface p-4 shadow-sm">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-content-muted">{label}</p>
-                <Icon className={\`h-4 w-4 shrink-0 \${tone}\`} aria-hidden="true" />
+                <Icon className={`h-4 w-4 shrink-0 ${tone}`} aria-hidden="true" />
               </div>
               <p className="mt-2 text-2xl font-semibold tabular-nums text-content" aria-live="polite">{loading && !initialLoadDone ? '—' : value}</p>
             </div>
