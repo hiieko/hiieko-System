@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { GlobalExperienceWorkspace } from '../../../components/GlobalExperienceWorkspace';
+import { GlobalExperienceWorkspace } from '../../../design-review/GlobalExperienceWorkspace';
 
 export const metadata: Metadata = {
   title: 'HIIEKO — Global Experience Design Review',
