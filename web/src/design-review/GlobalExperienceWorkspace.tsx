@@ -406,7 +406,7 @@ export function GlobalExperienceWorkspace() {
     event.preventDefault();
     if (!userDraft.name.trim() || !userDraft.email.trim()) return;
     const name = userDraft.name.trim();
-    setUsers((current) => [{ initials: name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(), name, email: userDraft.email.trim(), role: userDraft.role as MockUser['role'], status: userDraft.status as MockUser['status'], site: sitePersonnelMode ? projectLabel : userDraft.projectLabel, activity: translate('pending') }, ...current]);
+    setUsers((current) => [{ initials: name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase(), name, email: userDraft.email.trim(), role: userDraft.role as MockUser['role'], status: userDraft.status as MockUser['status'], site: sitePersonnelMode ? projectLabel : userDraft.project.replace('Parc Solar ', ''), activity: translate('pending') }, ...current]);
     setShowCreateUser(false);
     setInviteNotice(true);
   };
