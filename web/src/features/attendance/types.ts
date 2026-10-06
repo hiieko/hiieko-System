@@ -76,6 +76,14 @@ export interface CheckOutDto {
   notes?: string;
 }
 
+export interface CorrectAttendanceDto {
+  reason: string;
+  checkInTime?: string;
+  checkOutTime?: string | null;
+  notes?: string | null;
+  status?: AttendanceStatus;
+}
+
 // ── Today summary (GET /api/attendance/today) ─────────────────────────
 
 export interface TodaySummary {
