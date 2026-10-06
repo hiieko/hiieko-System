@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Bell, LogOut, MapPin, Menu, User, Settings, ChevronDown } from 'lucide-react';
+import { Bell, LogOut, MapPin, Menu, User, ChevronDown } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Button } from './ui/Button';
 import { DropdownMenu, type DropdownMenuItem } from './ui/DropdownMenu';
@@ -44,12 +44,6 @@ export function Header({ onMenuClick }: HeaderProps) {
       label: t('header.profile', locale) || 'Profilul meu',
       onClick: () => window.location.assign('/profil'),
       icon: <User className="w-4 h-4" />,
-    },
-    {
-      key: 'settings',
-      label: t('header.settings', locale) || 'Setări',
-      onClick: () => {},
-      icon: <Settings className="w-4 h-4" />,
     },
     {
       key: 'logout',
