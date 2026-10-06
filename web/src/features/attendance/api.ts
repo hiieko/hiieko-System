@@ -20,9 +20,15 @@ import type {
   AttendanceRecord,
   CheckInDto,
   CheckOutDto,
+  CorrectAttendanceDto,
   TodaySummary,
   AssignedTask,
 } from './types';
+
+/** Correct an attendance record — PATCH /api/attendance/:id. Backend restricts this to ADMIN/OWNER/MANAGER/PM and requires a reason. */
+export function correctAttendance(id: string, dto: CorrectAttendanceDto): Promise<ApiResponse<AttendanceRecord>> {
+  return apiClient.patch<AttendanceRecord>(`/api/attendance/${id}`, dto);
+}
 
 // ── Attendance records (supervisor) ───────────────────────────────────
 
