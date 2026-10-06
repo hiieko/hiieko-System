@@ -161,15 +161,15 @@ function RapoartePageInner() {
       </div>
 
       <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-        <p className="px-1 text-xs text-slate-500">{filteredReports.length} din {reports.length} rapoarte</p>
+        <p className="px-1 text-xs text-slate-500">{t('daily_report.results_count', locale).replace('{filtered}', String(filteredReports.length)).replace('{total}', String(reports.length))}</p>
         <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_200px]">
           <label className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-3">
             <Search className="size-4 shrink-0 text-slate-400" />
-            <span className="sr-only">Caută rapoarte</span>
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Proiect, cod, dată sau șef echipă" className="w-full bg-transparent text-sm outline-none" />
+            <span className="sr-only">{t('daily_report.search_label', locale)}</span>
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('daily_report.search_placeholder', locale)} className="w-full bg-transparent text-sm outline-none" />
           </label>
-          <select aria-label="Filtrează după starea rapoartelor" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700">
-            <option value="ALL">Toate stările</option>
+          <select aria-label={t('daily_report.status_filter_label', locale)} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700">
+            <option value="ALL">{t('daily_report.status_all', locale)}</option>
             {availableStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
         </div>
@@ -184,13 +184,13 @@ function RapoartePageInner() {
         <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-10 text-center">
           <AlertCircle className="size-8 text-rose-500" />
           <p className="text-sm text-rose-800">Eroare: {error}</p>
-          <button type="button" onClick={loadData} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">Reîncearcă</button>
+          <button type="button" onClick={loadData} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">{t('daily_report.retry', locale)}</button>
         </div>
       ) : filteredReports.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center">
           <FileText className="mx-auto size-8 text-slate-300" />
-          <h2 className="mt-2 text-sm font-semibold text-slate-800">{reports.length ? 'Niciun rezultat' : 'Nu există rapoarte zilnice'}</h2>
-          <p className="mt-1 text-sm text-slate-500">{reports.length ? 'Ajustează termenul de căutare sau starea selectată.' : 'Nu au fost returnate rapoarte pentru proiectul selectat.'}</p>
+          <h2 className="mt-2 text-sm font-semibold text-slate-800">{reports.length ? t('daily_report.no_results', locale) : t('daily_report.empty', locale)}</h2>
+          <p className="mt-1 text-sm text-slate-500">{reports.length ? t('daily_report.adjust_filters', locale) : t('daily_report.empty_project', locale)}</p>
         </div>
       ) : (
         <div className="space-y-6">
