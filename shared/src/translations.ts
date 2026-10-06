@@ -133,6 +133,7 @@ const d: Record<string, { ro: string; en: string }> = {
 'sidebar.collapse': { ro: 'Restrânge meniul', en: 'Collapse menu' },
 'sidebar.expand': { ro: 'Extinde meniul', en: 'Expand menu' },
 'sidebar.close': { ro: 'Închide meniul', en: 'Close menu' },
+'sidebar.navigation': { ro: 'Navigare principală', en: 'Main navigation' },
 'auth.login': { ro: 'Autentificare', en: 'Login' },
 'auth.signup': { ro: 'Solicita Cont', en: 'Apply' },
 'auth.logout': { ro: 'Deconectare', en: 'Logout' },
