@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArchitectureAuditWorkspace } from '../../../components/ArchitectureAuditWorkspace';
+import { ArchitectureAuditWorkspace } from '../../../design-review/ArchitectureAuditWorkspace';
 
 export const metadata: Metadata = {
   title: 'HIIEKO — Frontend Architecture Audit',
