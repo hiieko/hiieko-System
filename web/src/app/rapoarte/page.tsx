@@ -1,5 +1,7 @@
 'use client';
 
+// Production parity pass: filters and draft actions remain backed by existing APIs.
+
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
