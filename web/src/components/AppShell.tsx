@@ -15,18 +15,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { locale } = useLocale();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isDesignReviewPage = pathname.startsWith('/design-review');
 
-  if (isAuthPage) return <>{children}</>;
+  if (isAuthPage || isDesignReviewPage) return <>{children}</>;
 
   return (
     <AuthGuard>
       <ProjectProvider>
         <ToastProvider>
-          <div className="flex h-screen overflow-hidden hii-shell-canvas">
-            {/* Skip link */}
+          <div className="flex h-screen overflow-hidden bg-slate-50">
             <a
               href="#main-content"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-accent focus:text-accent-ink focus:rounded-lg focus:shadow-lg font-semibold"
+              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-hii-600 focus:text-white focus:rounded-lg focus:shadow-lg font-semibold"
             >
               {t('a11y.skip_to_content', locale)}
             </a>
@@ -36,13 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
               <Header onMenuClick={() => setMobileSidebarOpen(true)} />
-              <main
-                id="main-content"
-                tabIndex={-1}
-                className="flex-1 overflow-y-auto focus:outline-none hii-shell-canvas"
-              >
-                {/* v0 port (Step 1): extra bottom padding on < lg so page content
-                    is never hidden behind the MobilePrimaryNav bar. */}
+              <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">
                 <div className="hii-page pb-24 lg:pb-8">{children}</div>
               </main>
             </div>
