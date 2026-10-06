@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { t, useLocale, UserRole } from '@solar/shared';
-import { Plus, RefreshCw, Loader2 } from 'lucide-react';
+import { Plus, RefreshCw, Loader2, ClipboardList, ListTodo, Clock3, CircleAlert, CheckCircle2 } from 'lucide-react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { useToast } from '../../components/ui/Toast';
+import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import { ApiError } from '../../lib/api-client';
 
 import {
@@ -79,7 +81,7 @@ const shouldFilterOnlyMine = (role?: UserRole | string): boolean => {
 
 // ── Page Component ────────────────────────────────────────────────────────
 
-export default function TasksPage() {
+function TasksPageInner() {
   const { user } = useAuth();
   const { selectedProject } = useProject();
   const { success: toastSuccess, error: toastError } = useToast();
@@ -87,7 +89,7 @@ export default function TasksPage() {
 
   // Data state
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
 
@@ -129,6 +131,8 @@ export default function TasksPage() {
 
   // Initial load
   useEffect(() => {
+    setInitialLoadDone(false);
+    setTasks([]);
     loadTasks();
   }, [loadTasks]);
 
@@ -161,17 +165,25 @@ export default function TasksPage() {
 
     // Search filter
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const q = searchQuery.toLocaleLowerCase(locale);
       result = result.filter(
         (t) =>
-          t.title.toLowerCase().includes(q) ||
-          t.code.toLowerCase().includes(q) ||
-          (t.description && t.description.toLowerCase().includes(q))
+          t.title.toLocaleLowerCase(locale).includes(q) ||
+          t.code.toLocaleLowerCase(locale).includes(q) ||
+          (t.description && t.description.toLocaleLowerCase(locale).includes(q)) ||
+          (t.project?.name && t.project.name.toLocaleLowerCase(locale).includes(q)) ||
+          (t.project?.code && t.project.code.toLocaleLowerCase(locale).includes(q)) ||
+          (t.work_package?.name && t.work_package.name.toLocaleLowerCase(locale).includes(q)) ||
+          (t.zone?.name && t.zone.name.toLocaleLowerCase(locale).includes(q)) ||
+          (t.assignments || []).some((assignment) => {
+            const name = assignment.user?.profile?.full_name || assignment.user?.fullName || assignment.user?.email || '';
+            return name.toLocaleLowerCase(locale).includes(q);
+          })
       );
     }
 
     return result;
-  }, [tasks, activeStatus, onlyMine, searchQuery, user]);
+  }, [tasks, activeStatus, onlyMine, searchQuery, user, locale]);
 
   // ── Update status ───────────────────────────────────────────────────────
 
@@ -266,6 +278,14 @@ export default function TasksPage() {
   const userCanUpdateQuantity = canUpdateTaskQuantity(userRole);
   const userCanAssign = canAssignTask(userRole);
   const showOnlyMineFilter = !shouldFilterOnlyMine(userRole);
+  const totalTasks = tasks.length;
+  const completedTasks = (statusCounts.COMPLETED || 0) + (statusCounts.VERIFIED || 0);
+  const summaryCards = [
+    { label: t('task.summary_total', locale), value: totalTasks, Icon: ClipboardList, tone: 'text-content-secondary' },
+    { label: t('task.summary_active', locale), value: statusCounts.IN_PROGRESS || 0, Icon: Clock3, tone: 'text-info-foreground' },
+    { label: t('task.summary_blocked', locale), value: statusCounts.BLOCKED || 0, Icon: CircleAlert, tone: 'text-warning-foreground' },
+    { label: t('task.summary_complete', locale), value: completedTasks, Icon: CheckCircle2, tone: 'text-success-foreground' },
+  ];
 
   // ── Render ──────────────────────────────────────────────────────────────
 
@@ -328,6 +348,18 @@ export default function TasksPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <section aria-label={t('task.list_heading', locale)} className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {summaryCards.map(({ label, value, Icon, tone }) => (
+            <div key={label} className="rounded-xl border border-chrome-line bg-surface p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-content-muted">{label}</p>
+                <Icon className={\`h-4 w-4 shrink-0 \${tone}\`} aria-hidden="true" />
+              </div>
+              <p className="mt-2 text-2xl font-semibold tabular-nums text-content" aria-live="polite">{loading && !initialLoadDone ? '—' : value}</p>
+            </div>
+          ))}
+        </section>
+
         {/* Error State */}
         {error && !loading && (
           <ErrorState
@@ -362,7 +394,7 @@ export default function TasksPage() {
         )}
 
         {/* Empty State */}
-        {!loading && initialLoadDone && filteredTasks.length === 0 && (
+        {!loading && initialLoadDone && !error && filteredTasks.length === 0 && (
           <EmptyState
             title={
               searchQuery
@@ -374,17 +406,26 @@ export default function TasksPage() {
             description={
               searchQuery
                 ? t('task.empty_desc_filtered')
-                : onlyMine
-                ? ''
-                : userCanCreate && !selectedProject
+                : activeStatus !== 'all'
+                ? t('task.empty_desc_filtered')
+                : selectedProject
+                ? (userCanCreate ? t('task.empty_desc_create') : t('task.empty_desc_no_tasks'))
+                : userCanCreate
                 ? t('task.select_project_first')
-                : userCanCreate && selectedProject
-                ? t('task.empty_desc_create')
-                : ''
+                : t('task.empty_desc_scope')
             }
-            icon={<Loader2 className="w-8 h-8 text-slate-400" />}
+            icon={<ListTodo className="w-7 h-7" aria-hidden="true" />}
             action={
-              userCanCreate && selectedProject
+              (searchQuery || activeStatus !== 'all' || (onlyMine && showOnlyMineFilter))
+                ? {
+                    label: t('task.clear_filters', locale),
+                    onClick: () => {
+                      setSearchQuery('');
+                      setActiveStatus('all');
+                      if (showOnlyMineFilter) setOnlyMine(false);
+                    },
+                  }
+                : userCanCreate && selectedProject
                 ? {
                     label: t('task.create'),
                     onClick: () => setShowCreateModal(true),
@@ -397,6 +438,9 @@ export default function TasksPage() {
         {/* Task List */}
         {(!loading || initialLoadDone) && filteredTasks.length > 0 && (
           <div className="space-y-4">
+            <h2 className="text-sm font-semibold text-content-secondary">
+              {t('task.list_heading', locale)} <span className="font-normal text-content-muted">({filteredTasks.length})</span>
+            </h2>
             {filteredTasks.map((task) => (
               <TaskCard
                 key={task.id}
@@ -420,6 +464,14 @@ export default function TasksPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TasksPage() {
+  return (
+    <RoleGuard allowedRoles={ROUTE_ROLES['/tasks']}>
+      <TasksPageInner />
+    </RoleGuard>
   );
 }
 
