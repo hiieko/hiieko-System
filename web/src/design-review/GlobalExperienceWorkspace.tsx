@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
-  Activity, AlertCircle, ArrowDown, ArrowRight, ArrowUpRight, Bell, BriefcaseBusiness, CalendarDays,
+  Activity, AlertCircle, ArrowDown, ArrowRight, ArrowUpRight, Bell, BriefcaseBusiness, CalendarDays, Camera,
   Check, CheckCheck, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, CircleHelp,
-  ClipboardCheck, Clock3, CloudSun, FileCheck2, FileText, FolderKanban, HardHat, Headphones,
+  ClipboardCheck, Clock3, CloudSun, FileCheck2, FileText, FolderKanban, HardHat, Headphones, PackageCheck,
   LayoutDashboard, ListTodo, LogOut, Mail, MapPin, Menu, MoreHorizontal, Paperclip,
   PanelLeftClose, PanelLeftOpen, Search, Send, Settings, ShieldCheck, ShieldEllipsis,
   Sun, Moon, Monitor, UserRound, Users, X, Eye, EyeOff, LockKeyhole, Building2,
@@ -440,6 +440,7 @@ export function GlobalExperienceWorkspace() {
     <div className="g-metrics"><MetricCard icon={ListTodo} value="12" label={translate('tasksInProgress')} note={translate('activeCrewCount')} /><MetricCard icon={Users} value="42 / 46" label={translate('crewPresent')} note={translate('currentSite')} tone="blue" /><MetricCard icon={AlertCircle} value="03" label={translate('openBlockers')} note={translate('escalatedBlockers')} tone="amber" /></div>
     <div className="g-overview-grid"><section className="g-card g-queue-card"><CardHeading icon={ListTodo} title={translate('priorityQueue')} action={translate('viewAll')} onClick={() => setActiveView('notifications')} /><article className="g-queue-item"><span className="g-queue-number">01</span><div className="g-queue-content"><span className="g-chip g-chip-blue">{translate('inProgress')}</span><small>PV-1842 · 10:30</small><b>Montare structură zona B-04</b><p>Valea Mare · Andrei Popescu</p><div className="g-progress"><i style={{ width: '62%' }} /></div><small>62% complet · 18 din 29 structuri</small></div><ChevronRight size={16} /></article><article className="g-queue-item"><span className="g-queue-number">02</span><div className="g-queue-content"><span className="g-chip g-chip-amber">{translate('pending')}</span><small>DR-2026-104 · 09:18</small><b>{translate('reviewReports')}</b><p>{translate('reviewDescription')}</p></div><ChevronRight size={16} /></article><button className="g-link-button" type="button" onClick={() => setActiveView('notifications')}>{translate('viewAll')} <ArrowRight size={14} /></button></section>
       <section className="g-card g-activity-card"><CardHeading icon={Activity} title={translate('recentActivity')} action={translate('viewAll')} onClick={() => setActiveView('notifications')} /><ActivityRow icon={ListTodo} title={translate('activityTask')} meta="09:18 · Valea Mare" tone="green" /><ActivityRow icon={CalendarDays} title={translate('activityPlan')} meta="08:42 · Daniel Georgescu" tone="blue" /><ActivityRow icon={FileCheck2} title={translate('activityReport')} meta="08:16 · Andrei Popescu" tone="amber" /><div className="g-system-status"><span><i />{translate('systemStatus')}</span><span>v1.4.0 · Prototype</span></div></section></div>
+    <ProjectOverviewData locale={locale} />
   </>;
 
   const renderProfile = () => <>
@@ -522,6 +523,42 @@ export function GlobalExperienceWorkspace() {
     </main>
     {(helpOpen || showCreateUser) && <div className="g-dialog-layer" onMouseDown={(event) => { if (event.target === event.currentTarget) { setHelpOpen(false); setShowCreateUser(false); } }}><section className={helpOpen ? 'g-tutorial-panel' : 'g-create-user-panel'} ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="g-dialog-title" tabIndex={-1}><button type="button" className="g-dialog-close" aria-label={translate('close')} onClick={() => { setHelpOpen(false); setShowCreateUser(false); }}><X size={17} /></button>{helpOpen ? <><p className="g-eyebrow">{translate('help')} · {translate('overview')}</p><h2 id="g-dialog-title">{translate('introduction')}</h2><p>{translate('tutorialActions')}</p><h3>{translate('whatFor')}</h3><p>{translate('overviewDescription')}</p><h3>{translate('whatCanDo')}</h3><ul><li>{translate('viewQueue')}</li><li>{translate('projectProgress')}</li><li>{translate('report')}</li></ul><div className="g-tutorial-tip"><b>{translate('manager')}</b><p>{translate('tutorialRole')}</p><small>{translate('firstUse')}</small></div><div className="g-tutorial-actions"><label><input type="checkbox" checked={tutorialDismissed} onChange={(event) => setTutorialDismissed(event.target.checked)} />{translate('dontShow')}</label><button type="button" className="g-button g-button-primary" onClick={() => setHelpOpen(false)}>{translate('dismiss')}</button></div></> : <><p className="g-eyebrow">{translate(sitePersonnelMode ? 'siteManagerConcept' : 'teamUsers')}</p><h2 id="g-dialog-title">{translate('createUser')}</h2><p>{translate(sitePersonnelMode ? 'addPersonnelRole' : 'userManagementIntro')}</p><form onSubmit={createUser}><div className="g-form-grid"><Field label={translate('fullName')}><input autoFocus required value={userDraft.name} onChange={(event) => setUserDraft((draft) => ({ ...draft, name: event.target.value }))} /></Field><Field label={translate('email')}><input required type="email" value={userDraft.email} onChange={(event) => setUserDraft((draft) => ({ ...draft, email: event.target.value }))} /></Field><Field label={translate('role')}><select value={userDraft.role} onChange={(event) => setUserDraft((draft) => ({ ...draft, role: event.target.value as CopyKey }))}><option value="usersRole3">{translate('usersRole3')}</option><option value="usersRole2">{translate('usersRole2')}</option><option value="usersRole1">{translate('usersRole1')}</option><option value="usersRole4">{translate('usersRole4')}</option></select></Field><Field label={translate('siteAssignment')}><select value={userDraft.project} onChange={(event) => setUserDraft((draft) => ({ ...draft, project: event.target.value }))}><option>Parc Solar Valea Mare</option><option>Centrala Fotovoltaică Sud</option><option>Solar Agri Pitești</option></select></Field><Field label={translate('status')}><select value={userDraft.status} onChange={(event) => setUserDraft((draft) => ({ ...draft, status: event.target.value }))}><option value="pending">{translate('pending')}</option><option value="active">{translate('active')}</option><option value="suspended">{translate('suspended')}</option></select></Field></div><div className="g-inline-alert"><ShieldCheck size={15} /><span>{translate('productionPermissions')}</span></div><div className="g-form-footer"><button type="button" className="g-button g-button-quiet" onClick={() => setShowCreateUser(false)}>{translate('cancel')}</button><button type="submit" className="g-button g-button-primary"><Send size={14} />{translate(sitePersonnelMode ? 'addSiteInvite' : 'inviteUser')}</button></div></form></>}</section></div>}
   </div>;
+}
+
+
+function ProjectOverviewData({ locale }: { locale: Locale }) {
+  const ro = locale === 'ro';
+  const workers = [
+    ['AP', 'Andrei Popescu', ro ? 'Șef de echipă · Zona B-04' : 'Team Leader · Zone B-04', ro ? 'În teren' : 'On site'],
+    ['RM', 'Radu Marin', ro ? 'Muncitor · cablare DC' : 'Worker · DC cabling', ro ? 'În lucru' : 'Working'],
+    ['MI', 'Mara Ionescu', ro ? 'QA/QC · Zona B-04' : 'QA/QC · Zone B-04', ro ? 'Verificare' : 'Reviewing'],
+    ['IS', 'Ioana Stan', ro ? 'Muncitor · structură B-05' : 'Worker · B-05 structures', ro ? 'Planificat' : 'Planned'],
+  ];
+  const tasks = [
+    ['PV-1842', ro ? 'Montare structură B-04' : 'Install structure B-04', '62%', ro ? 'În lucru' : 'In progress'],
+    ['PV-1851', ro ? 'Verificare aliniere șine' : 'Check rail alignment', '80%', ro ? 'În verificare' : 'In review'],
+    ['PV-1860', ro ? 'Pregătire front B-05' : 'Prepare work front B-05', '35%', ro ? 'Blocat' : 'Blocked'],
+  ];
+  const documents = [
+    ['DR-2026-104', ro ? 'Raport zilnic · 27 octombrie' : 'Daily report · October 27', ro ? 'În revizuire' : 'In review'],
+    ['AVZ-2026-088', ro ? 'Aviz recepție cablu DC' : 'DC cable delivery note', ro ? 'Recepționat' : 'Received'],
+    ['QA-VM-041', ro ? 'Fișă inspecție șuruburi B-04' : 'B-04 bolt inspection sheet', ro ? '2 constatări' : '2 findings'],
+  ];
+  const materials = [
+    [ro ? 'Șină aluminiu 4.2 m' : '4.2 m aluminum rail', '120 m', '84 m', ro ? 'Necesar' : 'Needed'],
+    [ro ? 'Șurub M10 inox' : 'M10 stainless bolt', '480 buc', '920 buc', ro ? 'Disponibil' : 'Available'],
+    [ro ? 'Cablu solar 6 mm²' : '6 mm² solar cable', '840 m', '1,240 m', ro ? 'Disponibil' : 'Available'],
+  ];
+  return <section className="g-project-data-board">
+    <div className="g-project-data-head"><div><p className="g-eyebrow">{ro ? 'DATE PROIECT · DEMONSTRATIVE' : 'PROJECT DATA · ILLUSTRATIVE'}</p><h2>{ro ? 'Proiect complet populat' : 'Fully populated project'}</h2><p>{ro ? 'Date locale pentru Design Review · fără API sau bază de date.' : 'Local Design Review data · no API or database.'}</p></div><span><ShieldCheck size={13} />{ro ? 'Doar preview' : 'Preview only'}</span></div>
+    <div className="g-project-data-grid">
+      <section className="g-card g-project-data-card"><div className="g-card-heading"><span><Users size={15} /><h2>{ro ? 'Echipă și muncitori' : 'Team & workers'}</h2></span><b>4</b></div><div className="g-project-worker-list">{workers.map(([initials,name,role,status]) => <article key={name}><Avatar initials={initials}/><div><b>{name}</b><small>{role}</small></div><StatusPill>{status}</StatusPill></article>)}</div></section>
+      <section className="g-card g-project-data-card"><div className="g-card-heading"><span><ListTodo size={15} /><h2>{ro ? 'Task-uri' : 'Tasks'}</h2></span><b>12</b></div><div className="g-project-task-list">{tasks.map(([id,title,progress,status],index) => <article key={id}><div><small>{id}</small><b>{title}</b><span><i style={{width:progress}} /></span></div><StatusPill tone={index === 2 ? 'red' : index === 1 ? 'amber' : 'blue'}>{status}</StatusPill></article>)}</div></section>
+      <section className="g-card g-project-data-card"><div className="g-card-heading"><span><FileText size={15} /><h2>{ro ? 'Documente' : 'Documents'}</h2></span><b>8</b></div><div className="g-project-document-list">{documents.map(([id,title,status]) => <article key={id}><span><FileText size={14} /></span><div><b>{id} · {title}</b><small>{status}</small></div></article>)}</div></section>
+      <section className="g-card g-project-data-card"><div className="g-card-heading"><span><PackageCheck size={15} /><h2>{ro ? 'Materiale și stoc' : 'Materials & stock'}</h2></span><b>24</b></div><div className="g-project-material-list">{materials.map(([name,required,stock,status]) => <article key={name}><div><b>{name}</b><small>{ro ? 'Necesar' : 'Required'}: {required} · {ro ? 'Stoc' : 'Stock'}: {stock}</small></div><StatusPill tone={status === (ro ? 'Necesar' : 'Needed') ? 'amber' : 'green'}>{status}</StatusPill></article>)}</div></section>
+      <section className="g-card g-project-data-card g-project-photo-card"><div className="g-card-heading"><span><Camera size={15} /><h2>{ro ? 'Fotografii de șantier' : 'Site photos'}</h2></span><b>3</b></div><div className="g-project-photo-grid">{[1,2,3].map((n) => <article key={n}><div><Camera size={19}/><span>{ro ? 'Loc pentru fotografie' : 'Photo area'}</span><small>0{n}</small></div><b>{ro ? ['Front B-04 · structură','Recepție materiale · depozit','Inspecție QA/QC · rând 12'][n-1] : ['Front B-04 · structure','Material receipt · stockyard','QA/QC inspection · row 12'][n-1]}</b></article>)}</div><button type="button" className="g-button g-button-quiet">{ro ? '+ Adaugă fotografie demonstrativă' : '+ Add illustrative photo'}</button></section>
+    </div>
+  </section>;
 }
 
 function MetricCard({ icon: Icon, value, label, note, tone = 'green' }: { icon: LucideIcon; value: string; label: string; note: string; tone?: 'green' | 'blue' | 'amber' }) {
