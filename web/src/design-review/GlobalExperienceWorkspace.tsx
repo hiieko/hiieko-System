@@ -531,7 +531,7 @@ export function GlobalExperienceWorkspace() {
       @media(prefers-color-scheme:dark){.global-review[data-theme=system]{--g-bg:#101713;--g-surface:#18211c;--g-surface-muted:#1c2721;--g-sidebar:#0d1410;--g-sidebar-border:#24342a;--g-sidebar-text:#d5ded8;--g-ink:#edf2ee;--g-secondary:#c0cbc3;--g-muted:#98a69c;--g-border:#2b3930;--g-border-strong:#3a4a3e;--g-brand:#38ad70;--g-brand-dark:#64c18a;--g-brand-soft:#203b2b;--g-green:#88d5a7;--g-green-bg:#1e3928;--g-blue:#a6c7f2;--g-blue-bg:#203149;--g-amber:#efd28a;--g-amber-bg:#3a301d;--g-red:#f1a29c;--g-red-bg:#422723;--g-shadow:0 2px 12px #0004}}@media(max-width:720px){.g-tutorial-layer,.g-dialog-layer{align-items:end;padding:0}.g-tutorial-panel,.g-create-user-panel{width:100%;max-height:88vh;border-radius:15px 15px 0 0;padding:19px 17px max(19px,env(safe-area-inset-bottom));}}
     `}</style>
     <header className="g-review-top"><Link href="/design-review" className="g-review-brand"><span className="g-brand-mark">H</span><span>HIIEKO · {translate('reviewTools')}</span></Link><div className="g-review-tools"><span>{translate('viewTitle')}</span><div className="g-preview-modes" role="group" aria-label={translate('previewMode')}><button type="button" aria-pressed={viewport === 'desktop'} onClick={() => setViewport('desktop')}>{translate('desktop')}</button><button type="button" aria-pressed={viewport === 'tablet'} onClick={() => setViewport('tablet')}>{translate('tablet')}</button><button type="button" aria-pressed={viewport === 'mobile'} onClick={() => setViewport('mobile')}>390px</button></div><ThemeControl theme={theme} setTheme={setTheme} t={translate} compact /><Link href="/design-review" className="g-review-back">{translate('backReview')}</Link></div></header>
-    <main className="g-review-main"><div className="g-experience-bar"><span>{translate('switchView')}</span><nav className="g-experience-nav" aria-label={translate('switchView')}>{experienceViews.map(({ id, icon: Icon, label }) => <button key={id} type="button" aria-current={view === id ? 'page' : undefined} onClick={() => setActiveView(id)}><Icon size={13} />{translate(label)}</button>)}</nav></div>
+    <style>{designReviewStyles}</style><main className="g-review-main"><div className="g-experience-bar"><span>{translate('switchView')}</span><nav className="g-experience-nav" aria-label={translate('switchView')}>{experienceViews.map(({ id, icon: Icon, label }) => <button key={id} type="button" aria-current={view === id ? 'page' : undefined} onClick={() => setActiveView(id)}><Icon size={13} />{translate(label)}</button>)}</nav></div>
       <section className="g-preview-frame" aria-label={translate('accessibilityLabel')}><div className="g-app-shell">
         {view !== 'login' && view !== 'signup' && view !== 'forgot' && <>
           {mobileMenuOpen && <button className="g-sidebar-scrim" type="button" aria-label={translate('closeMenu')} onClick={() => setMobileMenuOpen(false)} />}
@@ -677,6 +677,7 @@ function ThemeControl({ theme, setTheme, t, compact = false }: { theme: Theme; s
 }
 
 
+const designReviewStyles = `
 .g-project-module{margin:0 0 16px;padding:18px;border:1px solid var(--g-border);border-radius:14px;background:var(--g-surface)}
 .g-project-module-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:15px}
 .g-project-module-head h2{margin:3px 0 4px;font-size:18px;color:var(--g-text)}
@@ -720,3 +721,4 @@ function ThemeControl({ theme, setTheme, t, compact = false }: { theme: Theme; s
 .g-project-option-action{display:flex;align-items:center;gap:6px;margin-top:auto;font-size:11px;font-weight:700;color:var(--g-text)}
 @media (max-width:900px){.g-project-selection-grid{grid-template-columns:1fr 1fr}}
 @media (max-width:640px){.g-project-selection-card{padding:12px}.g-project-selection-grid{grid-template-columns:1fr}.g-project-option{min-height:150px}.g-project-selection-head h1{font-size:25px}}
+`;
