@@ -2,24 +2,19 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
-import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { t, useLocale } from '@solar/shared';
+import { useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { Button } from '../../components/ui/Button';
-import { AvizCreateModal } from '../../features/procurement/components/AvizCreateModal';
-import type { Aviz } from '../../features/procurement/types';
-import {
-  Truck, FileText, Calendar, MapPin, User, Boxes, CheckCircle2,
-  Loader2, RefreshCw, Plus
+import { 
+  Truck, FileText, Calendar, MapPin, Boxes,
+  Loader2, RefreshCw, Search, AlertCircle
 } from 'lucide-react';
 
 interface DNRow {
   id: string; invoice_or_aviz_number: string; supplier: string; project_id: string;
-  receiver_user_id: string; delivery_date: string; photo_url?: string;
-  notes?: string; created_at: string;
+  delivery_date: string; photo_url?: string;
+  notes?: string; created_at: string; status?: string; driver_name?: string; vehicle_plate?: string;
 }
 interface DNItem {
   material_id: string; material_code: string; material_name: string; unit: string; quantity: number;
@@ -28,44 +23,11 @@ interface DNItem {
 function AvizePageInner() {
   const [deliveries, setDeliveries] = useState<(DNRow & { items: DNItem[] })[]>([]);
   const [siteNames, setSiteNames] = useState<Record<string, string>>({});
-  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const { locale } = useLocale();
   const { selectedProjectId } = useProject();
-  const { user } = useAuth();
-  const [showCreate, setShowCreate] = useState(false);
-  // Mirrors backend @Roles(ADMIN, PROCUREMENT, SITE_MANAGER, TEAM_LEADER) + RolesGuard
-  // ADMIN/OWNER bypass on POST /api/procurement/avize. PM and WORKER are denied server-side
-  // and never see the create control.
-  const AVIZ_CREATE_ROLES = ['admin', 'owner', 'procurement', 'site_manager', 'team_leader'];
-  const userRole = user?.role?.toLowerCase();
-  const canCreate = Boolean(selectedProjectId) && AVIZ_CREATE_ROLES.includes(userRole || '');
-
-  /** Maps a created NestJS aviz onto the page's DNRow shape (same mapping as load()),
-   *  so the new receipt can be prepended without refetching the whole list. */
-  const mapCreatedAviz = (aviz: Aviz): (DNRow & { items: DNItem[] }) => ({
-    id: aviz.id,
-    invoice_or_aviz_number: aviz.aviz_number || '',
-    supplier: aviz.supplier?.name || 'Necunoscut',
-    project_id: aviz.project_id || '',
-    receiver_user_id: '',
-    delivery_date: aviz.delivery_date || aviz.created_at,
-    photo_url: '',
-    notes: aviz.notes || '',
-    created_at: aviz.created_at,
-    items: (aviz.items || []).map((item) => ({
-      material_id: item.material_id,
-      material_code: item.material?.code || '',
-      material_name: item.material?.name || '',
-      unit: item.material?.unit || '',
-      quantity: item.quantity,
-    })) as DNItem[],
-  });
-
-  const handleCreated = (created: Aviz) => {
-    setDeliveries((prev) => [mapCreatedAviz(created), ...prev]);
-  };
 
   const load = async () => {
     setLoading(true);
@@ -82,11 +44,11 @@ function AvizePageInner() {
         invoice_or_aviz_number: aviz.aviz_number || '',
         supplier: aviz.supplier?.name || 'Necunoscut',
         project_id: aviz.project_id || '',
-        receiver_user_id: '',
         delivery_date: aviz.delivery_date || aviz.created_at,
         photo_url: '',
         notes: aviz.notes || '',
         created_at: aviz.created_at,
+        status: aviz.status ? String(aviz.status) : undefined,
         driver_name: aviz.driver_name,
         vehicle_plate: aviz.vehicle_plate,
         // Map items
@@ -94,7 +56,7 @@ function AvizePageInner() {
           material_id: item.material_id,
           material_code: item.material?.code || '',
           material_name: item.material?.name || '',
-          unit: '',
+          unit: item.material?.unit || '',
           quantity: item.quantity,
         })) as DNItem[],
       }));
@@ -108,7 +70,6 @@ function AvizePageInner() {
       
       // Build site/project names map
       const smap: Record<string, string> = {};
-      const umap: Record<string, string> = {};
       data.forEach((aviz: any) => {
         if (aviz.project_id && aviz.project?.name) {
           smap[aviz.project_id] = aviz.project.name;
@@ -116,18 +77,24 @@ function AvizePageInner() {
       });
       
       setSiteNames(smap);
-      setUserNames(umap);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError(err instanceof Error ? err.message : 'Eroare la incarcarea avizelor.');
+        setError(err instanceof Error ? err.message : 'Eroare la încărcarea avizelor.');
       }
     } finally {
       setLoading(false);
     }
   };
   useEffect(() => { load(); }, [selectedProjectId]);
+
+  const filteredDeliveries = deliveries.filter((delivery) => {
+    const term = search.trim().toLocaleLowerCase();
+    if (!term) return true;
+    return [delivery.invoice_or_aviz_number, delivery.supplier, siteNames[delivery.project_id] || '', delivery.status || '', ...delivery.items.map((item) => `${item.material_code} ${item.material_name}`)].some((value) => value.toLocaleLowerCase().includes(term));
+  });
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="deliveries" />
@@ -138,34 +105,31 @@ function AvizePageInner() {
             Evidența avizelor recepționate în șantier, fotografii documente și încărcarea automată a stocului.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {canCreate && (
-            <Button type="button" variant="primary" onClick={() => setShowCreate(true)}>
-              <span className="inline-flex items-center gap-1.5">
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                {t('avize.action_new', locale)}
-              </span>
-            </Button>
-          )}
-          <button onClick={load} disabled={loading}
-            className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reîmprospătează
-          </button>
-        </div>
+        <button onClick={load} disabled={loading}
+          className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
+          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reimprospateaza
+        </button>
       </div>
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
+      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <p className="px-1 text-xs text-slate-500">{filteredDeliveries.length} din {deliveries.length} avize</p>
+        <label className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-slate-300 px-3 sm:max-w-md"><Search className="size-4 shrink-0 text-slate-400" /><span className="sr-only">Caută livrări</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Aviz, furnizor, material sau proiect" className="w-full bg-transparent text-sm outline-none" /></label>
+      </section>
+      {error && !loading ? (
+        <div role="alert" className="flex flex-col gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 sm:flex-row sm:items-center sm:justify-between"><span className="flex items-center gap-2"><AlertCircle className="size-4" />{error}</span><button type="button" onClick={load} className="min-h-10 rounded-md border border-rose-300 px-3 font-semibold">Reîncearcă</button></div>
+      ) : null}
       {loading ? (
         <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca avizele...
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />Se încarcă avizele...
         </div>
-      ) : deliveries.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-          <Truck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">Niciun aviz receptionat</h3>
+      ) : error ? null : filteredDeliveries.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm">
+          <Truck className="mx-auto size-10 text-slate-300" />
+          <h3 className="mt-3 text-base font-semibold text-slate-800">{deliveries.length ? 'Niciun rezultat' : 'Nu există avize'}</h3>
+          <p className="mt-1 text-sm text-slate-500">{deliveries.length ? 'Încearcă alt termen de căutare.' : 'Nu au fost returnate avize pentru proiectul selectat.'}</p>
         </div>
       ) : (
-      <div className="grid grid-cols-1 gap-6">
-        {deliveries.map((dn) => {
+      <div className="flex flex-col gap-4">
+        {filteredDeliveries.map((dn) => {
 
           return (
             <div key={dn.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -189,9 +153,8 @@ function AvizePageInner() {
                     <MapPin className="w-3.5 h-3.5 mr-1" />
                     Destinație: <strong className="ml-1 text-slate-700">{siteNames[dn.project_id] || 'Necunoscut'}</strong>
                   </span>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                    Recepționat & Adăugat în Stoc
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                    {dn.status || 'Aviz înregistrat'}
                   </span>
                 </div>
               </div>
@@ -209,8 +172,7 @@ function AvizePageInner() {
                         <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
                           <th className="py-2.5 px-3">Cod Material</th>
                           <th className="py-2.5 px-3">Denumire Material</th>
-                          <th className="py-2.5 px-3 text-right">Cantitate Livrată</th>
-                          <th className="py-2.5 px-3 text-right">Impact Stoc</th>
+                          <th className="py-2.5 px-3 text-right">Cantitate</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -219,61 +181,34 @@ function AvizePageInner() {
                             <td className="py-2.5 px-3 font-mono font-semibold text-slate-800">{item.material_code}</td>
                             <td className="py-2.5 px-3 text-slate-700 font-medium">{item.material_name}</td>
                             <td className="py-2.5 px-3 text-right font-bold text-slate-900">{item.quantity} {item.unit}</td>
-                            <td className="py-2.5 px-3 text-right font-bold text-emerald-600">+{item.quantity} {item.unit}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
 
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 text-xs text-slate-600">
-                    Recepționat de: <strong className="text-slate-800">{userNames[dn.receiver_user_id] || 'Necunoscut'}</strong> • "{dn.notes}"
-                  </div>
+                  {dn.notes && <p className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs leading-5 text-slate-600">{dn.notes}</p>}
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
-                    <FileText className="w-4 h-4 mr-1.5 text-blue-600" />
-                    Foto Document Aviz
-                  </h3>
-                  {dn.photo_url ? (
-                    <div className="relative rounded-lg overflow-hidden border border-slate-200 aspect-video group">
-                      <img 
-                        src={dn.photo_url} 
-                        alt={`Document Aviz ${dn.invoice_or_aviz_number}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                      <div className="absolute inset-0 bg-slate-950/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold">
-                        Deschide Document Complet
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-32 border-2 border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs">
-                      Fără foto atașată
-                    </div>
-                  )}
-                </div>
+                <aside className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"><FileText className="size-4 text-blue-600" />Detalii transport</h3>
+                  <div className="text-sm"><p className="text-xs text-slate-500">Șofer</p><p className="mt-1 font-medium text-slate-800">{dn.driver_name || '—'}</p></div>
+                  <div className="text-sm"><p className="text-xs text-slate-500">Număr vehicul</p><p className="mt-1 font-mono font-medium text-slate-800">{dn.vehicle_plate || '—'}</p></div>
+                  <p className="border-t border-slate-200 pt-3 text-xs leading-5 text-slate-500">Previzualizarea documentului nu este inclusă în datele returnate de endpoint-ul curent.</p>
+                </aside>
               </div>
             </div>
           );
         })}
       </div>
       )}
-
-      <AvizCreateModal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        projectId={selectedProjectId || ''}
-        locale={locale}
-        onCreated={handleCreated}
-      />
     </div>
   );
 }
 
 export default function AvizePage() {
   return (
-    <RoleGuard allowedRoles={ROUTE_ROLES['/avize']}>
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker']}>
       <AvizePageInner />
     </RoleGuard>
   );
