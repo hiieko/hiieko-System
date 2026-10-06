@@ -9,47 +9,32 @@
 import {
   LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro,
   ClipboardCheck, Bell, Users, BarChart3, ShieldCheck, User,
-  SunMedium, AlertTriangle, Building2, type LucideIcon,
+  SunMedium, AlertTriangle, type LucideIcon,
 } from 'lucide-react';
 
 export interface NavItem {
   href: string;
   i18nKey: string;
-  label: string; // RO fallback when i18n key not found
+  label: string;
   icon: LucideIcon;
   roles?: string[];
 }
 
 export interface NavGroup {
   titleKey: string;
-  title: string; // RO fallback
+  title: string;
   items: NavItem[];
   roles?: string[];
 }
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    titleKey: 'nav.operations',
-    title: 'Operațiuni',
-    items: [
+    titleKey: 'nav.operations', title: 'Operațiuni', items: [
       { href: '/', i18nKey: 'nav.dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      {
-        href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar',
-        icon: SunMedium,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'technician'],
-      },
-      {
-        href: '/tasks', i18nKey: 'nav.tasks', label: 'Task-uri', icon: ClipboardCheck,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
-      },
-      {
-        href: '/planning', i18nKey: 'nav.planning', label: 'Plan Zilnic', icon: FileText,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
-      },
-      {
-        href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
-      },
+      { href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar', icon: SunMedium, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'technician'] },
+      { href: '/tasks', i18nKey: 'nav.tasks', label: 'Task-uri', icon: ClipboardCheck, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'] },
+      { href: '/planning', i18nKey: 'nav.planning', label: 'Plan Zilnic', icon: FileText, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'] },
+      { href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'] },
       { href: '/qa-qc', i18nKey: 'nav.qa_qc', label: 'QA/QC · Inspecții', icon: ShieldCheck, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'qa_qc'] },
       { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock },
       { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
@@ -59,13 +44,8 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    titleKey: 'nav.management',
-    title: 'Management',
-    roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'],
-    items: [
+    titleKey: 'nav.management', title: 'Management', roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'], items: [
       { href: '/projects', i18nKey: 'nav.projects', label: 'Proiecte', icon: MapPin },
-      { href: '/customers', i18nKey: 'nav.customers', label: 'Clienți', icon: Building2 },
-      { href: '/documents', i18nKey: 'nav.documents', label: 'Documente', icon: FileText },
       { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users },
       { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User },
       { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin },
@@ -73,20 +53,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/statistici', i18nKey: 'nav.statistici', label: 'Statistici', icon: BarChart3 },
     ],
   },
-  {
-    titleKey: 'nav.admin',
-    title: 'Administrare',
-    roles: ['admin'],
-    items: [
-      { href: '/utilizatori', i18nKey: 'nav.utilizatori', label: 'Utilizatori', icon: Users },
-    ],
-  },
-  {
-    titleKey: 'nav.personal',
-    title: 'Personal',
-    items: [
-      { href: '/notificari', i18nKey: 'nav.notificari', label: 'Notificări', icon: Bell },
-      { href: '/profil', i18nKey: 'nav.profil', label: 'Profil', icon: User },
-    ],
-  },
+  { titleKey: 'nav.admin', title: 'Administrare', roles: ['admin'], items: [{ href: '/utilizatori', i18nKey: 'nav.utilizatori', label: 'Utilizatori', icon: Users }] },
+  { titleKey: 'nav.personal', title: 'Personal', items: [{ href: '/notificari', i18nKey: 'nav.notificari', label: 'Notificări', icon: Bell }, { href: '/profil', i18nKey: 'nav.profil', label: 'Profil', icon: User }] },
 ];
