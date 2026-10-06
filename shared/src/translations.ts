@@ -1739,6 +1739,18 @@ Object.assign(d, {
   'stock.document_reference': T('Referință document', 'Document reference'),
 });
 
+// Production task navigation and summary labels.
+Object.assign(d, {
+  'task.summary_total': T('Total task-uri', 'Total tasks'),
+  'task.summary_active': T('În lucru', 'Active'),
+  'task.summary_blocked': T('Blocate', 'Blocked'),
+  'task.summary_complete': T('Finalizate', 'Completed'),
+  'task.list_heading': T('Task-uri', 'Tasks'),
+  'task.clear_filters': T('Resetează filtrele', 'Clear filters'),
+  'sidebar.navigation': T('Navigare principală', 'Main navigation'),
+});
+
+
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;
