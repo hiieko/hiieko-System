@@ -3,7 +3,7 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { t, useLocale } from '@solar/shared';
+import { useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { RoleGuard } from '../../lib/auth-guard';
