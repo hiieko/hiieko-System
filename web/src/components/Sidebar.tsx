@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, LogOut } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { NAV_GROUPS, type NavItem, type NavGroup } from '../config/navigation';
 import { ShellBrand } from './shell';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface SidebarProps {
   mobileOpen?: boolean;
@@ -33,6 +34,27 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const { locale } = useLocale();
 
   const userName = user?.fullName || user?.email || t('header.visitator', locale);
+  const drawerRef = useRef<HTMLElement>(null);
+  const drawerOpen = mobileOpen === true;
+
+  useFocusTrap(drawerRef, drawerOpen);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onMobileClose?.();
+      }
+    };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
+  }, [drawerOpen, onMobileClose]);
 
   // `/` is only exact-matched: the canonical Control Tower route now owns its
   // own navigation entry (`/control-tower`), so `/` must not claim it as active.
@@ -142,17 +164,22 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
           )}
           {/* Drawer */}
           <aside
+            ref={drawerRef}
+            role={drawerOpen ? 'dialog' : undefined}
+            aria-modal={drawerOpen ? true : undefined}
+            aria-hidden={!drawerOpen}
+            inert={!drawerOpen}
             className={`fixed inset-y-0 left-0 z-drawer w-72 hii-shell-chrome flex flex-col shadow-2xl transform transition-transform duration-250 ease-in-out lg:hidden ${
               mobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
-            aria-label={t('sidebar.close', locale)}
+            aria-label={t('sidebar.navigation', locale)}
           >
             <div className="px-4 py-4 border-b border-chrome-line flex items-center justify-between gap-2">
               <ShellBrand size="compact" onNavigate={onMobileClose} />
               <button
                 type="button"
                 onClick={onMobileClose}
-                className="p-2 text-chrome-muted hover:text-white rounded-lg hover:bg-chrome-hover shrink-0"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg p-2 text-chrome-muted hover:bg-chrome-hover hover:text-white"
                 aria-label={t('sidebar.close', locale)}
               >
                 <X className="w-5 h-5" aria-hidden="true" />
