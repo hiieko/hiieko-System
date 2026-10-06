@@ -470,7 +470,7 @@ export function GlobalExperienceWorkspace() {
     <div className="g-metrics"><MetricCard icon={ListTodo} value="12" label={translate('tasksInProgress')} note={translate('activeCrewCount')} /><MetricCard icon={Users} value="42 / 46" label={translate('crewPresent')} note={translate('currentSite')} tone="blue" /><MetricCard icon={AlertCircle} value="03" label={translate('openBlockers')} note={translate('escalatedBlockers')} tone="amber" /></div>
     <div className="g-overview-grid"><section className="g-card g-queue-card"><CardHeading icon={ListTodo} title={translate('priorityQueue')} action={translate('viewAll')} onClick={() => setActiveView('notifications')} /><article className="g-queue-item"><span className="g-queue-number">01</span><div className="g-queue-content"><span className="g-chip g-chip-blue">{translate('inProgress')}</span><small>PV-1842 · 10:30</small><b>Montare structură zona B-04</b><p>Valea Mare · Andrei Popescu</p><div className="g-progress"><i style={{ width: '62%' }} /></div><small>62% complet · 18 din 29 structuri</small></div><ChevronRight size={16} /></article><article className="g-queue-item"><span className="g-queue-number">02</span><div className="g-queue-content"><span className="g-chip g-chip-amber">{translate('pending')}</span><small>DR-2026-104 · 09:18</small><b>{translate('reviewReports')}</b><p>{translate('reviewDescription')}</p></div><ChevronRight size={16} /></article><button className="g-link-button" type="button" onClick={() => setActiveView('notifications')}>{translate('viewAll')} <ArrowRight size={14} /></button></section>
       <section className="g-card g-activity-card"><CardHeading icon={Activity} title={translate('recentActivity')} action={translate('viewAll')} onClick={() => setActiveView('notifications')} /><ActivityRow icon={ListTodo} title={translate('activityTask')} meta="09:18 · Valea Mare" tone="green" /><ActivityRow icon={CalendarDays} title={translate('activityPlan')} meta="08:42 · Daniel Georgescu" tone="blue" /><ActivityRow icon={FileCheck2} title={translate('activityReport')} meta="08:16 · Andrei Popescu" tone="amber" /><div className="g-system-status"><span><i />{translate('systemStatus')}</span><span>v1.4.0 · Prototype</span></div></section></div>
-    <ProjectOverviewData locale={locale} />
+    <ProjectOverviewData locale={locale} activePage={activeShellPage} />
   </>; }
 
   const renderProfile = () => <>
@@ -556,37 +556,101 @@ export function GlobalExperienceWorkspace() {
 }
 
 
-function ProjectOverviewData({ locale }: { locale: Locale }) {
+function ProjectOverviewData({ locale, activePage }: { locale: Locale; activePage: CopyKey }) {
   const ro = locale === 'ro';
+
   const workers = [
     ['AP', 'Andrei Popescu', ro ? 'Șef de echipă · Zona B-04' : 'Team Leader · Zone B-04', ro ? 'În teren' : 'On site'],
     ['RM', 'Radu Marin', ro ? 'Muncitor · cablare DC' : 'Worker · DC cabling', ro ? 'În lucru' : 'Working'],
     ['MI', 'Mara Ionescu', ro ? 'QA/QC · Zona B-04' : 'QA/QC · Zone B-04', ro ? 'Verificare' : 'Reviewing'],
     ['IS', 'Ioana Stan', ro ? 'Muncitor · structură B-05' : 'Worker · B-05 structures', ro ? 'Planificat' : 'Planned'],
   ];
+
   const tasks = [
     ['PV-1842', ro ? 'Montare structură B-04' : 'Install structure B-04', '62%', ro ? 'În lucru' : 'In progress'],
     ['PV-1851', ro ? 'Verificare aliniere șine' : 'Check rail alignment', '80%', ro ? 'În verificare' : 'In review'],
     ['PV-1860', ro ? 'Pregătire front B-05' : 'Prepare work front B-05', '35%', ro ? 'Blocat' : 'Blocked'],
+    ['PV-1864', ro ? 'Traseu cablu DC C-02' : 'DC cable route C-02', '74%', ro ? 'În lucru' : 'In progress'],
   ];
+
   const documents = [
     ['DR-2026-104', ro ? 'Raport zilnic · 27 octombrie' : 'Daily report · October 27', ro ? 'În revizuire' : 'In review'],
     ['AVZ-2026-088', ro ? 'Aviz recepție cablu DC' : 'DC cable delivery note', ro ? 'Recepționat' : 'Received'],
     ['QA-VM-041', ro ? 'Fișă inspecție șuruburi B-04' : 'B-04 bolt inspection sheet', ro ? '2 constatări' : '2 findings'],
+    ['SSM-REV-C', ro ? 'Plan SSM · revizia C' : 'HSE plan · revision C', ro ? 'Actualizat' : 'Updated'],
   ];
+
   const materials = [
     [ro ? 'Șină aluminiu 4.2 m' : '4.2 m aluminum rail', '120 m', '84 m', ro ? 'Necesar' : 'Needed'],
     [ro ? 'Șurub M10 inox' : 'M10 stainless bolt', '480 buc', '920 buc', ro ? 'Disponibil' : 'Available'],
+    [ro ? 'Cleme intermediare' : 'Mid clamps', '260 buc', '310 buc', ro ? 'Disponibil' : 'Available'],
     [ro ? 'Cablu solar 6 mm²' : '6 mm² solar cable', '840 m', '1,240 m', ro ? 'Disponibil' : 'Available'],
   ];
+
+  const photoLabels = ro
+    ? ['Front B-04 · structură', 'Recepție materiale · depozit', 'Inspecție QA/QC · rând 12']
+    : ['Front B-04 · structure', 'Material receipt · stockyard', 'QA/QC inspection · row 12'];
+
+  const module = (() => {
+    switch (activePage) {
+      case 'tasks':
+        return <section className="g-project-module">
+          <div className="g-project-module-head"><div><p className="g-eyebrow">{ro ? 'SARCINI · DATE DEMONSTRATIVE' : 'TASKS · ILLUSTRATIVE DATA'}</p><h2>{ro ? 'Lucrări ale proiectului' : 'Project work queue'}</h2><p>{ro ? 'Listă locală de lucru pentru Design Review.' : 'Local work queue for Design Review.'}</p></div><StatusPill>{ro ? '12 active' : '12 active'}</StatusPill></div>
+          <div className="g-project-table">{tasks.map(([id,title,progress,status], index) => <article key={id}><div className="g-project-table-main"><small>{id}</small><b>{title}</b><span><i style={{ width: progress }} /></span><em>{progress} · {ro ? ['Andrei Popescu · 6 persoane','Mara Ionescu · QA/QC','Ioana Stan · 4 persoane','Radu Marin · 5 persoane'][index] : ['Andrei Popescu · 6 people','Mara Ionescu · QA/QC','Ioana Stan · 4 people','Radu Marin · 5 people'][index]}</em></div><StatusPill tone={index === 2 ? 'red' : index === 1 ? 'amber' : 'blue'}>{status}</StatusPill></article>)}</div>
+        </section>;
+      case 'planning':
+        return <section className="g-project-module">
+          <div className="g-project-module-head"><div><p className="g-eyebrow">{ro ? 'PLANIFICARE ZILNICĂ · 27 OCT' : 'DAILY PLANNING · OCT 27'}</p><h2>{ro ? 'Planul zilei' : 'Today’s plan'}</h2><p>{ro ? 'Fronturi și lucrări pregătite pentru schimbul activ.' : 'Work fronts and activities prepared for the active shift.'}</p></div><StatusPill tone="green">{ro ? 'În grafic' : 'On schedule'}</StatusPill></div>
+          <div className="g-project-stat-strip"><div><b>12</b><span>{ro ? 'Planificate' : 'Planned'}</span></div><div><b>9</b><span>{ro ? 'Atribuite' : 'Assigned'}</span></div><div><b>4</b><span>{ro ? 'În lucru' : 'In progress'}</span></div><div><b>3</b><span>{ro ? 'Marcate finalizate' : 'Marked completed'}</span></div><div><b>1</b><span>{ro ? 'Blocat' : 'Blocked'}</span></div></div>
+          <div className="g-project-planning-list">{[
+            [ro ? '08:00–10:30 · B-04' : '08:00–10:30 · B-04', ro ? 'Montaj structură · 29 poziții' : 'Structure installation · 29 positions', 'Andrei · 6'],
+            [ro ? '09:00–12:00 · C-02' : '09:00–12:00 · C-02', ro ? 'Traseu cablu DC · 840 m' : 'DC cable route · 840 m', 'Radu · 5'],
+            [ro ? '13:00–15:00 · B-04' : '13:00–15:00 · B-04', ro ? 'Inspecție cuplu și aliniere' : 'Torque & alignment inspection', 'Mara · QA/QC'],
+          ].map(([time,title,owner]) => <article key={time}><Clock3 size={15}/><div><b>{title}</b><small>{time} · {owner}</small></div><StatusPill tone="blue">{ro ? 'Programat' : 'Scheduled'}</StatusPill></article>)}</div>
+        </section>;
+      case 'attendance':
+        return <section className="g-project-module">
+          <div className="g-project-module-head"><div><p className="g-eyebrow">{ro ? 'PONTAJ · DATE DEMONSTRATIVE' : 'ATTENDANCE · ILLUSTRATIVE DATA'}</p><h2>{ro ? 'Prezență echipă' : 'Crew attendance'}</h2><p>{ro ? 'Situația locală a prezenței pentru schimbul de azi.' : 'Local attendance view for today’s shift.'}</p></div><StatusPill tone="green">42 / 46</StatusPill></div>
+          <div className="g-project-attendance-list">{workers.concat([['SD','Sorin Dima',ro ? 'Muncitor · Zona B-05' : 'Worker · Zone B-05',ro ? 'Pontaj lipsă' : 'Clock-in missing']]).map(([initials,name,role,status]) => <article key={name}><Avatar initials={initials}/><div><b>{name}</b><small>{role}</small></div><span className={status.includes('lips') || status.includes('missing') ? 'g-demo-warning' : ''}>{status}</span></article>)}</div>
+        </section>;
+      case 'reports':
+        return <section className="g-project-module">
+          <div className="g-project-module-head"><div><p className="g-eyebrow">{ro ? 'RAPOARTE ZILNICE · DATE DEMONSTRATIVE' : 'DAILY REPORTS · ILLUSTRATIVE DATA'}</p><h2>{ro ? 'Rapoarte și aprobări' : 'Reports & review'}</h2><p>{ro ? 'Documentele operaționale ale zilei, cu starea lor de revizuire.' : 'Daily operational reports with their review state.'}</p></div><StatusPill tone="amber">{ro ? '3 de revizuit' : '3 to review'}</StatusPill></div>
+          <div className="g-project-report-list">{documents.map(([id,title,status], index) => <article key={id}><FileCheck2 size={16}/><div><b>{id} · {title}</b><small>{index === 0 ? (ro ? 'Trimis de Andrei Popescu · 09:18' : 'Submitted by Andrei Popescu · 09:18') : (ro ? 'Atașament proiect · Valea Mare' : 'Project attachment · Valea Mare')}</small></div><StatusPill tone={index === 0 ? 'amber' : index === 2 ? 'red' : 'green'}>{status}</StatusPill></article>)}</div>
+        </section>;
+      case 'materials':
+        return <section className="g-project-module">
+          <div className="g-project-module-head"><div><p className="g-eyebrow">{ro ? 'MATERIALE & STOC · DATE DEMONSTRATIVE' : 'MATERIALS & STOCK · ILLUSTRATIVE DATA'}</p><h2>{ro ? 'Materiale pentru fronturile active' : 'Materials for active fronts'}</h2><p>{ro ? 'Necesar, stoc și disponibilitate pentru lucrările din Valea Mare.' : 'Required quantities, stock and availability for Valea Mare work fronts.'}</p></div><StatusPill tone="amber">{ro ? '1 necesar' : '1 needed'}</StatusPill></div>
+          <div className="g-project-material-table">{materials.map(([name,required,stock,status]) => <article key={name}><div><b>{name}</b><small>{ro ? 'Necesar' : 'Required'}: {required}</small></div><div><small>{ro ? 'Stoc' : 'Stock'}</small><b>{stock}</b></div><StatusPill tone={status === (ro ? 'Necesar' : 'Needed') ? 'amber' : 'green'}>{status}</StatusPill></article>)}</div>
+        </section>;
+      case 'quality':
+        return <section className="g-project-module">
+          <div className="g-project-module-head"><div><p className="g-eyebrow">{ro ? 'QA/QC · DATE DEMONSTRATIVE' : 'QA/QC · ILLUSTRATIVE DATA'}</p><h2>{ro ? 'Inspecții și constatări' : 'Inspections & findings'}</h2><p>{ro ? 'Verificări de calitate asociate fronturilor active.' : 'Quality checks associated with active work fronts.'}</p></div><StatusPill tone="red">2 {ro ? 'constatări' : 'findings'}</StatusPill></div>
+          <div className="g-project-qa-list">{[
+            [ro ? 'QA-VM-041 · Șuruburi B-04' : 'QA-VM-041 · B-04 bolts', ro ? 'Mara Ionescu · 09:46' : 'Mara Ionescu · 09:46', ro ? '2 constatări deschise' : '2 open findings', 'red'],
+            [ro ? 'QA-VM-038 · Aliniere șine' : 'QA-VM-038 · Rail alignment', ro ? 'Mara Ionescu · 08:55' : 'Mara Ionescu · 08:55', ro ? 'Conform' : 'Conforming', 'green'],
+            [ro ? 'SSM-VM-022 · Acces C-02' : 'HSE-VM-022 · C-02 access', ro ? 'Site Manager · 08:12' : 'Site Manager · 08:12', ro ? 'Necesită verificare' : 'Needs check', 'amber'],
+          ].map(([title,owner,status,tone]) => <article key={title}><ClipboardCheck size={16}/><div><b>{title}</b><small>{owner}</small></div><StatusPill tone={tone as 'red'|'green'|'amber'}>{status}</StatusPill></article>)}</div>
+        </section>;
+      case 'documents':
+        return <section className="g-project-module">
+          <div className="g-project-module-head"><div><p className="g-eyebrow">{ro ? 'DOCUMENTE · DATE DEMONSTRATIVE' : 'DOCUMENTS · ILLUSTRATIVE DATA'}</p><h2>{ro ? 'Dosarul proiectului' : 'Project document register'}</h2><p>{ro ? 'Documente operaționale, QA/QC și SSM pentru proiect.' : 'Operational, QA/QC and HSE documents for the project.'}</p></div><StatusPill>{ro ? '8 documente' : '8 documents'}</StatusPill></div>
+          <div className="g-project-document-table">{documents.concat([['PLAN-B03','Baseline program · revizia 03',ro ? 'Actualizat' : 'Updated']]).map(([id,title,status]) => <article key={id}><span><FileText size={15}/></span><div><b>{id}</b><small>{title}</small></div><StatusPill tone={status.includes('revizuire') || status.includes('review') ? 'amber' : 'green'}>{status}</StatusPill></article>)}</div>
+        </section>;
+      default:
+        return null;
+    }
+  })();
+
   return <section className="g-project-data-board">
     <div className="g-project-data-head"><div><p className="g-eyebrow">{ro ? 'DATE PROIECT · DEMONSTRATIVE' : 'PROJECT DATA · ILLUSTRATIVE'}</p><h2>{ro ? 'Proiect complet populat' : 'Fully populated project'}</h2><p>{ro ? 'Date locale pentru Design Review · fără API sau bază de date.' : 'Local Design Review data · no API or database.'}</p></div><span><ShieldCheck size={13} />{ro ? 'Doar preview' : 'Preview only'}</span></div>
+    {module}
     <div className="g-project-data-grid">
       <section className="g-card g-project-data-card"><div className="g-card-heading"><span><Users size={15} /><h2>{ro ? 'Echipă și muncitori' : 'Team & workers'}</h2></span><b>4</b></div><div className="g-project-worker-list">{workers.map(([initials,name,role,status]) => <article key={name}><Avatar initials={initials}/><div><b>{name}</b><small>{role}</small></div><StatusPill>{status}</StatusPill></article>)}</div></section>
       <section className="g-card g-project-data-card"><div className="g-card-heading"><span><ListTodo size={15} /><h2>{ro ? 'Task-uri' : 'Tasks'}</h2></span><b>12</b></div><div className="g-project-task-list">{tasks.map(([id,title,progress,status],index) => <article key={id}><div><small>{id}</small><b>{title}</b><span><i style={{width:progress}} /></span></div><StatusPill tone={index === 2 ? 'red' : index === 1 ? 'amber' : 'blue'}>{status}</StatusPill></article>)}</div></section>
       <section className="g-card g-project-data-card"><div className="g-card-heading"><span><FileText size={15} /><h2>{ro ? 'Documente' : 'Documents'}</h2></span><b>8</b></div><div className="g-project-document-list">{documents.map(([id,title,status]) => <article key={id}><span><FileText size={14} /></span><div><b>{id} · {title}</b><small>{status}</small></div></article>)}</div></section>
       <section className="g-card g-project-data-card"><div className="g-card-heading"><span><PackageCheck size={15} /><h2>{ro ? 'Materiale și stoc' : 'Materials & stock'}</h2></span><b>24</b></div><div className="g-project-material-list">{materials.map(([name,required,stock,status]) => <article key={name}><div><b>{name}</b><small>{ro ? 'Necesar' : 'Required'}: {required} · {ro ? 'Stoc' : 'Stock'}: {stock}</small></div><StatusPill tone={status === (ro ? 'Necesar' : 'Needed') ? 'amber' : 'green'}>{status}</StatusPill></article>)}</div></section>
-      <section className="g-card g-project-data-card g-project-photo-card"><div className="g-card-heading"><span><Camera size={15} /><h2>{ro ? 'Fotografii de șantier' : 'Site photos'}</h2></span><b>3</b></div><div className="g-project-photo-grid">{[1,2,3].map((n) => <article key={n}><div><Camera size={19}/><span>{ro ? 'Loc pentru fotografie' : 'Photo area'}</span><small>0{n}</small></div><b>{ro ? ['Front B-04 · structură','Recepție materiale · depozit','Inspecție QA/QC · rând 12'][n-1] : ['Front B-04 · structure','Material receipt · stockyard','QA/QC inspection · row 12'][n-1]}</b></article>)}</div><button type="button" className="g-button g-button-quiet">{ro ? '+ Adaugă fotografie demonstrativă' : '+ Add illustrative photo'}</button></section>
+      <section className="g-card g-project-data-card g-project-photo-card"><div className="g-card-heading"><span><Camera size={15} /><h2>{ro ? 'Fotografii de șantier' : 'Site photos'}</h2></span><b>3</b></div><div className="g-project-photo-grid">{photoLabels.map((label,index) => <article key={label}><div><Camera size={19}/><span>{ro ? 'Loc pentru fotografie' : 'Photo area'}</span><small>0{index + 1}</small></div><b>{label}</b></article>)}</div><button type="button" className="g-button g-button-quiet">{ro ? '+ Adaugă fotografie demonstrativă' : '+ Add illustrative photo'}</button></section>
     </div>
   </section>;
 }
