@@ -2,12 +2,11 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { Users, Loader2, RefreshCw, Search, X, AlertTriangle, Edit3, Trash2, Check, Plus, Save } from 'lucide-react';
+import { Users, RefreshCw, Search, X, Edit3, Trash2, Check, Plus, Save } from 'lucide-react';
 import { displayName } from '../../lib/formatters';
-import { useFocusTrap } from '../../hooks/useFocusTrap';
-import { EmptyState } from '../../components/ui';
+import { PageHeader, Button, Card, Badge, Modal, ConfirmDialog, ErrorState, Skeleton, EmptyState } from '../../components/ui';
 
 interface Employee {
   id: string; first_name: string; last_name: string;
@@ -50,21 +49,6 @@ function WorkforcePageInner() {
   const [createHourlyRate, setCreateHourlyRate] = useState('');
   const [createUserId, setCreateUserId] = useState('');
   const [createSaving, setCreateSaving] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const dialogOpen = showEdit || showCreate || confirmDelete !== null;
-
-  useFocusTrap(dialogRef, dialogOpen);
-  useEffect(() => {
-    if (!dialogOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || editSaving || createSaving || deleting) return;
-      if (confirmDelete) setConfirmDelete(null);
-      else if (showEdit) setShowEdit(false);
-      else setShowCreate(false);
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [dialogOpen, confirmDelete, showEdit, editSaving, createSaving, deleting]);
 
   const showSuccess = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(null), 3000); };
 
@@ -165,37 +149,33 @@ function WorkforcePageInner() {
           <Check className="w-4 h-4" />{successMsg}
         </div>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-hii-500" />Forța de Muncă
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Angajați și personal activ</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => { setShowCreate(true); }}
-            className="inline-flex items-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg transition-colors">
-            <Plus className="w-4 h-4 mr-1.5" />Angajat Nou
-          </button>
-          <button type="button" onClick={load} disabled={loading} aria-label="Reîncarcă angajații"
-            className="inline-flex items-center px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
-            <RefreshCw className="w-4 h-4" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        icon={<Users className="w-6 h-6 text-hii-500" />}
+        title="Forța de Muncă"
+        subtitle="Angajați și personal activ"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => { setShowCreate(true); }}>
+              Angajat Nou
+            </Button>
+            <Button type="button" variant="secondary" size="icon" onClick={load} disabled={loading} aria-label="Reîncarcă angajații">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
+            </Button>
+          </div>
+        }
+      />
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" aria-label="Caută angajați" placeholder="Caută angajați..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-        {search && <button type="button" aria-label="Șterge căutarea" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" aria-hidden="true" /></button>}
+          className="hii-input pl-10 pr-10" />
+        {search && <Button type="button" variant="ghost" size="icon" aria-label="Șterge căutarea" onClick={() => setSearch('')} className="absolute right-1 top-1/2 -translate-y-1/2"><X className="w-4 h-4" aria-hidden="true" /></Button>}
       </div>
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{error}</div>}
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500"><Loader2 className="w-6 h-6 animate-spin mr-2" />Se încarcă...</div>
+        <Skeleton className="h-12" count={6} />
       ) : error ? (
-        <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-800"><p>{error}</p><button type="button" onClick={load} className="mt-3 min-h-10 rounded-md border border-rose-300 bg-white px-3 font-semibold">Reîncearcă</button></div>
+        <ErrorState title="Eroare la încărcarea angajaților" error={error} onRetry={load} />
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <Card padding={false}>
           {search ? (
             <EmptyState
               icon={<Search className="w-7 h-7" />}
@@ -211,44 +191,42 @@ function WorkforcePageInner() {
               action={{ label: 'Add employee', onClick: () => setShowCreate(true) }}
             />
           )}
-        </div>
+        </Card>
       ) : (
         <>
-        <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm xl:block">
-          <table className="w-full min-w-[1050px] text-left text-sm">
+        <Card padding={false} className="hidden overflow-x-auto xl:block">
+          <table className="hii-table min-w-[1050px]">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
-                <th className="py-3 px-4">Nume</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Poziție</th>
-                <th className="py-3 px-4">Rol</th>
-                <th className="py-3 px-4 text-right">Tarif</th>
-                <th className="py-3 px-4 text-center">Stare</th>
-                <th className="py-3 px-4 text-center">Acțiuni</th>
+              <tr>
+                <th>Nume</th>
+                <th>Email</th>
+                <th>Poziție</th>
+                <th>Rol</th>
+                <th className="text-right">Tarif</th>
+                <th className="text-center">Stare</th>
+                <th className="text-center">Acțiuni</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {filtered.map(e => (
-                <tr key={e.id} className="hover:bg-slate-50">
-                  <td className="py-3 px-4 font-medium">{e.first_name} {e.last_name}</td>
-                  <td className="py-3 px-4 text-xs text-slate-600">{e.user?.email || '—'}</td>
-                  <td className="py-3 px-4 text-xs text-slate-700">{e.position || '—'}</td>
-                  <td className="py-3 px-4"><span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{ROLE_LABELS[e.user?.role || ''] || e.user?.role || '—'}</span></td>
-                  <td className="py-3 px-4 text-right text-xs">{e.hourly_rate ? Number(e.hourly_rate).toFixed(2) + ' RON' : '—'}</td>
-                  <td className="py-3 px-4 text-center text-xs font-semibold">{e.is_active !== false ? <span className="text-emerald-700">Activ</span> : <span className="text-slate-500">Inactiv</span>}</td>
-                  <td className="py-3 px-4 text-center">
+                <tr key={e.id}>
+                  <td className="font-medium">{e.first_name} {e.last_name}</td>
+                  <td className="text-xs text-slate-600">{e.user?.email || '—'}</td>
+                  <td className="text-xs text-slate-700">{e.position || '—'}</td>
+                  <td><Badge variant="neutral" size="sm">{ROLE_LABELS[e.user?.role || ''] || e.user?.role || '—'}</Badge></td>
+                  <td className="text-right text-xs">{e.hourly_rate ? Number(e.hourly_rate).toFixed(2) + ' RON' : '—'}</td>
+                  <td className="text-center"><Badge variant={e.is_active !== false ? 'success' : 'neutral'} size="sm">{e.is_active !== false ? 'Activ' : 'Inactiv'}</Badge></td>
+                  <td className="text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <button onClick={() => openEdit(e)}
-                        className="p-1.5 hover:bg-slate-100 rounded text-slate-400 hover:text-hii-600 transition-colors"
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(e)}
                         title="Editează" aria-label={`Editează ${e.first_name} ${e.last_name}`}>
                         <Edit3 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                       {e.is_active !== false && (
-                        <button onClick={() => setConfirmDelete(e.id)}
-                          className="p-1.5 hover:bg-red-50 rounded text-slate-400 hover:text-red-500 transition-colors"
-                          title="Arhivează" aria-label={`Arhivează ${e.first_name} ${e.last_name}`}>
+                        <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(e.id)}
+                          title="Arhivează" aria-label={`Arhivează ${e.first_name} ${e.last_name}`} className="hover:bg-red-50 hover:text-red-500">
                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </td>
@@ -256,16 +234,16 @@ function WorkforcePageInner() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
         <div className="grid gap-3 xl:hidden">
           {filtered.map((employee) => (
-            <article key={employee.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <Card key={employee.id} padding={false} className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="break-words text-sm font-bold text-slate-900">{employee.first_name} {employee.last_name}</h2>
                   <p className="mt-1 break-all text-xs text-slate-600">{employee.user?.email || 'Fără e-mail asociat'}</p>
                 </div>
-                <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${employee.is_active !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>{employee.is_active !== false ? 'Activ' : 'Inactiv'}</span>
+                <Badge variant={employee.is_active !== false ? 'success' : 'neutral'} size="md" className="shrink-0">{employee.is_active !== false ? 'Activ' : 'Inactiv'}</Badge>
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-slate-100 pt-3 text-xs">
                 <div><dt className="text-slate-500">Poziție</dt><dd className="mt-0.5 font-medium text-slate-800">{employee.position || '—'}</dd></div>
@@ -273,137 +251,108 @@ function WorkforcePageInner() {
                 <div className="col-span-2"><dt className="text-slate-500">Tarif</dt><dd className="mt-0.5 font-medium text-slate-800">{employee.hourly_rate ? `${Number(employee.hourly_rate).toFixed(2)} RON` : '—'}</dd></div>
               </dl>
               <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                <button type="button" onClick={() => openEdit(employee)} className="min-h-10 flex-1 rounded-lg border border-slate-300 px-3 text-xs font-semibold text-slate-700">Editează datele</button>
-                {employee.is_active !== false && <button type="button" onClick={() => setConfirmDelete(employee.id)} className="min-h-10 flex-1 rounded-lg border border-rose-200 px-3 text-xs font-semibold text-rose-700">Arhivează angajatul</button>}
+                <Button type="button" variant="secondary" onClick={() => openEdit(employee)} className="min-h-10 flex-1 text-xs font-semibold">Editează datele</Button>
+                {employee.is_active !== false && <Button type="button" variant="danger" onClick={() => setConfirmDelete(employee.id)} className="min-h-10 flex-1 text-xs font-semibold">Arhivează angajatul</Button>}
               </div>
-            </article>
+            </Card>
           ))}
         </div>
         </>
       )}
 
       {/* Edit Employee Modal */}
-      {showEdit && editEmployee && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="workforce-edit-title" className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 id="workforce-edit-title" className="text-base font-bold text-slate-900">Editează angajat</h3>
-              <button type="button" aria-label="Închide editarea angajatului" onClick={() => setShowEdit(false)} className="p-2 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
+      <Modal
+        open={showEdit && !!editEmployee}
+        onClose={() => setShowEdit(false)}
+        title="Editează angajat"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setShowEdit(false)}>Anulează</Button>
+            <Button variant="primary" icon={<Save className="w-4 h-4" />} loading={editSaving} disabled={!editFirstName.trim() || !editLastName.trim()} onClick={handleEditSave}>
+              {editSaving ? 'Se salvează...' : 'Salvează'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label className="hii-label">Prenume *</label>
+              <input aria-label="Prenume" value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="hii-input" />
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div><label className="text-xs font-semibold text-slate-700 block mb-1">Prenume *</label>
-                  <input aria-label="Prenume" value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-                </div>
-                <div><label className="text-xs font-semibold text-slate-700 block mb-1">Nume *</label>
-                  <input aria-label="Nume" value={editLastName} onChange={(e) => setEditLastName(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-                </div>
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Poziție</label>
-                <input aria-label="Poziție" value={editPosition} onChange={(e) => setEditPosition(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Tarif orar (RON)</label>
-                <input aria-label="Tarif orar în RON" type="number" step="0.01" min="0" value={editHourlyRate} onChange={(e) => setEditHourlyRate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Utilizator asociat</label>
-                <select aria-label="Utilizator asociat" value={editUserId} onChange={(e) => setEditUserId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fără cont</option>
-                  {users.filter((u: any) => u.is_active !== false).map((u: any) => (
-                    <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setShowEdit(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={handleEditSave} disabled={editSaving || !editFirstName.trim() || !editLastName.trim()}
-                className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {editSaving ? 'Se salvează...' : <><Save className="w-4 h-4 inline mr-1" />Salvează</>}
-              </button>
+            <div><label className="hii-label">Nume *</label>
+              <input aria-label="Nume" value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="hii-input" />
             </div>
           </div>
+          <div><label className="hii-label">Poziție</label>
+            <input aria-label="Poziție" value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Tarif orar (RON)</label>
+            <input aria-label="Tarif orar în RON" type="number" step="0.01" min="0" value={editHourlyRate} onChange={(e) => setEditHourlyRate(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Utilizator asociat</label>
+            <select aria-label="Utilizator asociat" value={editUserId} onChange={(e) => setEditUserId(e.target.value)} className="hii-select">
+              <option value="">Fără cont</option>
+              {users.filter((u: any) => u.is_active !== false).map((u: any) => (
+                <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
+              ))}
+            </select>
+          </div>
         </div>
-      )}
+      </Modal>
 
-      {/* Confirm Delete Employee */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div ref={dialogRef} role="alertdialog" aria-modal="true" aria-labelledby="workforce-archive-title" className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-sm mx-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <h3 id="workforce-archive-title" className="text-base font-bold text-slate-900">Arhivează angajatul?</h3>
-                <p className="text-sm text-slate-500">Angajatul va fi marcat ca inactiv si nu va mai aparea in listele active.</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={() => handleDeleteEmployee(confirmDelete)} disabled={deleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {deleting ? 'Se arhiveaza...' : 'Arhiveaza'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          open={!!confirmDelete}
+          variant="danger"
+          title="Arhivează angajatul?"
+          message="Angajatul va fi marcat ca inactiv si nu va mai aparea in listele active."
+          confirmLabel={deleting ? 'Se arhiveaza...' : 'Arhiveaza'}
+          cancelLabel="Anulează"
+          loading={deleting}
+          onConfirm={() => handleDeleteEmployee(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
       {/* Create Employee Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="workforce-create-title" className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 id="workforce-create-title" className="text-base font-bold text-slate-900">Angajat nou</h3>
-              <button type="button" aria-label="Închide formularul de angajat nou" onClick={() => setShowCreate(false)} className="p-2 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Angajat nou"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setShowCreate(false)}>Anulează</Button>
+            <Button variant="primary" icon={<Plus className="w-4 h-4" />} loading={createSaving} disabled={!createFirstName.trim() || !createLastName.trim()} onClick={handleCreate}>
+              {createSaving ? 'Se salvează...' : 'Creează'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div><label className="hii-label">Prenume *</label>
+              <input aria-label="Prenume" value={createFirstName} onChange={(e) => setCreateFirstName(e.target.value)} className="hii-input" />
             </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div><label className="text-xs font-semibold text-slate-700 block mb-1">Prenume *</label>
-                  <input aria-label="Prenume" value={createFirstName} onChange={(e) => setCreateFirstName(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-                </div>
-                <div><label className="text-xs font-semibold text-slate-700 block mb-1">Nume *</label>
-                  <input aria-label="Nume" value={createLastName} onChange={(e) => setCreateLastName(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-                </div>
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Poziție</label>
-                <input aria-label="Poziție" value={createPosition} onChange={(e) => setCreatePosition(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Tarif orar (RON)</label>
-                <input aria-label="Tarif orar în RON" type="number" step="0.01" min="0" value={createHourlyRate} onChange={(e) => setCreateHourlyRate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Utilizator asociat</label>
-                <select aria-label="Utilizator asociat" value={createUserId} onChange={(e) => setCreateUserId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fără cont</option>
-                  {users.filter((u: any) => u.is_active !== false).map((u: any) => (
-                    <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={handleCreate} disabled={createSaving || !createFirstName.trim() || !createLastName.trim()}
-                className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {createSaving ? 'Se salvează...' : <><Plus className="w-4 h-4 inline mr-1" />Creează</>}
-              </button>
+            <div><label className="hii-label">Nume *</label>
+              <input aria-label="Nume" value={createLastName} onChange={(e) => setCreateLastName(e.target.value)} className="hii-input" />
             </div>
           </div>
+          <div><label className="hii-label">Poziție</label>
+            <input aria-label="Poziție" value={createPosition} onChange={(e) => setCreatePosition(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Tarif orar (RON)</label>
+            <input aria-label="Tarif orar în RON" type="number" step="0.01" min="0" value={createHourlyRate} onChange={(e) => setCreateHourlyRate(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Utilizator asociat</label>
+            <select aria-label="Utilizator asociat" value={createUserId} onChange={(e) => setCreateUserId(e.target.value)} className="hii-select">
+              <option value="">Fără cont</option>
+              {users.filter((u: any) => u.is_active !== false).map((u: any) => (
+                <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
+              ))}
+            </select>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
