@@ -10,8 +10,18 @@ import { apiClient } from '../../lib/api-client';
 import { t, useLocale, type DailyReport } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
-import { ConfirmDialog, useToast } from '../../components/ui';
-import { EmptyState } from '../../components/ui';
+import {
+  ConfirmDialog,
+  useToast,
+  EmptyState,
+  Button,
+  Badge,
+  Card,
+  Modal,
+  PageHeader,
+  ErrorState,
+  Skeleton,
+} from '../../components/ui';
 import { submitDailyReport, reviewDailyReport } from '../../features/daily-reports';
 import { useRouter } from 'next/navigation';
 import { 
@@ -22,10 +32,8 @@ import {
   Boxes, 
   Image as ImageIcon, 
   Calendar, 
-  Check, 
+Check,
   X,
-  Loader2,
-  AlertCircle,
   RefreshCw,
   Plus,
   Edit3,
@@ -154,59 +162,68 @@ function RapoartePageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="reports" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Rapoarte Zilnice per Echipa</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Activități finalizate de șefii de echipa, muncitori prezenți, materiale consumate și fotografii de execuție.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {canCreate && (
-            <button onClick={() => router.push('/rapoarte/form')}
-              className="inline-flex items-center px-3 py-2 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
-              <Plus className="w-3.5 h-3.5 mr-1.5" />Raport Nou
-            </button>
-          )}
-          <button onClick={loadData} disabled={loading}
-            className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('general.refresh', locale)}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        className="!mb-0"
+        title="Rapoarte Zilnice per Echipa"
+        subtitle="Activități finalizate de șefii de echipa, muncitori prezenți, materiale consumate și fotografii de execuție."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+              onClick={loadData}
+              disabled={loading}
+            >
+              {t('general.refresh', locale)}
+            </Button>
+            {canCreate && (
+              <Button
+                variant="primary"
+                size="md"
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => router.push('/rapoarte/form')}
+              >
+                Raport Nou
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {!loading && !error && reports.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-3 bg-white border border-slate-200 rounded-xl p-4">
+        <Card padding={false} className="p-4 flex flex-col sm:flex-row gap-3">
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder={locale === 'en' ? 'Search site, team leader, notes, tasks, materials…' : 'Caută șantier, șef de echipă, observații, task-uri, materiale…'}
-            className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-hii-500"
+            className="hii-input flex-1"
             aria-label={locale === 'en' ? 'Search daily reports' : 'Caută rapoarte zilnice'}
           />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white">
+            className="hii-select">
             {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? (locale === 'en' ? 'All statuses' : 'Toate stările') : status}</option>)}
           </select>
           {(searchQuery || statusFilter !== 'ALL') && (
-            <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }}
-              className="px-3 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
+            <Button type="button" variant="secondary" size="md" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }}>
               {locale === 'en' ? 'Clear filters' : 'Șterge filtrele'}
-            </button>
+            </Button>
           )}
-        </div>
+        </Card>
       )}
 
       {loading ? (
-        <div className="py-12 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" />
-          <p className="mt-2 text-sm text-slate-500">Îcarcăd rapoartele zilnice...</p>
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-40 rounded-xl" />
+          ))}
         </div>
       ) : error ? (
-        <div className="py-12 text-center">
-          <AlertCircle className="w-8 h-8 mx-auto text-rose-400" />
-          <p className="mt-2 text-sm text-rose-500">Eroare: {error}</p>
-        </div>
+        <ErrorState
+          title="Eroare la încărcarea rapoartelor"
+          error={error}
+          onRetry={loadData}
+        />
       ) : reports.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200">
           <EmptyState
@@ -253,15 +270,15 @@ function RapoartePageInner() {
             }));
 
           return (
-            <div key={report.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <Card key={report.id} padding={false} className="overflow-hidden">
               {/* Header */}
               <div className="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                   <div className="flex items-center space-x-3">
                     <span className="font-bold text-lg text-slate-900">{siteName}</span>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-200">
+                    <Badge variant="warning" size="md">
                       {siteCode}
-                    </span>
+                    </Badge>
                   </div>
                   <div className="text-xs text-slate-500 mt-1 flex items-center space-x-4">
                     <span className="flex items-center">
@@ -278,40 +295,62 @@ function RapoartePageInner() {
                 <div className="flex items-center space-x-3">
                   {report.status === 'DRAFT' ? (
                     <>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                      <Badge variant="neutral" size="md">
                         Ciorna
-                      </span>
-                      {canEditOrSubmit && (report.team_leader_id === user?.id || ['admin', 'owner'].includes(userRole || '')) && <button type="button" onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
-                        className="inline-flex items-center px-3 py-1.5 bg-hii-600 hover:bg-hii-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
-                        <Edit3 className="w-3.5 h-3.5 mr-1" />{t('general.edit', locale)}
-                      </button>}
+                      </Badge>
+                      {canEditOrSubmit && (report.team_leader_id === user?.id || ['admin', 'owner'].includes(userRole || '')) && <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        icon={<Edit3 className="w-3.5 h-3.5" />}
+                        onClick={() => router.push(`/rapoarte/form?id=${report.id}`)}
+                      >
+                        {t('general.edit', locale)}
+                      </Button>}
                       {/* P4.4 — one-click finalization for a DRAFT; confirms first, then submits. */}
-                      {canEditOrSubmit && (report.team_leader_id === user?.id || ['admin', 'owner'].includes(userRole || '')) && <button type="button"
+                      {canEditOrSubmit && (report.team_leader_id === user?.id || ['admin', 'owner'].includes(userRole || '')) && <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
                         data-testid={`submit-report-${report.id}`}
                         disabled={submittingId === report.id}
                         onClick={() => setSubmitTarget(report)}
-                        className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <Send className="w-3.5 h-3.5 mr-1" />
+                        loading={submittingId === report.id}
+                        icon={<Send className="w-3.5 h-3.5" />}
+                      >
                         {submittingId === report.id ? t('daily_report.submitting', locale) : t('daily_report.submit_report', locale)}
-                      </button>}
+                      </Button>}
                     </>
                   ) : (
                     <>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${report.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : report.status === 'REJECTED' ? 'bg-rose-100 text-rose-800' : 'bg-blue-100 text-blue-800'}`}>
+                      <Badge
+                        variant={report.status === 'APPROVED' ? 'success' : report.status === 'REJECTED' ? 'danger' : 'info'}
+                        size="md"
+                      >
                         {report.status === 'APPROVED' ? 'Aprobat' : report.status === 'REJECTED' ? 'Respins' : 'Transmis spre Aprobare'}
-                      </span>
+                      </Badge>
                       {report.status === 'SUBMITTED' && canReview && report.team_leader_id !== user?.id && (
                         <div className="flex items-center gap-2">
-                          <button type="button" disabled={reviewingId === report.id}
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            disabled={reviewingId === report.id}
                             onClick={() => { setReviewAction('APPROVED'); setReviewComment(''); setReviewTarget(report); }}
-                            className="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
-                            <Check className="w-3.5 h-3.5 mr-1" />Aproba
-                          </button>
-                          <button type="button" disabled={reviewingId === report.id}
+                            icon={<Check className="w-3.5 h-3.5" />}
+                          >
+                            Aproba
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            size="sm"
+                            disabled={reviewingId === report.id}
                             onClick={() => { setReviewAction('REJECTED'); setReviewComment(''); setReviewTarget(report); }}
-                            className="inline-flex items-center px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors disabled:opacity-50">
-                            <X className="w-3.5 h-3.5 mr-1" />Respinge
-                          </button>
+                            icon={<X className="w-3.5 h-3.5" />}
+                          >
+                            Respinge
+                          </Button>
                         </div>
                       )}
                     </>
@@ -416,7 +455,7 @@ function RapoartePageInner() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -436,40 +475,50 @@ function RapoartePageInner() {
       />
 
       {reviewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-labelledby="review-dialog-title">
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-xl border border-slate-200">
-            <div className="p-5 border-b border-slate-100">
-              <h2 id="review-dialog-title" className="text-lg font-bold text-slate-900">
-                {reviewAction === 'APPROVED' ? 'Aprobă raportul' : 'Respinge raportul'}
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                {reviewAction === 'APPROVED'
-                  ? 'Confirmă că raportul este verificat și poate fi închis.'
-                  : 'Explică ce trebuie corectat. Raportul rămâne înregistrat ca respins.'}
-              </p>
-            </div>
-            <div className="p-5">
-              <label htmlFor="review-comment" className="block text-sm font-semibold text-slate-700 mb-2">
-                Comentariu {reviewAction === 'REJECTED' ? '(obligatoriu)' : '(opțional)'}
-              </label>
-              <textarea id="review-comment" value={reviewComment} onChange={(e) => setReviewComment(e.target.value)}
-                rows={4} autoFocus
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-hii-500"
-                placeholder="Observații pentru audit / echipă..." />
-            </div>
-            <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
-              <button type="button" disabled={!!reviewingId} onClick={() => setReviewTarget(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
+        <Modal
+          open={true}
+          onClose={() => { if (!reviewingId) setReviewTarget(null); }}
+          title={reviewAction === 'APPROVED' ? 'Aprobă raportul' : 'Respinge raportul'}
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!!reviewingId}
+                onClick={() => setReviewTarget(null)}
+              >
                 Anulează
-              </button>
-              <button type="button" disabled={!!reviewingId || (reviewAction === 'REJECTED' && !reviewComment.trim())}
+              </Button>
+              <Button
+                type="button"
+                variant={reviewAction === 'APPROVED' ? 'primary' : 'danger'}
+                disabled={!!reviewingId || (reviewAction === 'REJECTED' && !reviewComment.trim())}
                 onClick={confirmReview}
-                className={`px-4 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-50 ${reviewAction === 'APPROVED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}>
+                loading={!!reviewingId}
+              >
                 {reviewingId ? 'Se procesează…' : reviewAction === 'APPROVED' ? 'Confirmă aprobarea' : 'Confirmă respingerea'}
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
+          }
+        >
+          <p className="text-sm text-slate-500 mb-4">
+            {reviewAction === 'APPROVED'
+              ? 'Confirmă că raportul este verificat și poate fi închis.'
+              : 'Explică ce trebuie corectat. Raportul rămâne înregistrat ca respins.'}
+          </p>
+          <label htmlFor="review-comment" className="block text-sm font-semibold text-slate-700 mb-2">
+            Comentariu {reviewAction === 'REJECTED' ? '(obligatoriu)' : '(opțional)'}
+          </label>
+          <textarea
+            id="review-comment"
+            value={reviewComment}
+            onChange={(e) => setReviewComment(e.target.value)}
+            rows={4}
+            autoFocus
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-hii-500"
+            placeholder="Observații pentru audit / echipă..."
+          />
+        </Modal>
       )}
     </div>
   );
