@@ -8,7 +8,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import {
   AlertTriangle,
-  Loader2,
   RefreshCw,
   Plus,
   X,
@@ -17,8 +16,21 @@ import {
   User,
   Calendar,
   Search,
+  Info,
+  AlertOctagon,
+  Clock,
 } from 'lucide-react';
-import { EmptyState } from '../../components/ui';
+import {
+  EmptyState,
+  Button,
+  Card,
+  Badge,
+  Tabs,
+  PageHeader,
+  ErrorState,
+  Skeleton,
+  Modal,
+} from '../../components/ui';
 import type { IssueSeverity } from '../../features/issues/types';
 
 interface IssueItem {
@@ -39,21 +51,43 @@ const SEVERITY_LABELS: Record<string, string> = {
   LOW: 'Scazuta', MEDIUM: 'Medie', HIGH: 'Ridicata', CRITICAL: 'Critica',
 };
 
-const SEVERITY_COLORS: Record<string, string> = {
-  LOW: 'bg-slate-100 text-slate-700', MEDIUM: 'bg-amber-100 text-amber-800',
-  HIGH: 'bg-orange-100 text-orange-800', CRITICAL: 'bg-red-100 text-red-800',
-};
-
 const STATUS_LABELS: Record<string, string> = {
   OPEN: 'Deschis', INVESTIGATING: 'In investigare',
   CORRECTIVE_ACTION_PROPOSED: 'Actiune propusa', RESOLVED: 'Rezolvat', CLOSED: 'Inchis',
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  OPEN: 'bg-red-100 text-red-800', INVESTIGATING: 'bg-blue-100 text-blue-800',
-  CORRECTIVE_ACTION_PROPOSED: 'bg-amber-100 text-amber-800',
-  RESOLVED: 'bg-emerald-100 text-emerald-800', CLOSED: 'bg-slate-100 text-slate-700',
-};
+function SeverityBadge({ severity }: { severity: string }) {
+  const icon =
+    severity === 'LOW' ? <Info className="size-3" /> :
+    severity === 'MEDIUM' ? <AlertCircle className="size-3" /> :
+    severity === 'CRITICAL' ? <AlertOctagon className="size-3" /> :
+    <AlertTriangle className="size-3" />;
+  const variant = severity === 'LOW' ? 'info' : severity === 'MEDIUM' ? 'warning' : 'danger';
+  return (
+    <Badge variant={variant} size="sm" dot={severity === 'CRITICAL'}>
+      {icon} {SEVERITY_LABELS[severity] || severity}
+    </Badge>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const icon =
+    status === 'OPEN' ? <AlertCircle className="size-3" /> :
+    status === 'INVESTIGATING' ? <Clock className="size-3" /> :
+    status === 'CORRECTIVE_ACTION_PROPOSED' ? <AlertTriangle className="size-3" /> :
+    status === 'RESOLVED' ? <CheckCircle2 className="size-3" /> :
+    <X className="size-3" />;
+  const variant =
+    status === 'OPEN' || status === 'CORRECTIVE_ACTION_PROPOSED' ? 'warning' :
+    status === 'INVESTIGATING' ? 'info' :
+    status === 'RESOLVED' ? 'success' :
+    'neutral';
+  return (
+    <Badge variant={variant} size="sm">
+      {icon} {STATUS_LABELS[status] || status}
+    </Badge>
+  );
+}
 
 function IssuesPageInner() {
   const [issues, setIssues] = useState<IssueItem[]>([]);
@@ -119,24 +153,34 @@ function IssuesPageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="issues" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Probleme & Blocaje</h1>
-          <p className="text-sm text-slate-500 mt-1">Raporteaza problemele intalnite pe santier si urmareste rezolvarea lor</p>
-        </div>
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
-          {canReport && (
-            <button onClick={() => { setShowCreate(true); setFormError(null); }}
-              className="inline-flex items-center px-3 py-2 bg-hii-500 hover:bg-hii-600 text-white font-semibold text-xs rounded-lg shadow-sm transition-colors">
-              <Plus className="w-3.5 h-3.5 mr-1.5" />Raporteaza
-            </button>
-          )}
-          <button onClick={loadIssues} disabled={loading}
-            className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reimprospateaza
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        className="!mb-0"
+        title="Probleme & Blocaje"
+        subtitle="Raporteaza problemele intalnite pe santier si urmareste rezolvarea lor"
+        actions={
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2">
+            {canReport && (
+              <Button
+                variant="primary"
+                size="md"
+                icon={<Plus className="w-3.5 h-3.5" />}
+                onClick={() => { setShowCreate(true); setFormError(null); }}
+              >
+                Raporteaza
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              size="md"
+              icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+              onClick={loadIssues}
+              disabled={loading}
+            >
+              Reimprospateaza
+            </Button>
+          </div>
+        }
+      />
 
 
       {successMsg && (
@@ -146,27 +190,32 @@ function IssuesPageInner() {
       )}
 
       {error && (
-        <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <span className="flex items-center gap-2"><AlertCircle className="w-4 h-4 shrink-0" />{error}</span>
-          <button type="button" onClick={loadIssues} disabled={loading} className="min-h-10 px-3 rounded-md border border-red-200 font-semibold hover:bg-red-100 disabled:opacity-50">Încearcă din nou</button>
-        </div>
+        <ErrorState
+          title="Eroare la incarcarea problemelor"
+          error={error}
+          onRetry={loadIssues}
+        />
       )}
 
       {!selectedProjectId ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+        <Card className="p-12 text-center">
           <AlertTriangle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <h3 className="text-base font-semibold text-slate-600">Selecteaza un proiect</h3>
           <p className="text-sm text-slate-400 mt-1">Foloseste selectorul de proiect din bara de sus</p>
-        </div>
+        </Card>
       ) : (
         <>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex w-full sm:w-fit overflow-x-auto items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
-              {[{ k: 'all', l: 'Toate' }, { k: 'open', l: 'Deschise' }, { k: 'RESOLVED', l: 'Rezolvate' }, { k: 'CLOSED', l: 'Inchise' }].map(t => (
-                <button key={t.k} onClick={() => setFilter(t.k)} aria-pressed={filter === t.k}
-                  className={`min-h-10 shrink-0 px-3 py-2 text-xs font-semibold rounded-md transition-colors ${filter === t.k ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>{t.l}</button>
-              ))}
-            </div>
+            <Tabs
+              tabs={[
+                { key: 'all', label: 'Toate' },
+                { key: 'open', label: 'Deschise' },
+                { key: 'RESOLVED', label: 'Rezolvate' },
+                { key: 'CLOSED', label: 'Inchise' },
+              ]}
+              activeTab={filter}
+              onTabChange={(key) => setFilter(key)}
+            />
             <label className="flex min-h-11 items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 shadow-sm sm:max-w-sm">
               <Search className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
               <span className="sr-only">Caută după titlu, descriere sau severitate</span>
@@ -176,11 +225,13 @@ function IssuesPageInner() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-500">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca...
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+            <Card padding={false}>
               {issues.length === 0 ? (
                 <EmptyState
                   icon={<AlertTriangle className="w-7 h-7" />}
@@ -196,21 +247,17 @@ function IssuesPageInner() {
                   action={{ label: 'Clear filters', onClick: () => { setSearch(''); setFilter('all'); } }}
                 />
               )}
-            </div>
+            </Card>
           ) : (
             <div className="space-y-3">
               {filtered.map((issue) => (
-                <div key={issue.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <Card key={issue.id} padding={false} className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-sm font-bold text-slate-900">{issue.title}</h3>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${SEVERITY_COLORS[issue.severity] || 'bg-slate-100 text-slate-700'}`}>
-                          {SEVERITY_LABELS[issue.severity] || issue.severity}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${STATUS_COLORS[issue.status] || 'bg-slate-100 text-slate-700'}`}>
-                          {STATUS_LABELS[issue.status] || issue.status}
-                        </span>
+                        <SeverityBadge severity={issue.severity} />
+                        <StatusBadge status={issue.status} />
                       </div>
                       <p className="text-xs text-slate-600 mt-1.5 whitespace-pre-wrap">{issue.description}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
@@ -219,7 +266,7 @@ function IssuesPageInner() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}
@@ -228,50 +275,54 @@ function IssuesPageInner() {
 
 
       {/* Create Issue Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-lg mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Raporteaza Problema</h3>
-              <button onClick={() => setShowCreate(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
-            </div>
-            {formError && (<div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formError}</div>)}
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Titlu *</label>
-                <input value={formTitle} onChange={e => setFormTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none"
-                  placeholder="Ex: Echipament defect, Material lipsa..." />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Descriere *</label>
-                <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={3}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none"
-                  placeholder="Descrie problema in detaliu..." />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Severitate</label>
-                <select value={formSeverity} onChange={e => setFormSeverity(e.target.value as IssueSeverity)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="LOW">Scazuta</option>
-                  <option value="MEDIUM">Medie</option>
-                  <option value="HIGH">Ridicata</option>
-                  <option value="CRITICAL">Critica</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anuleaza</button>
-              <button onClick={handleCreate} disabled={submitting || !formTitle.trim() || !formDescription.trim()}
-                className="inline-flex items-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : <AlertTriangle className="w-4 h-4 mr-1.5" />}
-                Raporteaza
-              </button>
-            </div>
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Raporteaza Problema"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="md" onClick={() => setShowCreate(false)}>
+              Anuleaza
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleCreate}
+              loading={submitting}
+              disabled={submitting || !formTitle.trim() || !formDescription.trim()}
+              icon={<AlertTriangle className="w-4 h-4" />}
+            >
+              Raporteaza
+            </Button>
+          </div>
+        }
+      >
+        {formError && (<div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formError}</div>)}
+        <div className="space-y-3">
+          <div>
+            <label className="hii-label">Titlu *</label>
+            <input value={formTitle} onChange={e => setFormTitle(e.target.value)}
+              className="hii-input"
+              placeholder="Ex: Echipament defect, Material lipsa..." />
+          </div>
+          <div>
+            <label className="hii-label">Descriere *</label>
+            <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={3}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none"
+              placeholder="Descrie problema in detaliu..." />
+          </div>
+          <div>
+            <label className="hii-label">Severitate</label>
+            <select value={formSeverity} onChange={e => setFormSeverity(e.target.value as IssueSeverity)}
+              className="hii-select">
+              <option value="LOW">Scazuta</option>
+              <option value="MEDIUM">Medie</option>
+              <option value="HIGH">Ridicata</option>
+              <option value="CRITICAL">Critica</option>
+            </select>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
