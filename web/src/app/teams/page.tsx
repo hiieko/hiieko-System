@@ -13,6 +13,7 @@ import {
   Edit3, Trash2, Save
 } from 'lucide-react';
 import { displayName, formatDate } from '../../lib/formatters';
+import { EmptyState } from '../../components/ui';
 
 interface TeamMember {
   id: string; team_id: string; user_id: string;
@@ -430,12 +431,26 @@ function TeamsPageInner() {
       {loading ? (
         <div className="flex items-center justify-center py-16 text-slate-500"><Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca...</div>
       ) : filteredTeams.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-          <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">{search ? 'Niciun rezultat' : 'Nicio echipa'}</h3>
-          {search && <p className="text-sm text-slate-400 mt-1">Încearcă alt termen de căutare</p>}
-          {!search && canManageTeam && <button onClick={() => { setShowCreate(true); setFormError(null); }}
-            className="mt-4 px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg"><Plus className="w-4 h-4 inline mr-1" />Creează prima echipă</button>}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          {search ? (
+            <EmptyState
+              icon={<Search className="w-7 h-7" />}
+              title="No matching results"
+              description="No teams match the current search."
+              action={{ label: 'Clear search', onClick: () => setSearch('') }}
+            />
+          ) : (
+            <EmptyState
+              icon={<Users className="w-7 h-7" />}
+              title="No teams yet"
+              description="Create teams to assign work to groups of workers."
+              action={
+                canManageTeam
+                  ? { label: 'New team', onClick: () => { setShowCreate(true); setFormError(null); } }
+                  : undefined
+              }
+            />
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
