@@ -25,7 +25,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { useLocale, canCreateProjects } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from '../components/ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from '../components/ControlTowerRedFlagsCard';
 import { PageTutorial } from '../components/PageTutorial';
@@ -33,6 +33,8 @@ import { useProject } from '../contexts/ProjectContext';
 import { useAuth } from '../contexts/AuthContext';
 import { WorkerDashboard } from '../components/WorkerDashboard';
 import { WorkerMyDay } from '../components/WorkerMyDay';
+import { useRouter } from 'next/navigation';
+import { EmptyState } from '../components/ui';
 
 export default function ControlTowerDashboardPage() {
   const { user } = useAuth();
@@ -57,6 +59,7 @@ export default function ControlTowerDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const { locale } = useLocale();
+  const router = useRouter();
   const { selectedProjectId, setSelectedProjectId } = useProject();
 
   // Drilldown Drawer State
@@ -154,6 +157,8 @@ export default function ControlTowerDashboardPage() {
     }).format(val);
   };
 
+  const hasProjects = (overview?.projects.activeProjectsList.length ?? 0) > 0;
+
   return (
     <div className="control-tower-page space-y-6 pb-12">
       <PageTutorial sectionId="dashboard" />
@@ -220,8 +225,24 @@ export default function ControlTowerDashboardPage() {
         </div>
       )}
 
+      {/* No projects yet: Control Tower has nothing to aggregate */}
+      {overview && !hasProjects && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <EmptyState
+            icon={<Briefcase className="w-7 h-7" />}
+            title="No projects yet"
+            description="Your Control Tower will populate once projects exist."
+            action={
+              user && canCreateProjects(user.role as never)
+                ? { label: 'New project', onClick: () => router.push('/projects') }
+                : undefined
+            }
+          />
+        </div>
+      )}
+
       {/* 1. CRITICAL ALERTS & RED FLAGS (Rule-based exceptions) */}
-      {overview && (
+      {overview && hasProjects && (
         <ControlTowerRedFlagsCard
           redFlags={overview.redFlags}
           onInspect={openRedFlagInspect}
@@ -229,7 +250,7 @@ export default function ControlTowerDashboardPage() {
       )}
 
       {/* 2. THE 7 OPERATIONAL DOMAIN CARDS */}
-      {overview && (
+      {overview && hasProjects && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {/* DOMAIN 1: PROIECTE (Projects) */}
           <div className="control-domain-card bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between transition-all">
