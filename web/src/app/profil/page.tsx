@@ -1,10 +1,11 @@
 'use client';
 import { PageTutorial } from '../../components/PageTutorial';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '@solar/shared';
 import { apiClient } from '../../lib/api-client';
-import { Loader2, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LoadingSpinner, ErrorState } from '../../components/ui';
 
 export default function ProfilPage() {
   const { user } = useAuth();
@@ -17,28 +18,32 @@ export default function ProfilPage() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const response = await apiClient.getMe();
+      const me = response.data as any;
+      setFullName(me?.fullName || me?.profile?.full_name || '');
+      setEmail(me?.email || '');
+      setPhone(me?.profile?.phone || me?.phone || '');
+    } catch (err: any) {
+      setLoadError(err?.message || 'Nu s-a putut încărca profilul.');
+      // Fall back to context user so the form still works when the API is unreachable.
+      if (user) {
+        setFullName(user.fullName || '');
+        setEmail(user.email || '');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    async function loadProfile() {
-      setLoading(true);
-      try {
-        const response = await apiClient.getMe();
-        const me = response.data as any;
-        setFullName(me?.fullName || me?.profile?.full_name || '');
-        setEmail(me?.email || '');
-        setPhone(me?.profile?.phone || me?.phone || '');
-      } catch {
-        // Fall back to context user
-        if (user) {
-          setFullName(user.fullName || '');
-          setEmail(user.email || '');
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
     loadProfile();
-  }, [user]);
+  }, [loadProfile]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -74,9 +79,19 @@ export default function ProfilPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-      </div>
+      <LoadingSpinner fullPage size="md" label={locale === 'en' ? 'Loading profile...' : 'Se încarcă profilul...'} />
+    );
+  }
+
+  if (!user && loadError) {
+    return (
+      <ErrorState
+        fullPage
+        title={locale === 'en' ? 'Could not load profile' : 'Profilul nu a putut fi încărcat'}
+        message={locale === 'en' ? 'Check your connection and try again.' : 'Verifică conexiunea și încearcă din nou.'}
+        error={loadError}
+        onRetry={loadProfile}
+      />
     );
   }
 
