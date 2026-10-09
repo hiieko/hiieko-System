@@ -2,8 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button, Input, ToastProvider, useToast } from '../../components/ui';
+import { apiClient, ApiError } from '../../lib/api-client';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
@@ -32,6 +35,8 @@ function BrandPanel() {
 
 function LoginForm() {
   const toast = useToast();
+  const router = useRouter();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -58,16 +63,29 @@ function LoginForm() {
     return next;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next = validate();
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    // Auth is not wired yet — that is Phase 0. Keep the screen honest.
     setLoading(true);
-    toast.info("Login isn't connected yet", 'Authentication arrives in a later phase.');
-    setLoading(false);
+    try {
+      await apiClient.login({ email: email.trim(), password });
+      await refreshUser();
+      router.push('/');
+    } catch (err) {
+      if (err instanceof ApiError && err.statusCode === 401) {
+        toast.error('Wrong email or password');
+        setPassword('');
+      } else if (err instanceof ApiError && err.statusCode === 429) {
+        toast.error('Too many attempts. Wait a minute.');
+      } else {
+        toast.error('No connection. Check your internet.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
