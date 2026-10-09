@@ -100,7 +100,7 @@ scoped to the shell chrome and the worker "My Day" surface (DEC-012 §3–§6).
 | `Skeleton` | ✅ Stable | `@/components/ui` | includes `TableRowSkeleton` |
 | `EmptyState` | ✅ Stable | `@/components/ui` | single/dual action |
 | `ErrorState` | ✅ Stable | `@/components/ui` | retry callback |
-| `PageHeader` | ✅ Stable | `@/components/ui` | `title/subtitle/backHref/onBack/onRefresh/refreshing/actions` |
+| `PageHeader` | ✅ Stable | `@/components/ui` | `eyebrow/title/subtitle/backHref/onBack/onRefresh/refreshing/actions` |
 | `ToastProvider` / `useToast` | ⚠️ NOT MOUNTED | `@/components/ui` | **P0:** must be mounted in AppShell; see ISSUE-036 |
 | `Modal` | ✅ Stable | `@/components/ui` | `sm/md/lg/xl/full`, focus trap, Escape close |
 | `LoadingSpinner` | ✅ Stable | `@/components/ui` | |

@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import { Button } from './Button';
 
 interface PageHeaderProps {
+  eyebrow?: string;
   title: string;
   subtitle?: string;
   backHref?: string;
@@ -18,6 +19,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({
+  eyebrow,
   title,
   subtitle,
   backHref,
@@ -52,6 +54,9 @@ export function PageHeader({
           </button>
         )}
         <div className="min-w-0">
+          {eyebrow && (
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">{eyebrow}</p>
+          )}
           <h1 className="text-xl font-bold text-slate-900 truncate">{title}</h1>
           {subtitle && (
             <p className="text-sm text-slate-500 mt-0.5 truncate">{subtitle}</p>

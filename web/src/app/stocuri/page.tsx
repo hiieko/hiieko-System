@@ -159,6 +159,7 @@ function StocuriPageInner() {
       <PageTutorial sectionId="stock" />
       <PageHeader
         className="!mb-0"
+        eyebrow={locale === 'en' ? 'Inventory' : 'Gestiune stocuri'}
         title={locale === 'en' ? 'Stock & Material Movements' : 'Stocuri și mișcări materiale'}
         subtitle={locale === 'en' ? 'Current balances and the immutable movement ledger, scoped to your project access.' : 'Soldurile curente și jurnalul imutabil al mișcărilor, limitate la proiectele la care ai acces.'}
         actions={
