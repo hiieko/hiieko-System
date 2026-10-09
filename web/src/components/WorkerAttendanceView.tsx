@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Clock, Loader2, RefreshCw, CheckCheck, LogOut, MapPin,
+  Clock, RefreshCw, CheckCheck, LogOut, MapPin,
   ClipboardList, AlertTriangle, Info, Timer, CheckCircle2,
 } from 'lucide-react';
 import { t, useLocale } from '@solar/shared';
@@ -14,6 +14,7 @@ import type { AssignedTask } from '../features/attendance/types';
 import type { DailyPlan } from '../features/planning/types';
 import { TASK_STATUS_LABELS } from '../features/attendance/types';
 import { useWorkerShift } from '../hooks/useWorkerShift';
+import { Card, Button, Badge, Skeleton } from './ui';
 
 /**
  * Worker Field Module — today's shift → project → check-in → active shift
@@ -93,7 +94,7 @@ export function WorkerAttendanceView() {
   return (
     <div className="space-y-4">
       {/* Shift card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <Card padding={false} className="overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg bg-hii-50 flex items-center justify-center">
@@ -106,15 +107,15 @@ export function WorkerAttendanceView() {
           </div>
           <div className="flex items-center gap-2">
             {selectedProject && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-xs font-semibold text-slate-700">
+              <Badge variant="default" size="sm">
                 <MapPin className="w-3 h-3 text-hii-600" />
                 {selectedProject.code || selectedProject.name}
-              </span>
+              </Badge>
             )}
-            <button onClick={loadShift} disabled={actionLoading}
-              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors" title={t('worker.refresh', locale)}>
+            <Button onClick={loadShift} disabled={actionLoading} variant="ghost" size="icon"
+              className="text-slate-400" title={t('worker.refresh', locale)} aria-label={t('worker.refresh', locale)}>
               <RefreshCw className={'w-4 h-4 ' + (shiftStatus === 'loading' ? 'animate-spin' : '')} />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -132,9 +133,10 @@ export function WorkerAttendanceView() {
           )}
 
           {shiftStatus === 'loading' && (
-            <div className="py-12 flex flex-col items-center justify-center text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin mb-2" />
-              <span className="text-xs">Se incarca pontajul...</span>
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-12 rounded-xl" />
+              ))}
             </div>
           )}
 
@@ -158,11 +160,10 @@ export function WorkerAttendanceView() {
                   <div className="text-lg font-bold mt-1 text-slate-400">0h</div>
                 </div>
               </div>
-              <button onClick={handleCheckIn} disabled={actionLoading}
-                className="w-full py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
-                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-5 h-5" />}
+              <Button onClick={handleCheckIn} disabled={actionLoading} variant="primary" size="lg" fullWidth
+                loading={actionLoading} icon={<CheckCheck className="w-5 h-5" />}>
                 {t('worker.clock_in', locale)}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -170,10 +171,10 @@ export function WorkerAttendanceView() {
             <div>
               <div className="flex items-center justify-center mb-5">
                 <div className="text-center">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold mb-2">
+                  <Badge variant="success" size="md" className="mb-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     {locale === 'en' ? 'Active shift' : 'Tura activa'}
-                  </div>
+                  </Badge>
                   <div className="font-mono text-4xl font-bold text-slate-900 tabular-nums">{formatDuration(elapsedSeconds)}</div>
                   <div className="text-xs text-slate-400 mt-1">{t('worker.elapsed_since_checkin', locale)}</div>
                 </div>
@@ -200,11 +201,10 @@ export function WorkerAttendanceView() {
                   </div>
                 </div>
               </div>
-              <button onClick={handleCheckOut} disabled={actionLoading}
-                className="w-full py-3 px-6 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
-                {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-5 h-5" />}
+              <Button onClick={handleCheckOut} disabled={actionLoading} variant="primary" size="lg" fullWidth
+                loading={actionLoading} icon={<LogOut className="w-5 h-5" />}>
                 {t('worker.clock_out', locale)}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -240,10 +240,9 @@ export function WorkerAttendanceView() {
                   </div>
                 </div>
               </div>
-              <button onClick={resetForNewShift}
-                className="w-full py-3 px-6 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition-colors">
+              <Button onClick={resetForNewShift} variant="secondary" size="lg" fullWidth>
                 {locale === 'en' ? 'New Shift' : 'Tura Noua'}
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -253,12 +252,12 @@ export function WorkerAttendanceView() {
             {t('worker.attendance_gps_note', locale)}
           </div>
         )}
-      </div>
+      </Card>
 
 
       {/* Assigned work */}
       {selectedProject && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <Card padding={false} className="overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg bg-hii-50 flex items-center justify-center">
@@ -269,14 +268,17 @@ export function WorkerAttendanceView() {
                 <p className="text-xs text-slate-400">{locale === 'en' ? 'Work assigned to you on this site' : t('worker.assigned_work_site', locale)}</p>
               </div>
             </div>
-            <button onClick={() => loadTasks(selectedProject.id)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
+            <Button onClick={() => loadTasks(selectedProject.id)} variant="ghost" size="icon" className="text-slate-400"
+              aria-label={t('worker.refresh', locale)} title={t('worker.refresh', locale)}>
               <RefreshCw className={'w-4 h-4 ' + (tasksLoading ? 'animate-spin' : '')} />
-            </button>
+            </Button>
           </div>
           <div className="p-6">
             {tasksLoading ? (
-              <div className="flex items-center justify-center py-6 text-slate-400">
-                <Loader2 className="w-5 h-5 animate-spin" />
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-14 rounded-lg" />
+                ))}
               </div>
             ) : tasksError ? (
               <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
@@ -298,20 +300,20 @@ export function WorkerAttendanceView() {
                       <p className="text-xs text-slate-400 font-mono">{task.code}</p>
                     </div>
                     {task.zone && <span className="text-xs text-slate-500 hidden sm:inline">{task.zone.name}</span>}
-                    <span className={'px-2 py-0.5 rounded-full text-[11px] font-semibold ' + (
-                      task.status === 'IN_PROGRESS' ? 'bg-hii-100 text-hii-700' :
-                      task.status === 'BLOCKED' ? 'bg-red-100 text-red-700' :
-                      task.status === 'READY' ? 'bg-blue-100 text-blue-700' :
-                      'bg-slate-100 text-slate-600'
-                    )}>
+                    <Badge variant={
+                      task.status === 'IN_PROGRESS' ? 'warning' :
+                      task.status === 'BLOCKED' ? 'danger' :
+                      task.status === 'READY' ? 'info' :
+                      'neutral'
+                    } size="sm">
                       {TASK_STATUS_LABELS[task.status] || task.status}
-                    </span>
+                    </Badge>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
