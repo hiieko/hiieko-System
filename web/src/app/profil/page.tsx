@@ -85,16 +85,17 @@ export default function ProfilPage() {
       <PageTutorial sectionId="profile" />
       <div><h1 className="text-2xl font-bold text-slate-900">Profil</h1>
         <p className="text-sm text-slate-500 mt-1">Informațiile personale și preferințele.</p></div>
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 text-center sm:text-left">
           <div className="w-16 h-16 rounded-full bg-slate-900 text-amber-400 flex items-center justify-center font-bold text-xl">
             {(fullName || 'U').slice(0, 2).toUpperCase()}
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="text-lg font-bold text-slate-900">{fullName || 'Utilizator'}</div>
-            <div className="text-sm text-slate-500">{email || 'Profil utilizator'}</div>
+            <div className="text-sm text-slate-500 break-words">{email || 'Profil utilizator'}</div>
           </div>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Nume complet</label>
           <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
@@ -118,6 +119,7 @@ export default function ProfilPage() {
             <option value="en">English</option>
           </select>
         </div>
+        </div>
 
         {saveMsg && (
           <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
@@ -130,12 +132,12 @@ export default function ProfilPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-xs text-slate-400 italic">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          <p className="text-xs text-slate-400 italic text-center sm:text-left">
             Emailul nu poate fi modificat.
           </p>
           <button onClick={handleSave} disabled={saving}
-            className="inline-flex items-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
+            className="inline-flex items-center justify-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50 w-full sm:w-auto">
             <Save className="w-4 h-4 mr-1.5" />{saving ? 'Se salvează...' : 'Salvează profil'}
           </button>
         </div>
