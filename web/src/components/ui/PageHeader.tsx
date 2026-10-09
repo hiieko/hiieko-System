@@ -8,6 +8,7 @@ import { Button } from './Button';
 
 interface PageHeaderProps {
   eyebrow?: string;
+  icon?: React.ReactNode;
   title: string;
   subtitle?: string;
   backHref?: string;
@@ -20,6 +21,7 @@ interface PageHeaderProps {
 
 export function PageHeader({
   eyebrow,
+  icon,
   title,
   subtitle,
   backHref,
@@ -57,7 +59,10 @@ export function PageHeader({
           {eyebrow && (
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 truncate">{eyebrow}</p>
           )}
-          <h1 className="text-xl font-bold text-slate-900 truncate">{title}</h1>
+          <div className="flex items-center gap-2">
+            {icon && <span className="shrink-0">{icon}</span>}
+            <h1 className="text-xl font-bold text-slate-900 truncate">{title}</h1>
+          </div>
           {subtitle && (
             <p className="text-sm text-slate-500 mt-0.5 truncate">{subtitle}</p>
           )}
