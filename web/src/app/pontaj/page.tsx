@@ -14,6 +14,7 @@ import {
   Clock, Calendar, Download, AlertCircle, MapPin,
   Loader2, RefreshCw, Users, Timer, Info, CheckCircle2,
 } from 'lucide-react';
+import { EmptyState } from '../../components/ui';
 import * as attendanceApi from '../../features/attendance/api';
 import type { AttendanceRecord, TodaySummary, CorrectAttendanceDto } from '../../features/attendance/types';
 
@@ -282,9 +283,11 @@ function PontajPageInner() {
           </div>
           <div className="p-4">
             {activeOnSite.length === 0 ? (
-              <div className="text-center py-6 text-slate-400 text-sm">
-                {locale === 'en' ? 'No active shifts right now.' : 'Nicio tura activa acum.'}
-              </div>
+              <EmptyState
+                variant="compact"
+                icon={<MapPin className="w-4 h-4" />}
+                title={locale === 'en' ? 'No active shifts right now.' : 'Nicio tura activa acum.'}
+              />
             ) : (
               <div className="space-y-2">
                 {activeOnSite.map((r) => (
@@ -419,8 +422,12 @@ function PontajPageInner() {
                 ) : attendanceRecords.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center">
-                      <Clock className="w-8 h-8 mx-auto text-slate-300" />
-                      <p className="mt-2 text-sm text-slate-500">{locale === 'en' ? 'No attendance records' : 'Nu exista inregistrari de pontaj'}</p>
+                      <EmptyState
+                        variant="compact"
+                        icon={<Clock className="w-4 h-4" />}
+                        title="No attendance this month"
+                        description="Attendance records appear here once workers check in."
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -539,7 +546,11 @@ function PontajPageInner() {
                 {workers.length === 0 && canReadUsers && (
                   <tr>
                     <td colSpan={daysInMonth.length + 3} className="py-10 text-center text-slate-400">
-                      {locale === 'en' ? 'No workers in the directory yet.' : 'Niciun muncitor in director inca.'}
+                      <EmptyState
+                        variant="compact"
+                        icon={<Users className="w-4 h-4" />}
+                        title={locale === 'en' ? 'No workers in the directory yet.' : 'Niciun muncitor in director inca.'}
+                      />
                     </td>
                   </tr>
                 )}
