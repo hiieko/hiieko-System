@@ -157,6 +157,7 @@ function TeamsPageInner() {
   };
 
   // Detail view
+  let detailView: React.ReactNode = null;
   if (selectedTeam) {
     const t = selectedTeam;
     const leader = t.members?.find((m) => m.user_id === t.leader_id);
@@ -164,7 +165,7 @@ function TeamsPageInner() {
       (u) => u.is_active !== false && !t.members?.some((m) => m.user_id === u.id)
     );
 
-    return (
+    detailView = (
       <div className="space-y-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => setSelectedTeam(null)} aria-label="Înapoi">
@@ -260,65 +261,10 @@ function TeamsPageInner() {
 
   // List view
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <>
+      {detailView ?? (
+      <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="teams" />
-
-      {/* Edit Team Modal */}
-      <Modal
-        open={showEdit}
-        onClose={() => setShowEdit(false)}
-        title="Editează Echipă"
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setShowEdit(false)}>Anulează</Button>
-            <Button variant="primary" icon={<Save className="w-4 h-4" />} loading={editSaving} disabled={!editName.trim() || !editCode.trim()} onClick={handleEditSave}>
-              {editSaving ? 'Se salvează...' : 'Salvează'}
-            </Button>
-          </div>
-        }
-      >
-        <div className="space-y-3">
-          <div><label className="hii-label">Nume *</label>
-            <input value={editName} onChange={(e) => setEditName(e.target.value)} className="hii-input" />
-          </div>
-          <div><label className="hii-label">Cod *</label>
-            <input value={editCode} onChange={(e) => setEditCode(e.target.value)} className="hii-input" />
-          </div>
-          <div><label className="hii-label">Lider (opțional)</label>
-            <select value={editLeaderId} onChange={(e) => setEditLeaderId(e.target.value)} className="hii-select">
-              <option value="">Fără lider</option>
-              {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
-            </select>
-          </div>
-        </div>
-      </Modal>
-
-      {confirmDelete && (
-        <ConfirmDialog
-          open={!!confirmDelete}
-          variant="danger"
-          title="Arhivează echipa"
-          message="Această acțiune va marca echipa ca inactivă. Membrii nu vor fi afectați."
-          confirmLabel={deleting ? 'Se arhivează...' : 'Arhivează'}
-          cancelLabel="Anulează"
-          loading={deleting}
-          onConfirm={() => handleDeleteTeam(confirmDelete)}
-          onCancel={() => setConfirmDelete(null)}
-        />
-      )}
-
-      {confirmRemoveMember && (
-        <ConfirmDialog
-          open={!!confirmRemoveMember}
-          variant="danger"
-          title="Elimina membru"
-          message={`Elimini pe ${confirmRemoveMember.name} din echipa?`}
-          confirmLabel="Elimina"
-          cancelLabel="Anulează"
-          onConfirm={() => handleRemoveMember(confirmRemoveMember.teamId, confirmRemoveMember.userId)}
-          onCancel={() => setConfirmRemoveMember(null)}
-        />
-      )}
 
       {successMsg && (
         <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-semibold flex items-center gap-2">
@@ -432,7 +378,66 @@ function TeamsPageInner() {
           })}
         </div>
       )}
-    </div>
+      </div>
+      )}
+
+      {/* Edit Team Modal */}
+      <Modal
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        title="Editează Echipă"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setShowEdit(false)}>Anulează</Button>
+            <Button variant="primary" icon={<Save className="w-4 h-4" />} loading={editSaving} disabled={!editName.trim() || !editCode.trim()} onClick={handleEditSave}>
+              {editSaving ? 'Se salvează...' : 'Salvează'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <div><label className="hii-label">Nume *</label>
+            <input value={editName} onChange={(e) => setEditName(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Cod *</label>
+            <input value={editCode} onChange={(e) => setEditCode(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Lider (opțional)</label>
+            <select value={editLeaderId} onChange={(e) => setEditLeaderId(e.target.value)} className="hii-select">
+              <option value="">Fără lider</option>
+              {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
+            </select>
+          </div>
+        </div>
+      </Modal>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          open={!!confirmDelete}
+          variant="danger"
+          title="Arhivează echipa"
+          message="Această acțiune va marca echipa ca inactivă. Membrii nu vor fi afectați."
+          confirmLabel={deleting ? 'Se arhivează...' : 'Arhivează'}
+          cancelLabel="Anulează"
+          loading={deleting}
+          onConfirm={() => handleDeleteTeam(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {confirmRemoveMember && (
+        <ConfirmDialog
+          open={!!confirmRemoveMember}
+          variant="danger"
+          title="Elimina membru"
+          message={`Elimini pe ${confirmRemoveMember.name} din echipa?`}
+          confirmLabel="Elimina"
+          cancelLabel="Anulează"
+          onConfirm={() => handleRemoveMember(confirmRemoveMember.teamId, confirmRemoveMember.userId)}
+          onCancel={() => setConfirmRemoveMember(null)}
+        />
+      )}
+    </>
   );
 }
 
