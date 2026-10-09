@@ -2,15 +2,15 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { 
   Truck, FileText, Calendar, MapPin, Boxes,
-  Loader2, RefreshCw, Search, AlertCircle
+  RefreshCw, Search
 } from 'lucide-react';
-import { EmptyState } from '../../components/ui';
+import { EmptyState, PageHeader, Button, Card, Badge, ErrorState, Skeleton } from '../../components/ui';
 
 interface DNRow {
   id: string; invoice_or_aviz_number: string; supplier: string; project_id: string;
@@ -21,6 +21,12 @@ interface DNItem {
   material_id: string; material_code: string; material_name: string; unit: string; quantity: number;
 }
 
+const AVIZ_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'neutral'> = {
+  PENDING: 'warning',
+  RECEIVED: 'success',
+  CANCELLED: 'neutral',
+};
+
 function AvizePageInner() {
   const [deliveries, setDeliveries] = useState<(DNRow & { items: DNItem[] })[]>([]);
   const [siteNames, setSiteNames] = useState<Record<string, string>>({});
@@ -30,7 +36,7 @@ function AvizePageInner() {
   const { locale } = useLocale();
   const { selectedProjectId } = useProject();
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -87,8 +93,8 @@ function AvizePageInner() {
     } finally {
       setLoading(false);
     }
-  };
-  useEffect(() => { load(); }, [selectedProjectId]);
+  }, [selectedProjectId]);
+  useEffect(() => { load(); }, [load]);
 
   const filteredDeliveries = deliveries.filter((delivery) => {
     const term = search.trim().toLocaleLowerCase();
@@ -99,30 +105,26 @@ function AvizePageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="deliveries" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Avize de Însoțire a Mărfii & Recepții</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Evidența avizelor recepționate în șantier, fotografii documente și încărcarea automată a stocului.
-          </p>
-        </div>
-        <button onClick={load} disabled={loading}
-          className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reimprospateaza
-        </button>
-      </div>
-      <section className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+      <PageHeader
+        title="Avize de Însoțire a Mărfii & Recepții"
+        subtitle="Evidența avizelor recepționate în șantier, fotografii documente și încărcarea automată a stocului."
+        actions={
+          <Button onClick={load} disabled={loading} variant="secondary" icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}>
+            Reimprospateaza
+          </Button>
+        }
+      />
+      <Card padding={false} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
         <p className="px-1 text-xs text-slate-500">{filteredDeliveries.length} din {deliveries.length} avize</p>
-        <label className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-slate-300 px-3 sm:max-w-md"><Search className="size-4 shrink-0 text-slate-400" /><span className="sr-only">Caută livrări</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Aviz, furnizor, material sau proiect" className="w-full bg-transparent text-sm outline-none" /></label>
-      </section>
-      {error && !loading ? (
-        <div role="alert" className="flex flex-col gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 sm:flex-row sm:items-center sm:justify-between"><span className="flex items-center gap-2"><AlertCircle className="size-4" />{error}</span><button type="button" onClick={load} className="min-h-10 rounded-md border border-rose-300 px-3 font-semibold">Reîncearcă</button></div>
-      ) : null}
+        <label className="relative flex w-full items-center sm:max-w-md"><Search className="absolute left-3 size-4 shrink-0 text-slate-400" /><span className="sr-only">Caută livrări</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Aviz, furnizor, material sau proiect" className="hii-input pl-10" /></label>
+      </Card>
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />Se încarcă avizele...
+        <div className="flex flex-col gap-4">
+          {[1, 2].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
         </div>
-      ) : error ? null : filteredDeliveries.length === 0 ? (
+      ) : error ? (
+        <ErrorState title="Eroare la încărcarea avizelor" error={error} onRetry={load} />
+      ) : filteredDeliveries.length === 0 ? (
         // TODO Phase 3: wire AvizCreateModal + apiClient.createAviz here.
         // "New aviz" button omitted because no create flow exists yet.
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -146,7 +148,7 @@ function AvizePageInner() {
         {filteredDeliveries.map((dn) => {
 
           return (
-            <div key={dn.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <Card key={dn.id} padding={false} className="overflow-hidden">
               <div className="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div className="flex items-center space-x-3">
                   <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
@@ -167,9 +169,9 @@ function AvizePageInner() {
                     <MapPin className="w-3.5 h-3.5 mr-1" />
                     Destinație: <strong className="ml-1 text-slate-700">{siteNames[dn.project_id] || 'Necunoscut'}</strong>
                   </span>
-                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                  <Badge variant={AVIZ_STATUS_VARIANT[(dn.status || '').toUpperCase()] || 'neutral'} size="md">
                     {dn.status || 'Aviz înregistrat'}
-                  </span>
+                  </Badge>
                 </div>
               </div>
 
@@ -211,7 +213,7 @@ function AvizePageInner() {
                   <p className="border-t border-slate-200 pt-3 text-xs leading-5 text-slate-500">Previzualizarea documentului nu este inclusă în datele returnate de endpoint-ul curent.</p>
                 </aside>
               </div>
-            </div>
+            </Card>
           );
         })}
       </div>
