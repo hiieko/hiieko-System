@@ -10,6 +10,7 @@ import {
   Truck, FileText, Calendar, MapPin, Boxes,
   Loader2, RefreshCw, Search, AlertCircle
 } from 'lucide-react';
+import { EmptyState } from '../../components/ui';
 
 interface DNRow {
   id: string; invoice_or_aviz_number: string; supplier: string; project_id: string;
@@ -122,10 +123,23 @@ function AvizePageInner() {
           <Loader2 className="w-6 h-6 animate-spin mr-2" />Se încarcă avizele...
         </div>
       ) : error ? null : filteredDeliveries.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm">
-          <Truck className="mx-auto size-10 text-slate-300" />
-          <h3 className="mt-3 text-base font-semibold text-slate-800">{deliveries.length ? 'Niciun rezultat' : 'Nu există avize'}</h3>
-          <p className="mt-1 text-sm text-slate-500">{deliveries.length ? 'Încearcă alt termen de căutare.' : 'Nu au fost returnate avize pentru proiectul selectat.'}</p>
+        // TODO Phase 3: wire AvizCreateModal + apiClient.createAviz here.
+        // "New aviz" button omitted because no create flow exists yet.
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          {deliveries.length === 0 ? (
+            <EmptyState
+              icon={<Truck className="w-7 h-7" />}
+              title="No delivery notes yet"
+              description="Avize appear here when deliveries are recorded."
+            />
+          ) : (
+            <EmptyState
+              icon={<Search className="w-7 h-7" />}
+              title="No matching results"
+              description="No delivery notes match the current search."
+              action={{ label: 'Clear search', onClick: () => setSearch('') }}
+            />
+          )}
         </div>
       ) : (
       <div className="flex flex-col gap-4">
