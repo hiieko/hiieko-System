@@ -34,7 +34,7 @@ interface AppUser {
 
 function TeamsPageInner() {
   const { user } = useAuth();
-  const { selectedProjectId } = useProject();
+  const { selectedProjectId, selectedProject } = useProject();
   const userRole = user?.role?.toLowerCase() || 'worker';
   const canManageTeam = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman'].includes(userRole);
   const canManageMembers = ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'].includes(userRole);
@@ -77,9 +77,10 @@ function TeamsPageInner() {
 
   const handleCreate = async () => {
     if (!formName.trim() || !formCode.trim()) { setFormError('Numele și codul sunt obligatorii'); return; }
+    if (!selectedProject?.id) { setFormError('Selectează un proiect mai întâi'); return; }
     setSaving(true); setFormError(null);
     try {
-      await apiClient.createTeam({ name: formName.trim(), code: formCode.trim(), leaderId: formLeaderId || undefined });
+      await apiClient.createTeam({ name: formName.trim(), code: formCode.trim(), leaderId: formLeaderId || undefined, projectId: selectedProject.id });
       setFormName(''); setFormCode(''); setFormLeaderId(''); setShowCreate(false);
       showSuccess('Echipă creată cu succes'); await load();
     } catch (err) {
@@ -278,9 +279,11 @@ function TeamsPageInner() {
         actions={
           <div className="flex items-center gap-2">
             {canManageTeam && (
-              <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => { setShowCreate(true); setFormError(null); }}>
-                Echipa Noua
-              </Button>
+              <span title={!selectedProject ? 'Select a project first' : undefined}>
+                <Button variant="primary" icon={<Plus className="w-4 h-4" />} disabled={!selectedProject} onClick={() => { setShowCreate(true); setFormError(null); }}>
+                  Echipa Noua
+                </Button>
+              </span>
             )}
             <Button variant="secondary" size="icon" onClick={load} disabled={loading} aria-label="Reîmprospătează">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -345,7 +348,7 @@ function TeamsPageInner() {
               title="No teams yet"
               description="Create teams to assign work to groups of workers."
               action={
-                canManageTeam
+                canManageTeam && !!selectedProject
                   ? { label: 'New team', onClick: () => { setShowCreate(true); setFormError(null); } }
                   : undefined
               }
