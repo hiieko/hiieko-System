@@ -8,12 +8,12 @@ import { apiClient, ApiError } from '../../lib/api-client';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import {
-  Users, Loader2, RefreshCw, Search, X, Plus, Check,
-  AlertTriangle, User, ArrowLeft, ChevronRight, UserPlus,
+  Users, RefreshCw, Search, X, Plus, Check,
+  User, ArrowLeft, ChevronRight, UserPlus,
   Edit3, Trash2, Save
 } from 'lucide-react';
 import { displayName, formatDate } from '../../lib/formatters';
-import { EmptyState } from '../../components/ui';
+import { PageHeader, Button, Card, Badge, Modal, ConfirmDialog, ErrorState, Skeleton, EmptyState } from '../../components/ui';
 
 interface TeamMember {
   id: string; team_id: string; user_id: string;
@@ -167,35 +167,31 @@ function TeamsPageInner() {
     return (
       <div className="space-y-6 max-w-4xl mx-auto">
         <div className="flex items-center gap-3">
-          <button onClick={() => setSelectedTeam(null)} className="p-2 hover:bg-slate-100 rounded-lg">
+          <Button variant="ghost" size="icon" onClick={() => setSelectedTeam(null)} aria-label="Înapoi">
             <ArrowLeft className="w-5 h-5 text-slate-500" />
-          </button>
+          </Button>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{t.code}</span>
-              {!t.is_active && <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-600">Inactiv</span>}
+              <Badge variant="neutral" size="sm" className="font-mono">{t.code}</Badge>
+              {!t.is_active && <Badge variant="neutral" size="md">Inactiv</Badge>}
             </div>
             <h1 className="text-2xl font-bold text-slate-900 mt-1">{t.name}</h1>
           </div>
           <div className="flex items-center gap-2">
             {t.is_active && canManageTeam && (
               <>
-                <button onClick={() => openEdit(t)}
-                  className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-hii-600 transition-colors"
-                  title="Editează echipa">
+                <Button variant="ghost" size="icon" onClick={() => openEdit(t)} title="Editează echipa">
                   <Edit3 className="w-4 h-4" />
-                </button>
-                <button onClick={() => setConfirmDelete(t.id)}
-                  className="p-2 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-600 transition-colors"
-                  title="Arhivează echipa">
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t.id)} title="Arhivează echipa" className="hover:bg-red-50 hover:text-red-600">
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </Button>
               </>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <Card className="space-y-4">
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Informații Echipă</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><label className="text-xs text-slate-500 block">Nume</label><p className="text-sm font-medium text-slate-900">{t.name}</p></div>
@@ -203,22 +199,21 @@ function TeamsPageInner() {
             <div><label className="text-xs text-slate-500 block">Lider</label><p className="text-sm text-slate-900">{leader ? displayName(leader.user) : '—'}</p></div>
             <div><label className="text-xs text-slate-500 block">Data creării</label><p className="text-sm text-slate-900">{formatDate(t.created_at)}</p></div>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-3">
+        <Card className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Membri ({t.members?.length || 0})</h3>
             {canManageMembers && availableUsers.length > 0 && (
               <div className="flex items-center gap-2">
                 <select value={addMemberUserId} onChange={(e) => setAddMemberUserId(e.target.value)}
-                  className="px-2 py-1 border border-slate-200 rounded text-xs focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
+                  className="hii-select h-auto w-auto py-1 text-xs">
                   <option value="">Selectează...</option>
                   {availableUsers.map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
                 </select>
-                <button onClick={() => handleAddMember(t.id)} disabled={!addMemberUserId || addingMember}
-                  className="px-3 py-1.5 bg-hii-500 hover:bg-hii-600 text-white text-xs font-bold rounded-lg disabled:opacity-50">
-                  <UserPlus className="w-3.5 h-3.5 inline mr-1" />Adaugă
-                </button>
+                <Button variant="primary" size="sm" icon={<UserPlus className="w-3.5 h-3.5" />} onClick={() => handleAddMember(t.id)} disabled={!addMemberUserId || addingMember}>
+                  Adaugă
+                </Button>
               </div>
             )}
           </div>
@@ -234,17 +229,16 @@ function TeamsPageInner() {
                     <div>
                       <p className="text-sm font-medium text-slate-900">
                         {displayName(m.user)}
-                        {m.user_id === t.leader_id && <span className="ml-2 px-1.5 py-0.5 bg-hii-100 text-hii-700 rounded text-[10px] font-bold">LIDER</span>}
+                        {m.user_id === t.leader_id && <Badge variant="info" size="sm" className="ml-2">LIDER</Badge>}
                       </p>
                       <p className="text-xs text-slate-500">{m.user?.email}</p>
                     </div>
                   </div>
                   {t.is_active && m.user_id !== t.leader_id && (
-                    <button onClick={() => setConfirmRemoveMember({ teamId: t.id, userId: m.user_id, name: displayName(m.user) })}
-                      className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
-                      title="Elimina membru">
+                    <Button variant="ghost" size="icon" onClick={() => setConfirmRemoveMember({ teamId: t.id, userId: m.user_id, name: displayName(m.user) })}
+                      title="Elimina membru" className="hover:bg-red-50 hover:text-red-500">
                       <X className="w-4 h-4" />
-                    </button>
+                    </Button>
                   )}
                 </div>
               ))}
@@ -252,7 +246,7 @@ function TeamsPageInner() {
           ) : (
             <p className="text-sm text-slate-400 text-center py-4">Niciun membru in aceasta echipa</p>
           )}
-        </div>
+        </Card>
       </div>
     );
   }
@@ -270,90 +264,60 @@ function TeamsPageInner() {
       <PageTutorial sectionId="teams" />
 
       {/* Edit Team Modal */}
-      {showEdit && selectedTeam && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Editează Echipă</h3>
-              <button onClick={() => setShowEdit(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="space-y-3">
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Nume *</label>
-                <input value={editName} onChange={(e) => setEditName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Cod *</label>
-                <input value={editCode} onChange={(e) => setEditCode(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Lider (opțional)</label>
-                <select value={editLeaderId} onChange={(e) => setEditLeaderId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fără lider</option>
-                  {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowEdit(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={handleEditSave} disabled={editSaving || !editName.trim() || !editCode.trim()}
-                className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {editSaving ? 'Se salvează...' : <><Save className="w-4 h-4 inline mr-1" />Salvează</>}
-              </button>
-            </div>
+      <Modal
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        title="Editează Echipă"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setShowEdit(false)}>Anulează</Button>
+            <Button variant="primary" icon={<Save className="w-4 h-4" />} loading={editSaving} disabled={!editName.trim() || !editCode.trim()} onClick={handleEditSave}>
+              {editSaving ? 'Se salvează...' : 'Salvează'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <div><label className="hii-label">Nume *</label>
+            <input value={editName} onChange={(e) => setEditName(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Cod *</label>
+            <input value={editCode} onChange={(e) => setEditCode(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Lider (opțional)</label>
+            <select value={editLeaderId} onChange={(e) => setEditLeaderId(e.target.value)} className="hii-select">
+              <option value="">Fără lider</option>
+              {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
+            </select>
           </div>
         </div>
-      )}
+      </Modal>
 
-      {/* Confirm Delete Team */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-sm mx-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Arhivează echipa</h3>
-                <p className="text-sm text-slate-500">Această acțiune va marca echipa ca inactivă. Membrii nu vor fi afectați.</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setConfirmDelete(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={() => handleDeleteTeam(confirmDelete)} disabled={deleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {deleting ? 'Se arhivează...' : 'Arhivează'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          open={!!confirmDelete}
+          variant="danger"
+          title="Arhivează echipa"
+          message="Această acțiune va marca echipa ca inactivă. Membrii nu vor fi afectați."
+          confirmLabel={deleting ? 'Se arhivează...' : 'Arhivează'}
+          cancelLabel="Anulează"
+          loading={deleting}
+          onConfirm={() => handleDeleteTeam(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
-      {/* Confirm Remove Member */}
       {confirmRemoveMember && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-sm mx-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Elimina membru</h3>
-                <p className="text-sm text-slate-500">Elimini pe <strong>{confirmRemoveMember.name}</strong> din echipa?</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setConfirmRemoveMember(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={() => handleRemoveMember(confirmRemoveMember.teamId, confirmRemoveMember.userId)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg">
-                Elimina
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          open={!!confirmRemoveMember}
+          variant="danger"
+          title="Elimina membru"
+          message={`Elimini pe ${confirmRemoveMember.name} din echipa?`}
+          confirmLabel="Elimina"
+          cancelLabel="Anulează"
+          onConfirm={() => handleRemoveMember(confirmRemoveMember.teamId, confirmRemoveMember.userId)}
+          onCancel={() => setConfirmRemoveMember(null)}
+        />
       )}
 
       {successMsg && (
@@ -361,77 +325,67 @@ function TeamsPageInner() {
           <Check className="w-4 h-4" />{successMsg}
         </div>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-hii-500" />Echipe
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Gestionarea echipelor de lucru</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {canManageTeam && (
-            <button onClick={() => { setShowCreate(true); setFormError(null); }}
-              className="inline-flex items-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg transition-colors">
-              <Plus className="w-4 h-4 mr-1.5" />Echipa Noua
-            </button>
-          )}
-          <button onClick={load} disabled={loading}
-            className="inline-flex items-center px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
-            <RefreshCw className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        icon={<Users className="w-6 h-6 text-hii-500" />}
+        title="Echipe"
+        subtitle="Gestionarea echipelor de lucru"
+        actions={
+          <div className="flex items-center gap-2">
+            {canManageTeam && (
+              <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => { setShowCreate(true); setFormError(null); }}>
+                Echipa Noua
+              </Button>
+            )}
+            <Button variant="secondary" size="icon" onClick={load} disabled={loading} aria-label="Reîmprospătează">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        }
+      />
 
-      {showCreate && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Echipă nouă</h3>
-              <button onClick={() => setShowCreate(false)} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
-            </div>
-            {formError && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formError}</div>}
-            <div className="space-y-3">
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Nume *</label>
-                <input value={formName} onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Cod *</label>
-                <input value={formCode} onChange={(e) => setFormCode(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-              </div>
-              <div><label className="text-xs font-semibold text-slate-700 block mb-1">Lider (opțional)</label>
-                <select value={formLeaderId} onChange={(e) => setFormLeaderId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white">
-                  <option value="">Fără lider</option>
-                  {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
-                </select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowCreate(false)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={handleCreate} disabled={saving || !formName.trim() || !formCode.trim()}
-                className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                {saving ? 'Se salvează...' : 'Creează echipă'}
-              </button>
-            </div>
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Echipă nouă"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setShowCreate(false)}>Anulează</Button>
+            <Button variant="primary" loading={saving} disabled={!formName.trim() || !formCode.trim()} onClick={handleCreate}>
+              {saving ? 'Se salvează...' : 'Creează echipă'}
+            </Button>
+          </div>
+        }
+      >
+        {formError && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formError}</div>}
+        <div className="space-y-3">
+          <div><label className="hii-label">Nume *</label>
+            <input value={formName} onChange={(e) => setFormName(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Cod *</label>
+            <input value={formCode} onChange={(e) => setFormCode(e.target.value)} className="hii-input" />
+          </div>
+          <div><label className="hii-label">Lider (opțional)</label>
+            <select value={formLeaderId} onChange={(e) => setFormLeaderId(e.target.value)} className="hii-select">
+              <option value="">Fără lider</option>
+              {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
+            </select>
           </div>
         </div>
-      )}
+      </Modal>
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" placeholder="Caută echipe..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-        {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>}
+          className="hii-input pl-10 pr-10" />
+        {search && <Button variant="ghost" size="icon" onClick={() => setSearch('')} aria-label="Șterge căutarea" className="absolute right-1 top-1/2 -translate-y-1/2"><X className="w-4 h-4" /></Button>}
       </div>
 
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2"><AlertTriangle className="w-4 h-4 shrink-0" />{error}</div>}
-
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500"><Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca...</div>
+        <Skeleton className="h-12" count={6} />
+      ) : error ? (
+        <ErrorState title="Eroare la încărcarea echipelor" error={error} onRetry={load} />
       ) : filteredTeams.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <Card padding={false}>
           {search ? (
             <EmptyState
               icon={<Search className="w-7 h-7" />}
@@ -451,27 +405,28 @@ function TeamsPageInner() {
               }
             />
           )}
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredTeams.map((t) => {
             const leader = t.members?.find((m) => m.user_id === t.leader_id);
             return (
-              <div key={t.id} onClick={() => setSelectedTeam(t)}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md hover:border-hii-300 transition-all cursor-pointer">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{t.name}</p>
-                    <p className="text-xs font-mono text-slate-400">{t.code}</p>
+              <div key={t.id} onClick={() => setSelectedTeam(t)} className="cursor-pointer">
+                <Card hover padding={false} className="p-5 h-full">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{t.name}</p>
+                      <p className="text-xs font-mono text-slate-400">{t.code}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 mt-1" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 shrink-0 mt-1" />
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <User className="w-3.5 h-3.5" /><span>{leader ? displayName(leader.user) : 'Fără lider'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                  <Users className="w-3.5 h-3.5" /><span>{t.members?.length || 0} membri</span>
-                </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <User className="w-3.5 h-3.5" /><span>{leader ? displayName(leader.user) : 'Fără lider'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                    <Users className="w-3.5 h-3.5" /><span>{t.members?.length || 0} membri</span>
+                  </div>
+                </Card>
               </div>
             );
           })}
