@@ -6,6 +6,7 @@ import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { MapPin, ShieldCheck, Navigation, Sliders, Loader2, RefreshCw, X, Save } from 'lucide-react';
+import { EmptyState } from '../../components/ui';
 
 interface Project {
   id: string;
@@ -111,10 +112,12 @@ function SantierePageInner() {
           <Loader2 className="w-6 h-6 animate-spin mr-2" />Se încarcă șantierele...
         </div>
       ) : sites.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-          <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">Niciun șantier găsit</h3>
-          <p className="text-xs text-slate-400 mt-1">Adaugă un șantier nou pentru a începe.</p>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <EmptyState
+            icon={<MapPin className="w-7 h-7" />}
+            title="No sites yet"
+            description="Sites appear here once projects have a location set."
+          />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
