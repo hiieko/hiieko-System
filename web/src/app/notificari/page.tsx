@@ -6,6 +6,7 @@ import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
 import { normalizeEnvelope } from '../../lib/normalize-envelope';
+import { EmptyState } from '../../components/ui';
 
 interface NotifItem {
   id: string;
@@ -162,10 +163,20 @@ export default function NotificariPage() {
             <Loader2 className="w-6 h-6 animate-spin mr-2" />{t('notifications.loading', locale)}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-600">{t('notifications.no_notifications', locale)}</h3>
-          </div>
+          filter === 'unread' && notifs.length > 0 ? (
+            <EmptyState
+              icon={<Bell className="w-7 h-7" />}
+              title="No matching results"
+              description="No unread notifications right now."
+              action={{ label: 'Show all', onClick: () => setFilter('all') }}
+            />
+          ) : (
+            <EmptyState
+              icon={<Bell className="w-7 h-7" />}
+              title="You're all caught up"
+              description="New notifications will appear here."
+            />
+          )
         ) : (
           <div>
             {groups.map(group => (

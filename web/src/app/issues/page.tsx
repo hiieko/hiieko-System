@@ -18,6 +18,7 @@ import {
   Calendar,
   Search,
 } from 'lucide-react';
+import { EmptyState } from '../../components/ui';
 import type { IssueSeverity } from '../../features/issues/types';
 
 interface IssueItem {
@@ -179,11 +180,22 @@ function IssuesPageInner() {
               <Loader2 className="w-6 h-6 animate-spin mr-2" />Se incarca...
             </div>
           ) : filtered.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-5 py-12 sm:p-12 text-center">
-              <AlertTriangle className="size-12 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-base font-semibold text-slate-700">{issues.length === 0 ? 'Nicio problemă raportată' : 'Niciun rezultat'}</h3>
-              <p className="text-sm text-slate-500 mt-1">{issues.length === 0 ? 'Nu au fost raportate probleme pentru proiectul selectat.' : 'Încearcă alt termen sau schimbă filtrul de stare.'}</p>
-              {issues.length > 0 && <button type="button" onClick={() => { setSearch(''); setFilter('all'); }} className="min-h-11 mt-4 px-4 text-sm font-semibold text-hii-700 hover:bg-hii-50 rounded-lg">Resetează filtrele</button>}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+              {issues.length === 0 ? (
+                <EmptyState
+                  icon={<AlertTriangle className="w-7 h-7" />}
+                  title="No issues reported"
+                  description="When a blocker is reported on site, it appears here."
+                  action={{ label: 'Report issue', onClick: () => setShowCreate(true) }}
+                />
+              ) : (
+                <EmptyState
+                  icon={<Search className="w-7 h-7" />}
+                  title="No matching results"
+                  description="No issues match the current search or status filter."
+                  action={{ label: 'Clear filters', onClick: () => { setSearch(''); setFilter('all'); } }}
+                />
+              )}
             </div>
           ) : (
             <div className="space-y-3">

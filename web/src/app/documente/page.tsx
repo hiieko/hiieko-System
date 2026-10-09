@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Loader2, RefreshCw, Upload, Download, X, CheckCircle2 } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
+import { EmptyState } from '../../components/ui';
 
 type Project = { id: string; name: string; code?: string };
 type DocumentRow = {
@@ -242,7 +243,12 @@ function DocumentsPage() {
         {loading ? (
           <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
         ) : documents.length === 0 ? (
-          <div className="p-10 text-center text-sm text-slate-500">Nu există documente pentru acest proiect.</div>
+          <EmptyState
+            icon={<FileText className="w-7 h-7" />}
+            title="No documents yet"
+            description="Upload project documents to keep them organized."
+            action={{ label: 'Upload document', onClick: () => inputRef.current?.click() }}
+          />
         ) : (
           <div className="divide-y divide-slate-100">
             {documents.map((doc) => {

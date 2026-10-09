@@ -8,7 +8,7 @@ import { useProject } from '../../contexts/ProjectContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
-import { Button } from '../../components/ui/Button';
+import { Button, EmptyState } from '../../components/ui';
 import {
   Boxes, AlertTriangle, ArrowUpRight, ArrowDownRight, History, Plus,
   Search, Loader2, AlertCircle, RefreshCw, X, ArrowLeftRight
@@ -197,7 +197,29 @@ function StocuriPageInner() {
                   <th className="py-3 px-4">Cod</th><th className="py-3 px-4">Material</th><th className="py-3 px-4">Categorie</th><th className="py-3 px-4">Cod bare</th><th className="py-3 px-4 text-right">Minim</th><th className="py-3 px-4 text-right">Disponibil</th><th className="py-3 px-4 text-center">Stare</th>
                 </tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {balanceRows.length === 0 ? <tr><td colSpan={7} className="py-12 text-center text-slate-400">{search ? (locale === 'en' ? 'No stock rows match the search.' : 'Niciun stoc nu corespunde căutării.') : (locale === 'en' ? 'No stock balances are available.' : 'Nu există solduri de stoc disponibile.')}</td></tr> :
+                  {balanceRows.length === 0 ? <tr><td colSpan={7}>
+                    {search ? (
+                      <EmptyState
+                        variant="compact"
+                        icon={<Search className="w-4 h-4" />}
+                        title="No matching results"
+                        description="No stock rows match the search."
+                        action={{ label: 'Clear search', onClick: () => setSearch('') }}
+                      />
+                    ) : (
+                      <EmptyState
+                        variant="compact"
+                        icon={<Boxes className="w-4 h-4" />}
+                        title="No stock recorded"
+                        description="Materials appear here once stock is received."
+                        action={
+                          MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId
+                            ? { label: 'Receive stock', onClick: () => openAction('receive') }
+                            : undefined
+                        }
+                      />
+                    )}
+                  </td></tr> :
                     balanceRows.map(({ balance, material }) => {
                       const qty = Number(balance.current_quantity || 0);
                       const threshold = material?.min_stock_threshold;
@@ -223,7 +245,24 @@ function StocuriPageInner() {
               <table className="w-full text-left text-xs">
                 <thead><tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-semibold"><th className="py-3 px-4">Data & Ora</th><th className="py-3 px-4">Operațiune</th><th className="py-3 px-4">Material</th><th className="py-3 px-4 text-right">Cantitate</th><th className="py-3 px-4">Proiect</th><th className="py-3 px-4">Referință</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {movementRows.length === 0 ? <tr><td colSpan={6} className="py-12 text-center text-slate-400">{locale === 'en' ? 'No movements match the current filters.' : 'Nicio mișcare nu corespunde filtrelor curente.'}</td></tr> :
+                  {movementRows.length === 0 ? <tr><td colSpan={6}>
+                    {movementFilter !== 'ALL' ? (
+                      <EmptyState
+                        variant="compact"
+                        icon={<Search className="w-4 h-4" />}
+                        title="No matching results"
+                        description="No movements match the current filter."
+                        action={{ label: 'Clear filter', onClick: () => setMovementFilter('ALL') }}
+                      />
+                    ) : (
+                      <EmptyState
+                        variant="compact"
+                        icon={<History className="w-4 h-4" />}
+                        title="No stock recorded"
+                        description="Materials appear here once stock is received."
+                      />
+                    )}
+                  </td></tr> :
                     movementRows.map(mv => {
                       const type = mv.movement_type.toUpperCase();
                       const positive = type === 'RECEIPT' || type === 'TRANSFER_IN' || type === 'RETURN' || (type === 'ADJUSTMENT' && Number(mv.quantity) >= 0);

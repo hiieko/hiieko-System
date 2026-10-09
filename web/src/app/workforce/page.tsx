@@ -7,6 +7,7 @@ import { apiClient, ApiError } from '../../lib/api-client';
 import { Users, Loader2, RefreshCw, Search, X, AlertTriangle, Edit3, Trash2, Check, Plus, Save } from 'lucide-react';
 import { displayName } from '../../lib/formatters';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { EmptyState } from '../../components/ui';
 
 interface Employee {
   id: string; first_name: string; last_name: string;
@@ -194,9 +195,22 @@ function WorkforcePageInner() {
       ) : error ? (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-800"><p>{error}</p><button type="button" onClick={load} className="mt-3 min-h-10 rounded-md border border-rose-300 bg-white px-3 font-semibold">Reîncearcă</button></div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
-          <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">{search ? 'Niciun rezultat' : 'Niciun angajat'}</h3>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          {search ? (
+            <EmptyState
+              icon={<Search className="w-7 h-7" />}
+              title="No matching results"
+              description="No employees match the current search."
+              action={{ label: 'Clear search', onClick: () => setSearch('') }}
+            />
+          ) : (
+            <EmptyState
+              icon={<Users className="w-7 h-7" />}
+              title="No employees yet"
+              description="Add employees to assign them to teams and tasks."
+              action={{ label: 'Add employee', onClick: () => setShowCreate(true) }}
+            />
+          )}
         </div>
       ) : (
         <>

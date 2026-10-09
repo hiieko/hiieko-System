@@ -12,6 +12,7 @@ import { Expense } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useProject } from '../../contexts/ProjectContext';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { EmptyState } from '../../components/ui';
 import { formatDecimal, enumLabel, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_COLORS, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/formatters';
 
 // STATUS_MAP and CAT_MAP replaced by shared formatters (EXPENSE_STATUS_LABELS, EXPENSE_CATEGORY_LABELS)
@@ -147,10 +148,21 @@ function AprobarePageInner() {
         ) : error ? (
           <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-10 text-center"><AlertCircle className="size-8 text-rose-500" /><p className="text-sm text-rose-800">Nu s-au putut încărca cheltuielile: {error}</p><button type="button" onClick={() => void loadExpenses()} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">Reîncearcă</button></div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center shadow-sm">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-slate-700">{search ? 'Niciun rezultat' : filter === 'pending' ? 'Totul la zi!' : 'Nicio cheltuială găsită'}</h3>
-            <p className="text-sm text-slate-500 mt-1">{search ? 'Nicio cheltuială nu corespunde căutării.' : filter === 'pending' ? 'Nu există cheltuieli în așteptare.' : 'Nu există cheltuieli care să corespundă stării selectate.'}</p>
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+            {search || (filter !== 'pending' && filter !== 'all') ? (
+              <EmptyState
+                icon={<Search className="w-7 h-7" />}
+                title="No matching results"
+                description="No expenses match the current search or status filter."
+                action={{ label: 'Reset filters', onClick: () => { setSearch(''); setFilter('pending'); } }}
+              />
+            ) : (
+              <EmptyState
+                icon={<CheckCircle2 className="w-7 h-7" />}
+                title="Nothing to approve"
+                description="You are all caught up."
+              />
+            )}
           </div>
         ) : filtered.map(exp => {
           const status = (exp.status || '').toUpperCase();
