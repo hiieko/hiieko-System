@@ -70,6 +70,29 @@ export default function NotificariPage() {
   const filtered = filter === 'unread' ? notifs.filter(n => !n.is_read) : notifs;
   const unreadCount = notifs.filter(n => !n.is_read).length;
 
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const todayStart = startOfDay(new Date());
+  const yesterdayStart = todayStart - 86400000;
+  const groups: { key: string; label: string; items: NotifItem[] }[] = [];
+  filtered.forEach(n => {
+    const ts = startOfDay(new Date(n.created_at));
+    let key: string;
+    let label: string;
+    if (ts === todayStart) {
+      key = 'today';
+      label = locale === 'ro' ? 'Astăzi' : 'Today';
+    } else if (ts === yesterdayStart) {
+      key = 'yesterday';
+      label = locale === 'ro' ? 'Ieri' : 'Yesterday';
+    } else {
+      key = String(ts);
+      label = new Date(n.created_at).toLocaleDateString(locale === 'ro' ? 'ro-RO' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.items.push(n);
+    else groups.push({ key, label, items: [n] });
+  });
+
   const markRead = async (id: string) => {
     try {
       await apiClient.markNotificationRead(id);
@@ -103,18 +126,18 @@ export default function NotificariPage() {
           <h1 className="text-2xl font-bold text-slate-900">{t('notifications.title', locale)}</h1>
           <p className="text-sm text-slate-500 mt-1">{t('notifications.system_subtitle', locale)}</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {unreadCount > 0 && (
             <span className="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-xs font-bold">
               <Bell className="w-3.5 h-3.5 mr-1.5" />{unreadCount} {t('notifications.unread', locale).toLowerCase()}
             </span>
           )}
           <button onClick={() => loadNotifs()}
-            className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm">
+            className="inline-flex items-center justify-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm">
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('notifications.refresh', locale)}
           </button>
           <button onClick={markAllRead}
-            className="inline-flex items-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm">
+            className="inline-flex items-center justify-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm w-full sm:w-auto">
             <CheckCheck className="w-3.5 h-3.5 mr-1.5" />{t('notifications.mark_all_read', locale)}
           </button>
         </div>
@@ -124,16 +147,16 @@ export default function NotificariPage() {
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
       )}
 
-      <div className="flex items-center space-x-2 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit">
-        {tabs.map(t => (
-          <button key={t.k} onClick={() => setFilter(t.k as 'all' | 'unread')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${filter === t.k ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-            {t.l}
+      <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-full sm:w-fit">
+        {tabs.map(tb => (
+          <button key={tb.k} onClick={() => setFilter(tb.k as 'all' | 'unread')}
+            className={`flex-1 sm:flex-none px-4 py-2 text-sm font-semibold rounded-md transition-colors ${filter === tb.k ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+            {tb.l}
           </button>
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-16 text-slate-500">
             <Loader2 className="w-6 h-6 animate-spin mr-2" />{t('notifications.loading', locale)}
@@ -144,22 +167,31 @@ export default function NotificariPage() {
             <h3 className="text-base font-semibold text-slate-600">{t('notifications.no_notifications', locale)}</h3>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {filtered.map(n => (
-              <div key={n.id}
-                className={`p-4 flex items-start space-x-4 hover:bg-slate-50/50 transition-colors cursor-pointer ${!n.is_read ? 'bg-amber-50/30' : ''}`}
-                onClick={() => markRead(n.id)}>
-                <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.is_read ? 'bg-slate-200' : 'bg-amber-500'}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-sm font-semibold text-slate-900">{locale === 'ro' ? n.title_ro : (n.title_en || n.title_ro)}</h4>
-                    {pBadge(n.priority)}
-                    {!n.is_read && <span className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0" />}
-                  </div>
-                  <p className="text-xs text-slate-600 mt-0.5">{locale === 'ro' ? n.message_ro : (n.message_en || n.message_ro)}</p>
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    {new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </span>
+          <div>
+            {groups.map(group => (
+              <div key={group.key}>
+                <div className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                  {group.label}
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {group.items.map(n => (
+                    <div key={n.id}
+                      className={`p-4 sm:p-5 flex items-start space-x-4 hover:bg-slate-50/50 transition-colors cursor-pointer border-l-4 ${!n.is_read ? 'bg-amber-50/30 border-l-amber-500' : 'border-l-transparent'}`}
+                      onClick={() => markRead(n.id)}>
+                      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.is_read ? 'bg-slate-200' : 'bg-amber-500'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <h4 className="text-sm font-semibold text-slate-900">{locale === 'ro' ? n.title_ro : (n.title_en || n.title_ro)}</h4>
+                          {pBadge(n.priority)}
+                          {!n.is_read && <span className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0" />}
+                        </div>
+                        <p className="text-xs text-slate-600 mt-0.5">{locale === 'ro' ? n.message_ro : (n.message_en || n.message_ro)}</p>
+                        <span className="text-[11px] text-slate-400 mt-1 block">
+                          {new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
