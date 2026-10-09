@@ -12,6 +12,8 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  /** Optional pinned footer rendered outside the scrollable body. */
+  footer?: React.ReactNode;
   size?: ModalSize;
   showClose?: boolean;
   className?: string;
@@ -30,6 +32,7 @@ export function Modal({
   onClose,
   title,
   children,
+  footer,
   size = 'md',
   showClose = true,
   className,
@@ -76,6 +79,7 @@ export function Modal({
         ref={dialogRef}
         className={clsx(
           'relative w-full bg-white rounded-xl shadow-2xl border border-slate-200',
+          'flex flex-col max-h-[90vh]',
           'animate-in fade-in zoom-in-95 duration-200',
           sizeStyles[size],
           className,
@@ -87,7 +91,7 @@ export function Modal({
       >
         {/* Header */}
         {(title || showClose) && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
             {title && (
               <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
             )}
@@ -103,7 +107,11 @@ export function Modal({
           </div>
         )}
         {/* Content */}
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-6 py-4 flex-1 overflow-y-auto">{children}</div>
+        {/* Footer */}
+        {footer && (
+          <div className="px-6 py-4 border-t border-slate-100 shrink-0">{footer}</div>
+        )}
       </div>
     </div>
   );
