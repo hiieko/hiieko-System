@@ -5,7 +5,7 @@ import { ROUTE_ROLES } from '../../config/route-roles';
 import { FieldHelp } from '../../components/FieldHelp';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Receipt, Plus, Search, X, Upload, RefreshCw } from 'lucide-react';
+import { Receipt, Plus, Search, X, Upload, RefreshCw, SlidersHorizontal, Check } from 'lucide-react';
 import { t, Expense, OcrResult, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
@@ -20,6 +20,7 @@ function CheltuieliPageInner() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [scanError, setScanError] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -199,7 +200,7 @@ function CheltuieliPageInner() {
         </div>
         {showNew && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-            <div role="dialog" aria-modal="true" aria-labelledby="new-expense-title" className="w-full max-w-lg rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
+            <div role="dialog" aria-modal="true" aria-labelledby="new-expense-title" className="w-full max-w-lg rounded-xl bg-white shadow-xl flex flex-col max-h-[90vh]">
               <div className="flex items-center justify-between border-b border-slate-200 p-5">
                 <div>
                   <h2 id="new-expense-title" className="text-lg font-bold text-slate-900">{locale === 'ro' ? 'Cheltuiala nouă' : 'New Expense'}</h2>
@@ -207,7 +208,7 @@ function CheltuieliPageInner() {
                 </div>
                 <button type="button" onClick={() => setShowNew(false)} aria-label="Închide" className="p-2 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
               </div>
-              <div className="space-y-4 p-5">
+              <div className="space-y-4 p-5 flex-1 overflow-y-auto">
                 {!user && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Trebuie să te autentifici pentru a trimite o cheltuială. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
                 {/* --- OCR Upload Section --- */}
                 <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
@@ -229,7 +230,7 @@ function CheltuieliPageInner() {
                   {ocrResult && (
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm mt-2">
                       <p className="font-semibold text-emerald-900 text-xs">{locale === 'ro' ? 'Date extrase — verifică înainte de trimitere' : 'Extracted data — verify before submitting'}</p>
-                      <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
+                      <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
                         {([
                           [locale === 'ro' ? 'Furnizor' : 'Merchant', ocrResult.merchant_name],
                           ['CUI', ocrResult.merchant_cui],
@@ -247,7 +248,7 @@ function CheltuieliPageInner() {
                   )}
                 </div>
                 {/* --- Expense Form Fields --- */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">{locale === 'ro' ? 'Categorie' : 'Category'}</label>
                     <select value={formCategory} onChange={e => setFormCategory(e.target.value)}
@@ -299,13 +300,13 @@ function CheltuieliPageInner() {
                     placeholder={locale === 'ro' ? 'Descrie cheltuiala...' : 'Describe the expense...'} />
                 </div>
                 {submitError && <p className="text-sm text-red-700">{submitError}</p>}
-                <div className="flex justify-end gap-3 border-t border-slate-200 pt-4">
-                  <button type="button" onClick={() => setShowNew(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">{locale === 'ro' ? 'Anulează' : 'Cancel'}</button>
-                  <button type="button" disabled={submitting || !formAmount || Number(formAmount) <= 0} onClick={() => void handleCreateExpense()}
-                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
-                    {submitting ? (locale === 'ro' ? 'Se trimite...' : 'Submitting...') : (locale === 'ro' ? 'Trimite spre aprobare' : 'Submit for approval')}
-                  </button>
-                </div>
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 border-t border-slate-200 p-5 shrink-0">
+                <button type="button" onClick={() => setShowNew(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600">{locale === 'ro' ? 'Anulează' : 'Cancel'}</button>
+                <button type="button" disabled={submitting || !formAmount || Number(formAmount) <= 0} onClick={() => void handleCreateExpense()}
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50 w-full sm:w-auto">
+                  {submitting ? (locale === 'ro' ? 'Se trimite...' : 'Submitting...') : (locale === 'ro' ? 'Trimite spre aprobare' : 'Submit for approval')}
+                </button>
               </div>
             </div>
           </div>
@@ -317,13 +318,40 @@ function CheltuieliPageInner() {
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={t('general.search', locale)}
             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none" />
         </div>
-        {['all','submitted','approved','rejected','reimbursed'].map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border ${filter === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'}`}>
-            {s === 'all' ? (locale === 'ro' ? 'Toate' : 'All') : t('status.' + s, locale)}
-          </button>
-        ))}
+        <button onClick={() => setFilterOpen(true)} aria-haspopup="dialog"
+          className="sm:hidden inline-flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-lg shadow-sm">
+          <SlidersHorizontal className="w-4 h-4" />
+          {locale === 'ro' ? 'Filtre' : 'Filters'}
+        </button>
+        <div className="hidden sm:flex flex-wrap gap-2">
+          {['all','submitted','approved','rejected','reimbursed'].map(s => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border ${filter === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'}`}>
+              {s === 'all' ? (locale === 'ro' ? 'Toate' : 'All') : t('status.' + s, locale)}
+            </button>
+          ))}
+        </div>
       </div>
+
+      {filterOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:hidden">
+          <div role="dialog" aria-modal="true" aria-label={locale === 'ro' ? 'Filtre' : 'Filters'} className="w-full max-h-[70vh] rounded-t-2xl bg-white shadow-xl overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-200 p-4">
+              <span className="text-base font-bold text-slate-900">{locale === 'ro' ? 'Filtre' : 'Filters'}</span>
+              <button type="button" onClick={() => setFilterOpen(false)} aria-label="Închide" className="p-2 text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-2 p-4">
+              {['all','submitted','approved','rejected','reimbursed'].map(s => (
+                <button key={s} onClick={() => { setFilter(s); setFilterOpen(false); }}
+                  className={`w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-lg border ${filter === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200'}`}>
+                  <span>{s === 'all' ? (locale === 'ro' ? 'Toate' : 'All') : t('status.' + s, locale)}</span>
+                  {filter === s && <Check className="w-4 h-4 text-emerald-500" aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {loading ? <div className="text-center py-12 text-slate-500">{t('general.loading', locale)}</div>
       : filtered.length === 0 ? (
         <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl bg-white">
@@ -332,7 +360,8 @@ function CheltuieliPageInner() {
         </div>
       )
       : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <>
+        <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead><tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
@@ -355,6 +384,23 @@ function CheltuieliPageInner() {
             </table>
           </div>
         </div>
+        <div className="md:hidden space-y-3">
+          {filtered.map(exp => (
+            <div key={exp.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString('ro-RO')}</span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${EXPENSE_STATUS_COLORS[exp.status?.toUpperCase()] || 'bg-slate-100 text-slate-700'}`}>{enumLabel(exp.status, EXPENSE_STATUS_LABELS, locale)}</span>
+              </div>
+              <p className="text-xs font-medium text-slate-700">{enumLabel(exp.category, EXPENSE_CATEGORY_LABELS, locale)}</p>
+              <p className="text-sm text-slate-800 font-medium break-words">{exp.description || '-'}</p>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                <span className="text-xs text-slate-500">{enumLabel(exp.payment_method, PAYMENT_METHOD_LABELS, locale)}</span>
+                <span className="text-sm font-bold text-slate-900">{formatDecimal(exp.amount)} {exp.currency}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        </>
       )}
     </div>
   );
