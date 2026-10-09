@@ -107,8 +107,23 @@ export function InspectionCreateModal({ open, onClose, projectId, locale, onCrea
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={t('qa.create_title', locale)} size="lg">
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={t('qa.create_title', locale)}
+      size="lg"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
+            {t('general.cancel', locale)}
+          </Button>
+          <Button form="inspection-create-form" type="submit" variant="primary" loading={submitting}>
+            {submitting ? t('qa.submit_creating', locale) : t('qa.submit', locale)}
+          </Button>
+        </div>
+      }
+    >
+      <form id="inspection-create-form" onSubmit={handleSubmit} noValidate className="space-y-4">
         {validationError && (
           <p role="alert" className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
             {validationError}
@@ -140,8 +155,8 @@ export function InspectionCreateModal({ open, onClose, projectId, locale, onCrea
           {measurements.length > 0 && (
             <div className="space-y-2">
               {measurements.map((m, index) => (
-                <div key={index} className="flex items-end gap-2">
-                  <div className="flex-1">
+                <div key={index} className="space-y-2 sm:space-y-0 sm:flex sm:items-end sm:gap-2">
+                  <div className="sm:flex-1">
                     <label htmlFor={`measurement-parameter-${index}`} className="sr-only">
                       {t('qa.field_parameter', locale)}
                     </label>
@@ -155,54 +170,59 @@ export function InspectionCreateModal({ open, onClose, projectId, locale, onCrea
                       className={fieldClass}
                     />
                   </div>
-                  <div className="w-24">
-                    <label htmlFor={`measurement-value-${index}`} className="sr-only">
-                      {t('qa.field_value', locale)}
-                    </label>
-                    <input
-                      id={`measurement-value-${index}`}
-                      type="number"
-                      step="any"
-                      value={m.value}
-                      onChange={(e) => updateMeasurement(index, { value: e.target.value })}
-                      placeholder={t('qa.field_value', locale)}
-                      disabled={submitting}
-                      className={fieldClass}
-                    />
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
+                    <div className="sm:w-24">
+                      <label htmlFor={`measurement-value-${index}`} className="sr-only">
+                        {t('qa.field_value', locale)}
+                      </label>
+                      <input
+                        id={`measurement-value-${index}`}
+                        type="number"
+                        step="any"
+                        inputMode="decimal"
+                        value={m.value}
+                        onChange={(e) => updateMeasurement(index, { value: e.target.value })}
+                        placeholder={t('qa.field_value', locale)}
+                        disabled={submitting}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="sm:w-24">
+                      <label htmlFor={`measurement-unit-${index}`} className="sr-only">
+                        {t('qa.field_unit', locale)}
+                      </label>
+                      <input
+                        id={`measurement-unit-${index}`}
+                        type="text"
+                        value={m.unit}
+                        onChange={(e) => updateMeasurement(index, { unit: e.target.value })}
+                        placeholder={t('qa.field_unit', locale)}
+                        disabled={submitting}
+                        className={fieldClass}
+                      />
+                    </div>
                   </div>
-                  <div className="w-24">
-                    <label htmlFor={`measurement-unit-${index}`} className="sr-only">
-                      {t('qa.field_unit', locale)}
+                  <div className="flex items-center justify-between sm:justify-start sm:gap-3 sm:pb-2.5">
+                    <label className="flex items-center gap-1.5 text-xs text-content-secondary">
+                      <input
+                        type="checkbox"
+                        checked={m.passed}
+                        onChange={(e) => updateMeasurement(index, { passed: e.target.checked })}
+                        disabled={submitting}
+                        className="h-4 w-4 rounded border-chrome-line"
+                      />
+                      {t('qa.field_passed', locale)}
                     </label>
-                    <input
-                      id={`measurement-unit-${index}`}
-                      type="text"
-                      value={m.unit}
-                      onChange={(e) => updateMeasurement(index, { unit: e.target.value })}
-                      placeholder={t('qa.field_unit', locale)}
+                    <button
+                      type="button"
+                      onClick={() => setMeasurements((prev) => prev.filter((_, i) => i !== index))}
                       disabled={submitting}
-                      className={fieldClass}
-                    />
+                      aria-label={t('qa.remove_measurement', locale)}
+                      className="p-2 rounded-lg text-content-muted hover:bg-surface-muted hover:text-content-secondary focus:outline-none focus:ring-2 focus:ring-hii-500"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
                   </div>
-                  <label className="flex items-center gap-1.5 text-xs text-content-secondary pb-2.5">
-                    <input
-                      type="checkbox"
-                      checked={m.passed}
-                      onChange={(e) => updateMeasurement(index, { passed: e.target.checked })}
-                      disabled={submitting}
-                      className="h-4 w-4 rounded border-chrome-line"
-                    />
-                    {t('qa.field_passed', locale)}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setMeasurements((prev) => prev.filter((_, i) => i !== index))}
-                    disabled={submitting}
-                    aria-label={t('qa.remove_measurement', locale)}
-                    className="p-2 rounded-lg text-content-muted hover:bg-surface-muted hover:text-content-secondary focus:outline-none focus:ring-2 focus:ring-hii-500"
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  </button>
                 </div>
               ))}
             </div>
@@ -216,15 +236,6 @@ export function InspectionCreateModal({ open, onClose, projectId, locale, onCrea
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             {t('qa.add_measurement', locale)}
           </button>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
-            {t('general.cancel', locale)}
-          </Button>
-          <Button type="submit" variant="primary" loading={submitting}>
-            {submitting ? t('qa.submit_creating', locale) : t('qa.submit', locale)}
-          </Button>
         </div>
       </form>
     </Modal>
