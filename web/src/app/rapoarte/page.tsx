@@ -11,6 +11,7 @@ import { t, useLocale, type DailyReport } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { ConfirmDialog, useToast } from '../../components/ui';
+import { EmptyState } from '../../components/ui';
 import { submitDailyReport, reviewDailyReport } from '../../features/daily-reports';
 import { useRouter } from 'next/navigation';
 import { 
@@ -207,19 +208,28 @@ function RapoartePageInner() {
           <p className="mt-2 text-sm text-rose-500">Eroare: {error}</p>
         </div>
       ) : reports.length === 0 ? (
-        <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
-          <FileText className="w-8 h-8 mx-auto text-slate-300" />
-          <p className="mt-2 text-sm text-slate-500">Nu exista rapoarte zilnice</p>
+        <div className="bg-white rounded-xl border border-slate-200">
+          <EmptyState
+            icon={<FileText className="w-7 h-7" />}
+            title="No daily reports yet"
+            description="Reports appear here after team leaders submit them."
+            action={
+              canCreate
+                ? { label: 'New report', onClick: () => router.push('/rapoarte/form') }
+                : undefined
+            }
+          />
         </div>
       ) : (
         <div className="space-y-6">
           {filteredReports.length === 0 ? (
-            <div className="py-12 text-center bg-white rounded-xl border border-slate-200">
-              <FileText className="w-8 h-8 mx-auto text-slate-300" />
-              <p className="mt-2 text-sm text-slate-500">{locale === 'en' ? 'No reports match the current filters.' : 'Niciun raport nu corespunde filtrelor curente.'}</p>
-              <button type="button" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }} className="mt-3 text-sm font-semibold text-hii-700 hover:underline">
-                {locale === 'en' ? 'Clear filters' : 'Șterge filtrele'}
-              </button>
+            <div className="bg-white rounded-xl border border-slate-200">
+              <EmptyState
+                icon={<FileText className="w-7 h-7" />}
+                title="No matching results"
+                description="No reports match the current search or status filter."
+                action={{ label: 'Clear filters', onClick: () => { setSearchQuery(''); setStatusFilter('ALL'); } }}
+              />
             </div>
           ) : filteredReports.map((report) => {
             const siteName = report.project?.name || 'Șantier';
