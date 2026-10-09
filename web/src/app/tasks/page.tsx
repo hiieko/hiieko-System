@@ -27,6 +27,7 @@ import {
 import {
   PageHeader,
   Button,
+  Card,
   EmptyState,
   ErrorState,
   Skeleton,
@@ -350,13 +351,13 @@ function TasksPageInner() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <section aria-label={t('task.list_heading', locale)} className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
           {summaryCards.map(({ label, value, Icon, tone }) => (
-            <div key={label} className="rounded-xl border border-chrome-line bg-surface p-4 shadow-sm">
+            <Card key={label} padding={false} className="p-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-content-muted">{label}</p>
                 <Icon className={`h-4 w-4 shrink-0 ${tone}`} aria-hidden="true" />
               </div>
               <p className="mt-2 text-2xl font-semibold tabular-nums text-content" aria-live="polite">{loading && !initialLoadDone ? '—' : value}</p>
-            </div>
+            </Card>
           ))}
         </section>
 

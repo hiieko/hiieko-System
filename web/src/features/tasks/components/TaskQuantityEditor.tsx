@@ -5,7 +5,7 @@ import { clsx } from 'clsx';
 import { t } from '@solar/shared';
 
 import { TaskStatus } from '../types';
-import { Button, LoadingSpinner } from '@/components/ui';
+import { Button } from '@/components/ui';
 
 interface TaskQuantityEditorProps {
   currentStatus: TaskStatus;
@@ -139,10 +139,8 @@ export function TaskQuantityEditor({
           onBlur={handleBlur}
           disabled={isDisabled}
           className={clsx(
-            'flex-1 px-3 py-2 text-sm border rounded-lg',
-            'focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500',
-            'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
-            !isValidNumber && value.length > 0 && 'border-red-300 bg-red-50'
+            'hii-input flex-1',
+            !isValidNumber && value.length > 0 && '!border-red-300 !bg-red-50'
           )}
           aria-label={t('task.actual_quantity')}
           placeholder="0"

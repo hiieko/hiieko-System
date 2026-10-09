@@ -200,21 +200,23 @@ export function TaskCreateModal({
   );
 
   // No project selected
-  if (!projectId) {
+if (!projectId) {
     return (
       <Modal
         open={open}
         onClose={onClose}
         title={t('task.create_title')}
         size="md"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={onClose}>
+              {t('task.cancel')}
+            </Button>
+          </div>
+        }
       >
         <div className="py-8 text-center text-slate-500">
           {t('task.select_project_first')}
-        </div>
-        <div className="mt-6 flex justify-end">
-          <Button variant="secondary" onClick={onClose}>
-            {t('task.cancel')}
-          </Button>
         </div>
       </Modal>
     );
@@ -226,8 +228,28 @@ export function TaskCreateModal({
       onClose={onClose}
       title={t('task.create_title')}
       size="lg"
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={creating}
+          >
+            {t('task.cancel')}
+          </Button>
+          <Button
+            type="submit"
+            form="task-create-form"
+            loading={creating}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            {t('task.create')}
+          </Button>
+        </div>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="task-create-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Error message */}
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -249,7 +271,7 @@ export function TaskCreateModal({
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="hii-label">
                 {t('task.field_title')} <span className="text-red-500">*</span>
               </label>
               <input
@@ -257,9 +279,8 @@ export function TaskCreateModal({
                 value={form.title}
                 onChange={(e) => updateField('title', e.target.value)}
                 className={clsx(
-                  'w-full px-3 py-2 text-sm border rounded-lg',
-                  'focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500',
-                  fieldErrors.title && 'border-red-300 bg-red-50'
+                  'hii-input',
+                  fieldErrors.title && '!border-red-300 !bg-red-50'
                 )}
                 placeholder={t('task.field_title')}
               />
@@ -270,7 +291,7 @@ export function TaskCreateModal({
 
             {/* Code */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="hii-label">
                 {t('task.field_code')} <span className="text-red-500">*</span>
               </label>
               <div className="flex items-center gap-2">
@@ -280,9 +301,8 @@ export function TaskCreateModal({
                   value={form.code}
                   onChange={(e) => updateField('code', e.target.value)}
                   className={clsx(
-                    'flex-1 px-3 py-2 text-sm font-mono border rounded-lg',
-                    'focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500',
-                    fieldErrors.code && 'border-red-300 bg-red-50'
+                    'hii-input flex-1 font-mono',
+                    fieldErrors.code && '!border-red-300 !bg-red-50'
                   )}
                   placeholder="TASK-001"
                 />
@@ -297,7 +317,7 @@ export function TaskCreateModal({
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="hii-label">
                 {t('task.field_description')}
               </label>
               <textarea
@@ -313,7 +333,7 @@ export function TaskCreateModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Work Package */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="hii-label">
                   {t('task.field_work_package')}
                 </label>
                 <div className="flex items-center gap-2">
@@ -321,7 +341,7 @@ export function TaskCreateModal({
                   <select
                     value={form.workPackageId}
                     onChange={(e) => updateField('workPackageId', e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500 bg-white"
+                    className="hii-select flex-1"
                   >
                     <option value="">{t('task.none_option')}</option>
                     {allWorkPackages.map((wp: any) => (
@@ -335,7 +355,7 @@ export function TaskCreateModal({
 
               {/* Zone */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="hii-label">
                   {t('task.field_zone')}
                 </label>
                 <div className="flex items-center gap-2">
@@ -343,7 +363,7 @@ export function TaskCreateModal({
                   <select
                     value={form.zoneId}
                     onChange={(e) => updateField('zoneId', e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500 bg-white"
+                    className="hii-select flex-1"
                   >
                     <option value="">{t('task.none_option')}</option>
                     {zones.map((zone) => (
@@ -360,7 +380,7 @@ export function TaskCreateModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Planned Quantity */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="hii-label">
                   {t('task.field_planned_qty')}
                 </label>
                 <input
@@ -370,9 +390,8 @@ export function TaskCreateModal({
                   value={form.plannedQuantity}
                   onChange={(e) => updateField('plannedQuantity', e.target.value)}
                   className={clsx(
-                    'w-full px-3 py-2 text-sm border rounded-lg',
-                    'focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500',
-                    fieldErrors.plannedQuantity && 'border-red-300 bg-red-50'
+                    'hii-input',
+                    fieldErrors.plannedQuantity && '!border-red-300 !bg-red-50'
                   )}
                   placeholder="0"
                 />
@@ -385,39 +404,20 @@ export function TaskCreateModal({
 
               {/* Unit of Measure */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="hii-label">
                   {t('task.field_uom')}
                 </label>
                 <input
                   type="text"
                   value={form.unitOfMeasure}
                   onChange={(e) => updateField('unitOfMeasure', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500"
+                  className="hii-input"
                   placeholder="buc, mp, ore, kg..."
                 />
               </div>
             </div>
           </div>
         )}
-
-        {/* Footer actions */}
-        <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={creating}
-          >
-            {t('task.cancel')}
-          </Button>
-          <Button
-            type="submit"
-            loading={creating}
-            icon={<Plus className="w-4 h-4" />}
-          >
-            {t('task.create')}
-          </Button>
-        </div>
       </form>
     </Modal>
   );

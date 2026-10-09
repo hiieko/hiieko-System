@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 import { Task, TaskStatus, TASK_STATUS_I18N, TASK_STATUS_BADGE } from '../types';
-import { Badge, Button, ConfirmDialog } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog } from '@/components/ui';
 import { TaskProgressBar } from './TaskProgressBar';
 import { TaskDependencyChips } from './TaskDependencyChips';
 import { TaskStatusWorkflow } from './TaskStatusWorkflow';
@@ -102,8 +102,7 @@ export function TaskCard({
     await onQuantityChange(task.id, quantity);
   };
 
-  // Card ID for aria-controls
-  const cardId = `task-card-${task.id}`;
+  // Card content id for aria-controls
   const contentId = `task-content-${task.id}`;
 
   return (
@@ -121,11 +120,10 @@ export function TaskCard({
       />
 
       {/* Task Card */}
-      <article
-        id={cardId}
+      <Card
+        hover
+        padding={false}
         className={clsx(
-          'bg-surface border border-chrome-line rounded-xl shadow-sm',
-          'hover:shadow-md hover:border-chrome-line transition-all duration-150',
           expanded && 'shadow-md',
           className
         )}
@@ -137,10 +135,10 @@ export function TaskCard({
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 {/* Task code */}
-                <span className="text-xs font-mono font-medium text-content-muted bg-surface-muted px-2 py-0.5 rounded">
-                  <Hash className="w-3 h-3 inline mr-0.5 -mt-0.5" />
+                <Badge variant="neutral" size="sm" className="font-mono">
+                  <Hash className="w-3 h-3 mr-0.5" />
                   {task.code}
-                </span>
+                </Badge>
 
                 {/* Status badge */}
                 <Badge variant={TASK_STATUS_BADGE[task.status]} size="sm">
@@ -209,14 +207,15 @@ export function TaskCard({
             </div>
 
             {/* Expand button */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setExpanded(!expanded)}
               aria-expanded={expanded}
               aria-controls={contentId}
               aria-label={expanded ? t('task.collapse_details') : t('task.expand_details')}
               className={clsx(
-                'p-2 rounded-lg transition-colors',
-                'hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-hii-500',
+                'hover:bg-surface-muted',
                 expanded && 'bg-surface-muted'
               )}
             >
@@ -225,7 +224,7 @@ export function TaskCard({
               ) : (
                 <ChevronDown className="w-5 h-5 text-content-muted" />
               )}
-            </button>
+            </Button>
           </div>
 
           {/* Progress bar */}
@@ -336,7 +335,7 @@ export function TaskCard({
             )}
           </div>
         )}
-      </article>
+      </Card>
     </>
   );
 }

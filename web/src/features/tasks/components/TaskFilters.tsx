@@ -58,17 +58,19 @@ export function TaskFilters({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t('task.search_placeholder')}
-            className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500"
+            className="hii-input pl-10 pr-8"
             aria-label={t('task.search_placeholder')}
           />
           {searchQuery && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 hover:text-slate-600"
+              className="absolute right-1 top-1/2 -translate-y-1/2 !w-7 !h-7 !rounded-md text-slate-400 hover:text-slate-600"
               aria-label={t('task.search_clear')}
             >
               ×
-            </button>
+            </Button>
           )}
         </div>
 

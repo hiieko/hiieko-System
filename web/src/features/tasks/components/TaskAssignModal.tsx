@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { clsx } from 'clsx';
 import { t } from '@solar/shared';
 import { User, Loader2 } from 'lucide-react';
 
@@ -161,39 +160,37 @@ export function TaskAssignModal({
       {!loading && availableMembers.length > 0 && (
         <div className="space-y-2">
           {availableMembers.map((member) => (
-            <button
+            <Button
               key={member.id}
+              variant="secondary"
+              size="md"
+              fullWidth
               onClick={() => handleAssign(member.user_id)}
               disabled={assigning !== null}
-              className={clsx(
-                'w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left',
-                'hover:bg-slate-50 hover:border-slate-300',
-                'focus:outline-none focus:ring-2 focus:ring-hii-500',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
+              className="px-3 py-3 rounded-lg"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+              <span className="flex items-center gap-3 min-w-0">
+                <span className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                   <User className="w-4 h-4 text-slate-500" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-slate-900">
+                </span>
+                <span className="min-w-0 text-left">
+                  <span className="block text-sm font-medium text-slate-900 truncate">
                     {getMemberName(member)}
-                  </div>
-                  <div className="text-xs text-slate-500">
+                  </span>
+                  <span className="block text-xs text-slate-500 truncate">
                     {member.user?.email || ''}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
+                  </span>
+                </span>
+              </span>
+              <span className="ml-auto shrink-0 flex items-center gap-2">
                 <Badge variant="neutral" size="sm">
                   {member.role}
                 </Badge>
                 {assigning === member.user_id && (
                   <Loader2 className="w-4 h-4 animate-spin text-hii-600" />
                 )}
-              </div>
-            </button>
+              </span>
+            </Button>
           ))}
         </div>
       )}
