@@ -97,12 +97,9 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8;
   }
 
-  /* Card */
+  /* Card (D0: white, rounded-xl, neutral-200 border, hii-shadow-card, p-4 md:p-6) */
   .hii-card {
-    background: var(--hii-surface);
-    border: 1px solid var(--hii-border);
-    border-radius: var(--hii-radius-lg);
-    box-shadow: var(--hii-shadow-card);
+    @apply bg-white rounded-xl border border-slate-200 shadow-card p-4 md:p-6;
   }
 
   .hii-card-header {
@@ -126,7 +123,9 @@
     @apply text-sm text-slate-500 mt-1;
   }
 
-  /* Status badges */
+  /* Status badges. Semantic variants (success/warning/danger/info/neutral)
+     are already handled by the shared Badge component (components/ui/Badge.tsx),
+     so D0 adds no new badge utilities. */
   .hii-badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
   }
@@ -180,9 +179,14 @@
     @apply px-6 py-3 text-base;
   }
 
-  /* Form elements */
+  /* Form elements (D0: 40px height, rounded-lg, neutral-300 border,
+     brand focus ring, danger error border) */
   .hii-input {
-    @apply w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-hii-500/30 focus:border-hii-500 transition-colors;
+    @apply w-full h-10 px-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-hii-500/30 focus:border-hii-500 transition-colors;
+  }
+
+  .hii-input[aria-invalid='true'] {
+    @apply border-critical;
   }
 
   .hii-label {

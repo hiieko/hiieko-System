@@ -11,6 +11,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // D0 semantic color system: brand + success/warning/danger/info + slate neutrals.
+        // Brand: only the shades that pages actually use (500/600/700 are canonical;
+        // 50-400 and 800 are still referenced by existing pages and are kept until
+        // those pages migrate in D4 — removing them now would change the preview).
         hii: {
           50: '#ecfdf3',
           100: '#d1fae0',
@@ -21,21 +25,9 @@ module.exports = {
           600: '#0f7040',
           700: '#0c5935',
           800: '#0c472c',
-          900: '#0a3a25',
-          950: '#062015',
         },
-        amber: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
-        },
+        // NOTE: `amber` override removed in D0 — every value was byte-identical to
+        // the Tailwind default palette, so `amber-*` utilities are unchanged.
         surface: {
           DEFAULT: 'var(--hii-surface)',
           muted: 'var(--hii-surface-muted)',
@@ -46,10 +38,8 @@ module.exports = {
           secondary: 'var(--hii-text-secondary)',
           muted: 'var(--hii-text-muted)',
         },
-        border: {
-          DEFAULT: 'var(--hii-border)',
-          light: 'var(--hii-border-light)',
-        },
+        // NOTE: `border` and `neutral` color groups removed in D0 — no utility
+        // in web/src referenced them, so nothing can change visually.
         success: {
           DEFAULT: 'var(--hii-success)',
           soft: '#d1fae5',
@@ -60,6 +50,9 @@ module.exports = {
           soft: '#fef3c7',
           foreground: '#78350f',
         },
+        // D0 spec calls this group `danger`; pages currently use `critical`
+        // (text-critical, bg-critical, bg-critical-soft). Renaming would break
+        // those pages, so the name is kept until D4 migrates them.
         critical: {
           DEFAULT: 'var(--hii-critical)',
           soft: '#fee2e2',
@@ -69,10 +62,6 @@ module.exports = {
           DEFAULT: 'var(--hii-info)',
           soft: '#dbeafe',
           foreground: '#1e40af',
-        },
-        neutral: {
-          soft: '#f1f5f9',
-          foreground: '#475569',
         },
         // Phase-1 shell visual direction (see globals.css). Fixed dark chrome +
         // HIIEKO accent; declared as colours, never as a `dark:` theme.
@@ -105,18 +94,20 @@ module.exports = {
         '88': '22rem',
       },
       borderRadius: {
-        'xs': '0.25rem',
-        'sm': '0.375rem',
+        // D0: only `lg` and `xl` are part of the system beyond Tailwind defaults.
+        // `md` is kept because pages use `rounded-md` (58 occurrences) and the
+        // custom value (0.5rem) differs from Tailwind's default (0.375rem);
+        // removing it would change the preview. Migrate pages in D4.
         'md': '0.5rem',
         'lg': '0.625rem',
         'xl': '0.75rem',
-        '2xl': '1rem',
       },
       boxShadow: {
+        // D0: the only two custom shadows (hii-shadow-card / hii-shadow-elevated
+        // in globals.css share these exact values). Kept under their utility
+        // names `shadow-card` / `shadow-elevated` because pages reference them.
         'card': '0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06)',
-        'card-hover': '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 2px 6px -1px rgb(0 0 0 / 0.08)',
         'elevated': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'focus': '0 0 0 3px rgba(15, 112, 64, 0.3)',
       },
       maxWidth: {
         'page': '80rem',
