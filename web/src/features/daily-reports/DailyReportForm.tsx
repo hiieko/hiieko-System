@@ -95,22 +95,24 @@ export function DailyReportForm({ reportId }: Props) {
         </fieldset>
       </Card>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between z-30 shadow-lg">
-        <Button variant="ghost" size="sm" onClick={goBack} disabled={currentIdx === 0}><ChevronLeft className="w-4 h-4 mr-1" />{t('daily_report.back', locale)}</Button>
-        {readOnly ? (
-          <Button variant="secondary" size="sm" onClick={() => router.push('/rapoarte')} icon={<ArrowLeft className="w-4 h-4" />}>{t('daily_report.back_to_list', locale)}</Button>
-        ) : (
-          <>
-            <Button variant="outline" size="sm" onClick={handleSave} loading={saving} disabled={submitting} icon={<Save className="w-4 h-4" />}>{t('daily_report.save_draft', locale)}</Button>
-            {section !== 'review' ? (
-              <Button variant="primary" size="sm" onClick={goNext} icon={<ChevronRight className="w-4 h-4" />} iconPosition="right">{t('daily_report.next', locale)}</Button>
-            ) : (
-              <div data-testid="submit-report-footer">
-                <Button variant="primary" size="sm" onClick={requestSubmit} loading={submitting} disabled={saving} icon={<Send className="w-4 h-4" />}>{t('daily_report.submit_report', locale)}</Button>
-              </div>
-            )}
-          </>
-        )}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 z-30 shadow-lg">
+        <div className="mx-auto max-w-2xl flex items-center justify-between gap-2">
+          <Button variant="ghost" size="sm" onClick={goBack} disabled={currentIdx === 0}><ChevronLeft className="w-4 h-4 mr-1" />{t('daily_report.back', locale)}</Button>
+          {readOnly ? (
+            <Button variant="secondary" size="sm" onClick={() => router.push('/rapoarte')} icon={<ArrowLeft className="w-4 h-4" />}>{t('daily_report.back_to_list', locale)}</Button>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button variant="outline" size="sm" onClick={handleSave} loading={saving} disabled={submitting} icon={<Save className="w-4 h-4" />}>{t('daily_report.save_draft', locale)}</Button>
+              {section !== 'review' ? (
+                <Button variant="primary" size="sm" onClick={goNext} icon={<ChevronRight className="w-4 h-4" />} iconPosition="right">{t('daily_report.next', locale)}</Button>
+              ) : (
+                <div data-testid="submit-report-footer">
+                  <Button variant="primary" size="sm" onClick={requestSubmit} loading={submitting} disabled={saving} icon={<Send className="w-4 h-4" />}>{t('daily_report.submit_report', locale)}</Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/*

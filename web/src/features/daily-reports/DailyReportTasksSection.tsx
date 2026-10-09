@@ -57,7 +57,7 @@ export function DailyReportTasksSection({ form, onChange }: Props) {
             <p className="text-sm font-medium text-slate-800 truncate">{task.taskTitle || task.taskId}</p>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs text-slate-500">{t('daily_report.quantity_done', locale)}:</span>
-              <input type="number" min="0" step="0.01" value={task.quantityDone}
+              <input type="number" min="0" step="0.01" inputMode="decimal" value={task.quantityDone}
                 onChange={e => updateTask(i, { quantityDone: Number(e.target.value) || 0 })}
                 className="w-20 text-xs border border-slate-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-hii-500" />
               {task.taskUnit && <span className="text-xs text-slate-400">{task.taskUnit}</span>}
@@ -81,7 +81,7 @@ export function DailyReportTasksSection({ form, onChange }: Props) {
               <option key={t.id} value={t.id}>{t.title || t.code} {t.unit_of_measure ? `(${t.unit_of_measure})` : ''}</option>
             ))}
           </select>
-          <input type="number" min="0" step="0.01" value={newQty} onChange={e => setNewQty(e.target.value)}
+          <input type="number" min="0" step="0.01" inputMode="decimal" value={newQty} onChange={e => setNewQty(e.target.value)}
             placeholder={t('daily_report.quantity_done', locale)}
             className="w-full text-sm border border-slate-200 rounded-md px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-hii-500" />
           <input value={newNotes} onChange={e => setNewNotes(e.target.value)}

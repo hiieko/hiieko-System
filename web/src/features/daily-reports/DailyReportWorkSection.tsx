@@ -58,7 +58,7 @@ export function DailyReportWorkSection({ form, onChange }: Props) {
       </div>
 
       {/* Start/End Time */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1"><Clock className="w-3.5 h-3.5" />{t('daily_report.start_time', locale)}</label>
           <input type="time" value={form.startTime} onChange={e => onChange({ startTime: e.target.value })}

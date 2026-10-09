@@ -54,7 +54,7 @@ export function DailyReportMaterialsSection({ form, onChange }: Props) {
             <div className="flex gap-2 mt-1">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-slate-500">{t('daily_report.quantity', locale)}:</span>
-                <input type="number" min="0" step="0.01" value={m.quantityUsed}
+                <input type="number" min="0" step="0.01" inputMode="decimal" value={m.quantityUsed}
                   onChange={e => updateMaterial(i, { quantityUsed: Number(e.target.value) || 0 })}
                   className="w-20 text-xs border border-slate-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-hii-500" />
                 {m.materialUnit && <span className="text-xs text-slate-400">{m.materialUnit}</span>}
@@ -79,7 +79,7 @@ export function DailyReportMaterialsSection({ form, onChange }: Props) {
               <option key={m.id} value={m.id}>{m.name || m.code} {m.unit ? `(${m.unit})` : ''}</option>
             ))}
           </select>
-          <input type="number" min="0" step="0.01" value={newQty} onChange={e => setNewQty(e.target.value)}
+          <input type="number" min="0" step="0.01" inputMode="decimal" value={newQty} onChange={e => setNewQty(e.target.value)}
             placeholder={t('daily_report.quantity', locale)}
             className="w-full text-sm border border-slate-200 rounded-md px-2.5 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-hii-500" />
           <input value={newRemarks} onChange={e => setNewRemarks(e.target.value)}
