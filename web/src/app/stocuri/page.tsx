@@ -8,10 +8,10 @@ import { useProject } from '../../contexts/ProjectContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
-import { Button, EmptyState } from '../../components/ui';
+import { Button, EmptyState, Card, Badge, PageHeader, ErrorState, Skeleton, Modal } from '../../components/ui';
 import {
   Boxes, AlertTriangle, ArrowUpRight, ArrowDownRight, History, Plus,
-  Search, Loader2, AlertCircle, RefreshCw, X, ArrowLeftRight
+  Search, RefreshCw, ArrowLeftRight
 } from 'lucide-react';
 
 interface Material {
@@ -157,19 +157,21 @@ function StocuriPageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="stock" />
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{locale === 'en' ? 'Inventory' : 'Gestiune stocuri'}</p>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{locale === 'en' ? 'Stock & Material Movements' : 'Stocuri și mișcări materiale'}</h1>
-          <p className="text-sm text-slate-500 mt-1">{locale === 'en' ? 'Current balances and the immutable movement ledger, scoped to your project access.' : 'Soldurile curente și jurnalul imutabil al mișcărilor, limitate la proiectele la care ai acces.'}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId && <Button type="button" variant="primary" onClick={() => openAction('receive')}><Plus className="w-4 h-4 mr-1.5" />{locale === 'en' ? 'Receive' : 'Recepție'}</Button>}
-          {MUTATION_ROLES.consume.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('consume')}><ArrowDownRight className="w-4 h-4 mr-1.5" />{locale === 'en' ? 'Consume' : 'Consum'}</Button>}
-          {MUTATION_ROLES.transfer.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('transfer')}><ArrowLeftRight className="w-4 h-4 mr-1.5" />{locale === 'en' ? 'Transfer' : 'Transfer'}</Button>}
-          <button type="button" onClick={() => void loadData()} disabled={loading} className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 disabled:opacity-50"><RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{locale === 'en' ? 'Refresh' : 'Reîmprospătează'}</button>
-        </div>
-      </div>
+      <PageHeader
+        className="!mb-0"
+        title={locale === 'en' ? 'Stock & Material Movements' : 'Stocuri și mișcări materiale'}
+        subtitle={locale === 'en' ? 'Current balances and the immutable movement ledger, scoped to your project access.' : 'Soldurile curente și jurnalul imutabil al mișcărilor, limitate la proiectele la care ai acces.'}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId && <Button type="button" variant="primary" onClick={() => openAction('receive')} icon={<Plus className="w-4 h-4" />}>{locale === 'en' ? 'Receive' : 'Recepție'}</Button>}
+            {MUTATION_ROLES.consume.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('consume')} icon={<ArrowDownRight className="w-4 h-4" />}>{locale === 'en' ? 'Consume' : 'Consum'}</Button>}
+            {MUTATION_ROLES.transfer.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('transfer')} icon={<ArrowLeftRight className="w-4 h-4" />}>{locale === 'en' ? 'Transfer' : 'Transfer'}</Button>}
+            <Button type="button" variant="secondary" onClick={() => void loadData()} disabled={loading} icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}>
+              {locale === 'en' ? 'Refresh' : 'Reîmprospătează'}
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Summary label={locale === 'en' ? 'Materials in stock' : 'Materiale cu stoc'} value={balances.length} />
@@ -179,16 +181,27 @@ function StocuriPageInner() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-5 flex items-start gap-3 text-rose-800"><AlertCircle className="w-5 h-5 mt-0.5" /><div><p className="font-semibold">{locale === 'en' ? 'Could not load stock' : 'Nu s-au putut încărca stocurile'}</p><p className="text-sm mt-1">{error}</p><button type="button" onClick={() => void loadData()} className="mt-3 text-sm font-semibold underline">{locale === 'en' ? 'Retry' : 'Încearcă din nou'}</button></div></div>
+        <ErrorState
+          title={locale === 'en' ? 'Could not load stock' : 'Nu s-au putut încărca stocurile'}
+          error={error}
+          onRetry={() => void loadData()}
+        />
       ) : loading ? (
-        <div className="rounded-xl border border-slate-200 bg-white py-16 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-slate-400" /><p className="mt-2 text-sm text-slate-500">{locale === 'en' ? 'Loading stock…' : 'Se încarcă stocurile…'}</p></div>
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
       ) : (
         <>
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <Card padding={false} className="overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Boxes className="w-4 h-4 text-amber-600" />{locale === 'en' ? 'Current stock' : 'Stoc curent'}</div>
               <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <div className="relative"><Search className="absolute left-2.5 top-2.5 w-4 h-4 text-slate-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder={locale === 'en' ? 'Search material…' : 'Caută material…'} className="pl-8 pr-3 py-2 w-full sm:w-64 rounded-lg border border-slate-200 text-sm" /></div>
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder={locale === 'en' ? 'Search material…' : 'Caută material…'} className="hii-input pl-10" />
+                </div>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -225,18 +238,18 @@ function StocuriPageInner() {
                       const threshold = material?.min_stock_threshold;
                       const critical = typeof threshold === 'number' && qty <= threshold;
                       return <tr key={balance.id} className="hover:bg-slate-50">
-                        <td className="py-3.5 px-4 font-mono font-bold">{material?.code || '—'}</td><td className="py-3.5 px-4 font-medium">{material?.name || '—'}</td><td className="py-3.5 px-4 text-xs text-slate-500">{material?.category || '—'}</td><td className="py-3.5 px-4 font-mono text-xs text-slate-500">{material?.barcode || '—'}</td><td className="py-3.5 px-4 text-right text-xs text-slate-500">{threshold == null ? '—' : `${threshold} ${material?.unit || ''}`}</td><td className="py-3.5 px-4 text-right font-extrabold">{qty} <span className="text-xs font-normal text-slate-500">{material?.unit || ''}</span></td><td className="py-3.5 px-4 text-center">{critical ? <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800"><AlertTriangle className="w-3 h-3 mr-1" />{locale === 'en' ? 'Critical' : 'Critic'}</span> : <span className="text-xs text-slate-500">{threshold == null ? (locale === 'en' ? 'No threshold' : 'Fără prag') : (locale === 'en' ? 'OK' : 'OK')}</span>}</td>
+                        <td className="py-3.5 px-4 font-mono font-bold">{material?.code || '—'}</td><td className="py-3.5 px-4 font-medium">{material?.name || '—'}</td><td className="py-3.5 px-4 text-xs text-slate-500">{material?.category || '—'}</td><td className="py-3.5 px-4 font-mono text-xs text-slate-500">{material?.barcode || '—'}</td><td className="py-3.5 px-4 text-right text-xs text-slate-500">{threshold == null ? '—' : `${threshold} ${material?.unit || ''}`}</td><td className="py-3.5 px-4 text-right font-extrabold">{qty} <span className="text-xs font-normal text-slate-500">{material?.unit || ''}</span></td><td className="py-3.5 px-4 text-center">{critical ? <Badge variant="danger" size="sm"><AlertTriangle className="w-3 h-3" />{locale === 'en' ? 'Low' : 'Low'}</Badge> : <span className="text-xs text-slate-500">{threshold == null ? (locale === 'en' ? 'No threshold' : 'Fără prag') : (locale === 'en' ? 'OK' : 'OK')}</span>}</td>
                       </tr>;
                     })}
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <Card padding={false} className="overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><History className="w-4 h-4 text-amber-600" />{locale === 'en' ? 'Immutable movement audit trail' : 'Jurnal imutabil al mișcărilor'}</div>
-              <select value={movementFilter} onChange={e => setMovementFilter(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs bg-white">
+              <select value={movementFilter} onChange={e => setMovementFilter(e.target.value)} className="hii-select !w-auto text-xs">
                 <option value="ALL">{locale === 'en' ? 'All movement types' : 'Toate tipurile'}</option>
                 {Array.from(new Set(movements.map(m => m.movement_type))).map(type => <option key={type} value={type}>{type}</option>)}
               </select>
@@ -267,34 +280,68 @@ function StocuriPageInner() {
                       const type = mv.movement_type.toUpperCase();
                       const positive = type === 'RECEIPT' || type === 'TRANSFER_IN' || type === 'RETURN' || (type === 'ADJUSTMENT' && Number(mv.quantity) >= 0);
                       const label = type === 'RECEIPT' ? (locale === 'en' ? 'Receipt' : 'Recepție') : type === 'CONSUMPTION' ? (locale === 'en' ? 'Consumption' : 'Consum') : type === 'TRANSFER_OUT' ? (locale === 'en' ? 'Transfer out' : 'Transfer ieșire') : type === 'TRANSFER_IN' ? (locale === 'en' ? 'Transfer in' : 'Transfer intrare') : type;
-                      return <tr key={mv.id} className="hover:bg-slate-50"><td className="py-3 px-4 font-mono text-slate-600">{new Date(mv.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}</td><td className="py-3 px-4">{positive ? <span className="inline-flex items-center text-emerald-700 bg-emerald-50 px-2 py-1 rounded font-semibold"><ArrowUpRight className="w-3.5 h-3.5 mr-1" />{label}</span> : <span className="inline-flex items-center text-rose-700 bg-rose-50 px-2 py-1 rounded font-semibold"><ArrowDownRight className="w-3.5 h-3.5 mr-1" />{label}</span>}</td><td className="py-3 px-4 font-medium">{mv.material?.name || materials.find(m => m.id === mv.material_id)?.name || '—'}</td><td className="py-3 px-4 text-right font-bold">{positive ? '+' : '-'}{Number(mv.quantity)} {mv.material?.unit || materials.find(m => m.id === mv.material_id)?.unit || ''}</td><td className="py-3 px-4">{mv.project?.name || '—'}</td><td className="py-3 px-4 text-slate-500">{mv.notes || '—'}</td></tr>;
+                      const badgeVariant = type === 'CONSUMPTION' ? 'info' : (type === 'TRANSFER_OUT' || type === 'TRANSFER_IN') ? 'neutral' : 'success';
+                      return <tr key={mv.id} className="hover:bg-slate-50"><td className="py-3 px-4 font-mono text-slate-600">{new Date(mv.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}</td><td className="py-3 px-4"><Badge variant={badgeVariant} size="sm">{positive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}{label}</Badge></td><td className="py-3 px-4 font-medium">{mv.material?.name || materials.find(m => m.id === mv.material_id)?.name || '—'}</td><td className="py-3 px-4 text-right font-bold">{positive ? '+' : '-'}{Number(mv.quantity)} {mv.material?.unit || materials.find(m => m.id === mv.material_id)?.unit || ''}</td><td className="py-3 px-4">{mv.project?.name || '—'}</td><td className="py-3 px-4 text-slate-500">{mv.notes || '—'}</td></tr>;
                     })}
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         </>
       )}
 
-      {action && <div className="fixed inset-0 z-50 bg-slate-950/40 p-4 flex items-center justify-center" role="dialog" aria-modal="true">
-        <div className="w-full max-w-lg rounded-xl bg-white shadow-xl border border-slate-200">
-          <div className="flex items-start justify-between p-5 border-b border-slate-100"><div><h2 className="text-lg font-bold text-slate-900">{actionLabel}</h2><p className="text-xs text-slate-500 mt-1">{locale === 'en' ? 'This operation is persisted through the inventory API and immutable ledger.' : 'Operațiunea este salvată prin API-ul de inventar și jurnalul imutabil.'}</p></div><button type="button" onClick={() => !saving && setAction(null)} className="p-2 rounded-lg hover:bg-slate-100"><X className="w-4 h-4" /></button></div>
-          <div className="p-5 space-y-4">
-            <label className="block text-sm font-semibold text-slate-700">{locale === 'en' ? 'Material' : 'Material'}<select value={materialId} onChange={e => setMaterialId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-normal"><option value="">{locale === 'en' ? 'Select material' : 'Selectează materialul'}</option>{materials.map(m => <option key={m.id} value={m.id}>{m.code} — {m.name} ({m.unit})</option>)}</select></label>
-            <label className="block text-sm font-semibold text-slate-700">{locale === 'en' ? 'Quantity' : 'Cantitate'}<input type="number" min="0.0001" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-normal" /></label>
-            {action === 'transfer' && <label className="block text-sm font-semibold text-slate-700">{locale === 'en' ? 'Target project' : 'Proiect țintă'}<select value={targetProjectId} onChange={e => setTargetProjectId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-normal"><option value="">{locale === 'en' ? 'Select target project' : 'Selectează proiectul țintă'}</option>{projects.filter(p => p.id !== selectedProjectId).map(p => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}</select></label>}
-            <label className="block text-sm font-semibold text-slate-700">{locale === 'en' ? 'Notes' : 'Observații'}<textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-normal" /></label>
-            {formError && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{formError}</div>}
+      <Modal
+        open={!!action}
+        onClose={() => { if (!saving) setAction(null); }}
+        title={actionLabel}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setAction(null)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary" onClick={() => void submitAction()} loading={saving} disabled={saving}>
+              {saving ? (locale === 'en' ? 'Saving…' : 'Se salvează…') : actionLabel}
+            </Button>
           </div>
-          <div className="flex justify-end gap-2 p-5 border-t border-slate-100"><button type="button" onClick={() => setAction(null)} disabled={saving} className="px-4 py-2 text-sm font-semibold border rounded-lg">Cancel</button><Button type="button" variant="primary" onClick={() => void submitAction()} disabled={saving}>{saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}{saving ? (locale === 'en' ? 'Saving…' : 'Se salvează…') : actionLabel}</Button></div>
+        }
+      >
+        <p className="text-xs text-slate-500 -mt-2">
+          {locale === 'en' ? 'This operation is persisted through the inventory API and immutable ledger.' : 'Operațiunea este salvată prin API-ul de inventar și jurnalul imutabil.'}
+        </p>
+        <div className="space-y-4">
+          <div>
+            <label className="hii-label">{locale === 'en' ? 'Material' : 'Material'}</label>
+            <select value={materialId} onChange={e => setMaterialId(e.target.value)} className="hii-select">
+              <option value="">{locale === 'en' ? 'Select material' : 'Selectează materialul'}</option>
+              {materials.map(m => <option key={m.id} value={m.id}>{m.code} — {m.name} ({m.unit})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="hii-label">{locale === 'en' ? 'Quantity' : 'Cantitate'}</label>
+            <input type="number" min="0.0001" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} className="hii-input" />
+          </div>
+          {action === 'transfer' && (
+            <div>
+              <label className="hii-label">{locale === 'en' ? 'Target project' : 'Proiect țintă'}</label>
+              <select value={targetProjectId} onChange={e => setTargetProjectId(e.target.value)} className="hii-select">
+                <option value="">{locale === 'en' ? 'Select target project' : 'Selectează proiectul țintă'}</option>
+                {projects.filter(p => p.id !== selectedProjectId).map(p => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="hii-label">{locale === 'en' ? 'Notes' : 'Observații'}</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none" />
+          </div>
+          {formError && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{formError}</div>}
         </div>
-      </div>}
+      </Modal>
     </div>
   );
 }
 
 function Summary({ label, value, attention = false }: { label: string; value: number; attention?: boolean }) {
-  return <div className={`rounded-xl border p-4 bg-white ${attention ? 'border-rose-200' : 'border-slate-200'}`}><p className="text-xs font-semibold text-slate-500">{label}</p><p className={`mt-1 text-2xl font-bold ${attention ? 'text-rose-700' : 'text-slate-900'}`}>{value}</p></div>;
+  return <Card className={`p-4 ${attention ? '!border-rose-200' : ''}`}><p className="text-xs font-semibold text-slate-500">{label}</p><p className={`mt-1 text-2xl font-bold ${attention ? '!text-rose-700' : 'text-slate-900'}`}>{value}</p></Card>;
 }
 
 export default function StocuriPage() {
