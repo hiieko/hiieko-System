@@ -1,7 +1,8 @@
 ﻿# Role / Sidebar / Action Visibility Matrix
 
 > Source of truth: comprehensive backend (31 controllers) + frontend (21 routes + Sidebar.tsx + AppShell.tsx) audit.
-> Last Updated: 2026-10-05 (UX-R1A C4 corrected two rows: `/control-tower` is the `Turn de Control` destination - `/statistici` is a C2 redirect and no longer a page - and `/avize` reads `Livrări & Avize`. See the notes below the table.)
+> Last Updated: 2026-10-07 (restated §3 to `web/src/config/route-roles.ts` after the frontend guards/sidebar
+> were aligned to the canonical map; see the reconciliation note below the table.)
 
 ---
 
@@ -35,18 +36,26 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
 |------|-------|-------|-------|---------|----|----------|---------|-----------|------|--------|--------|---------|---------|-------|----------|-----------|----------|
 | **Operațiuni** | | | | | | | | | | | | | | | | | |
 | Dashboard | / | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Pontaj & Ore | /pontaj | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
-| Rapoarte Zilnice | /rapoarte | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
-| Livrări & Avize | /avize | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | ✅ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
-| Materiale & Stoc | /stocuri | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | 👁️ | 👁️ | ✅ | ✅ | ✅ |
-| Cheltuieli | /cheltuieli | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 👁️ | 👁️ | ✅ | 👁️ | 👁️ | ✅ | ✅ |
+| Configurator Solar | /solar-configurator | ✅ | ✅ | 🔒 | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Task-uri | /tasks | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Plan Zilnic | /planning | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Probleme & Blocaje | /issues | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Pontaj & Ore | /pontaj | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Rapoarte Zilnice | /rapoarte | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Documente | /documente | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Livrări & Avize | /avize | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Materiale & Stoc | /stocuri | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Cheltuieli | /cheltuieli | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 |
 | **Management** | | | | | | | | | | | | | | | | | |
-| Proiecte | /projects | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Proiecte | /projects | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
 | Echipe | /teams | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
-| Forță de Muncă | /workforce | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Furnizori | /furnizori | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Depozite | /depozite | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| Forță de Muncă | /workforce | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 |
 | Șantiere (GIS) | /santiere | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
-| Aprobări | /aprobare | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 |
-| Turn de Control | /control-tower | ✅ | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
+| QA / QC | /qa-qc | ✅ | ✅ | 🔒 | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 |
+| Aprobări | /aprobare | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | 🔒 | 🔒 | 🔒 | 🔒 |
+| Turn de Control | /control-tower | ✅ | ✅ | ✅ | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Administrare** | | | | | | | | | | | | | | | | | |
 | Utilizatori | /utilizatori | ✅ | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 | 🔒 |
 | **Personal** | | | | | | | | | | | | | | | | | |
@@ -64,12 +73,25 @@ SITE_MANAGER, FOREMAN, TEAM_LEADER, TECHNICIAN, WORKER, VIEWER, PROCUREMENT, FIN
   `Notificări`, `Operațiuni`) and the legend emoji render as mojibake. The two rows above
   now contain real characters; a full re-encode should happen when this document is next revised
   (ISSUE-056).
+- **Reconciliation (2026-10-07):** the sidebar (`NAV_GROUPS`) and every guarded page now read
+  `ROUTE_ROLES[...]` directly (G3 parity guard in `npm run guards:check`), so the table above is
+  restated byte-for-byte from `web/src/config/route-roles.ts` and matches what the sidebar actually
+  shows. Rows restated: `/pontaj`, `/rapoarte`, `/avize`, `/stocuri`, `/cheltuieli`, `/projects`,
+  `/workforce`, `/aprobare`, `/control-tower`; rows added: Configurator Solar, Task-uri, Plan Zilnic,
+  Probleme & Blocaje, Documente, Furnizori, Depozite, QA / QC.
 
 ### Sidebar Group Visibility Rules
-- **Operațiuni**: All authenticated users (no role filter)
-- **Management**: admin, owner, manager, pm
-- **Administrare**: admin only
-- **Personal**: All authenticated users (no role filter)
+`NAV_GROUPS` carries no group-level roles: every item reads `ROUTE_ROLES[href]` from
+`web/src/config/route-roles.ts` (`npm run guards:check` rule G3 enforces navigation ↔ map parity, and
+every guarded page uses the same map, so the sidebar cannot show a link that the page guard denies).
+- **Operațiuni**: per item — `/`, `/documente` advertise to all authenticated roles; the rest advertise
+  the operational set (9 roles), with `/avize` + `procurement` and `/cheltuieli` + `finance`.
+- **Management**: per item — `/projects` & `/teams` (`PROJECT_ROLES`), `/furnizori` (`SUPPLIER_ROLES`),
+  `/depozite` (`WAREHOUSE_ROLES`), `/workforce` (`WORKFORCE_ROLES`), `/santiere` (`GIS_ROLES`),
+  `/qa-qc` (`QA_ROLES`), `/aprobare` (`APPROVAL_ROLES`), `/control-tower` (`CONTROL_TOWER_ROLES`).
+- **Administrare**: `/utilizatori` = admin only (owner still reaches the page via the `RoleGuard`
+  admin/owner superset — ISSUE-054, accepted).
+- **Personal**: all authenticated roles.
 
 ---
 

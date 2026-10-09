@@ -51,8 +51,10 @@ export const PROJECT_ROLES: string[] = [
 ];
 
 /**
- * `/solar-configurator`. Note: `worker` is deliberately NOT here — the sidebar
- * never offered it, so the page guard is aligned to the advertised contract.
+ * `/solar-configurator`. Matches the backend write contract (`solar.controller.ts`
+ * `@Roles(ADMIN, OWNER, PM, SITE_MANAGER)`). `manager` / `foreman` / `technician` /
+ * `worker` were removed by the 2026-10-05 authorization reconciliation, which is why
+ * neither the sidebar nor the page guard offers them a surface here.
  */
 export const SOLAR_CONFIGURATOR_ROLES: string[] = [
   'admin',
@@ -69,9 +71,11 @@ export const SOLAR_CONFIGURATOR_ROLES: string[] = [
 export const WORKFORCE_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'finance'];
 
 /**
- * `/aprobare`. `owner` is kept (current page guard + role superset) and
- * `procurement` / `finance` are NOT added: the expense approval contract has
- * not been verified as an intended organisational permission. See ISSUES.md.
+ * `/aprobare`. `owner` is kept (current page guard + role superset). `finance` was added
+ * by the 2026-10-05 authorization reconciliation: `POST /api/expenses/:id/approve` is
+ * `@Roles(ADMIN, MANAGER, PM, FINANCE)` (`expenses.controller.ts:61`), so keeping it out
+ * of the page would deny the role that owns the approval step. `procurement` is NOT added:
+ * its access has not been verified as an intended organisational permission. See ISSUES.md.
  */
 export const APPROVAL_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'finance'];
 
@@ -79,12 +83,18 @@ export const APPROVAL_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'fin
 export const GIS_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'site_manager'];
 
 /**
- * `/qa` (QA/QC inspections). Mirrors the backend authorization on
+ * `/qa-qc` (QA/QC inspections — the canonical quality route; legacy `/qa` redirects here
+ * via `web/next.config.js`). Role list mirrors the backend authorization on
  * `POST /api/qa-qc/inspections` (`@Roles(ADMIN, QA_QC, PM, SITE_MANAGER)` —
- * `backend/src/modules/qa-qc/qa-qc.controller.ts`), extended with `owner` per the
+ * `backend/src/modules/qa-qc/qa-qc.controller.ts:38`), extended with `owner` per the
  * established global-bypass convention (`RoleGuard` lets admin/owner through
- * everywhere already). Read access is project-scoped for any authenticated member
- * (no `@Roles` on `GET`), matching the Issues pattern.
+ * everywhere already, so `owner` records the bypass rather than granting anything new).
+ * It is also the narrowest contract the existing sources agree on: the backend
+ * decorator, `QualityWorkspace.mayRecordInspection` and the retired `/qa` page guard
+ * all resolve to the same set. The drifted sidebar list that once added `manager` is
+ * not a contract source (UX-R1A C2: navigation follows this map, not the other way
+ * round). Read access is project-scoped for any authenticated member (no `@Roles` on
+ * `GET`), matching the Issues pattern.
  */
 export const QA_ROLES: string[] = ['admin', 'owner', 'qa_qc', 'pm', 'site_manager'];
 
@@ -170,7 +180,7 @@ export type AppRoute =
   | '/depozite'
   | '/workforce'
   | '/santiere'
-  | '/qa'
+  | '/qa-qc'
   | '/aprobare'
   | '/utilizatori'
   | '/documente'
@@ -205,7 +215,7 @@ export const ROUTE_ROLES = {
   '/depozite': WAREHOUSE_ROLES,
   '/workforce': WORKFORCE_ROLES,
   '/santiere': GIS_ROLES,
-  '/qa': QA_ROLES,
+  '/qa-qc': QA_ROLES,
   '/aprobare': APPROVAL_ROLES,
   '/utilizatori': ADMIN_ROLES,
   '/documente': null,

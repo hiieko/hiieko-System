@@ -1,4 +1,5 @@
-﻿{
+{
+  "$schema": "https://opencode.ai/config.json",
   "": "https://opencode.ai/config.jsonc",
   "agent": {
     "subagents": {

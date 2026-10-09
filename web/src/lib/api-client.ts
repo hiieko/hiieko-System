@@ -884,23 +884,6 @@ export class NestApiClient {
     );
   }
 
-  async checkIn(data: any): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>('/api/attendance/check-in', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async checkOut(attendanceRecordId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>('/api/attendance/check-out', {
-      method: 'POST',
-      body: JSON.stringify({
-        attendanceRecordId,
-        ...data,
-      }),
-    });
-  }
-
   async getMyAttendanceLogs(date?: string): Promise<ApiResponse<any>> {
     const q = date ? `?date=${encodeURIComponent(date)}` : '';
     return this.request<ApiResponse<any>>(`/api/attendance/my-logs${q}`);
@@ -1482,8 +1465,6 @@ export interface IApiClient {
     startDate?: string;
     endDate?: string;
   }): Promise<ApiResponse<any[]>>;
-  checkIn(data: any): Promise<ApiResponse<any>>;
-  checkOut(id: string, data: any): Promise<ApiResponse<any>>;
   getMyAttendanceLogs(date?: string): Promise<ApiResponse<any>>;
   checkInAttendance(data: { projectId: string; latitude: number; longitude: number; idempotencyKey?: string }): Promise<ApiResponse<any>>;
   checkOutAttendance(data: { projectId?: string; latitude: number; longitude: number; notes?: string }): Promise<ApiResponse<any>>;

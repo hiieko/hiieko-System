@@ -19,6 +19,19 @@
  *             `'TODO'` / `'DONE'` used as task statuses, and any newly invented status,
  *             without touching unrelated legitimate strings elsewhere in the application.
  *
+ * G3 (FAIL) - navigation ↔ `ROUTE_ROLES` parity. `config/route-roles.ts` is the
+ *             authorization contract and `config/navigation.ts` is what the sidebar
+ *             advertises; the contract in route-roles.ts states that a route a role
+ *             cannot use MUST NOT be advertised to it. Two concrete assertions:
+ *               G3a - every nav `href` must be a key of `ROUTE_ROLES` (no links to
+ *                     routes outside the contract);
+ *               G3b - every role a nav item is advertised to (its own `roles`, else its
+ *                     group's `roles`, else every authenticated role) must be allowed by
+ *                     `ROUTE_ROLES[href]` (`null` allows everyone; a list denies every
+ *                     role outside it).
+ *             The two config files are parsed as data (comments stripped, values walked),
+ *             so `ROUTE_ROLES['/x']` references and role-array spreads resolve normally.
+ *
  * R1 (REPORT) - allow-listed legacy tokens found OUTSIDE TASK_SCOPE (visibility only), and
  *             `progress` reads on a task object (Prisma `Task` exposes actual_quantity /
  *             planned_quantity, not `progress`).
@@ -229,6 +242,316 @@ for (const file of files) {
   });
 }
 
+/* ---------------------------------------------------------------------------
+ * G3 - navigation ↔ ROUTE_ROLES parity
+ * ------------------------------------------------------------------------ */
+
+const ROUTE_ROLES_SOURCE = 'web/src/config/route-roles.ts';
+const NAVIGATION_SOURCE = 'web/src/config/navigation.ts';
+
+/** Remove comments without touching anything inside a string literal. */
+function stripComments(src) {
+  let out = '';
+  let i = 0;
+  let quote = null;
+  while (i < src.length) {
+    const c = src[i];
+    if (quote !== null) {
+      if (c === '\\') {
+        out += c + (src[i + 1] ?? '');
+        i += 2;
+        continue;
+      }
+      if (c === quote) quote = null;
+      out += c;
+      i += 1;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      quote = c;
+      out += c;
+      i += 1;
+      continue;
+    }
+    if (c === '/' && src[i + 1] === '/') {
+      while (i < src.length && src[i] !== '\n') i += 1;
+      continue;
+    }
+    if (c === '/' && src[i + 1] === '*') {
+      const end = src.indexOf('*/', i + 2);
+      i = end === -1 ? src.length : end + 2;
+      continue;
+    }
+    out += c;
+    i += 1;
+  }
+  return out;
+}
+
+function tokenize(src) {
+  const tokens = [];
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (/\s/.test(c)) {
+      i += 1;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      let j = i + 1;
+      let value = '';
+      while (j < src.length) {
+        if (src[j] === '\\') {
+          value += src[j + 1] ?? '';
+          j += 2;
+          continue;
+        }
+        if (src[j] === c) break;
+        value += src[j];
+        j += 1;
+      }
+      tokens.push({ t: 'str', v: value });
+      i = j + 1;
+      continue;
+    }
+    if ('{}[],:;.'.includes(c)) {
+      tokens.push({ t: c });
+      i += 1;
+      continue;
+    }
+    if (/[A-Za-z_$]/.test(c)) {
+      let j = i;
+      while (j < src.length && /[\w$]/.test(src[j])) j += 1;
+      tokens.push({ t: 'id', v: src.slice(i, j) });
+      i = j;
+      continue;
+    }
+    i += 1;
+  }
+  return tokens;
+}
+
+function parseValueAt(tokens, start, where) {
+  const first = tokens[start];
+  if (first === undefined) throw new Error(`unexpected end of input in ${where}`);
+  if (first.t === 'str') return [{ kind: 'str', v: first.v }, start + 1];
+  if (first.t === 'id' && (first.v === 'null' || first.v === 'undefined')) {
+    return [{ kind: 'null' }, start + 1];
+  }
+  if (first.t === '[') {
+    const items = [];
+    let i = start + 1;
+    while (tokens[i] !== undefined && tokens[i].t !== ']') {
+      const [value, next] = parseValueAt(tokens, i, where);
+      items.push(value);
+      i = next;
+      if (tokens[i] !== undefined && tokens[i].t === ',') i += 1;
+    }
+    if (tokens[i] === undefined || tokens[i].t !== ']') {
+      throw new Error(`unterminated array in ${where}`);
+    }
+    return [{ kind: 'array', items }, i + 1];
+  }
+  if (first.t === '{') {
+    const obj = {};
+    let i = start + 1;
+    while (tokens[i] !== undefined && tokens[i].t !== '}') {
+      const key = tokens[i];
+      if (key === undefined || (key.t !== 'str' && key.t !== 'id')) {
+        throw new Error(`unexpected object key in ${where}`);
+      }
+      i += 1;
+      if (tokens[i] === undefined || tokens[i].t !== ':') {
+        throw new Error(`expected ':' after '${key.v}' in ${where}`);
+      }
+      const [value, next] = parseValueAt(tokens, i + 1, where);
+      obj[key.v] = value;
+      i = next;
+      if (tokens[i] !== undefined && tokens[i].t === ',') i += 1;
+    }
+    if (tokens[i] === undefined || tokens[i].t !== '}') {
+      throw new Error(`unterminated object in ${where}`);
+    }
+    return [{ kind: 'object', obj }, i + 1];
+  }
+  if (first.t === 'id') {
+    const ref = { kind: 'ref', name: first.v, index: null };
+    let i = start + 1;
+    while (tokens[i] !== undefined && tokens[i].t === '[') {
+      const inner = tokens[i + 1];
+      if (inner === undefined || inner.t !== 'str') {
+        throw new Error(`unsupported index expression in ${where}`);
+      }
+      ref.index = inner.v;
+      if (tokens[i + 2] === undefined || tokens[i + 2].t !== ']') {
+        throw new Error(`unterminated index expression in ${where}`);
+      }
+      i += 3;
+    }
+    while (
+      tokens[i] !== undefined && tokens[i].t === '.' &&
+      tokens[i + 1] !== undefined && tokens[i + 1].t === 'id'
+    ) {
+      ref.name += `.${tokens[i + 1].v}`;
+      i += 2;
+    }
+    return [ref, i];
+  }
+  throw new Error(`unsupported token '${first.t}' in ${where}`);
+}
+
+function parseRouteRoles(src) {
+  const roleSets = {};
+  const declPattern = /export\s+const\s+(\w+)\s*:\s*string\[\]\s*=\s*\[([\s\S]*?)\]/g;
+  for (const match of src.matchAll(declPattern)) {
+    roleSets[match[1]] = [...match[2].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  }
+
+  const decl = /export\s+const\s+ROUTE_ROLES[^=]*=/.exec(src);
+  if (decl === null) throw new Error(`ROUTE_ROLES declaration not found in ${ROUTE_ROLES_SOURCE}`);
+  const open = src.indexOf('{', decl.index + decl[0].length);
+  if (open === -1) throw new Error(`ROUTE_ROLES object literal not found in ${ROUTE_ROLES_SOURCE}`);
+  let depth = 0;
+  let close = -1;
+  for (let i = open; i < src.length; i += 1) {
+    if (src[i] === '{') depth += 1;
+    else if (src[i] === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        close = i;
+        break;
+      }
+    }
+  }
+  if (close === -1) throw new Error(`ROUTE_ROLES object literal is not terminated in ${ROUTE_ROLES_SOURCE}`);
+
+  const resolve = (raw) => {
+    const value = raw.trim().replace(/,\s*$/, '').trim();
+    if (value === 'null' || value === 'undefined') return null;
+    if (value.startsWith('[')) {
+      if (!/\]\s*$/.test(value)) {
+        throw new Error(`multi-line ROUTE_ROLES value is not supported (${raw.trim()})`);
+      }
+      const roles = [];
+      for (const part of value.matchAll(/\.\.\.\s*(\w+)|'([^']+)'/g)) {
+        if (part[1] !== undefined) {
+          if (roleSets[part[1]] === undefined) throw new Error(`unknown role array '${part[1]}'`);
+          roles.push(...roleSets[part[1]]);
+        } else {
+          roles.push(part[2]);
+        }
+      }
+      return roles;
+    }
+    if (roleSets[value] === undefined) throw new Error(`unresolved ROUTE_ROLES value '${value}'`);
+    return roleSets[value];
+  };
+
+  const routeRoles = {};
+  for (const line of src.slice(open + 1, close).split(/\r?\n/)) {
+    const entry = /^\s*'([^']+)':\s*(.*)$/.exec(line);
+    if (entry === null) continue;
+    routeRoles[entry[1]] = resolve(entry[2]);
+  }
+  return { routeRoles, roleSets };
+}
+
+function parseNavGroups(src) {
+  const cleaned = src.replace(/\?\?\s*(?:undefined|null)/g, '');
+  const decl = /export\s+const\s+NAV_GROUPS[^=]*=/.exec(cleaned);
+  if (decl === null) throw new Error(`NAV_GROUPS declaration not found in ${NAVIGATION_SOURCE}`);
+  const open = cleaned.indexOf('[', decl.index + decl[0].length);
+  if (open === -1) throw new Error(`NAV_GROUPS array literal not found in ${NAVIGATION_SOURCE}`);
+  const [value] = parseValueAt(tokenize(cleaned.slice(open)), 0, 'NAV_GROUPS');
+  if (value.kind !== 'array') throw new Error('NAV_GROUPS is not an array literal');
+  return value.items;
+}
+
+const navParityFailures = [];
+const navUnadvertised = [];
+
+try {
+  const routeRolesSrc = stripComments(
+    readFileSync(join(REPO_ROOT, ROUTE_ROLES_SOURCE), 'utf8'),
+  );
+  const navSrc = stripComments(readFileSync(join(REPO_ROOT, NAVIGATION_SOURCE), 'utf8'));
+  const { routeRoles, roleSets } = parseRouteRoles(routeRolesSrc);
+  const groups = parseNavGroups(navSrc);
+  const allRoles = [...new Set(Object.values(routeRoles).flatMap((roles) => roles ?? []))].sort();
+
+  const resolveRoles = (value, where) => {
+    if (value === undefined || value === null || value.kind === 'null') return null;
+    if (value.kind === 'str') return [value.v];
+    if (value.kind === 'array') {
+      const roles = [];
+      for (const element of value.items) {
+        if (element.kind === 'str') roles.push(element.v);
+        else if (element.kind === 'ref') roles.push(...resolveRef(element, where));
+        else throw new Error(`unsupported nav role value in ${where}`);
+      }
+      return roles;
+    }
+    if (value.kind === 'ref') return resolveRef(value, where);
+    throw new Error(`unsupported nav role value in ${where}`);
+  };
+
+  const resolveRef = (ref, where) => {
+    if (ref.name === 'ROUTE_ROLES' && ref.index !== null) {
+      if (!Object.prototype.hasOwnProperty.call(routeRoles, ref.index)) {
+        throw new Error(`${where} reads ROUTE_ROLES['${ref.index}'], which does not exist`);
+      }
+      return routeRoles[ref.index];
+    }
+    if (roleSets[ref.name] !== undefined) return roleSets[ref.name];
+    throw new Error(`${where} references unknown role source '${ref.name}'`);
+  };
+
+  const advertisedHrefs = new Set();
+  const strValue = (node) => (node !== null && node !== undefined && node.kind === 'str' ? node.v : null);
+  const objValue = (node) => (node !== null && node !== undefined && node.kind === 'object' ? node.obj : null);
+  for (const rawGroup of groups) {
+    const group = objValue(rawGroup);
+    if (group === null) continue;
+    const title = strValue(group.titleKey) ?? '?';
+    const groupRoles = resolveRoles(group.roles, `${NAVIGATION_SOURCE} group ${title}`);
+    const itemsNode = group.items;
+    const items = itemsNode !== undefined && itemsNode.kind === 'array' ? itemsNode.items : [];
+    for (const rawItem of items) {
+      const item = objValue(rawItem);
+      if (item === null) continue;
+      const href = strValue(item.href);
+      if (href === null) continue;
+      advertisedHrefs.add(href);
+      const contract = Object.prototype.hasOwnProperty.call(routeRoles, href)
+        ? routeRoles[href]
+        : undefined;
+      if (contract === undefined) {
+        navParityFailures.push(
+          `${NAVIGATION_SOURCE} → '${href}' has no entry in ROUTE_ROLES`,
+        );
+        continue;
+      }
+      const advertised = item.roles !== undefined
+        ? resolveRoles(item.roles, `${NAVIGATION_SOURCE} ${href}`)
+        : groupRoles;
+      const advertisedSet = advertised === null ? allRoles : advertised;
+      const denied = contract === null ? [] : allRoles.filter((role) => !contract.includes(role));
+      const conflicts = advertisedSet.filter((role) => denied.includes(role));
+      if (conflicts.length > 0) {
+        navParityFailures.push(
+          `${NAVIGATION_SOURCE} → '${href}' advertised to [${conflicts.join(', ')}] ` +
+            `but ROUTE_ROLES denies them`,
+        );
+      }
+    }
+  }
+  for (const route of Object.keys(routeRoles)) {
+    if (!advertisedHrefs.has(route)) navUnadvertised.push(`${ROUTE_ROLES_SOURCE} '${route}'`);
+  }
+} catch (error) {
+  navParityFailures.push(`could not evaluate navigation parity: ${error.message}`);
+}
+
 const failures = [];
 const reports = [];
 
@@ -251,6 +574,16 @@ if (legacyStatusRows.length > 0) {
   });
 }
 
+if (navParityFailures.length > 0) {
+  failures.push({
+    title: `G3 navigation advertises a route/role ROUTE_ROLES denies (${navParityFailures.length})`,
+    rows: [
+      `${NAVIGATION_SOURCE} must advertise exactly what ${ROUTE_ROLES_SOURCE} allows`,
+      ...navParityFailures,
+    ],
+  });
+}
+
 if (legacyTokenOutsideScope.length > 0) {
   reports.push({
     title: `legacy token outside task scope - reviewed, not failed (${legacyTokenOutsideScope.length})`,
@@ -263,6 +596,15 @@ if (progressRows.length > 0) {
     rows: [
       'Prisma `Task` exposes actual_quantity / planned_quantity, not progress',
       ...progressRows.slice(0, MAX_REPORT_ROWS),
+    ],
+  });
+}
+if (navUnadvertised.length > 0) {
+  reports.push({
+    title: `contract routes the sidebar does not advertise (${navUnadvertised.length})`,
+    rows: [
+      'detail / sub routes are expected here; a whole feature missing is worth a look',
+      ...navUnadvertised.slice(0, MAX_REPORT_ROWS),
     ],
   });
 }

@@ -2,6 +2,7 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { Users, Loader2, RefreshCw, Search, X, AlertTriangle, Edit3, Trash2, Check, Plus, Save } from 'lucide-react';
@@ -396,7 +397,7 @@ function WorkforcePageInner() {
 
 export default function WorkforcePage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm']}>
+      <RoleGuard allowedRoles={ROUTE_ROLES['/workforce']}>
       <WorkforcePageInner />
     </RoleGuard>
   );

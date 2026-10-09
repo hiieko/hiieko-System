@@ -64,6 +64,22 @@
   --hii-chrome-text: #f9fafb;
   --hii-chrome-text-muted: #9ca3af;
   --hii-shell-content-bg: #f3f4f6;
+
+  /* Accent family (Solar Amber). Consumed by `tailwind.config.js` `accent.*`
+     tokens (sidebar active state, brand tile, EmptyState CTA, worker surfaces,
+     project-context chip, drawers). The amber accent is the chrome's single
+     emphasis colour; text on it is the navy `--hii-navy`. */
+  --hii-accent: #f59e0b;
+  --hii-accent-hover: #d97706;
+  --hii-accent-soft: #fef3c7;
+  --hii-accent-tile: #fffbeb;
+  --hii-accent-text: #111827;
+  --hii-navy: #111827;
+
+  /* Positive family (completion / success emphasis). Consumed by
+     `tailwind.config.js` `positive.*` tokens (worker progress bars). */
+  --hii-positive: #16a34a;
+  --hii-positive-soft: #d1fae5;
 }
 
 @layer base {

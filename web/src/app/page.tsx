@@ -38,19 +38,19 @@ export default function ControlTowerDashboardPage() {
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase();
 
-  if (userRole === 'worker') {
-    return <WorkerMyDay />;
-  }
+  // Preserve the existing landing destination for the field roles. The decision is
+  // made once, before any hook, so every hook below runs unconditionally on every
+  // render (Rules of Hooks) and only the rendered surface changes.
+  const fieldSurface =
+    userRole === 'worker'
+      ? 'worker-day'
+      : userRole === 'team_leader' ||
+          userRole === 'technician' ||
+          userRole === 'foreman' ||
+          userRole === 'site_manager'
+        ? 'worker-dashboard'
+        : null;
 
-  // Preserve the existing landing destination for the other field roles.
-  const keepsWorkerDashboard =
-    userRole === 'team_leader' ||
-    userRole === 'technician' ||
-    userRole === 'foreman' ||
-    userRole === 'site_manager';
-  if (keepsWorkerDashboard) {
-    return <WorkerDashboard />;
-  }
   const [overview, setOverview] = useState<ControlTowerOverviewDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -101,8 +101,17 @@ export default function ControlTowerDashboardPage() {
   );
 
   useEffect(() => {
+    // A field surface never mounts the Control Tower, so never fetch it for them.
+    if (fieldSurface !== null) return;
     loadControlTower();
-  }, [loadControlTower]);
+  }, [loadControlTower, fieldSurface]);
+
+  if (fieldSurface === 'worker-day') {
+    return <WorkerMyDay />;
+  }
+  if (fieldSurface === 'worker-dashboard') {
+    return <WorkerDashboard />;
+  }
 
   // Open drill-down drawer helper
   const openDrilldown = (

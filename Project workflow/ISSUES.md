@@ -708,17 +708,23 @@ The C2 canonical map (`web/src/config/route-roles.ts`) records the **front-end**
 `@Roles` decorators are not proof of the intended organisational model, so wherever they disagree C2
 kept the currently safe (no-403) behaviour and did not touch `@Roles`. Measured on this tree:
 
-| Route | Canonical front-end roles (C2) | Backend contract | Divergence kept |
+| Route | Canonical front-end roles (C2, enforced today) | Backend contract | Divergence kept |
 |---|---|---|---|
-| `/workforce` | admin, owner, manager, pm | `GET /api/employees` → `@Roles(ADMIN, MANAGER, PM, FINANCE)` (`employees.controller.ts:19`) | `site_manager` / `foreman` / `team_leader` used to see the link and get **403** — the sidebar no longer advertises it. `owner` passes the page guard but is not in the backend list (403). `finance` may call the API but has no navigation entry. |
-| `/aprobare` | admin, owner, manager, pm | `POST /api/expenses/:id/approve` → `@Roles(ADMIN, MANAGER, PM, FINANCE)` (`expenses.controller.ts:61`); `GET /api/expenses` carries no `@Roles` | `owner` can list but gets **403** on approve; `finance` can approve but is outside the page guard. `procurement` access was **not** invented (unverified). |
-| `/avize` | operational 9 | `POST /api/procurement/avize` → `@Roles(ADMIN, PROCUREMENT, SITE_MANAGER, TEAM_LEADER)` (`procurement.controller.ts:76`) | The page is named "Procurement / Avize" yet the guard denies `procurement` (and `finance`); the sidebar now mirrors the guard instead of advertising a denied link. |
-| `/cheltuieli` | operational 9 | `POST /api/expenses` unrestricted; approve restricted as above | `finance` has no access to the expense page despite owning the financial approval step. |
-| `/solar-configurator` | admin, owner, manager, pm, site_manager, foreman, technician | `solar.controller.ts:53…` → `@Roles(ADMIN, OWNER, PM, SITE_MANAGER)` on the write endpoints | Aligned to the advertised navigation contract: `worker` (previously allowed by the page guard but never offered the link) can no longer enter by direct URL. |
+| `/workforce` | admin, owner, manager, pm, finance | `GET /api/employees` → `@Roles(ADMIN, MANAGER, PM, FINANCE)` (`employees.controller.ts:19`) | `owner` still passes the page guard (RoleGuard superset) but is not in the backend list, so owner data loads return **403** when the API enforces it. `site_manager` / `foreman` / `team_leader` are excluded from the canonical set and the sidebar no longer advertises the link (their `GET /api/employees` returns **403**). |
+| `/aprobare` | admin, owner, manager, pm, finance | `POST /api/expenses/:id/approve` → `@Roles(ADMIN, MANAGER, PM, FINANCE)` (`expenses.controller.ts:61`); `GET /api/expenses` carries no `@Roles` | `owner` can list but gets **403** on approve (not in the backend list). `finance` is now granted by both the page guard and the backend. `procurement` access was **not** invented (unverified). |
+| `/avize` | operational 9 + procurement | `POST /api/procurement/avize` → `@Roles(ADMIN, PROCUREMENT, SITE_MANAGER, TEAM_LEADER)` (`procurement.controller.ts:76`) | Sidebar label is `Livrări & Avize` and `procurement` is now allowed, matching the backend create step. Read is project-scoped (`GET` carries no `@Roles`); the create action still **403**s for the operational roles outside the backend list (manager, foreman, technician, worker, pm) — accepted, unverified intent. `finance` remains denied (unverified). |
+| `/cheltuieli` | operational 9 + finance | `POST /api/expenses` unrestricted; approve restricted as above | `finance` now has both the page and the financial approval step. Other operational roles can list/create but **403** on approve. |
+| `/solar-configurator` | admin, owner, pm, site_manager | `solar.controller.ts:53…` → `@Roles(ADMIN, OWNER, PM, SITE_MANAGER)` on the write endpoints | Aligned to the backend write contract exactly. `manager` / `foreman` / `technician` / `worker` were removed from the canonical map, the page guard and the sidebar by the 2026-10-05 reconciliation (`#14`). |
 
-### Required Action
-Resolve each row as an authorization decision (backend `@Roles` + `ROUTE_ROLES` + business matrix) in
-a dedicated authorization change, not inside a navigation checkpoint.
+### Outcome
+The 2026-10-05 reconciliation (`#14`, `fix(security)`: workforce + finance, approval + finance, avize
++ procurement, expenses + finance, solar narrowed to the backend write set) applied the backend
+authorization decisions. On 2026-10-07 the frontend finished aligning with them: the page guards for
+`/workforce`, `/aprobare`, `/avize`, `/solar-configurator`, `/issues` and `/projects/[id]` now read
+`ROUTE_ROLES[...]` directly (no hardcoded role lists), and `npm run guards:check` (rule G3) fails on
+any navigation ↔ `ROUTE_ROLES` drift, so the canonical column above is what the pages and the sidebar
+actually enforce. The rows above are the accepted residual deviations (`owner` bypass on `/workforce`,
+action-level 403s) that still require a business decision if they are to change.
 
 ---
 

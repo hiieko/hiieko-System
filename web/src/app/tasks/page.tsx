@@ -117,11 +117,11 @@ function TasksPageInner() {
       if (res.data && !res.error) {
         setTasks(res.data);
       } else {
-        setError(res.error || t('task.err_generic'));
+        setError(res.error || t('task.err_generic', locale));
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t('task.err_generic')
+        err instanceof Error ? err.message : t('task.err_generic', locale)
       );
     } finally {
       setLoading(false);
@@ -203,19 +203,19 @@ function TasksPageInner() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? res.data! : t))
         );
-        toastSuccess(t('task.status_updated'));
+        toastSuccess(t('task.status_updated', locale));
       } else {
-        toastError(t('task.generic_error'), res.error);
+        toastError(t('task.generic_error', locale), res.error);
       }
     } catch (err) {
       if (err instanceof ApiError && err.statusCode === 400) {
         // Slice 6: illegal transition (or a reopen the role may not perform).
-        toastError(t('task.invalid_transition'), err.message);
+        toastError(t('task.invalid_transition', locale), err.message);
       } else if (err instanceof ApiError && err.statusCode === 403) {
         // K-6: verification role restriction / self-verification prohibition.
-        toastError(t('task.verify_forbidden'), err.message);
+        toastError(t('task.verify_forbidden', locale), err.message);
       } else {
-        toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+        toastError(t('task.generic_error', locale), err instanceof Error ? err.message : undefined);
       }
     } finally {
       setUpdatingStatusIds((prev) => {
@@ -239,12 +239,12 @@ function TasksPageInner() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? res.data! : t))
         );
-        toastSuccess(t('task.quantity_updated'));
+        toastSuccess(t('task.quantity_updated', locale));
       } else {
-        toastError(t('task.generic_error'), res.error);
+        toastError(t('task.generic_error', locale), res.error);
       }
     } catch (err) {
-      toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+      toastError(t('task.generic_error', locale), err instanceof Error ? err.message : undefined);
     } finally {
       setUpdatingQuantityIds((prev) => {
         const next = new Set(prev);
@@ -258,7 +258,7 @@ function TasksPageInner() {
 
   const handleTaskCreated = (task: Task) => {
     setTasks((prev) => [task, ...prev]);
-    toastSuccess(t('task.created'), task.code);
+    toastSuccess(t('task.created', locale), task.code);
   };
 
   // ── Task assigned ───────────────────────────────────────────────────────
@@ -267,7 +267,7 @@ function TasksPageInner() {
     setTasks((prev) =>
       prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
     );
-    toastSuccess(t('task.assigned'));
+    toastSuccess(t('task.assigned', locale));
   };
 
   // ── Permissions ─────────────────────────────────────────────────────────
@@ -314,11 +314,11 @@ function TasksPageInner() {
 
       {/* Page Header */}
       <PageHeader
-        title={t('task.page_title')}
+        title={t('task.page_title', locale)}
         subtitle={
           selectedProject
             ? `${selectedProject.code} — ${selectedProject.name}`
-            : t('task.all_projects')
+            : t('task.all_projects', locale)
         }
         actions={
           <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ function TasksPageInner() {
               onClick={loadTasks}
               loading={loading}
             >
-              {t('general.refresh')}
+              {t('general.refresh', locale)}
             </Button>
             {userCanCreate && (
               <Button
@@ -339,7 +339,7 @@ function TasksPageInner() {
                 onClick={() => setShowCreateModal(true)}
                 disabled={!selectedProject}
               >
-                {t('task.new')}
+                {t('task.new', locale)}
               </Button>
             )}
           </div>
@@ -347,7 +347,10 @@ function TasksPageInner() {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* AppShell's `.hii-page` already owns the max-width + horizontal/vertical
+          padding; re-declaring it here double-insets the content relative to the
+          PageHeader above. Keep only `min-w-0` so wide chips never overflow. */}
+      <div className="min-w-0">
         <section aria-label={t('task.list_heading', locale)} className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
           {summaryCards.map(({ label, value, Icon, tone }) => (
             <div key={label} className="rounded-xl border border-chrome-line bg-surface p-4 shadow-sm">
@@ -363,7 +366,7 @@ function TasksPageInner() {
         {/* Error State */}
         {error && !loading && (
           <ErrorState
-            title={t('task.generic_error')}
+            title={t('task.generic_error', locale)}
             error={error}
             onRetry={loadTasks}
             className="mb-6"
@@ -398,21 +401,21 @@ function TasksPageInner() {
           <EmptyState
             title={
               searchQuery
-                ? t('task.empty_none')
+                ? t('task.empty_none', locale)
                 : onlyMine
-                ? t('task.empty_mine')
-                : t('task.empty_none')
+                ? t('task.empty_mine', locale)
+                : t('task.empty_none', locale)
             }
             description={
               searchQuery
-                ? t('task.empty_desc_filtered')
+                ? t('task.empty_desc_filtered', locale)
                 : activeStatus !== 'all'
-                ? t('task.empty_desc_filtered')
+                ? t('task.empty_desc_filtered', locale)
                 : selectedProject
-                ? (userCanCreate ? t('task.empty_desc_create') : t('task.empty_desc_no_tasks'))
+                ? (userCanCreate ? t('task.empty_desc_create', locale) : t('task.empty_desc_no_tasks', locale))
                 : userCanCreate
-                ? t('task.select_project_first')
-                : t('task.empty_desc_scope')
+                ? t('task.select_project_first', locale)
+                : t('task.empty_desc_scope', locale)
             }
             icon={<ListTodo className="w-7 h-7" aria-hidden="true" />}
             action={
@@ -427,7 +430,7 @@ function TasksPageInner() {
                   }
                 : userCanCreate && selectedProject
                 ? {
-                    label: t('task.create'),
+                    label: t('task.create', locale),
                     onClick: () => setShowCreateModal(true),
                   }
                 : undefined

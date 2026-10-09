@@ -65,13 +65,13 @@ export function ControlTowerSurface() {
       case 'finance':
         return { title: t('nav.cheltuieli', locale), focus: t('control_tower.focus_finance', locale), links: [['/cheltuieli', 'nav.cheltuieli'], ['/aprobare', 'nav.aprobare'], ['/projects', 'nav.projects']] };
       case 'qa_qc':
-        return { title: t('nav.qa_qc', locale), focus: t('control_tower.focus_quality', locale), links: [['/qa', 'nav.qa_qc'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
+        return { title: t('nav.qa_qc', locale), focus: t('control_tower.focus_quality', locale), links: [['/qa-qc', 'nav.qa_qc'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
       case 'site_logistics':
         return { title: t('nav.avize', locale), focus: t('control_tower.focus_logistics', locale), links: [['/avize', 'nav.avize'], ['/stocuri', 'nav.stocuri'], ['/issues', 'nav.issues']] };
       case 'maintenance_director':
         return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_maintenance', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/issues', 'nav.issues']] };
       case 'technical_director':
-        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_technical', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/qa', 'nav.qa_qc'], ['/rapoarte', 'nav.rapoarte']] };
+        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_technical', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/qa-qc', 'nav.qa_qc'], ['/rapoarte', 'nav.rapoarte']] };
       default:
         return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_viewer', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/rapoarte', 'nav.rapoarte']] };
     }

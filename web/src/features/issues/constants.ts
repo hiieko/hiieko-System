@@ -5,7 +5,7 @@
  * IssuesController only supports GET /api/issues?projectId=), so grouping,
  * filtering and ordering all happen here.
  *
- * Blocker definition (matches web/src/components/WorkerBlockers.tsx):
+ * Blocker definition:
  * an issue is an ACTIVE BLOCKER while its status is OPEN, INVESTIGATING or
  * CORRECTIVE_ACTION_PROPOSED. RESOLVED and CLOSED are not blockers.
  */
