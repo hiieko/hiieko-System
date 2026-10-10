@@ -6,12 +6,14 @@ import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useLocale } from '@solar/shared';
+import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { 
   Truck, FileText, Calendar, MapPin, Boxes,
-  RefreshCw, Search
+  RefreshCw, Search, Plus
 } from 'lucide-react';
 import { EmptyState, PageHeader, Button, Card, Badge, ErrorState, Skeleton } from '../../components/ui';
+import { AvizCreateModal } from '../../features/procurement/components/AvizCreateModal';
 
 interface DNRow {
   id: string; invoice_or_aviz_number: string; supplier: string; project_id: string;
@@ -28,14 +30,20 @@ const AVIZ_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'neutral'> = {
   CANCELLED: 'neutral',
 };
 
+// Roles allowed by the backend to create avize (POST /api/procurement/avize).
+const AVIZ_CREATOR_ROLES = ['admin', 'owner', 'procurement', 'site_manager', 'team_leader'];
+
 function AvizePageInner() {
   const [deliveries, setDeliveries] = useState<(DNRow & { items: DNItem[] })[]>([]);
   const [siteNames, setSiteNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
   const { locale } = useLocale();
   const { selectedProjectId } = useProject();
+  const { user } = useAuth();
+  const canCreate = AVIZ_CREATOR_ROLES.includes((user?.role || '').toLowerCase());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,9 +118,23 @@ function AvizePageInner() {
         title="Avize de Însoțire a Mărfii & Recepții"
         subtitle="Evidența avizelor recepționate în șantier, fotografii documente și încărcarea automată a stocului."
         actions={
-          <Button onClick={load} disabled={loading} variant="secondary" icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}>
-            Reimprospateaza
-          </Button>
+          <div className="flex items-center gap-2">
+            {canCreate && (
+              <span title={!selectedProjectId ? 'Select a project first' : undefined} className="inline-flex">
+                <Button
+                  onClick={() => setCreateOpen(true)}
+                  disabled={!selectedProjectId}
+                  variant="primary"
+                  icon={<Plus className="w-4 h-4" />}
+                >
+                  Aviz Nou
+                </Button>
+              </span>
+            )}
+            <Button onClick={load} disabled={loading} variant="secondary" icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}>
+              Reimprospateaza
+            </Button>
+          </div>
         }
       />
       <Card padding={false} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
@@ -126,8 +148,6 @@ function AvizePageInner() {
       ) : error ? (
         <ErrorState title="Eroare la încărcarea avizelor" error={error} onRetry={load} />
       ) : filteredDeliveries.length === 0 ? (
-        // TODO Phase 3: wire AvizCreateModal + apiClient.createAviz here.
-        // "New aviz" button omitted because no create flow exists yet.
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
           {deliveries.length === 0 ? (
             <EmptyState
@@ -219,6 +239,13 @@ function AvizePageInner() {
         })}
       </div>
       )}
+      <AvizCreateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        projectId={selectedProjectId || ''}
+        locale={locale}
+        onCreated={() => { load(); }}
+      />
     </div>
   );
 }
