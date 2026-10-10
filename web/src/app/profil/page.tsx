@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from '@solar/shared';
 import { apiClient } from '../../lib/api-client';
 import { Save, CheckCircle2, AlertCircle } from 'lucide-react';
-import { LoadingSpinner, ErrorState } from '../../components/ui';
+import { PageHeader, Button, Card, Input, Skeleton, ErrorState } from '../../components/ui';
 
 export default function ProfilPage() {
   const { user } = useAuth();
@@ -79,7 +79,10 @@ export default function ProfilPage() {
 
   if (loading) {
     return (
-      <LoadingSpinner fullPage size="md" label={locale === 'en' ? 'Loading profile...' : 'Se încarcă profilul...'} />
+      <div className="space-y-4 max-w-2xl mx-auto">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-64" />
+      </div>
     );
   }
 
@@ -98,9 +101,11 @@ export default function ProfilPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <PageTutorial sectionId="profile" />
-      <div><h1 className="text-2xl font-bold text-slate-900">Profil</h1>
-        <p className="text-sm text-slate-500 mt-1">Informațiile personale și preferințele.</p></div>
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
+      <PageHeader
+        title="Profil"
+        subtitle="Informațiile personale și preferințele."
+      />
+      <Card padding={false} className="p-4 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 text-center sm:text-left">
           <div className="w-16 h-16 rounded-full bg-slate-900 text-amber-400 flex items-center justify-center font-bold text-xl">
             {(fullName || 'U').slice(0, 2).toUpperCase()}
@@ -111,29 +116,37 @@ export default function ProfilPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Nume complet</label>
-          <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
-          <input type="email" value={email} readOnly
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Telefon</label>
-          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Limbă</label>
-          <select value={selectedLocale} onChange={e => handleLocaleChange(e.target.value as 'ro' | 'en')}
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none">
-            <option value="ro">Română</option>
-            <option value="en">English</option>
-          </select>
-        </div>
+          <Input
+            label="Nume complet"
+            type="text"
+            value={fullName}
+            onChange={e => setFullName(e.target.value)}
+          />
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            readOnly
+            className="bg-slate-50"
+          />
+          <Input
+            label="Telefon"
+            type="tel"
+            value={phone}
+            onChange={e => setPhone(e.target.value)}
+          />
+          <div>
+            <label htmlFor="profil-language" className="hii-label">Limbă</label>
+            <select
+              id="profil-language"
+              value={selectedLocale}
+              onChange={e => handleLocaleChange(e.target.value as 'ro' | 'en')}
+              className="hii-select"
+            >
+              <option value="ro">Română</option>
+              <option value="en">English</option>
+            </select>
+          </div>
         </div>
 
         {saveMsg && (
@@ -151,12 +164,18 @@ export default function ProfilPage() {
           <p className="text-xs text-slate-400 italic text-center sm:text-left">
             Emailul nu poate fi modificat.
           </p>
-          <button onClick={handleSave} disabled={saving}
-            className="inline-flex items-center justify-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50 w-full sm:w-auto">
-            <Save className="w-4 h-4 mr-1.5" />{saving ? 'Se salvează...' : 'Salvează profil'}
-          </button>
+          <Button
+            variant="primary"
+            onClick={handleSave}
+            disabled={saving}
+            loading={saving}
+            icon={<Save className="w-4 h-4" />}
+            className="w-full sm:w-auto"
+          >
+            {saving ? 'Se salvează...' : 'Salvează profil'}
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
