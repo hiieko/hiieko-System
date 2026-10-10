@@ -35,6 +35,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/', i18nKey: 'nav.dashboard', label: 'Dashboard', icon: LayoutDashboard },
       {
+        href: '/control-tower', i18nKey: 'nav.control_tower', label: 'Turn de Control', icon: Gauge,
+        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager'],
+      },
+      {
         href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar',
         icon: SunMedium,
         roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'technician'],
