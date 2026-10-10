@@ -141,7 +141,6 @@ function UtilizatoriPageInner() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="users" />
       <PageHeader
-        icon={<Users className="w-6 h-6 text-warning" />}
         title={t('users.title', locale)}
         subtitle={locale === 'en' ? 'Manage organization users, roles, status, and permissions.' : 'Gestionează utilizatorii organizației, rolurile, statusul și permisiunile.'}
         actions={

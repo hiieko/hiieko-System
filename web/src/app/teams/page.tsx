@@ -273,7 +273,6 @@ function TeamsPageInner() {
         </div>
       )}
       <PageHeader
-        icon={<Users className="w-6 h-6 text-hii-500" />}
         title="Echipe"
         subtitle="Gestionarea echipelor de lucru"
         actions={

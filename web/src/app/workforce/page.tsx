@@ -151,7 +151,6 @@ function WorkforcePageInner() {
         </div>
       )}
       <PageHeader
-        icon={<Users className="w-6 h-6 text-hii-500" />}
         title="Forța de Muncă"
         subtitle="Angajați și personal activ"
         actions={

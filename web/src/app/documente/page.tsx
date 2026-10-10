@@ -154,7 +154,6 @@ function DocumentsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageHeader
-        icon={<FileText className="w-6 h-6 text-warning" />}
         title="Documente"
         subtitle="Documente reale, stocate pe server și asociate proiectului selectat."
         actions={
