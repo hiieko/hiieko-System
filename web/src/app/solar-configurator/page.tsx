@@ -484,9 +484,9 @@ function SolarConfiguratorPageInner() {
       </div>
 
       {error && (
-        <div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between">
+        <div role="alert" className="flex flex-col gap-3 rounded-lg border border-critical-soft bg-critical-soft p-3 text-sm text-critical-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>{error}</span>
-          <button type="button" onClick={() => { setError(null); if (designId) void loadDesign(designId); else setRetryToken((token) => token + 1); }} className="min-h-10 shrink-0 rounded-md border border-red-300 bg-white px-3 font-semibold">Reîncearcă</button>
+          <button type="button" onClick={() => { setError(null); if (designId) void loadDesign(designId); else setRetryToken((token) => token + 1); }} className="min-h-10 shrink-0 rounded-md border border-critical-soft bg-white px-3 font-semibold">Reîncearcă</button>
         </div>
       )}
 
@@ -524,7 +524,7 @@ function SolarConfiguratorPageInner() {
                         onClick={() => setSelectedRoofSectionId(r.id)}
                         className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-sm cursor-pointer ${
                           selectedRoofSectionId === r.id
-                            ? 'bg-amber-100 text-slate-900'
+                            ? 'bg-warning-soft text-slate-900'
                             : 'hover:bg-slate-100 text-slate-700'
                         }`}
                       >
@@ -535,7 +535,7 @@ function SolarConfiguratorPageInner() {
                             e.stopPropagation();
                             setDeleteTarget({ kind: 'roof', id: r.id, label: r.name });
                           }}
-                          className="min-h-10 rounded px-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="min-h-10 rounded px-2 text-xs font-semibold text-critical hover:bg-critical-soft hover:text-critical-foreground"
                         >
                           Șterge
                         </button>
@@ -560,7 +560,7 @@ function SolarConfiguratorPageInner() {
                           <button
                             type="button"
                             onClick={() => setDeleteTarget({ kind: 'obstacle', id: o.id, label: o.name || o.obstacleType || 'Obstacol' })}
-                            className="min-h-10 rounded px-2 text-red-600 hover:bg-red-50 hover:text-red-700 font-semibold"
+                            className="min-h-10 rounded px-2 text-critical hover:bg-critical-soft hover:text-critical-foreground font-semibold"
                           >
                             Șterge
                           </button>
@@ -584,7 +584,7 @@ function SolarConfiguratorPageInner() {
                 type="button"
                 onClick={recalculate}
                 disabled={loading || roofSections.length === 0}
-                className="w-full px-3 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 text-sm font-semibold rounded-lg"
+                className="w-full px-3 py-2.5 bg-warning hover:bg-warning disabled:opacity-50 text-slate-950 text-sm font-semibold rounded-lg"
               >
                 {loading ? 'Se calculează...' : 'Calculează layout & BOM'}
               </button>

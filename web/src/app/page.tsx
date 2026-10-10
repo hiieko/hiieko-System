@@ -145,7 +145,7 @@ export default function ControlTowerDashboardPage() {
   if (loading && !overview) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+        <Loader2 className="w-10 h-10 animate-spin text-warning" />
         <div className="text-center">
           <h3 className="text-base font-semibold text-slate-800">
             Se încarcă Turnul de Control...
@@ -177,7 +177,7 @@ export default function ControlTowerDashboardPage() {
       <div className="control-tower-heading flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 text-hii-700 uppercase tracking-[0.12em] border border-emerald-100">
+            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-success-soft text-hii-700 uppercase tracking-[0.12em] border border-success-soft">
               Turn de Control HIIEKO
             </span>
             <span className="text-xs text-slate-400 font-medium">
@@ -198,7 +198,7 @@ export default function ControlTowerDashboardPage() {
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              className="bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-warning focus:border-warning"
             >
               <option value="">Toate Șantierele Active</option>
               {overview?.projects.activeProjectsList.map((p) => (
@@ -221,14 +221,14 @@ export default function ControlTowerDashboardPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start justify-between">
+        <div className="p-4 rounded-xl bg-warning-soft border border-warning-soft text-warning-foreground text-xs flex items-start justify-between">
           <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
             <span>{error}</span>
           </div>
           <button
             onClick={() => loadControlTower(true)}
-            className="font-bold underline ml-4 hover:text-amber-950"
+            className="font-bold underline ml-4 hover:text-warning-foreground"
           >
             Reîncearcă
           </button>
@@ -267,7 +267,7 @@ export default function ControlTowerDashboardPage() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <div className="p-2 bg-info-soft text-info rounded-lg">
                     <Briefcase className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">Proiecte Active</h3>
@@ -324,10 +324,10 @@ export default function ControlTowerDashboardPage() {
                     overview.projects.upcomingDeadlinesList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
               >
                 <span className="font-medium">Termene Limită (≤14 zile):</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-warning-foreground rounded">
                   {overview.projects.upcomingDeadlines}
                 </span>
               </button>
@@ -339,7 +339,7 @@ export default function ControlTowerDashboardPage() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                  <div className="p-2 bg-success-soft text-success rounded-lg">
                     <Users className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">Personal & Pontaj</h3>
@@ -363,7 +363,7 @@ export default function ControlTowerDashboardPage() {
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Pontaj Valid (GPS)</span>
-                  <strong className="text-emerald-600 text-sm font-mono">
+                  <strong className="text-success text-sm font-mono">
                     {overview.workforce.checkedIn}
                   </strong>
                 </div>
@@ -397,10 +397,10 @@ export default function ControlTowerDashboardPage() {
                     overview.workforce.overtimeList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-blue-50/50 hover:bg-blue-100/60 text-blue-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-info-soft/50 hover:bg-info-soft/60 text-info-foreground transition-colors text-left"
               >
                 <span className="font-medium">Ore Suplimentare:</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-blue-200 text-blue-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-info-soft text-info-foreground rounded">
                   {(overview.workforce.overtimeMinutes / 60).toFixed(1)} ore
                 </span>
               </button>
@@ -412,12 +412,12 @@ export default function ControlTowerDashboardPage() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                  <div className="p-2 bg-warning-soft text-warning rounded-lg">
                     <Layers className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">Producție & Execuție</h3>
                 </div>
-                <span className="text-xl font-black text-amber-600 font-mono">
+                <span className="text-xl font-black text-warning font-mono">
                   {overview.production.completionPercentage}%
                 </span>
               </div>
@@ -426,7 +426,7 @@ export default function ControlTowerDashboardPage() {
               <div className="mt-3">
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                    className="bg-warning h-2 rounded-full transition-all duration-500"
                     style={{ width: `${overview.production.completionPercentage}%` }}
                   />
                 </div>
@@ -515,10 +515,10 @@ export default function ControlTowerDashboardPage() {
                     overview.materials.lowStockList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
               >
                 <span className="font-medium">Stoc Redus (Deficit):</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-warning-foreground rounded">
                   {overview.materials.lowStock} articole
                 </span>
               </button>
@@ -547,7 +547,7 @@ export default function ControlTowerDashboardPage() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                  <div className="p-2 bg-success-soft text-success rounded-lg">
                     <Euro className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">Finanțe & Bugete</h3>
@@ -555,7 +555,7 @@ export default function ControlTowerDashboardPage() {
                 <span
                   className={`text-xs font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
                     overview.finance.variance >= 0
-                      ? 'bg-emerald-100 text-emerald-800'
+                      ? 'bg-success-soft text-success-foreground'
                       : 'bg-rose-100 text-rose-800'
                   }`}
                 >
@@ -638,7 +638,7 @@ export default function ControlTowerDashboardPage() {
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">Corecții Active</span>
-                  <strong className="text-amber-600 text-sm font-mono">
+                  <strong className="text-warning text-sm font-mono">
                     {overview.quality.pendingCorrections}
                   </strong>
                 </div>
@@ -706,7 +706,7 @@ export default function ControlTowerDashboardPage() {
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">În Așteptare Aprobare</span>
-                  <strong className="text-amber-600 text-sm font-mono">
+                  <strong className="text-warning text-sm font-mono">
                     {overview.documentation.awaitingApproval}
                   </strong>
                 </div>
@@ -723,10 +723,10 @@ export default function ControlTowerDashboardPage() {
                     overview.documentation.supersededDocumentsList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
               >
                 <span className="font-medium">Documente Înlocuite:</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-warning-foreground rounded">
                   {overview.documentation.supersededDocuments}
                 </span>
               </button>

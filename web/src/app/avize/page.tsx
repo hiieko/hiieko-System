@@ -151,7 +151,7 @@ function AvizePageInner() {
             <Card key={dn.id} padding={false} className="overflow-hidden">
               <div className="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+                  <div className="p-2.5 bg-info-soft text-info rounded-lg">
                     <Truck className="w-5 h-5" />
                   </div>
                   <div>
@@ -178,7 +178,7 @@ function AvizePageInner() {
               <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
-                    <Boxes className="w-4 h-4 mr-1.5 text-blue-600" />
+                    <Boxes className="w-4 h-4 mr-1.5 text-info" />
                     Materiale Recepționate pe Aviz
                   </h3>
 
@@ -207,7 +207,7 @@ function AvizePageInner() {
                 </div>
 
                 <aside className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"><FileText className="size-4 text-blue-600" />Detalii transport</h3>
+                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"><FileText className="size-4 text-info" />Detalii transport</h3>
                   <div className="text-sm"><p className="text-xs text-slate-500">Șofer</p><p className="mt-1 font-medium text-slate-800">{dn.driver_name || '—'}</p></div>
                   <div className="text-sm"><p className="text-xs text-slate-500">Număr vehicul</p><p className="mt-1 font-mono font-medium text-slate-800">{dn.vehicle_plate || '—'}</p></div>
                   <p className="border-t border-slate-200 pt-3 text-xs leading-5 text-slate-500">Previzualizarea documentului nu este inclusă în datele returnate de endpoint-ul curent.</p>

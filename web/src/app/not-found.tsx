@@ -6,8 +6,8 @@ export default function NotFoundPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       <div className="text-center max-w-md">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-6">
-          <FileQuestion className="w-8 h-8 text-amber-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-warning-soft rounded-full mb-6">
+          <FileQuestion className="w-8 h-8 text-warning" />
         </div>
         <h1 className="text-xl font-bold text-slate-900 mb-2">
           Pagina nu a fost găsită

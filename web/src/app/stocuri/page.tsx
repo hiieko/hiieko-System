@@ -197,7 +197,7 @@ function StocuriPageInner() {
         <>
           <Card padding={false} className="overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Boxes className="w-4 h-4 text-amber-600" />{locale === 'en' ? 'Current stock' : 'Stoc curent'}</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Boxes className="w-4 h-4 text-warning" />{locale === 'en' ? 'Current stock' : 'Stoc curent'}</div>
               <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -249,7 +249,7 @@ function StocuriPageInner() {
 
           <Card padding={false} className="overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><History className="w-4 h-4 text-amber-600" />{locale === 'en' ? 'Immutable movement audit trail' : 'Jurnal imutabil al mișcărilor'}</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><History className="w-4 h-4 text-warning" />{locale === 'en' ? 'Immutable movement audit trail' : 'Jurnal imutabil al mișcărilor'}</div>
               <select value={movementFilter} onChange={e => setMovementFilter(e.target.value)} className="hii-select !w-auto text-xs">
                 <option value="ALL">{locale === 'en' ? 'All movement types' : 'Toate tipurile'}</option>
                 {Array.from(new Set(movements.map(m => m.movement_type))).map(type => <option key={type} value={type}>{type}</option>)}

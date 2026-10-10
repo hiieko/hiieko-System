@@ -185,7 +185,7 @@ function TeamsPageInner() {
                 <Button variant="ghost" size="icon" onClick={() => openEdit(t)} title="Editează echipa">
                   <Edit3 className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t.id)} title="Arhivează echipa" className="hover:bg-red-50 hover:text-red-600">
+                <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t.id)} title="Arhivează echipa" className="hover:bg-critical-soft hover:text-critical">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </>
@@ -238,7 +238,7 @@ function TeamsPageInner() {
                   </div>
                   {t.is_active && m.user_id !== t.leader_id && (
                     <Button variant="ghost" size="icon" onClick={() => setConfirmRemoveMember({ teamId: t.id, userId: m.user_id, name: displayName(m.user) })}
-                      title="Elimina membru" className="hover:bg-red-50 hover:text-red-500">
+                      title="Elimina membru" className="hover:bg-critical-soft hover:text-critical">
                       <X className="w-4 h-4" />
                     </Button>
                   )}
@@ -305,7 +305,7 @@ function TeamsPageInner() {
           </div>
         }
       >
-        {formError && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formError}</div>}
+        {formError && <div className="p-3 mb-3 bg-critical-soft border border-critical-soft rounded-lg text-sm text-critical-foreground">{formError}</div>}
         <div className="space-y-3">
           <div><label className="hii-label">Nume *</label>
             <input value={formName} onChange={(e) => setFormName(e.target.value)} className="hii-input" />

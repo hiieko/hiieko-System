@@ -184,7 +184,7 @@ function IssuesPageInner() {
 
 
       {successMsg && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 flex items-center gap-2">
+        <div className="p-3 bg-success-soft border border-success-soft rounded-lg text-sm text-success-foreground flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />{successMsg}
         </div>
       )}
@@ -297,7 +297,7 @@ function IssuesPageInner() {
           </div>
         }
       >
-        {formError && (<div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{formError}</div>)}
+        {formError && (<div className="p-3 bg-critical-soft border border-critical-soft rounded-lg text-sm text-critical-foreground">{formError}</div>)}
         <div className="space-y-3">
           <div>
             <label className="hii-label">Titlu *</label>

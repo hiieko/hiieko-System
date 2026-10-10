@@ -141,22 +141,22 @@ function SantierePageInner() {
                 </div>
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 space-y-2.5 text-xs">
                   <div className="flex items-center justify-between text-slate-600">
-                    <span className="flex items-center"><Navigation className="w-3.5 h-3.5 mr-1.5 text-amber-600" />Coordonate GPS Centru:</span>
+                    <span className="flex items-center"><Navigation className="w-3.5 h-3.5 mr-1.5 text-warning" />Coordonate GPS Centru:</span>
                     <span className="font-mono font-semibold text-slate-800">{Number(site.latitude).toFixed(4)}, {Number(site.longitude).toFixed(4)}</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
-                    <span className="flex items-center"><Sliders className="w-3.5 h-3.5 mr-1.5 text-amber-600" />Raza Geofence Validare:</span>
+                    <span className="flex items-center"><Sliders className="w-3.5 h-3.5 mr-1.5 text-warning" />Raza Geofence Validare:</span>
                     <Badge variant="success" size="md">{site.geofence_radius_meters} metri</Badge>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
-                    <span className="flex items-center"><ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-amber-600" />Manager Responsabil:</span>
+                    <span className="flex items-center"><ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-warning" />Manager Responsabil:</span>
                     <span className="font-semibold text-slate-800">{site.manager_id || 'Neasignat'}</span>
                   </div>
                 </div>
               </div>
               <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <span>Stare: <strong>{site.is_active ? 'Activ' : 'Inactiv'}</strong></span>
-                <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700" onClick={() => openEditParams(site)}>
+                <Button variant="ghost" size="sm" className="text-warning hover:text-warning-foreground" onClick={() => openEditParams(site)}>
                   Modifica Parametri
                 </Button>
               </div>
@@ -178,7 +178,7 @@ function SantierePageInner() {
           </div>
         }
       >
-        {editError && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{editError}</div>}
+        {editError && <div className="p-3 mb-3 bg-critical-soft border border-critical-soft rounded-lg text-sm text-critical-foreground">{editError}</div>}
         <div className="space-y-3">
           <Input
             label="Latitudine"

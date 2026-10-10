@@ -34,9 +34,9 @@ function getPasswordStrength(password: string): PasswordStrength | null {
 }
 
 const STRENGTH_STYLES: Record<PasswordStrength, string> = {
-  weak: 'text-red-600',
-  fair: 'text-amber-600',
-  strong: 'text-emerald-600',
+  weak: 'text-critical',
+  fair: 'text-warning',
+  strong: 'text-success',
 };
 
 const selectClass =
@@ -277,7 +277,7 @@ function SignupForm() {
               </span>
             </label>
             {errors.terms && (
-              <p role="alert" className="mt-1.5 text-xs text-red-600">
+              <p role="alert" className="mt-1.5 text-xs text-critical">
                 {errors.terms}
               </p>
             )}

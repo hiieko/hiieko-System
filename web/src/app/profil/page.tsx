@@ -107,7 +107,7 @@ export default function ProfilPage() {
       />
       <Card padding={false} className="p-4 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 text-center sm:text-left">
-          <div className="w-16 h-16 rounded-full bg-slate-900 text-amber-400 flex items-center justify-center font-bold text-xl">
+          <div className="w-16 h-16 rounded-full bg-slate-900 text-warning flex items-center justify-center font-bold text-xl">
             {(fullName || 'U').slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -150,12 +150,12 @@ export default function ProfilPage() {
         </div>
 
         {saveMsg && (
-          <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700">
+          <div className="flex items-center gap-2 p-3 bg-success-soft border border-success-soft rounded-lg text-sm text-success-foreground">
             <CheckCircle2 className="w-4 h-4 shrink-0" />{saveMsg}
           </div>
         )}
         {saveError && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="flex items-center gap-2 p-3 bg-critical-soft border border-critical-soft rounded-lg text-sm text-critical-foreground">
             <AlertCircle className="w-4 h-4 shrink-0" />{saveError}
           </div>
         )}

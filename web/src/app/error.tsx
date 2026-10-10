@@ -15,8 +15,8 @@ export default function ErrorPage({
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       <div className="text-center max-w-md">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-6">
-          <AlertTriangle className="w-8 h-8 text-red-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-critical-soft rounded-full mb-6">
+          <AlertTriangle className="w-8 h-8 text-critical" />
         </div>
         <h1 className="text-xl font-bold text-slate-900 mb-2">
           {t('general.error', locale)}

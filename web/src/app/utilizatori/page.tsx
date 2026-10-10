@@ -141,7 +141,7 @@ function UtilizatoriPageInner() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="users" />
       <PageHeader
-        icon={<Users className="w-6 h-6 text-amber-600" />}
+        icon={<Users className="w-6 h-6 text-warning" />}
         title={t('users.title', locale)}
         subtitle={locale === 'en' ? 'Manage organization users, roles, status, and permissions.' : 'Gestionează utilizatorii organizației, rolurile, statusul și permisiunile.'}
         actions={
@@ -275,7 +275,7 @@ function UtilizatoriPageInner() {
                 <Card key={role.code}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-amber-600" />
+                      <div className="flex items-center gap-2"><Shield className="w-4 h-4 text-warning" />
                         <h2 className="font-semibold text-slate-900">{getRoleLabel(role.code.toLowerCase(), locale) || role.name || role.code}</h2>
                       </div>
                       <p className="text-xs text-slate-500 mt-1">{role.description || role.code}</p>

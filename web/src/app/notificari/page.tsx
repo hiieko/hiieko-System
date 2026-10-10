@@ -194,14 +194,14 @@ export default function NotificariPage() {
                   <div key={n.id} onClick={() => markRead(n.id)} className="cursor-pointer">
                     <Card
                       padding={false}
-                      className={`p-4 sm:p-5 flex items-start space-x-4 hover:bg-slate-50/50 border-l-4 ${!n.is_read ? 'bg-amber-50/30 border-l-amber-500' : 'border-l-transparent'}`}
+                      className={`p-4 sm:p-5 flex items-start space-x-4 hover:bg-slate-50/50 border-l-4 ${!n.is_read ? 'bg-warning-soft/30 border-l-warning' : 'border-l-transparent'}`}
                     >
-                      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.is_read ? 'bg-slate-200' : 'bg-amber-500'}`} />
+                      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.is_read ? 'bg-slate-200' : 'bg-warning'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
                           <h4 className="text-sm font-semibold text-slate-900">{locale === 'ro' ? n.title_ro : (n.title_en || n.title_ro)}</h4>
                           {pBadge(n.priority)}
-                          {!n.is_read && <span className="w-1.5 h-1.5 bg-blue-500 rounded-full shrink-0" />}
+                          {!n.is_read && <span className="w-1.5 h-1.5 bg-info rounded-full shrink-0" />}
                         </div>
                         <p className="text-xs text-slate-600 mt-0.5">{locale === 'ro' ? n.message_ro : (n.message_en || n.message_ro)}</p>
                         <span className="text-[11px] text-slate-400 mt-1 block">

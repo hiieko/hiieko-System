@@ -223,27 +223,27 @@ function CheltuieliPageInner() {
       >
         <p className="text-xs text-slate-500 mb-4">{locale === 'ro' ? 'Completeaza detaliile și trimite spre aprobare.' : 'Fill in the details and submit for approval.'}</p>
         <div className="space-y-4">
-          {!user && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Trebuie să te autentifici pentru a trimite o cheltuială. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
+          {!user && <p className="rounded-lg bg-warning-soft p-3 text-sm text-warning-foreground">Trebuie să te autentifici pentru a trimite o cheltuială. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
           {/* --- OCR Upload Section --- */}
           <Card className="p-4 bg-slate-50" padding={false}>
             <p className="text-xs font-semibold text-slate-600 mb-2">{locale === 'ro' ? 'Scanare document (opțională)' : 'Document scan (optional)'}</p>
-            <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-amber-300 bg-amber-50/50 px-4 text-center hover:bg-amber-50">
-              <Upload className="mb-2 h-6 w-6 text-amber-600" />
+            <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-warning-soft bg-warning-soft/50 px-4 text-center hover:bg-warning-soft">
+              <Upload className="mb-2 h-6 w-6 text-warning" />
               <span className="text-sm font-semibold text-slate-800">{receipt ? receipt.name : (locale === 'ro' ? 'Încarcă bonul fiscal sau factura' : 'Upload receipt or invoice')}</span>
               <span className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP sau PDF</span>
               <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" className="sr-only"
                 onChange={e => setReceipt(e.target.files?.[0] || null)} />
             </label>
-            {receipt && !ocrResult && <p className="text-xs text-emerald-700 mt-2">{locale === 'ro' ? 'Document selectat. Apasă "Procesează documentul" pentru OCR.' : 'Document selected. Press \"Process document\" for OCR.'}</p>}
+            {receipt && !ocrResult && <p className="text-xs text-success-foreground mt-2">{locale === 'ro' ? 'Document selectat. Apasă "Procesează documentul" pentru OCR.' : 'Document selected. Press \"Process document\" for OCR.'}</p>}
             {receipt && (
               <Button type="button" disabled={processing} onClick={() => void processReceipt()} variant="primary" fullWidth className="mt-2">
                 {processing ? (locale === 'ro' ? 'Se procesează...' : 'Processing...') : (locale === 'ro' ? 'Procesează documentul' : 'Process document')}
               </Button>
             )}
-            {scanError && <p className="text-sm text-red-700 mt-2">{scanError}</p>}
+            {scanError && <p className="text-sm text-critical-foreground mt-2">{scanError}</p>}
             {ocrResult && (
-              <Card className="p-3 bg-emerald-50 border-emerald-200 mt-2" padding={false}>
-                <p className="font-semibold text-emerald-900 text-xs">{locale === 'ro' ? 'Date extrase — verifică înainte de trimitere' : 'Extracted data — verify before submitting'}</p>
+              <Card className="p-3 bg-success-soft border-success-soft mt-2" padding={false}>
+                <p className="font-semibold text-success-foreground text-xs">{locale === 'ro' ? 'Date extrase — verifică înainte de trimitere' : 'Extracted data — verify before submitting'}</p>
                 <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
                   {([
                     [locale === 'ro' ? 'Furnizor' : 'Merchant', ocrResult.merchant_name],
@@ -309,7 +309,7 @@ function CheltuieliPageInner() {
               className="hii-input h-auto py-2 resize-none"
               placeholder={locale === 'ro' ? 'Descrie cheltuiala...' : 'Describe the expense...'} />
           </div>
-          {submitError && <p className="text-sm text-red-700">{submitError}</p>}
+          {submitError && <p className="text-sm text-critical-foreground">{submitError}</p>}
         </div>
       </Modal>
       <div className="flex flex-wrap gap-2">
@@ -341,7 +341,7 @@ function CheltuieliPageInner() {
               {['all','submitted','approved','rejected','reimbursed'].map(s => (
                 <Button key={s} onClick={() => { setFilter(s); setFilterOpen(false); }} fullWidth
                   variant={filter === s ? 'primary' : 'secondary'} className="justify-between font-semibold"
-                  icon={filter === s ? <Check className="w-4 h-4 text-emerald-500" aria-hidden="true" /> : undefined} iconPosition="right">
+                  icon={filter === s ? <Check className="w-4 h-4 text-success" aria-hidden="true" /> : undefined} iconPosition="right">
                   <span>{s === 'all' ? (locale === 'ro' ? 'Toate' : 'All') : t('status.' + s, locale)}</span>
                 </Button>
               ))}

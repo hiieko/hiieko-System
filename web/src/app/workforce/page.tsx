@@ -225,7 +225,7 @@ function WorkforcePageInner() {
                       </Button>
                       {e.is_active !== false && (
                         <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(e.id)}
-                          title="Arhivează" aria-label={`Arhivează ${e.first_name} ${e.last_name}`} className="hover:bg-red-50 hover:text-red-500">
+                          title="Arhivează" aria-label={`Arhivează ${e.first_name} ${e.last_name}`} className="hover:bg-critical-soft hover:text-critical">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       )}

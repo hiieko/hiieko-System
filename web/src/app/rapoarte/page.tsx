@@ -381,14 +381,14 @@ function RapoartePageInner() {
                 {/* Column 1: Tasks & Progress */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
-                    <Wrench className="w-4 h-4 mr-1.5 text-amber-600" />
+                    <Wrench className="w-4 h-4 mr-1.5 text-warning" />
                     Lucrari Executate
                   </h3>
                   <div className="space-y-2">
                     {((report.tasks || []) as any[]).length > 0 ? (report.tasks as any[]).map((t: any, idx: number) => (
                       <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-800">{t.task?.title || t.notes || 'Sarcina'}</span>
-                        <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded">
+                        <span className="text-xs font-bold text-warning-foreground bg-warning-soft px-2 py-1 rounded">
                           {t.quantity_done || t.quantity || 0} {t.unit || 'buc'}
                         </span>
                       </div>
@@ -408,7 +408,7 @@ function RapoartePageInner() {
                 {/* Column 2: Materials Consumed */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
-                    <Boxes className="w-4 h-4 mr-1.5 text-amber-600" />
+                    <Boxes className="w-4 h-4 mr-1.5 text-warning" />
                     Materiale Consumate (Scăzute din Stoc)
                   </h3>
                   <div className="space-y-2">
@@ -445,7 +445,7 @@ function RapoartePageInner() {
                 {/* Column 3: Site Photos */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
-                    <ImageIcon className="w-4 h-4 mr-1.5 text-amber-600" />
+                    <ImageIcon className="w-4 h-4 mr-1.5 text-warning" />
                     Fotografii Execuție Șantier
                   </h3>
                   <div className="grid grid-cols-1 gap-3">

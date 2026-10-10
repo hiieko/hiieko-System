@@ -338,7 +338,7 @@ function ProjectsPageInner() {
                     <span className="text-sm text-slate-700">{m.userId}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="neutral">{m.role}</Badge>
-                      <button onClick={() => removeMemberFromSelection(m.userId)} className="p-1 rounded hover:bg-red-50 text-slate-400 hover:text-red-600">
+                      <button onClick={() => removeMemberFromSelection(m.userId)} className="p-1 rounded hover:bg-critical-soft text-slate-400 hover:text-critical">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -368,7 +368,7 @@ function ProjectsPageInner() {
               )}
             </div>
             {wizardError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+              <div className="bg-critical-soft border border-critical-soft text-critical-foreground px-4 py-3 rounded-lg text-sm flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{wizardError}</span>
               </div>
@@ -548,7 +548,7 @@ function ProjectsPageInner() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {wizardError && <span className="text-xs text-red-500">{wizardError}</span>}
+                {wizardError && <span className="text-xs text-critical">{wizardError}</span>}
                 {wizardStep < WIZARD_STEPS.length - 1 ? (
                   <Button variant="primary" size="sm" icon={<ArrowRight className="w-4 h-4" />} onClick={nextStep} disabled={wizardSaving}>
                     {locale === 'en' ? 'Next' : 'Următorul'}

@@ -104,7 +104,7 @@ export function ProjectSettingsPanel({ project, onUpdate }: Props) {
           <label htmlFor="isActive" className="text-sm text-slate-700">{locale === 'en' ? 'Active' : 'Activ'}</label>
         </div>
         {err && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+          <div className="bg-critical-soft border border-critical-soft text-critical-foreground px-4 py-3 rounded-lg text-sm flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{err}</span>
           </div>

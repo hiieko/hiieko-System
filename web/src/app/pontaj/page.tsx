@@ -234,8 +234,8 @@ function PontajPageInner() {
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
             <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Active now' : 'Pe șantier acum'}</div>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <Users className="w-4 h-4 text-emerald-600" />
+            <div className="w-8 h-8 rounded-lg bg-success-soft flex items-center justify-center">
+              <Users className="w-4 h-4 text-success" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{activeOnSite.length}</div>
@@ -254,8 +254,8 @@ function PontajPageInner() {
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
             <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Workers today' : 'Muncitori azi'}</div>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-              <Clock className="w-4 h-4 text-blue-600" />
+            <div className="w-8 h-8 rounded-lg bg-info-soft flex items-center justify-center">
+              <Clock className="w-4 h-4 text-info" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{todaySummary?.totalWorkersToday ?? '-'}</div>
@@ -264,8 +264,8 @@ function PontajPageInner() {
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
             <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Overtime today' : 'Ore suplim. azi'}</div>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-              <Timer className="w-4 h-4 text-amber-600" />
+            <div className="w-8 h-8 rounded-lg bg-warning-soft flex items-center justify-center">
+              <Timer className="w-4 h-4 text-warning" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">
@@ -295,8 +295,8 @@ function PontajPageInner() {
             ) : (
               <div className="space-y-2">
                 {activeOnSite.map((r) => (
-                  <div key={r.id} className="flex items-center gap-3 bg-emerald-50/60 border border-emerald-100 rounded-lg px-3 py-2.5">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">
+                  <div key={r.id} className="flex items-center gap-3 bg-success-soft/60 border border-success-soft rounded-lg px-3 py-2.5">
+                    <div className="w-8 h-8 rounded-full bg-success-soft flex items-center justify-center text-xs font-bold text-success-foreground">
                       {((r.user?.profile?.full_name || r.user?.email || '?').slice(0, 2)).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -322,7 +322,7 @@ function PontajPageInner() {
         <Card padding={false} className="overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900">{locale === 'en' ? 'Missing Attendance' : 'Lipsa Pontaj'}</h3>
-            {canReadUsers && <span className="text-xs text-amber-600">{missingWorkers.length} {locale === 'en' ? 'missing' : 'lipsa'}</span>}
+            {canReadUsers && <span className="text-xs text-warning">{missingWorkers.length} {locale === 'en' ? 'missing' : 'lipsa'}</span>}
           </div>
           <div className="p-4">
             {!canReadUsers ? (
@@ -341,8 +341,8 @@ function PontajPageInner() {
             ) : (
               <div className="space-y-2">
                 {missingWorkers.map((w) => (
-                  <div key={w.id} className="flex items-center gap-3 bg-amber-50/60 border border-amber-100 rounded-lg px-3 py-2.5">
-                    <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700">
+                  <div key={w.id} className="flex items-center gap-3 bg-warning-soft/60 border border-warning-soft rounded-lg px-3 py-2.5">
+                    <div className="w-8 h-8 rounded-full bg-warning-soft flex items-center justify-center text-xs font-bold text-warning-foreground">
                       {displayName(w).slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -378,7 +378,7 @@ function PontajPageInner() {
         <Card padding={false} className="overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
-              <Calendar className="w-4 h-4 text-amber-600" />
+              <Calendar className="w-4 h-4 text-warning" />
               <span>{locale === 'en' ? 'Daily Attendance Register' : 'Registru Prezență'}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -487,7 +487,7 @@ function PontajPageInner() {
                             </Badge>
                           ) : (
                             <Badge variant="success" size="sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                               {locale === 'en' ? 'On site' : 'Pe șantier'}
                             </Badge>
                           )}
@@ -512,7 +512,7 @@ function PontajPageInner() {
         <Card padding={false} className="overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
-              <Calendar className="w-4 h-4 text-amber-600" />
+              <Calendar className="w-4 h-4 text-warning" />
               <span>{locale === 'en' ? 'Monthly Attendance Matrix' : 'Matrice Pontaj Lunar'}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -539,8 +539,8 @@ function PontajPageInner() {
                       {day}
                     </th>
                   ))}
-                  <th className="py-3 px-3 bg-amber-50 text-amber-900 font-bold min-w-[90px]">{locale === 'en' ? 'Total Hours' : 'Total Ore'}</th>
-                  <th className="py-3 px-3 bg-amber-100 text-amber-950 font-extrabold min-w-[100px]">{locale === 'en' ? 'OVERTIME' : 'ORE SUPLIM.'}</th>
+                  <th className="py-3 px-3 bg-warning-soft text-warning-foreground font-bold min-w-[90px]">{locale === 'en' ? 'Total Hours' : 'Total Ore'}</th>
+                  <th className="py-3 px-3 bg-warning-soft text-warning-foreground font-extrabold min-w-[100px]">{locale === 'en' ? 'OVERTIME' : 'ORE SUPLIM.'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -587,16 +587,16 @@ function PontajPageInner() {
                       return (
                         <td key={day} className="py-2 px-1 border-r border-slate-100 font-mono">
                           <span className="text-slate-800 font-semibold">{dayRecord.regular_hours || 8}</span>
-                          {hasOt && <span className="block text-[10px] text-amber-700 font-bold">+{Math.round((dayRecord.overtime_minutes || 0) / 60)}</span>}
+                          {hasOt && <span className="block text-[10px] text-warning-foreground font-bold">+{Math.round((dayRecord.overtime_minutes || 0) / 60)}</span>}
                         </td>
                       );
                     })}
-                    <td className="py-3 px-3 bg-amber-50/50 font-bold text-slate-900">
+                    <td className="py-3 px-3 bg-warning-soft/50 font-bold text-slate-900">
                       {attendanceRecords
                         .filter((r) => r.user_id === worker.id)
                         .reduce((sum, r) => sum + (r.regular_hours || 0), 0)} ore
                     </td>
-                    <td className="py-3 px-3 bg-amber-100/50 font-extrabold text-amber-800 text-sm">
+                    <td className="py-3 px-3 bg-warning-soft/50 font-extrabold text-warning-foreground text-sm">
                       {(
                         attendanceRecords
                           .filter((r) => r.user_id === worker.id)

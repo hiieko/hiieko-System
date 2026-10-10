@@ -174,7 +174,7 @@ function AprobarePageInner() {
             <Card key={exp.id} padding={false} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-start space-x-4">
-                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg shrink-0">
+                  <div className="p-2.5 bg-warning-soft text-warning rounded-lg shrink-0">
                     <Euro className="w-5 h-5" />
                   </div>
                   <div>
@@ -230,7 +230,7 @@ function AprobarePageInner() {
                     </label>
                     <textarea id={`approval-review-note-${exp.id}`} value={note} onChange={e => setNote(e.target.value)}
                       placeholder="Motiv pentru aprobare/respingere..." rows={2}
-                      className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 resize-none" />
+                      className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning-soft resize-none" />
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button variant="primary" size="sm" icon={<CheckCircle2 className="w-4 h-4" />} onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}>

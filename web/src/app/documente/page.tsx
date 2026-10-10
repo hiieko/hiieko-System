@@ -154,7 +154,7 @@ function DocumentsPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageHeader
-        icon={<FileText className="w-6 h-6 text-amber-600" />}
+        icon={<FileText className="w-6 h-6 text-warning" />}
         title="Documente"
         subtitle="Documente reale, stocate pe server și asociate proiectului selectat."
         actions={
@@ -171,7 +171,7 @@ function DocumentsPage() {
       />
 
       {error && (
-        <div className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <div className="flex items-start justify-between gap-3 rounded-lg border border-critical-soft bg-critical-soft p-3 text-sm text-critical-foreground">
           <span>{error}</span>
           <Button variant="ghost" size="icon" onClick={() => setError(null)} aria-label="Închide">
             <X className="w-4 h-4" />
@@ -179,7 +179,7 @@ function DocumentsPage() {
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+        <div className="flex items-center gap-2 rounded-lg border border-success-soft bg-success-soft p-3 text-sm text-success-foreground">
           <CheckCircle2 className="w-4 h-4" />{success}
         </div>
       )}
