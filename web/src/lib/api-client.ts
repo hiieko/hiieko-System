@@ -26,6 +26,7 @@
  */
 
 import type { Issue, CreateIssueDto } from '../features/issues/types';
+import { getPreviewResponse } from './preview-demo-data';
 
 /**
  * Resolve the backend base URL for the current runtime.
@@ -300,6 +301,13 @@ export class NestApiClient {
     options: RequestInit = {},
     allowRefresh = true
   ): Promise<T> {
+    // TEMPORARY REVIEW MODE: use synthetic read-only data so every role dashboard
+    // is visually populated on the Netlify preview without requiring backend auth.
+    if (!options.method || options.method.toUpperCase() === 'GET') {
+      const previewResponse = getPreviewResponse(endpoint);
+      if (previewResponse !== null) return previewResponse as T;
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
