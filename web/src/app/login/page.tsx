@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button, Input, ToastProvider, useToast } from '../../components/ui';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, SIGNED_OUT_FLASH_KEY } from '../../contexts/AuthContext';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
@@ -44,7 +44,12 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.sessionStorage.getItem(SIGNUP_FLASH_KEY) === 'created') {
+    if (typeof window === 'undefined') return;
+    if (window.sessionStorage.getItem(SIGNED_OUT_FLASH_KEY) === '1') {
+      window.sessionStorage.removeItem(SIGNED_OUT_FLASH_KEY);
+      toast.success('Signed out');
+    }
+    if (window.sessionStorage.getItem(SIGNUP_FLASH_KEY) === 'created') {
       window.sessionStorage.removeItem(SIGNUP_FLASH_KEY);
       toast.success('Account created.', 'You can sign in now.');
     }

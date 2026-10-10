@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiClient, AuthUser } from '../lib/api-client';
 
 interface AuthContextType {
@@ -10,6 +11,12 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+/**
+ * Set by `signOut`, read once by the login screen to surface the
+ * "Signed out" toast after the redirect (mirrors the signup flash pattern).
+ */
+export const SIGNED_OUT_FLASH_KEY = 'hiieko_signed_out';
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
@@ -18,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,10 +66,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
+  /**
+   * Real logout: revoke the server session and clear every trace of the
+   * local session, then send the user to the login screen.
+   *  1. POST /api/auth/logout (revokes session, clears the refresh cookie)
+   *  2. clear the access token from localStorage
+   *  3. drop the user from context
+   *  4. redirect to /login and show the "Signed out" toast there
+   */
   const signOut = useCallback(async () => {
     await apiClient.logout();
+    apiClient.setToken(null);
     setUser(null);
-  }, []);
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(SIGNED_OUT_FLASH_KEY, '1');
+    }
+    router.replace('/login');
+  }, [router]);
 
   return (
     <AuthContext.Provider value={{ user, loading, signOut, refreshUser }}>
