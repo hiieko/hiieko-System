@@ -2,11 +2,11 @@
 
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect, useCallback } from 'react';
-import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-react';
+import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
 import { normalizeEnvelope } from '../../lib/normalize-envelope';
-import { EmptyState } from '../../components/ui';
+import { PageHeader, Button, Card, Badge, Tabs, ErrorState, Skeleton, EmptyState } from '../../components/ui';
 
 interface NotifItem {
   id: string;
@@ -113,57 +113,61 @@ export default function NotificariPage() {
   };
 
   const pBadge = (p: string) => {
-    if (p === 'high') return <span className="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded">{t('notifications.urgent', locale)}</span>;
+    if (p === 'high') return <Badge variant="danger" size="sm">{t('notifications.urgent', locale)}</Badge>;
     return null;
   };
-
-  const tabs = [{ k: 'all', l: t('notifications.all', locale) }, { k: 'unread', l: t('notifications.unread', locale) }];
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <PageTutorial sectionId="notifications" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t('notifications.title', locale)}</h1>
-          <p className="text-sm text-slate-500 mt-1">{t('notifications.system_subtitle', locale)}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {unreadCount > 0 && (
-            <span className="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-xs font-bold">
-              <Bell className="w-3.5 h-3.5 mr-1.5" />{unreadCount} {t('notifications.unread', locale).toLowerCase()}
-            </span>
-          )}
-          <button onClick={() => loadNotifs()}
-            className="inline-flex items-center justify-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm">
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('notifications.refresh', locale)}
-          </button>
-          <button onClick={markAllRead}
-            className="inline-flex items-center justify-center px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm w-full sm:w-auto">
-            <CheckCheck className="w-3.5 h-3.5 mr-1.5" />{t('notifications.mark_all_read', locale)}
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
-      )}
-
-      <div className="flex items-center gap-1 sm:gap-2 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-full sm:w-fit">
-        {tabs.map(tb => (
-          <button key={tb.k} onClick={() => setFilter(tb.k as 'all' | 'unread')}
-            className={`flex-1 sm:flex-none px-4 py-2 text-sm font-semibold rounded-md transition-colors ${filter === tb.k ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-            {tb.l}
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        {loading ? (
-          <div className="flex items-center justify-center py-16 text-slate-500">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />{t('notifications.loading', locale)}
+      <PageHeader
+        title={t('notifications.title', locale)}
+        subtitle={t('notifications.system_subtitle', locale)}
+        actions={
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {unreadCount > 0 && (
+              <Badge variant="danger" size="md" className="gap-1.5">
+                <Bell className="w-3.5 h-3.5" />{unreadCount} {t('notifications.unread', locale).toLowerCase()}
+              </Badge>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => loadNotifs()}
+              icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+            >
+              {t('notifications.refresh', locale)}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={markAllRead}
+              className="w-full sm:w-auto"
+              icon={<CheckCheck className="w-3.5 h-3.5" />}
+            >
+              {t('notifications.mark_all_read', locale)}
+            </Button>
           </div>
-        ) : filtered.length === 0 ? (
-          filter === 'unread' && notifs.length > 0 ? (
+        }
+      />
+
+      <Tabs
+        tabs={[
+          { key: 'all', label: t('notifications.all', locale) },
+          { key: 'unread', label: t('notifications.unread', locale) },
+        ]}
+        activeTab={filter}
+        onTabChange={(k) => setFilter(k as 'all' | 'unread')}
+        className="w-full sm:w-fit"
+      />
+
+      {error ? (
+        <ErrorState title={t('notifications.load_error', locale)} error={error} onRetry={loadNotifs} />
+      ) : loading ? (
+        <Skeleton className="h-20" count={4} />
+      ) : filtered.length === 0 ? (
+        <Card padding={false}>
+          {filter === 'unread' && notifs.length > 0 ? (
             <EmptyState
               icon={<Bell className="w-7 h-7" />}
               title="No matching results"
@@ -176,19 +180,22 @@ export default function NotificariPage() {
               title="You're all caught up"
               description="New notifications will appear here."
             />
-          )
-        ) : (
-          <div>
-            {groups.map(group => (
-              <div key={group.key}>
-                <div className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200">
-                  {group.label}
-                </div>
-                <div className="divide-y divide-slate-100">
-                  {group.items.map(n => (
-                    <div key={n.id}
-                      className={`p-4 sm:p-5 flex items-start space-x-4 hover:bg-slate-50/50 transition-colors cursor-pointer border-l-4 ${!n.is_read ? 'bg-amber-50/30 border-l-amber-500' : 'border-l-transparent'}`}
-                      onClick={() => markRead(n.id)}>
+          )}
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {groups.map(group => (
+            <div key={group.key} className="space-y-3">
+              <div className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-sm px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                {group.label}
+              </div>
+              <div className="space-y-3">
+                {group.items.map(n => (
+                  <div key={n.id} onClick={() => markRead(n.id)} className="cursor-pointer">
+                    <Card
+                      padding={false}
+                      className={`p-4 sm:p-5 flex items-start space-x-4 hover:bg-slate-50/50 border-l-4 ${!n.is_read ? 'bg-amber-50/30 border-l-amber-500' : 'border-l-transparent'}`}
+                    >
                       <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${n.is_read ? 'bg-slate-200' : 'bg-amber-500'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">
@@ -201,14 +208,14 @@ export default function NotificariPage() {
                           {new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    </Card>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
