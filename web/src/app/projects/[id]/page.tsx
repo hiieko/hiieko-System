@@ -2,7 +2,6 @@
 
 import { PageTutorial } from '../../../components/PageTutorial';
 import { RoleGuard } from '../../../lib/auth-guard';
-import { ROUTE_ROLES } from '../../../config/route-roles';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient, ApiError } from '../../../lib/api-client';
@@ -389,7 +388,7 @@ function ProjectDetailPageInner() {
 
 export default function ProjectDetailPage() {
   return (
-    <RoleGuard allowedRoles={ROUTE_ROLES['/projects/[id]']}>
+    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader']}>
       <ProjectDetailPageInner />
     </RoleGuard>
   );
