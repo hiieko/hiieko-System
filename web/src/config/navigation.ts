@@ -8,7 +8,7 @@
  */
 import {
   LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro,
-  ClipboardCheck, Bell, Users, BarChart3, ShieldCheck, User,
+  ClipboardCheck, Bell, Users, ShieldCheck, User,
   SunMedium, AlertTriangle, type LucideIcon,
 } from 'lucide-react';
 
@@ -68,7 +68,6 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User },
       { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin },
       { href: '/aprobare', i18nKey: 'nav.aprobare', label: 'Aprobări', icon: ClipboardCheck },
-      { href: '/statistici', i18nKey: 'nav.statistici', label: 'Statistici', icon: BarChart3 },
     ],
   },
   {
