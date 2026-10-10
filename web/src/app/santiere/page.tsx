@@ -117,7 +117,7 @@ function SantierePageInner() {
       ) : sites.length === 0 ? (
         <Card padding={false}>
           <EmptyState
-            icon={<MapPin className="w-7 h-7" />}
+            icon={<MapPin />}
             title="No sites yet"
             description="Sites appear here once projects have a location set."
           />

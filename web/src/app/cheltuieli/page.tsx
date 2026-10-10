@@ -357,7 +357,7 @@ function CheltuieliPageInner() {
         <ErrorState title="Eroare la încărcarea cheltuielilor" error={error} onRetry={loadData} />
       ) : filtered.length === 0 ? (
         <Card padding={false}>
-          <EmptyState icon={<Receipt className="w-7 h-7" />} title={t('empty.expenses', locale)} />
+          <EmptyState icon={<Receipt />} title={t('empty.expenses', locale)} />
         </Card>
       ) : (
         <>

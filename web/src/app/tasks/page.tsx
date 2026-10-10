@@ -415,7 +415,7 @@ function TasksPageInner() {
                 ? t('task.select_project_first')
                 : t('task.empty_desc_scope')
             }
-            icon={<ListTodo className="w-7 h-7" aria-hidden="true" />}
+            icon={<ListTodo aria-hidden="true" />}
             action={
               (searchQuery || activeStatus !== 'all' || (onlyMine && showOnlyMineFilter))
                 ? {

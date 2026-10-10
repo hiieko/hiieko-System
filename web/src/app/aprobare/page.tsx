@@ -154,14 +154,14 @@ function AprobarePageInner() {
           <Card padding={false}>
             {search || (filter !== 'pending' && filter !== 'all') ? (
               <EmptyState
-                icon={<Search className="w-7 h-7" />}
+                icon={<Search />}
                 title="No matching results"
                 description="No expenses match the current search or status filter."
                 action={{ label: 'Reset filters', onClick: () => { setSearch(''); setFilter('pending'); } }}
               />
             ) : (
               <EmptyState
-                icon={<CheckCircle2 className="w-7 h-7" />}
+                icon={<CheckCircle2 />}
                 title="Nothing to approve"
                 description="You are all caught up."
               />

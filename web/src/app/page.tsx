@@ -230,7 +230,7 @@ export default function ControlTowerDashboardPage() {
       {overview && !hasProjects && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <EmptyState
-            icon={<Briefcase className="w-7 h-7" />}
+            icon={<Briefcase />}
             title="No projects yet"
             description="Your Control Tower will populate once projects exist."
             action={

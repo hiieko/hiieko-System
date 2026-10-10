@@ -169,14 +169,14 @@ export default function NotificariPage() {
         <Card padding={false}>
           {filter === 'unread' && notifs.length > 0 ? (
             <EmptyState
-              icon={<Bell className="w-7 h-7" />}
+              icon={<Bell />}
               title="No matching results"
               description="No unread notifications right now."
               action={{ label: 'Show all', onClick: () => setFilter('all') }}
             />
           ) : (
             <EmptyState
-              icon={<Bell className="w-7 h-7" />}
+              icon={<Bell />}
               title="You're all caught up"
               description="New notifications will appear here."
             />

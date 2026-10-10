@@ -90,7 +90,7 @@ function FurnizoriPageInner() {
         <ErrorState title={t('suppliers.load_error', locale)} message={error} onRetry={load} />
       ) : suppliers.length === 0 ? (
         <EmptyState
-          icon={<Store className="w-7 h-7" />}
+          icon={<Store />}
           title={t('suppliers.empty_title', locale)}
           description={t('suppliers.empty_hint', locale)}
           action={canCreate ? { label: t('suppliers.action_new', locale), onClick: () => setShowCreate(true) } : undefined}

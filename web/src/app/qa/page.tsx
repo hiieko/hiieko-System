@@ -114,7 +114,7 @@ function QaPageInner() {
 
       {!loading && !error && inspections.length === 0 && (
         <EmptyState
-          icon={<ShieldCheck className="h-10 w-10 text-content-muted" aria-hidden="true" />}
+          icon={<ShieldCheck className="text-content-muted" aria-hidden="true" />}
           title={t('qa.empty_title', locale)}
           description={t('qa.empty_message', locale)}
           action={

@@ -516,7 +516,7 @@ function PlanningPageInner() {
 
         {!selectedProjectId ? (
           <EmptyState
-            icon={<ClipboardList className="w-7 h-7" />}
+            icon={<ClipboardList />}
             title={t('planning.empty_no_project_title', locale)}
             description={t('planning.empty_no_project_message', locale)}
           />
@@ -536,7 +536,7 @@ function PlanningPageInner() {
                 <PlanningDaySummary plans={summaryPlans} variant="my-work" />
                 {myWorkPlans.length === 0 ? (
                   <EmptyState
-                    icon={<ClipboardList className="w-7 h-7" />}
+                    icon={<ClipboardList />}
                     title={t('planning.my_work_empty_title', locale)}
                     description={t('planning.my_work_empty_message', locale)}
                   />
@@ -553,7 +553,7 @@ function PlanningPageInner() {
               </>
             ) : plans.length === 0 ? (
               <EmptyState
-                icon={<ClipboardList className="w-7 h-7" />}
+                icon={<ClipboardList />}
                 title={t('planning.empty_title', locale)}
                 description={t('planning.empty_for_date_message', locale).replace(
                   '{date}',
@@ -584,7 +584,7 @@ function PlanningPageInner() {
                 )}
                 {filteredPlans.length === 0 ? (
                   <EmptyState
-                    icon={<ClipboardList className="w-7 h-7" />}
+                    icon={<ClipboardList />}
                     title={t('planning.empty_title', locale)}
                     description={t('planning.empty_message', locale)}
                   />

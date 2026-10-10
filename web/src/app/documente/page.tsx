@@ -269,7 +269,7 @@ function DocumentsPage() {
             ) : documents.length === 0 ? (
               <Card padding={false}>
                 <EmptyState
-                  icon={<FileText className="w-7 h-7" />}
+                  icon={<FileText />}
                   title="No documents yet"
                   description="Upload project documents to keep them organized."
                   action={{ label: 'Upload document', onClick: () => inputRef.current?.click() }}

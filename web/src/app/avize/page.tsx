@@ -130,13 +130,13 @@ function AvizePageInner() {
         <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
           {deliveries.length === 0 ? (
             <EmptyState
-              icon={<Truck className="w-7 h-7" />}
+              icon={<Truck />}
               title="No delivery notes yet"
               description="Avize appear here when deliveries are recorded."
             />
           ) : (
             <EmptyState
-              icon={<Search className="w-7 h-7" />}
+              icon={<Search />}
               title="No matching results"
               description="No delivery notes match the current search."
               action={{ label: 'Clear search', onClick: () => setSearch('') }}

@@ -227,7 +227,7 @@ function RapoartePageInner() {
       ) : reports.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200">
           <EmptyState
-            icon={<FileText className="w-7 h-7" />}
+            icon={<FileText />}
             title="No daily reports yet"
             description="Reports appear here after team leaders submit them."
             action={
@@ -242,7 +242,7 @@ function RapoartePageInner() {
           {filteredReports.length === 0 ? (
             <div className="bg-white rounded-xl border border-slate-200">
               <EmptyState
-                icon={<FileText className="w-7 h-7" />}
+                icon={<FileText />}
                 title="No matching results"
                 description="No reports match the current search or status filter."
                 action={{ label: 'Clear filters', onClick: () => { setSearchQuery(''); setStatusFilter('ALL'); } }}

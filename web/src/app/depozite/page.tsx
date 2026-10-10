@@ -89,7 +89,7 @@ function DepozitePageInner() {
         <ErrorState title={t('depozite.load_error', locale)} message={error} onRetry={load} />
       ) : warehouses.length === 0 ? (
         <EmptyState
-          icon={<WarehouseIcon className="w-7 h-7" />}
+          icon={<WarehouseIcon />}
           title={t('depozite.empty_title', locale)}
           description={t('depozite.empty_hint', locale)}
           action={canCreate ? { label: t('depozite.action_new', locale), onClick: () => setShowCreate(true) } : undefined}

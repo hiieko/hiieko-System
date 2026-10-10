@@ -194,7 +194,7 @@ function UtilizatoriPageInner() {
               ) : filteredUsers.length === 0 ? (
                 <Card padding={false}>
                   <EmptyState
-                    icon={<Users className="w-7 h-7" />}
+                    icon={<Users />}
                     title={locale === 'en' ? 'No users found' : 'Nu există utilizatori'}
                   />
                 </Card>
@@ -267,7 +267,7 @@ function UtilizatoriPageInner() {
               ) : roles.length === 0 ? (
                 <Card padding={false} className="lg:col-span-2">
                   <EmptyState
-                    icon={<Shield className="w-7 h-7" />}
+                    icon={<Shield />}
                     title={locale === 'en' ? 'No roles returned by the API' : 'API-ul nu a returnat roluri'}
                   />
                 </Card>

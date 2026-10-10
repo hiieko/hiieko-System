@@ -179,14 +179,14 @@ function WorkforcePageInner() {
         <Card padding={false}>
           {search ? (
             <EmptyState
-              icon={<Search className="w-7 h-7" />}
+              icon={<Search />}
               title="No matching results"
               description="No employees match the current search."
               action={{ label: 'Clear search', onClick: () => setSearch('') }}
             />
           ) : (
             <EmptyState
-              icon={<Users className="w-7 h-7" />}
+              icon={<Users />}
               title="No employees yet"
               description="Add employees to assign them to teams and tasks."
               action={{ label: 'Add employee', onClick: () => setShowCreate(true) }}

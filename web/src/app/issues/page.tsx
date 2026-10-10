@@ -236,14 +236,14 @@ function IssuesPageInner() {
             <Card padding={false}>
               {issues.length === 0 ? (
                 <EmptyState
-                  icon={<AlertTriangle className="w-7 h-7" />}
+                  icon={<AlertTriangle />}
                   title="No issues reported"
                   description="When a blocker is reported on site, it appears here."
                   action={{ label: 'Report issue', onClick: () => setShowCreate(true) }}
                 />
               ) : (
                 <EmptyState
-                  icon={<Search className="w-7 h-7" />}
+                  icon={<Search />}
                   title="No matching results"
                   description="No issues match the current search or status filter."
                   action={{ label: 'Clear filters', onClick: () => { setSearch(''); setFilter('all'); } }}

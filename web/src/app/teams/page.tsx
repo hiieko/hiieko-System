@@ -337,14 +337,14 @@ function TeamsPageInner() {
         <Card padding={false}>
           {search ? (
             <EmptyState
-              icon={<Search className="w-7 h-7" />}
+              icon={<Search />}
               title="No matching results"
               description="No teams match the current search."
               action={{ label: 'Clear search', onClick: () => setSearch('') }}
             />
           ) : (
             <EmptyState
-              icon={<Users className="w-7 h-7" />}
+              icon={<Users />}
               title="No teams yet"
               description="Create teams to assign work to groups of workers."
               action={
