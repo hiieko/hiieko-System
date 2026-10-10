@@ -1,4 +1,4 @@
-﻿# HIIEKO Implementation Decisions
+# HIIEKO Implementation Decisions
 
 **Last Updated:** 2026-09-22  
 **Version:** 1.0
