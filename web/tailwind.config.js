@@ -58,6 +58,11 @@ module.exports = {
           soft: '#fee2e2',
           foreground: '#991b1b',
         },
+        danger: {
+          DEFAULT: 'var(--hii-critical)',
+          soft: '#fee2e2',
+          foreground: '#991b1b',
+        },
         info: {
           DEFAULT: 'var(--hii-info)',
           soft: '#dbeafe',
