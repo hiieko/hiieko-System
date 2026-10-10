@@ -10,7 +10,7 @@ import { t, Expense, OcrResult, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { Button, Card, Badge, Modal, ErrorState, Skeleton, EmptyState, PageHeader } from '../../components/ui';
+import { Button, Card, Badge, Modal, ErrorState, Skeleton, EmptyState, PageHeader, useToast } from '../../components/ui';
 import { formatDecimal, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, EXPENSE_STATUS_LABELS, enumLabel } from '../../lib/formatters';
 import { todayCompanyIso } from '../../lib/company-time';
 
@@ -23,6 +23,12 @@ const EXPENSE_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 
   REIMBURSED: 'success',
   CANCELLED: 'neutral',
 };
+// Rows awaiting a decision — the only states the approve action applies to.
+const PENDING_EXPENSE_STATUSES = ['SUBMITTED', 'UNDER_REVIEW'];
+const isPendingExpense = (status?: string | null) =>
+  !!status && PENDING_EXPENSE_STATUSES.includes(status.toUpperCase());
+// Roles allowed by the backend to approve/reject expenses (POST /api/expenses/:id/approve).
+const EXPENSE_APPROVER_ROLES = ['admin', 'owner', 'manager', 'pm', 'finance'];
 function CheltuieliPageInner() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [filter, setFilter] = useState('all');
@@ -37,6 +43,7 @@ function CheltuieliPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   const { selectedProjectId } = useProject();
   // Expense form fields
   const [formCategory, setFormCategory] = useState('FUEL');
@@ -48,6 +55,8 @@ function CheltuieliPageInner() {
   const [formMerchantName, setFormMerchantName] = useState('');
   const { user } = useAuth();
   const { locale } = useLocale();
+  const { success: toastSuccess, error: toastError } = useToast();
+  const canApprove = EXPENSE_APPROVER_ROLES.includes((user?.role || '').toLowerCase());
   /**
    * Maps backend OcrExtractionResult (camelCase) to shared OcrResult (snake_case)
    */
@@ -159,6 +168,26 @@ function CheltuieliPageInner() {
       setSubmitError(err instanceof ApiError ? err.message : message);
     } finally {
       setSubmitting(false);
+    }
+  };
+  // Approve a pending expense — POST /api/expenses/:id/approve (role-gated by the backend).
+  const handleApprove = async (exp: Expense) => {
+    if (approvingId) return;
+    setApprovingId(exp.id);
+    try {
+      await apiClient.approveExpense(exp.id, { status: 'APPROVED' });
+      toastSuccess(
+        locale === 'ro' ? 'Cheltuială aprobată' : 'Expense approved',
+        exp.description || undefined
+      );
+      await loadData();
+    } catch (err) {
+      toastError(
+        locale === 'ro' ? 'Aprobare eșuată' : 'Approval failed',
+        err instanceof ApiError ? err.message : err instanceof Error ? err.message : undefined
+      );
+    } finally {
+      setApprovingId(null);
     }
   };
   const loadData = useCallback(async () => {
@@ -368,6 +397,7 @@ function CheltuieliPageInner() {
                 <th>Data</th><th>Categorie</th>
                 <th>Descriere</th><th className="text-right">Suma</th>
                 <th>Plata</th><th className="text-center">Stare</th>
+                {canApprove && <th className="text-center">{locale === 'ro' ? 'Acțiuni' : 'Actions'}</th>}
               </tr></thead>
               <tbody>
                 {filtered.map(exp => (
@@ -378,6 +408,17 @@ function CheltuieliPageInner() {
                     <td className="text-right font-bold text-slate-900">{formatDecimal(exp.amount)} {exp.currency}</td>
                     <td className="text-xs text-slate-500">{enumLabel(exp.payment_method, PAYMENT_METHOD_LABELS, locale)}</td>
                     <td className="text-center"><Badge variant={EXPENSE_STATUS_VARIANT[exp.status?.toUpperCase()] || 'neutral'} size="sm">{enumLabel(exp.status, EXPENSE_STATUS_LABELS, locale)}</Badge></td>
+                    {canApprove && (
+                      <td className="text-center">
+                        {isPendingExpense(exp.status) ? (
+                          <Button size="sm" variant="primary" loading={approvingId === exp.id} disabled={!!approvingId} onClick={() => void handleApprove(exp)} icon={<Check className="w-3.5 h-3.5" />}>
+                            {locale === 'ro' ? 'Aprobă' : 'Approve'}
+                          </Button>
+                        ) : (
+                          <span className="text-slate-300" aria-hidden="true">—</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -397,6 +438,11 @@ function CheltuieliPageInner() {
                 <span className="text-xs text-slate-500">{enumLabel(exp.payment_method, PAYMENT_METHOD_LABELS, locale)}</span>
                 <span className="text-sm font-bold text-slate-900">{formatDecimal(exp.amount)} {exp.currency}</span>
               </div>
+              {canApprove && isPendingExpense(exp.status) && (
+                <Button size="sm" variant="primary" fullWidth loading={approvingId === exp.id} disabled={!!approvingId} onClick={() => void handleApprove(exp)} icon={<Check className="w-3.5 h-3.5" />}>
+                  {locale === 'ro' ? 'Aprobă cheltuiala' : 'Approve expense'}
+                </Button>
+              )}
             </Card>
           ))}
         </div>
