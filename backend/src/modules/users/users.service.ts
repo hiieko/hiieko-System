@@ -180,6 +180,10 @@ export class UsersService {
     return updated;
   }
 
+  async getProfile(userId: string) {
+    return this.prisma.userProfile.findUnique({ where: { user_id: userId } });
+  }
+
   async updateProfile(
     id: string,
     data: { fullName?: string; phone?: string; language?: string },

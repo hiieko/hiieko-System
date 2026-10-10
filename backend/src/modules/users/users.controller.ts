@@ -29,6 +29,12 @@ export class UsersController {
     return this.usersService.findAll(user);
   }
 
+  @Get('profile')
+  @ApiOperation({ summary: 'Get own profile' })
+  async getProfile(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.getProfile(user.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a user in the current organization' })
   async findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
