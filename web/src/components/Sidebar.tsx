@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { X, LogOut } from 'lucide-react';
 import { getRoleLabel, t, useLocale } from '@solar/shared';
 import { useAuth } from '../contexts/AuthContext';
-import { NAV_GROUPS, type NavItem, type NavGroup } from '../config/navigation';
+import { NAV_GROUPS, canRoleAccess, type NavItem, type NavGroup } from '../config/navigation';
 import { ShellBrand } from './shell';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useFocusTrap } from '../hooks/useFocusTrap';
@@ -30,7 +30,6 @@ interface SidebarProps {
 export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
-  const userRole = user?.role?.toLowerCase() || 'worker';
   const { locale } = useLocale();
 
   const userName = user?.fullName || user?.email || t('header.visitator', locale);
@@ -64,15 +63,10 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
     [pathname],
   );
 
-  // Item roles come from the canonical `ROUTE_ROLES` map (config/navigation.ts).
-  // No roles (or an empty list) means "every authenticated role".
-  const canSee = useCallback(
-    (item: NavItem | NavGroup): boolean => {
-      const roles = item.roles;
-      return !roles || roles.length === 0 || roles.includes(userRole);
-    },
-    [userRole],
-  );
+  // Access is delegated to the canonical `ROUTE_ROLES` contract via
+  // `canRoleAccess` (config/navigation.ts) — the same check the mobile nav uses.
+  // A group is rendered only when at least one of its items is visible.
+  const canSee = useCallback((href: string): boolean => canRoleAccess(href, user?.role), [user?.role]);
 
   const renderNavItem = useCallback(
     (item: NavItem) => {
@@ -103,8 +97,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
   const renderNavGroup = useCallback(
     (group: NavGroup) => {
-      if (!canSee(group)) return null;
-      const visible = group.items.filter(canSee);
+      const visible = group.items.filter((item) => canSee(item.href));
       if (visible.length === 0) return null;
       return (
         <div key={group.titleKey}>

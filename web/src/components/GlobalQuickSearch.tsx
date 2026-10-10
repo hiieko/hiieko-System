@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowRight, Command, Search } from 'lucide-react';
-import { NAV_GROUPS } from '../config/navigation';
+import { NAV_GROUPS, canRoleAccess } from '../config/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocale, t } from '@solar/shared';
 import { Modal } from './ui/Modal';
@@ -19,7 +19,7 @@ export function GlobalQuickSearch() {
   const destinations = useMemo(() => {
     const role = user?.role?.toLowerCase();
     return NAV_GROUPS.flatMap((group) => group.items)
-      .filter((item) => !item.roles?.length || (!!role && item.roles.includes(role)))
+      .filter((item) => canRoleAccess(item.href, role))
       .map((item) => ({ ...item, title: t(item.i18nKey, locale) || item.label }));
   }, [locale, user?.role]);
 

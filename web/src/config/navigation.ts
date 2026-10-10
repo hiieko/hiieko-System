@@ -4,7 +4,9 @@
  * Consumed by Sidebar, Breadcrumbs, and any future command-palette / global search.
  *
  * i18n keys reference `nav.*` paths in `@solar/shared` (DEC-004).
- * Role filtering is unchanged from the original Sidebar implementation.
+ * Role filtering is delegated to `route-roles.ts` via `canRoleAccess`: an item is
+ * shown only when `ROUTE_ROLES[href]` allows the current role. There is no
+ * per-item `roles` list here — that was a second, drifting source of truth.
  */
 import {
   LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro,
@@ -18,14 +20,12 @@ export interface NavItem {
   i18nKey: string;
   label: string; // RO fallback when i18n key not found
   icon: LucideIcon;
-  roles?: string[];
 }
 
 export interface NavGroup {
   titleKey: string;
   title: string; // RO fallback
   items: NavItem[];
-  roles?: string[];
 }
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -34,28 +34,12 @@ export const NAV_GROUPS: NavGroup[] = [
     title: 'Operațiuni',
     items: [
       { href: '/', i18nKey: 'nav.dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      {
-        href: '/control-tower', i18nKey: 'nav.control_tower', label: 'Turn de Control', icon: Gauge,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager'],
-      },
-      {
-        href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar',
-        icon: SunMedium,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'technician'],
-      },
-      {
-        href: '/tasks', i18nKey: 'nav.tasks', label: 'Task-uri', icon: ClipboardCheck,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
-      },
-      {
-        href: '/planning', i18nKey: 'nav.planning', label: 'Plan Zilnic', icon: FileText,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
-      },
-      {
-        href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle,
-        roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
-      },
-      { href: '/qa', i18nKey: 'nav.qa_qc', label: 'QA/QC · Inspecții', icon: ShieldCheck, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'qa_qc'] },
+      { href: '/control-tower', i18nKey: 'nav.control_tower', label: 'Turn de Control', icon: Gauge },
+      { href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar', icon: SunMedium },
+      { href: '/tasks', i18nKey: 'nav.tasks', label: 'Task-uri', icon: ClipboardCheck },
+      { href: '/planning', i18nKey: 'nav.planning', label: 'Plan Zilnic', icon: FileText },
+      { href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle },
+      { href: '/qa', i18nKey: 'nav.qa_qc', label: 'QA/QC · Inspecții', icon: ShieldCheck },
       { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock },
       { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
       { href: '/avize', i18nKey: 'nav.avize', label: 'Procurement / Avize', icon: Truck },
@@ -66,7 +50,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     titleKey: 'nav.management',
     title: 'Management',
-    roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader'],
     items: [
       { href: '/projects', i18nKey: 'nav.projects', label: 'Proiecte', icon: MapPin },
       { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users },
@@ -78,7 +61,6 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     titleKey: 'nav.admin',
     title: 'Administrare',
-    roles: ['admin'],
     items: [
       { href: '/utilizatori', i18nKey: 'nav.utilizatori', label: 'Utilizatori', icon: Users },
     ],
