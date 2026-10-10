@@ -6,7 +6,7 @@ import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
 import { normalizeEnvelope } from '../../lib/normalize-envelope';
-import { PageHeader, Button, Card, Badge, Tabs, ErrorState, Skeleton, EmptyState } from '../../components/ui';
+import { PageHeader, Button, Card, Badge, Tabs, ErrorState, Skeleton, EmptyState, useToast } from '../../components/ui';
 
 interface NotifItem {
   id: string;
@@ -21,13 +21,6 @@ interface NotifItem {
   created_at: string;
 }
 
-interface PaginatedNotifs {
-  data: NotifItem[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
-
 export default function NotificariPage() {
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -35,25 +28,22 @@ export default function NotificariPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { locale } = useLocale();
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const loadNotifs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const rawResponse = await apiClient.getNotifications({ page: 1, pageSize: 50 });
-      // The apiClient wraps in { data, error }. The inner data is the paginated envelope:
-      // { data: NotifItem[], total, page, pageSize }
-      const normalized = normalizeEnvelope<PaginatedNotifs>(rawResponse);
+      // normalizeEnvelope already flattens the paginated inner envelope
+      // ({ data, total, page, pageSize }), so `normalized.data` is the array itself.
+      const normalized = normalizeEnvelope<NotifItem[]>(rawResponse);
       if (normalized.error) {
         setError(normalized.error);
         setNotifs([]);
-      } else if (normalized.data) {
-        // normalized.data is the PaginatedNotifs object; access .data for the array
-        const paginated = normalized.data as unknown as PaginatedNotifs;
-        setNotifs(Array.isArray(paginated.data) ? paginated.data : []);
-        setTotal(paginated.total || 0);
       } else {
-        setNotifs([]);
+        setNotifs(Array.isArray(normalized.data) ? normalized.data : []);
+        setTotal(normalized.total || 0);
       }
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -99,7 +89,10 @@ export default function NotificariPage() {
       await apiClient.markNotificationRead(id);
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+      toastError(
+        t('notifications.load_error', locale),
+        err instanceof ApiError ? err.message : err instanceof Error ? err.message : undefined,
+      );
     }
   };
 
@@ -107,8 +100,12 @@ export default function NotificariPage() {
     try {
       await apiClient.markAllNotificationsRead();
       setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
+      toastSuccess(locale === 'ro' ? 'Notificări marcate ca citite' : 'All notifications marked as read');
     } catch (err) {
-      console.error('Failed to mark all notifications as read:', err);
+      toastError(
+        t('notifications.load_error', locale),
+        err instanceof ApiError ? err.message : err instanceof Error ? err.message : undefined
+      );
     }
   };
 
