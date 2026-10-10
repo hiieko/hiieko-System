@@ -1,5 +1,15 @@
 'use client';
 
+/**
+ * This route is the role router. Managers see Control Tower. Workers see their
+ * dashboard. Do not add a second Control Tower surface here or at /control-tower.
+ *
+ * `/control-tower` is the canonical, manager-direct entry; it renders the shared
+ * `ControlTowerSurface` and redirects disallowed roles back to `/`. This page
+ * keeps the role branch (worker day / field dashboard / Control Tower) so every
+ * role has a home at `/`.
+ */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
