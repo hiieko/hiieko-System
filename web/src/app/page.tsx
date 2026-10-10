@@ -174,7 +174,7 @@ export default function ControlTowerDashboardPage() {
       <PageTutorial sectionId="dashboard" />
 
       {/* Control Tower Header & Global Filter Bar */}
-      <div className="control-tower-heading flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="control-tower-heading flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-success-soft text-hii-700 uppercase tracking-[0.12em] border border-success-soft">
@@ -237,7 +237,7 @@ export default function ControlTowerDashboardPage() {
 
       {/* No projects yet: Control Tower has nothing to aggregate */}
       {overview && !hasProjects && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <EmptyState
             icon={<Briefcase className="w-7 h-7" />}
             title="No projects yet"
@@ -753,7 +753,7 @@ export default function ControlTowerDashboardPage() {
       )}
 
       {/* QUICK WORKFLOW ACCESS */}
-      <div className="control-quick-links bg-slate-900 rounded-2xl p-6 text-white shadow-sm border border-slate-800">
+      <div className="control-quick-links bg-slate-900 rounded-xl p-6 text-white shadow-sm border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">

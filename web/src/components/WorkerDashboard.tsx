@@ -150,7 +150,7 @@ export function WorkerDashboard() {
 
   return (
     <div className="space-y-6 pb-12 max-w-5xl mx-auto">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-slate-900 text-amber-400 flex items-center justify-center font-bold text-xl">
             {(user?.fullName || 'U').slice(0, 2).toUpperCase()}
@@ -176,7 +176,7 @@ export function WorkerDashboard() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2"><Clock className="w-5 h-5 text-hii-500" aria-hidden="true" /><h2 className="font-bold text-slate-900">{t('worker.attendance_today', locale)}</h2></div>
         </div>

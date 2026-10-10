@@ -177,7 +177,7 @@ export function ControlTowerSurface() {
     <div className="space-y-6 pb-12">
       <PageTutorial sectionId="dashboard" />
 
-      <section aria-labelledby="role-focus-title" className="bg-slate-900 rounded-2xl p-5 text-white shadow-sm">
+      <section aria-labelledby="role-focus-title" className="bg-slate-900 rounded-xl p-5 text-white shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-400">{roleProfile.title}</p>
@@ -194,7 +194,7 @@ export function ControlTowerSurface() {
       </section>
 
       {/* Control Tower Header & Global Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-warning-soft0 text-slate-950 uppercase tracking-wide">
@@ -761,7 +761,7 @@ export function ControlTowerSurface() {
       )}
 
       {/* QUICK WORKFLOW ACCESS */}
-      <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-sm border border-slate-800">
+      <div className="bg-slate-900 rounded-xl p-6 text-white shadow-sm border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-base font-bold text-white tracking-tight">
