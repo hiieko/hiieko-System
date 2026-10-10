@@ -855,6 +855,10 @@ export class NestApiClient {
     });
   }
 
+  async getProfile(): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/users/profile');
+  }
+
   async updateProfile(data: { fullName?: string; phone?: string; language?: string }): Promise<ApiResponse<any>> {
     return this.request<ApiResponse<any>>('/api/users/profile', {
       method: 'PATCH',
@@ -1449,6 +1453,7 @@ export interface IApiClient {
   getUser(id: string): Promise<ApiResponse<any>>;
   updateUserStatus(id: string, isActive: boolean): Promise<ApiResponse<any>>;
   updateUserRole(id: string, role: string): Promise<ApiResponse<any>>;
+  getProfile(): Promise<ApiResponse<any>>;
   updateProfile(data: { fullName?: string; phone?: string; language?: string }): Promise<ApiResponse<any>>;
 
   // Projects

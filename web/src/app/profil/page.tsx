@@ -24,11 +24,17 @@ export default function ProfilPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const response = await apiClient.getMe();
-      const me = response.data as any;
-      setFullName(me?.fullName || me?.profile?.full_name || '');
-      setEmail(me?.email || '');
-      setPhone(me?.profile?.phone || me?.phone || '');
+      const response = await apiClient.getProfile();
+      const profile = response.data as any;
+      // Profile API owns fullName/phone/language; email comes from the auth user
+      // (the profile record has no email column) with a per-field fallback to the
+      // context user so a user without a profile row still sees their name.
+      setFullName(profile?.full_name || user?.fullName || '');
+      setPhone(profile?.phone || '');
+      setEmail(user?.email || '');
+      if (profile?.language === 'ro' || profile?.language === 'en') {
+        setSelectedLocale(profile.language);
+      }
     } catch (err: any) {
       setLoadError(err?.message || 'Nu s-a putut încărca profilul.');
       // Fall back to context user so the form still works when the API is unreachable.
