@@ -10,6 +10,7 @@ import { useAuth, SIGNED_OUT_FLASH_KEY } from '../../contexts/AuthContext';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
+const SIGNUP_EMAIL_KEY = 'hiieko_signup_email';
 
 function BrandPanel() {
   return (
@@ -51,7 +52,12 @@ function LoginForm() {
     }
     if (window.sessionStorage.getItem(SIGNUP_FLASH_KEY) === 'created') {
       window.sessionStorage.removeItem(SIGNUP_FLASH_KEY);
-      toast.success('Account created.', 'You can sign in now.');
+      const signupEmail = window.sessionStorage.getItem(SIGNUP_EMAIL_KEY);
+      if (signupEmail) {
+        setEmail(signupEmail);
+        window.sessionStorage.removeItem(SIGNUP_EMAIL_KEY);
+      }
+      toast.success('Account created. Sign in to continue.');
     }
   }, [toast]);
 

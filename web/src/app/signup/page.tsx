@@ -9,6 +9,7 @@ import { apiClient, ApiError } from '../../lib/api-client';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
+const SIGNUP_EMAIL_KEY = 'hiieko_signup_email';
 
 const ROLES = [
   { value: 'worker', label: 'Worker' },
@@ -112,10 +113,11 @@ function SignupForm() {
         role: form.requestedRole,
       });
       window.sessionStorage.setItem(SIGNUP_FLASH_KEY, 'created');
+      window.sessionStorage.setItem(SIGNUP_EMAIL_KEY, form.email.trim());
       router.push('/login');
     } catch (err) {
       if (err instanceof ApiError && err.statusCode === 409) {
-        setErrors((prev) => ({ ...prev, email: 'An account with this email already exists.' }));
+        setErrors((prev) => ({ ...prev, email: 'This email is already registered.' }));
       } else if (err instanceof ApiError) {
         toast.error('Could not create your account.', err.message);
       } else {
