@@ -7,6 +7,7 @@ import { PrismaService } from './common/prisma/prisma.service';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { assertJwtSecretStrength } from './common/config/env-security';
 
 /** Same-site local development origins, used only when CORS_ORIGIN is unset. */
 const DEFAULT_CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:19006'];
@@ -30,6 +31,11 @@ export function parseCorsOrigins(raw?: string): string[] {
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  // Phase 0.5 (Item 2): fail fast on a missing/placeholder/too-short JWT_SECRET in
+  // production, before any request can be served.
+  assertJwtSecretStrength();
+
   const app = await NestFactory.create(AppModule);
   const prisma = app.get(PrismaService);
 
