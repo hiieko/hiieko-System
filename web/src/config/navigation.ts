@@ -50,7 +50,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle,
         roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'],
       },
-      { href: '/qa-qc', i18nKey: 'nav.qa_qc', label: 'QA/QC · Inspecții', icon: ShieldCheck, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'qa_qc'] },
+      { href: '/qa', i18nKey: 'nav.qa_qc', label: 'QA/QC · Inspecții', icon: ShieldCheck, roles: ['admin', 'owner', 'manager', 'pm', 'site_manager', 'qa_qc'] },
       { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock },
       { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
       { href: '/avize', i18nKey: 'nav.avize', label: 'Procurement / Avize', icon: Truck },

@@ -1,8 +1,9 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { AuthGuard } from '../../lib/auth-guard';
-import { QualityWorkspace } from '../../features/quality/QualityWorkspace';
-
-export default function QualityPage() {
-  return <AuthGuard><QualityWorkspace /></AuthGuard>;
+/**
+ * Deprecated route. `/qa` is the canonical QA/QC page (D5 — resolve duplication).
+ * The old `/qa-qc` URL is kept alive as a permanent-in-spirit redirect.
+ */
+export default function QaQcRedirectPage() {
+  redirect('/qa');
 }

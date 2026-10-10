@@ -51,7 +51,7 @@ const PROJECT_WORKSPACES = [
   { href: '/avize', label: 'Livrări', description: 'Avize și recepții', icon: Truck },
   { href: '/rapoarte', label: 'Rapoarte zilnice', description: 'Activitate de teren', icon: FileText },
   { href: '/issues', label: 'Probleme / blocaje', description: 'Urmărire probleme', icon: CircleAlert },
-  { href: '/qa-qc', label: 'QA/QC', description: 'Inspecții și NCR-uri', icon: ShieldCheck },
+  { href: '/qa', label: 'QA/QC', description: 'Inspecții și NCR-uri', icon: ShieldCheck },
   { href: '/solar-configurator', label: 'Configurație solară', description: 'Layout PV și BOM', icon: SunMedium },
   { href: '/projects', label: 'Proiecte', description: 'Portofoliu proiecte', icon: Activity },
 ] as const;
