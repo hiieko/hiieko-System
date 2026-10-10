@@ -21,8 +21,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Boot sequence — runs once when AuthProvider mounts and answers
+   * "is this user logged in?".
+   *
+   *  1. Read the access token (`api_token` in localStorage).
+   *  2. No token            → user = null, loading = false.
+   *  3. Token present       → GET /api/auth/me.
+   *       - 200              → user = result, loading = false.
+   *       - 401              → api-client transparently refreshes the session
+   *                            with the httpOnly cookie and retries /me once;
+   *                            if the retry still fails the token is cleared.
+   *       - any other error  → clear token, user = null, loading = false.
+   *
+   * Refresh failure falls back to the login screen via AuthGuard/ProtectedRoute.
+   */
   const refreshUser = useCallback(async () => {
-    if (!apiClient.isAuthenticated()) {
+    if (!apiClient.getToken()) {
       setUser(null);
       setLoading(false);
       return;
