@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { t, useLocale } from '@solar/shared';
@@ -32,6 +32,8 @@ interface DrawerProps {
   size?: DrawerSize;
   showClose?: boolean;
   className?: string;
+  /** Bottom drawers only: close when dragged down past a threshold. */
+  swipeToClose?: boolean;
 }
 
 const sideStyles: Record<DrawerSide, Record<DrawerSize, string>> = {
@@ -56,11 +58,46 @@ export function Drawer({
   size = 'lg',
   showClose = true,
   className,
+  swipeToClose = false,
 }: DrawerProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const { locale } = useLocale();
 
   useFocusTrap(dialogRef, open);
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (!swipeToClose || side !== 'bottom') return;
+      touchStartY.current = e.touches[0].clientY;
+      setDragging(true);
+    },
+    [swipeToClose, side],
+  );
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (touchStartY.current == null) return;
+    const scroller = contentRef.current;
+    if (scroller && scroller.scrollTop > 0) {
+      touchStartY.current = null;
+      setDragY(0);
+      return;
+    }
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setDragY(delta);
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchStartY.current == null) return;
+    const shouldClose = dragY > 80;
+    touchStartY.current = null;
+    setDragY(0);
+    setDragging(false);
+    if (shouldClose) onClose();
+  }, [dragY, onClose]);
 
   // Close on Escape (capture phase, same pattern as production Modal).
   const handleKeyDown = useCallback(
@@ -105,6 +142,13 @@ export function Drawer({
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: dragY ? `translateY(${dragY}px)` : undefined,
+          transition: dragging ? 'none' : 'transform 200ms ease-out',
+        }}
         className={clsx(
           'absolute z-[60] bg-surface shadow-2xl border-chrome-line flex flex-col',
           'animate-in fade-in duration-200',
@@ -138,7 +182,7 @@ export function Drawer({
           </div>
         )}
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div ref={contentRef} className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
       </div>
     </div>
   );
