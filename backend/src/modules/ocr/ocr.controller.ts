@@ -15,6 +15,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nes
 import { OcrService, CreateOCRJobDto, ProcessDocumentDto } from './ocr.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
+import { RateLimit } from '../../common/auth/decorators/rate-limit.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { Express } from 'express';
@@ -33,12 +34,14 @@ export class OcrController {
   }
 
   @Post('jobs')
+  @RateLimit({ scope: 'user', limit: 10, windowMs: 3_600_000 })
   @ApiOperation({ summary: 'Submit document or receipt to OCR queue' })
   async createJob(@Body() dto: CreateOCRJobDto, @CurrentUser() user: AuthenticatedUser) {
     return this.ocrService.createJob(dto, user.id);
   }
 
   @Post('process')
+  @RateLimit({ scope: 'user', limit: 10, windowMs: 3_600_000 })
   @ApiOperation({ summary: 'Upload and process document with OCR (synchronous)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

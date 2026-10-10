@@ -4,11 +4,17 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RATE_LIMIT_KEY, RateLimitRule } from '../decorators/rate-limit.decorator';
+import {
+  RATE_LIMIT_KEY,
+  RateLimitRule,
+  RateLimitScope,
+} from '../decorators/rate-limit.decorator';
 
 /**
  * PostgreSQL-backed fixed-window rate limiter.
@@ -16,11 +22,30 @@ import { RATE_LIMIT_KEY, RateLimitRule } from '../decorators/rate-limit.decorato
  * Slice 7 replaces the Slice 1 process-local Map with an atomic database counter so
  * concurrent API instances share the same IP/email windows. No X-Forwarded-For parsing
  * is introduced: the limiter continues to trust only req.ip.
+ *
+ * Phase 0.5 registers this guard globally (`APP_GUARD`), so every request is limited:
+ * - a handler carrying `@RateLimit(...)` uses exactly those rules (per-endpoint override);
+ * - otherwise a per-method default applies — 30/min for writes and 100/min for reads,
+ *   keyed by the authenticated user (or IP when anonymous).
  */
 @Injectable()
 export class RateLimitGuard implements CanActivate {
   private static readonly CLEANUP_INTERVAL_MS = 5 * 60_000;
   private static lastCleanupAt = 0;
+
+  /** Phase 0.5 default windows: writes 30/min, reads 100/min. */
+  private static readonly DEFAULT_WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  private static readonly DEFAULT_READ_METHODS = ['GET', 'HEAD'];
+  private static readonly DEFAULT_WRITE_RULE: RateLimitRule = {
+    scope: 'user',
+    limit: 30,
+    windowMs: 60_000,
+  };
+  private static readonly DEFAULT_READ_RULE: RateLimitRule = {
+    scope: 'user',
+    limit: 100,
+    windowMs: 60_000,
+  };
 
   static reset(): void {
     RateLimitGuard.lastCleanupAt = 0;
@@ -29,19 +54,40 @@ export class RateLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly prisma: PrismaService,
+    @Optional() private readonly jwtService?: JwtService,
   ) {}
 
+  /** Method-based fallback rule used when a handler declares no `@RateLimit` rules. */
+  private static defaultRulesFor(method: string): RateLimitRule[] {
+    const verb = (method || '').toUpperCase();
+    if (RateLimitGuard.DEFAULT_WRITE_METHODS.includes(verb)) {
+      return [RateLimitGuard.DEFAULT_WRITE_RULE];
+    }
+    if (RateLimitGuard.DEFAULT_READ_METHODS.includes(verb)) {
+      return [RateLimitGuard.DEFAULT_READ_RULE];
+    }
+    return [];
+  }
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const rules = this.reflector.getAllAndOverride<RateLimitRule[]>(RATE_LIMIT_KEY, [
+    const request = context.switchToHttp().getRequest();
+
+    const declared = this.reflector.getAllAndOverride<RateLimitRule[]>(RATE_LIMIT_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (!rules || rules.length === 0) {
+    // A declared rule set overrides the default; otherwise fall back to the
+    // per-method default so every endpoint is covered.
+    const rules =
+      declared && declared.length > 0
+        ? declared
+        : RateLimitGuard.defaultRulesFor(request?.method);
+
+    if (rules.length === 0) {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
     const route = `${context.getClass().name}.${context.getHandler().name}`;
     const now = Date.now();
 
@@ -49,7 +95,7 @@ export class RateLimitGuard implements CanActivate {
 
     let exceeded = false;
     for (const rule of rules) {
-      const subject = this.subjectFor(rule, request);
+      const subject = this.subjectFor(rule.scope, request);
       if (subject === undefined) {
         continue;
       }
@@ -67,16 +113,50 @@ export class RateLimitGuard implements CanActivate {
     return true;
   }
 
-  private subjectFor(rule: RateLimitRule, request: any): string | undefined {
-    if (rule.scope === 'ip') {
+  private subjectFor(scope: RateLimitScope, request: any): string | undefined {
+    if (scope === 'ip') {
       return request?.ip ?? 'unknown';
     }
 
-    const email = request?.body?.email;
-    if (typeof email !== 'string' || email.trim() === '') {
+    if (scope === 'email') {
+      const email = request?.body?.email;
+      if (typeof email !== 'string' || email.trim() === '') {
+        return undefined;
+      }
+      return email.trim().toLowerCase();
+    }
+
+    // 'user' — authenticated id when available, else a verified bearer token
+    // (the guard runs globally, before JwtAuthGuard, so request.user is usually
+    // unset here), else the client IP for anonymous callers.
+    const userId = request?.user?.id;
+    if (typeof userId === 'string' && userId.length > 0) {
+      return userId;
+    }
+    const tokenSubject = this.bearerSubject(request);
+    if (tokenSubject) {
+      return tokenSubject;
+    }
+    return request?.ip ?? 'unknown';
+  }
+
+  /** Extracts `sub` from a signature-verified bearer token, or undefined. */
+  private bearerSubject(request: any): string | undefined {
+    if (!this.jwtService) {
       return undefined;
     }
-    return email.trim().toLowerCase();
+    const header = request?.headers?.authorization;
+    if (typeof header !== 'string' || !header.startsWith('Bearer ')) {
+      return undefined;
+    }
+    try {
+      const payload = this.jwtService.verify<{ sub?: string }>(header.substring(7));
+      return typeof payload?.sub === 'string' && payload.sub.length > 0
+        ? payload.sub
+        : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private async register(

@@ -7,8 +7,11 @@ export const RATE_LIMIT_KEY = 'rate_limit';
  * - `ip`    — the client address (`req.ip`, taken as-is; `X-Forwarded-For` is deliberately
  *             ignored because there is no trusted proxy in Slice 1).
  * - `email` — the normalized (trimmed + lowercased) `email` field of the request body.
+ * - `user`  — the authenticated user id when available (from `request.user` if the guard runs
+ *             after `JwtAuthGuard`, otherwise from a verified bearer token), falling back to
+ *             the client IP for anonymous requests.
  */
-export type RateLimitScope = 'ip' | 'email';
+export type RateLimitScope = 'ip' | 'email' | 'user';
 
 export interface RateLimitRule {
   scope: RateLimitScope;

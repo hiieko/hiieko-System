@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
@@ -37,6 +38,9 @@ import { RateLimitGuard } from '../../common/auth/guards/rate-limit.guard';
     AuthService,
     SessionService,
     RateLimitGuard,
+    // Phase 0.5: apply the distributed limiter to every endpoint. Handlers with
+    // `@RateLimit(...)` keep those rules; everything else gets the per-method default.
+    { provide: APP_GUARD, useExisting: RateLimitGuard },
     JwtAuthGuard,
     RolesGuard,
     PermissionsGuard,

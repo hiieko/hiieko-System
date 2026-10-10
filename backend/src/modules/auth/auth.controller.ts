@@ -13,7 +13,6 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Request, Response } from 'express';
 import { AuthService, RegisterDto, LoginDto } from './auth.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
-import { RateLimitGuard } from '../../common/auth/guards/rate-limit.guard';
 import { RateLimit } from '../../common/auth/decorators/rate-limit.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
@@ -30,8 +29,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(RateLimitGuard)
-  @RateLimit({ scope: 'ip', limit: 5, windowMs: 60_000 })
+  @RateLimit({ scope: 'ip', limit: 3, windowMs: 3_600_000 })
   @ApiOperation({ summary: 'Register a new user (SEC-003: starts PENDING, no token issued)' })
   @ApiResponse({ status: 201, description: 'User registered as PENDING — awaiting ADMIN/OWNER activation' })
   @ApiResponse({ status: 429, description: 'Too many registration attempts (rate limited)' })
@@ -41,10 +39,9 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RateLimitGuard)
   @RateLimit(
-    { scope: 'ip', limit: 20, windowMs: 60_000 },
-    { scope: 'email', limit: 10, windowMs: 60_000 },
+    { scope: 'ip', limit: 20, windowMs: 900_000 },
+    { scope: 'email', limit: 5, windowMs: 900_000 },
   )
   @ApiOperation({ summary: 'Login with credentials' })
   @ApiResponse({ status: 200, description: 'Successfully authenticated' })
@@ -78,7 +75,6 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RateLimitGuard)
   @RateLimit({ scope: 'ip', limit: 60, windowMs: 60_000 })
   @ApiOperation({ summary: 'Rotate the refresh token and issue a new access token' })
   @ApiResponse({ status: 200, description: 'New access token issued and refresh token rotated' })

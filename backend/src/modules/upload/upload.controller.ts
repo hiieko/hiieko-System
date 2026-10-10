@@ -24,6 +24,7 @@ import { UploadService } from './upload.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
+import { RateLimit } from '../../common/auth/decorators/rate-limit.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
 import { SkipEnvelope } from '../../common/decorators/skip-envelope.decorator';
@@ -40,6 +41,7 @@ export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post()
+  @RateLimit({ scope: 'user', limit: 10, windowMs: 3_600_000 })
   @RequireProjectAccess('projectId', 'optional')
   @ApiOperation({ summary: 'Upload a receipt/invoice and persist its blob + metadata' })
   @ApiConsumes('multipart/form-data')
