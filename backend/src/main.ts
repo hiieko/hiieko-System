@@ -3,6 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Reflector } from '@nestjs/core';
 import { randomUUID } from 'crypto';
+import helmet from 'helmet';
 import { PrismaService } from './common/prisma/prisma.service';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -38,6 +39,50 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   const prisma = app.get(PrismaService);
+
+  // Phase 0.5 (Item 3): baseline security headers (X-Content-Type-Options: nosniff,
+  // X-Frame-Options: DENY, HSTS, Referrer-Policy, and a CSP). Applied before every route
+  // — including /health/* — so all responses carry them and `X-Powered-By` is removed.
+  // The CSP is intentionally permissive enough for the Swagger UI at /api/docs (inline
+  // scripts/styles) and for Google Fonts; the goal is a solid scanner score, not a
+  // locked-down browser app.
+  const connectSources = Array.from(
+    new Set(["'self'", ...parseCorsOrigins(process.env.CORS_ORIGIN)]),
+  );
+
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: false,
+        directives: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          frameAncestors: ["'none'"],
+          objectSrc: ["'none'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: connectSources,
+        },
+      },
+      // CORS is handled by enableCors() below; leave CORP permissive so the SPA on
+      // another origin can embed API-served images (e.g. receipt blobs).
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      frameguard: { action: 'deny' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      strictTransportSecurity: { maxAge: 31536000, includeSubDomains: true },
+    }),
+  );
+
+  // Permissions-Policy has no helmet option; set it explicitly.
+  app.use((_req: any, res: any, next: any) => {
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(self), geolocation=(self), microphone=()',
+    );
+    next();
+  });
 
   // Operational endpoints intentionally bypass application auth so load balancers and
   // orchestrators can distinguish a live process from a ready database-backed process.
