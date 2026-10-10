@@ -5,8 +5,8 @@ import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { MapPin, ShieldCheck, Navigation, Sliders, Loader2, RefreshCw, X, Save } from 'lucide-react';
-import { EmptyState } from '../../components/ui';
+import { MapPin, ShieldCheck, Navigation, Sliders, RefreshCw, Save } from 'lucide-react';
+import { PageHeader, Button, Card, Badge, Modal, Input, ErrorState, Skeleton, EmptyState } from '../../components/ui';
 
 interface Project {
   id: string;
@@ -94,47 +94,50 @@ function SantierePageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="sites" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Șantiere Solare & Perimetre Geofence</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Configurarea parcurilor fotovoltaice, a coordonatelor GPS și a razei de validare a prezenței lucrătorilor.
-          </p>
-        </div>
-        <button onClick={load} disabled={loading}
-          className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
-          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />Reîmprospătează
-        </button>
-      </div>
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
-      {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />Se încarcă șantierele...
-        </div>
+      <PageHeader
+        title="Șantiere Solare & Perimetre Geofence"
+        subtitle="Configurarea parcurilor fotovoltaice, a coordonatelor GPS și a razei de validare a prezenței lucrătorilor."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={load}
+            disabled={loading}
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+          >
+            Reîmprospătează
+          </Button>
+        }
+      />
+
+      {error ? (
+        <ErrorState title="Eroare la încărcarea șantierelor" error={error} onRetry={load} />
+      ) : loading ? (
+        <Skeleton className="h-40" count={2} />
       ) : sites.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <Card padding={false}>
           <EmptyState
             icon={<MapPin className="w-7 h-7" />}
             title="No sites yet"
             description="Sites appear here once projects have a location set."
           />
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sites.map((site) => (
-            <div key={site.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+            <Card key={site.id} padding={false} className="overflow-hidden flex flex-col justify-between">
               <div className="p-6 space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-200">
+                    <Badge variant="warning" size="md">
                       {site.code}
-                    </span>
+                    </Badge>
                     <h2 className="text-lg font-bold text-slate-900 mt-1.5">{site.name}</h2>
                     <p className="text-xs text-slate-500 flex items-center mt-1">
                       <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" />{site.address}
                     </p>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Activ</span>
+                  <Badge variant="success" size="md">Activ</Badge>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 space-y-2.5 text-xs">
                   <div className="flex items-center justify-between text-slate-600">
@@ -143,7 +146,7 @@ function SantierePageInner() {
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="flex items-center"><Sliders className="w-3.5 h-3.5 mr-1.5 text-amber-600" />Raza Geofence Validare:</span>
-                    <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">{site.geofence_radius_meters} metri</span>
+                    <Badge variant="success" size="md">{site.geofence_radius_meters} metri</Badge>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
                     <span className="flex items-center"><ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-amber-600" />Manager Responsabil:</span>
@@ -153,50 +156,59 @@ function SantierePageInner() {
               </div>
               <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <span>Stare: <strong>{site.is_active ? 'Activ' : 'Inactiv'}</strong></span>
-                <button type="button" onClick={() => openEditParams(site)} className="text-amber-600 hover:text-amber-700 font-semibold">Modifica Parametri</button>
+                <Button variant="ghost" size="sm" className="text-amber-600 hover:text-amber-700" onClick={() => openEditParams(site)}>
+                  Modifica Parametri
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
-      {/* Edit Params Modal */}
-      {editSite && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm" onClick={closeEditParams}>
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 p-6 w-full max-w-md mx-4 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900">Modifica Parametri — {editSite.name}</h3>
-              <button onClick={closeEditParams} className="p-1 hover:bg-slate-100 rounded"><X className="w-5 h-5" /></button>
-            </div>
-            {editError && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{editError}</div>}
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Latitudine</label>
-                <input type="number" step="any" value={editLat} onChange={e => setEditLat(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none font-mono" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Longitudine</label>
-                <input type="number" step="any" value={editLng} onChange={e => setEditLng(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none font-mono" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Raza Geofence (metri)</label>
-                <input type="number" min="1" value={editRadius} onChange={e => setEditRadius(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none font-mono" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={closeEditParams}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Anulează</button>
-              <button onClick={handleSaveParams} disabled={editSaving}
-                className="inline-flex items-center px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-bold rounded-lg disabled:opacity-50">
-                <Save className="w-4 h-4 mr-1.5" />{editSaving ? 'Se salvează...' : 'Salvează'}
-              </button>
-            </div>
+      <Modal
+        open={!!editSite}
+        onClose={closeEditParams}
+        title={`Modifica Parametri — ${editSite?.name || ''}`}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={closeEditParams}>Anulează</Button>
+            <Button variant="primary" loading={editSaving} onClick={handleSaveParams} icon={<Save className="w-4 h-4" />}>
+              {editSaving ? 'Se salvează...' : 'Salvează'}
+            </Button>
           </div>
+        }
+      >
+        {editError && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{editError}</div>}
+        <div className="space-y-3">
+          <Input
+            label="Latitudine"
+            type="number"
+            step="any"
+            inputMode="decimal"
+            value={editLat}
+            onChange={e => setEditLat(e.target.value)}
+            className="font-mono"
+          />
+          <Input
+            label="Longitudine"
+            type="number"
+            step="any"
+            inputMode="decimal"
+            value={editLng}
+            onChange={e => setEditLng(e.target.value)}
+            className="font-mono"
+          />
+          <Input
+            label="Raza Geofence (metri)"
+            type="number"
+            min={1}
+            inputMode="decimal"
+            value={editRadius}
+            onChange={e => setEditRadius(e.target.value)}
+            className="font-mono"
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
