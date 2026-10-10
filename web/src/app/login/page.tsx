@@ -73,7 +73,11 @@ function LoginForm() {
     try {
       await apiClient.login({ email: email.trim(), password });
       await refreshUser();
-      router.push('/');
+      const from =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('from')
+          : null;
+      router.push(from && from.startsWith('/') && !from.startsWith('//') ? from : '/');
     } catch (err) {
       if (err instanceof ApiError && err.statusCode === 401) {
         toast.error('Wrong email or password');

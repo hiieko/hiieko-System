@@ -8,7 +8,7 @@ import { Header } from './Header';
 import { MobilePrimaryNav } from './MobilePrimaryNav';
 import { ProjectProvider } from '../contexts/ProjectContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
-import { AuthGuard } from '../lib/auth-guard';
+import { ProtectedRoute } from './ProtectedRoute';
 import { ToastProvider } from './ui/Toast';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
-      <AuthGuard>
+      <ProtectedRoute>
       <ProjectProvider>
         <ToastProvider>
           <div className="flex h-screen overflow-hidden bg-slate-50">
@@ -46,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </ToastProvider>
       </ProjectProvider>
-      </AuthGuard>
+      </ProtectedRoute>
     </ThemeProvider>
   );
 }
