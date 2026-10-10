@@ -9,9 +9,10 @@ import { ROUTE_ROLES } from '../../config/route-roles';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { WarehouseCreateModal } from '../../features/warehouses/components/WarehouseCreateModal';
 import type { Warehouse } from '../../features/warehouses/types';
-import { Warehouse as WarehouseIcon, Plus, Search, Loader2 } from 'lucide-react';
+import { Plus, Warehouse as WarehouseIcon, Loader2, Search } from 'lucide-react';
 
 const WAREHOUSE_CREATE_ROLES = ['admin', 'owner', 'procurement'];
 
@@ -79,8 +80,10 @@ function DepozitePageInner() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />{t('depozite.loading', locale)}
+        <div className="space-y-4 py-12">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height={64} />
+          ))}
         </div>
       ) : error ? (
         <ErrorState title={t('depozite.load_error', locale)} message={error} onRetry={load} />

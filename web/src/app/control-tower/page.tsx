@@ -14,7 +14,7 @@
  */
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Skeleton } from '../../components/ui';
 import { ControlTowerSurface } from '../../components/ControlTowerSurface';
 import { ROUTE_ROLES } from '../../config/route-roles';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,9 +31,14 @@ export default function ControlTowerPage() {
 
   if (loading || !isAllowed) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-hii-500" aria-hidden="true" />
-        <span className="sr-only">Se încarcă...</span>
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <Skeleton className="h-10 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height={96} />
+          ))}
+        </div>
+        <Skeleton variant="rectangular" height={320} />
       </div>
     );
   }

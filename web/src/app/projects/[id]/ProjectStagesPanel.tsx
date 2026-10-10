@@ -5,8 +5,9 @@ import type { ProjectStage, CreateStageDto } from '../../../features/projects/ty
 import { apiClient } from '../../../lib/api-client';
 import { Button } from '../../../components/ui/Button';
 import { useToast } from '../../../components/ui/Toast';
+import { Skeleton } from '../../../components/ui/Skeleton';
 import { t, useLocale } from '@solar/shared';
-import { Plus, Loader2, Layers, AlertCircle, Save, X } from 'lucide-react';
+import { Plus, Layers, AlertCircle, Save, X } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 
 interface Props {
@@ -70,8 +71,10 @@ export function ProjectStagesPanel({ projectId }: Props) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-hii-500" />
+      <div className="space-y-4 py-8">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} variant="rectangular" height={80} />
+        ))}
       </div>
     );
   }

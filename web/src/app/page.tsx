@@ -12,28 +12,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import {
-  Layers,
-  Users,
-  Clock,
-  Briefcase,
-  Boxes,
-  Euro,
-  ShieldCheck,
-  FileCheck,
-  AlertTriangle,
-  RefreshCw,
-  Loader2,
-  ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  ExternalLink,
-  MapPin,
-  Calendar,
-} from 'lucide-react';
+
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
 import { useLocale, canCreateProjects } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from '../components/ControlTowerDrilldownDrawer';
@@ -44,7 +23,21 @@ import { useAuth } from '../contexts/AuthContext';
 import { WorkerDashboard } from '../components/WorkerDashboard';
 import { WorkerMyDay } from '../components/WorkerMyDay';
 import { useRouter } from 'next/navigation';
-import { EmptyState } from '../components/ui';
+import { EmptyState, Skeleton } from '../components/ui';
+import {
+  RefreshCw,
+  AlertTriangle,
+  Briefcase,
+  Users,
+  Layers,
+  Boxes,
+  Euro,
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  ShieldCheck,
+  FileCheck,
+} from 'lucide-react';
 
 export default function ControlTowerDashboardPage() {
   const { user } = useAuth();
@@ -144,16 +137,14 @@ export default function ControlTowerDashboardPage() {
 
   if (loading && !overview) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-warning" />
-        <div className="text-center">
-          <h3 className="text-base font-semibold text-slate-800">
-            Se încarcă Turnul de Control...
-          </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Se agregă datele operaționale în timp real din baza de date centrală.
-          </p>
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <Skeleton className="h-10 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height={96} />
+          ))}
         </div>
+        <Skeleton variant="rectangular" height={320} />
       </div>
     );
   }

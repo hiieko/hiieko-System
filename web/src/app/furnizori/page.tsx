@@ -9,9 +9,10 @@ import { ROUTE_ROLES } from '../../config/route-roles';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
+import { Skeleton } from '../../components/ui/Skeleton';
 import { SupplierCreateModal } from '../../features/suppliers/components/SupplierCreateModal';
 import type { Supplier } from '../../features/suppliers/types';
-import { Store, Plus, Search, Loader2 } from 'lucide-react';
+import { Store, Plus, Loader2, Search } from 'lucide-react';
 
 const SUPPLIER_CREATE_ROLES = ['admin', 'owner', 'manager', 'procurement'];
 
@@ -80,8 +81,10 @@ function FurnizoriPageInner() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-slate-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />{t('suppliers.loading', locale)}
+        <div className="space-y-4 py-12">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height={64} />
+          ))}
         </div>
       ) : error ? (
         <ErrorState title={t('suppliers.load_error', locale)} message={error} onRetry={load} />

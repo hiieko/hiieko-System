@@ -5,8 +5,9 @@ import { RoleGuard } from '../../../lib/auth-guard';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient, ApiError } from '../../../lib/api-client';
+import { Skeleton } from '../../../components/ui/Skeleton';
 import {
-  Loader2, ArrowLeft, RefreshCw, Users, UserPlus, X, Trash2,
+  ArrowLeft, RefreshCw, Users, UserPlus, X, Trash2,
   Activity, Building2, Calendar, DollarSign, Sliders,
   Check, AlertTriangle, ClipboardCheck, Clock, Boxes, Truck,
   FileText, ShieldCheck, SunMedium, CircleAlert,
@@ -150,9 +151,14 @@ function ProjectDetailPageInner() {
   // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-hii-500 mr-3" />
-        <span className="text-slate-500">Se incarca proiectul...</span>
+      <div className="max-w-7xl mx-auto space-y-6 py-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton variant="rectangular" height={220} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height={320} />
+          ))}
+        </div>
       </div>
     );
   }
