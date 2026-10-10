@@ -5,17 +5,22 @@ import { RoleGuard } from '../../lib/auth-guard';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Euro, User, MapPin, Calendar,
-  ClipboardCheck, CheckCircle2, XCircle, AlertCircle, Clock,
-  Search, Eye, MessageSquare, Loader2, RefreshCw,
+  CheckCircle2, XCircle, Clock,
+  Search, Eye, MessageSquare,
 } from 'lucide-react';
 import { Expense } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useProject } from '../../contexts/ProjectContext';
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { EmptyState } from '../../components/ui';
-import { formatDecimal, enumLabel, EXPENSE_STATUS_LABELS, EXPENSE_STATUS_COLORS, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/formatters';
+import { formatDecimal, enumLabel, EXPENSE_STATUS_LABELS, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/formatters';
+import { PageHeader, Button, Card, Badge, Tabs, ConfirmDialog, ErrorState, Skeleton, EmptyState } from '../../components/ui';
 
-// STATUS_MAP and CAT_MAP replaced by shared formatters (EXPENSE_STATUS_LABELS, EXPENSE_CATEGORY_LABELS)
+function statusVariant(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
+  const u = (status || '').toUpperCase();
+  if (u === 'APPROVED') return 'success';
+  if (u === 'REJECTED' || u === 'DENIED') return 'danger';
+  if (u === 'SUBMITTED' || u === 'UNDER_REVIEW' || u === 'PENDING') return 'warning';
+  return 'neutral';
+}
 
 function AprobarePageInner() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -39,16 +44,16 @@ function AprobarePageInner() {
       if (selectedProjectId) params.projectId = selectedProjectId;
       const response = await apiClient.getExpenses(Object.keys(params).length ? params : undefined);
       let data = (response.data || []) as Expense[];
-      
+
       // Keep the complete response in state so pending totals stay accurate across tabs.
       // Status filtering remains client-side below because the API does not support it.
 
       // Sort by created_at descending
-      data.sort((a: any, b: any) => 
-        new Date(b.created_at || b.createdAt || 0).getTime() - 
+      data.sort((a: any, b: any) =>
+        new Date(b.created_at || b.createdAt || 0).getTime() -
         new Date(a.created_at || a.createdAt || 0).getTime()
       );
-      
+
       setExpenses(data);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -113,42 +118,38 @@ function AprobarePageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="approvals" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Aprobare Cheltuieli</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Verificare și aprobare cheltuieli trimise de angajați conform §6.6.
-          </p>
-        </div>
-        <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">
-          <Clock className="w-3.5 h-3.5 mr-1.5" />{loading || error ? '—' : pending} în așteptare
-        </span>
-      </div>
+      <PageHeader
+        title="Aprobare Cheltuieli"
+        subtitle="Verificare și aprobare cheltuieli trimise de angajați conform §6.6."
+        actions={
+          <Badge variant="warning" size="md" className="gap-1.5">
+            <Clock className="w-3.5 h-3.5" />{loading || error ? '—' : pending} în așteptare
+          </Badge>
+        }
+      />
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="flex items-center space-x-2 bg-white rounded-lg border border-slate-200 p-1 shadow-sm">
-          {tabs.map(t => (
-            <button key={t.k} onClick={() => setFilter(t.k)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${filter === t.k ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-              {t.l}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center bg-white rounded-lg border border-slate-200 px-3 py-2 shadow-sm w-full sm:w-72">
-          <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
+        <Tabs
+          tabs={tabs.map(t => ({ key: t.k, label: t.l }))}
+          activeTab={filter}
+          onTabChange={setFilter}
+          className="w-full sm:w-fit"
+        />
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input type="text" aria-label="Caută cheltuieli" placeholder="Caută cheltuială..." value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full text-sm text-slate-800 focus:outline-none placeholder:text-slate-400" />
+            className="hii-input pl-10" />
         </div>
       </div>
 
       <div className="space-y-4">
         {loading ? (
-          <div role="status" className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-12 text-sm text-slate-500"><Loader2 className="size-5 animate-spin" />Se încarcă cheltuielile...</div>
+          <Skeleton className="h-28" count={3} />
         ) : error ? (
-          <div role="alert" className="flex flex-col items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-10 text-center"><AlertCircle className="size-8 text-rose-500" /><p className="text-sm text-rose-800">Nu s-au putut încărca cheltuielile: {error}</p><button type="button" onClick={() => void loadExpenses()} className="min-h-11 rounded-lg border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-800">Reîncearcă</button></div>
+          <ErrorState title="Nu s-au putut încărca cheltuielile" error={error} onRetry={loadExpenses} />
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <Card padding={false}>
             {search || (filter !== 'pending' && filter !== 'all') ? (
               <EmptyState
                 icon={<Search className="w-7 h-7" />}
@@ -163,13 +164,13 @@ function AprobarePageInner() {
                 description="You are all caught up."
               />
             )}
-          </div>
+          </Card>
         ) : filtered.map(exp => {
           const status = (exp.status || '').toUpperCase();
           const stLabel = enumLabel(exp.status, EXPENSE_STATUS_LABELS);
           const catLabel = enumLabel(exp.category, EXPENSE_CATEGORY_LABELS);
           return (
-            <div key={exp.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+            <Card key={exp.id} padding={false} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-start space-x-4">
                   <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg shrink-0">
@@ -178,9 +179,9 @@ function AprobarePageInner() {
                   <div>
                     <div className="flex items-center space-x-2">
                       <h3 className="font-bold text-base text-slate-900">{catLabel}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${EXPENSE_STATUS_COLORS[exp.status?.toUpperCase()] || 'bg-slate-100 text-slate-700'}`}>
+                      <Badge variant={statusVariant(status)} size="md">
                         {stLabel}
-                      </span>
+                      </Badge>
                     </div>
                     <p className="text-sm text-slate-600 mt-1">{exp.description || 'Fara descriere'}</p>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
@@ -207,18 +208,15 @@ function AprobarePageInner() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-1.5">
-                    <button type="button" aria-label={`${selId === exp.id ? 'Ascunde' : 'Vezi'} detaliile cheltuielii ${exp.description || exp.id}`} aria-expanded={selId === exp.id} onClick={() => { setNote(''); setSelId(selId === exp.id ? null : exp.id); }}
-                      className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
+                    <Button variant="ghost" size="icon" aria-label={`${selId === exp.id ? 'Ascunde' : 'Vezi'} detaliile cheltuielii ${exp.description || exp.id}`} aria-expanded={selId === exp.id} onClick={() => { setNote(''); setSelId(selId === exp.id ? null : exp.id); }}>
                       <Eye className="w-4 h-4" aria-hidden="true" />
-                    </button>
-                    <button type="button" aria-label={`Aprobă cheltuiala ${exp.description || exp.id}`} onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
-                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg disabled:opacity-50">
+                    </Button>
+                    <Button variant="primary" size="icon" aria-label={`Aprobă cheltuiala ${exp.description || exp.id}`} onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}>
                       <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
-                    </button>
-                    <button type="button" aria-label={`Respinge cheltuiala ${exp.description || exp.id}`} onClick={() => setPendingAction({ id: exp.id, status: 'REJECTED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
-                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg disabled:opacity-50">
+                    </Button>
+                    <Button variant="danger" size="icon" aria-label={`Respinge cheltuiala ${exp.description || exp.id}`} onClick={() => setPendingAction({ id: exp.id, status: 'REJECTED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}>
                       <XCircle className="w-5 h-5" aria-hidden="true" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -234,19 +232,16 @@ function AprobarePageInner() {
                       className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/30 resize-none" />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button type="button" onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
-                      className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg disabled:opacity-50">
-                      <CheckCircle2 className="w-4 h-4 mr-1.5" />Aproba
-                    </button>
-                    
-                    <button type="button" onClick={() => setPendingAction({ id: exp.id, status: 'REJECTED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}
-                      className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-lg disabled:opacity-50">
-                      <XCircle className="w-4 h-4 mr-1.5" />Respinge
-                    </button>
+                    <Button variant="primary" size="sm" icon={<CheckCircle2 className="w-4 h-4" />} onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}>
+                      Aproba
+                    </Button>
+                    <Button variant="danger" size="sm" icon={<XCircle className="w-4 h-4" />} onClick={() => setPendingAction({ id: exp.id, status: 'REJECTED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}>
+                      Respinge
+                    </Button>
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           );
         })}
       </div>
@@ -274,5 +269,3 @@ export default function AprobarePage() {
     </RoleGuard>
   );
 }
-
-
