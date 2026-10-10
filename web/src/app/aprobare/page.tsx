@@ -9,7 +9,7 @@ import {
   CheckCircle2, XCircle, Clock,
   Search, Eye, MessageSquare,
 } from 'lucide-react';
-import { Expense } from '@solar/shared';
+import { Expense, useLocale } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useProject } from '../../contexts/ProjectContext';
 import { formatDecimal, enumLabel, EXPENSE_STATUS_LABELS, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS } from '../../lib/formatters';
@@ -34,6 +34,7 @@ function AprobarePageInner() {
   const [acting, setActing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { selectedProjectId } = useProject();
+  const { locale } = useLocale();
 
   const loadExpenses = useCallback(async () => {
     setLoading(true);
@@ -194,7 +195,7 @@ function AprobarePageInner() {
                       </span>
                       <span className="flex items-center">
                         <Calendar className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                        {new Date(exp.submitted_at || exp.created_at).toLocaleDateString('ro-RO')}
+                        {new Date(exp.submitted_at || exp.created_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'ro-RO')}
                       </span>
                     </div>
                   </div>

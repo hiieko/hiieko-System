@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../../lib/api-client';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
+import { useLocale } from '@solar/shared';
 import {
   AlertTriangle,
   RefreshCw,
@@ -103,6 +104,7 @@ function IssuesPageInner() {
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const { selectedProjectId } = useProject();
+  const { locale } = useLocale();
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase();
 
@@ -261,7 +263,7 @@ function IssuesPageInner() {
                       </div>
                       <p className="text-xs text-slate-600 mt-1.5 whitespace-pre-wrap">{issue.description}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
-                        <span><Calendar className="w-3 h-3 inline mr-1" />{new Date(issue.created_at).toLocaleDateString('ro-RO')}</span>
+                        <span><Calendar className="w-3 h-3 inline mr-1" />{new Date(issue.created_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'ro-RO')}</span>
                         {issue.reporter && <span><User className="w-3 h-3 inline mr-1" />{issue.reporter.profile?.full_name || issue.reporter.email}</span>}
                       </div>
                     </div>

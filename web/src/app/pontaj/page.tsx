@@ -146,8 +146,8 @@ function PontajPageInner() {
       return [
         userName,
         log.project?.name || '',
-        log.check_in_time ? new Date(log.check_in_time).toLocaleString('ro-RO') : '',
-        log.check_out_time ? new Date(log.check_out_time).toLocaleString('ro-RO') : '',
+        log.check_in_time ? new Date(log.check_in_time).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO') : '',
+        log.check_out_time ? new Date(log.check_out_time).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO') : '',
         String(log.check_in_distance_m || 0),
         String(log.regular_hours || 0),
         String(((log.overtime_minutes || 0) / 60).toFixed(1)),

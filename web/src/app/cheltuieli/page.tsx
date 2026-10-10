@@ -372,7 +372,7 @@ function CheltuieliPageInner() {
               <tbody>
                 {filtered.map(exp => (
                   <tr key={exp.id}>
-                    <td className="text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString('ro-RO')}</td>
+                    <td className="text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'ro-RO')}</td>
                     <td className="text-xs font-medium text-slate-700">{enumLabel(exp.category, EXPENSE_CATEGORY_LABELS, locale)}</td>
                     <td className="text-slate-800 font-medium">{exp.description || '-'}</td>
                     <td className="text-right font-bold text-slate-900">{formatDecimal(exp.amount)} {exp.currency}</td>
@@ -388,7 +388,7 @@ function CheltuieliPageInner() {
           {filtered.map(exp => (
             <Card key={exp.id} padding={false} className="p-4 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString('ro-RO')}</span>
+                <span className="text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'ro-RO')}</span>
                 <Badge variant={EXPENSE_STATUS_VARIANT[exp.status?.toUpperCase()] || 'neutral'} size="sm">{enumLabel(exp.status, EXPENSE_STATUS_LABELS, locale)}</Badge>
               </div>
               <p className="text-xs font-medium text-slate-700">{enumLabel(exp.category, EXPENSE_CATEGORY_LABELS, locale)}</p>
