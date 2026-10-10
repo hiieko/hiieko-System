@@ -29,6 +29,14 @@ const isPendingExpense = (status?: string | null) =>
   !!status && PENDING_EXPENSE_STATUSES.includes(status.toUpperCase());
 // Roles allowed by the backend to approve/reject expenses (POST /api/expenses/:id/approve).
 const EXPENSE_APPROVER_ROLES = ['admin', 'owner', 'manager', 'pm', 'finance'];
+/** Normalizes an OCR date to the `YYYY-MM-DD` an <input type="date"> requires. */
+const toIsoDateInput = (value?: string): string | null => {
+  if (!value) return null;
+  const iso = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
+};
 function CheltuieliPageInner() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [filter, setFilter] = useState('all');
@@ -85,6 +93,23 @@ function CheltuieliPageInner() {
       recognition: backendResult.recognition,
     };
   };
+  // Auto-fill ONLY the fields OCR actually returns: amount (total), date (documentDate)
+  // and merchant (merchantName). Category and description are left for the user to choose —
+  // the OCR result carries neither, and we never invent data.
+  useEffect(() => {
+    if (!ocrResult) return;
+    const total = ocrResult.total;
+    if (typeof total === 'number' && !Number.isNaN(total)) {
+      setFormAmount(String(total));
+    }
+    const isoDate = toIsoDateInput(ocrResult.document_date);
+    if (isoDate) {
+      setFormExpenseDate(isoDate);
+    }
+    if (ocrResult.merchant_name) {
+      setFormMerchantName(ocrResult.merchant_name);
+    }
+  }, [ocrResult]);
   const processReceipt = async () => {
     if (!receipt) return;
     if (!user) {
