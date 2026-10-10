@@ -37,8 +37,8 @@ export function ErrorState({
         className,
       )}
     >
-      <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
-        <AlertTriangle className="w-7 h-7 text-red-500" />
+      <div className="w-14 h-14 rounded-full bg-danger-soft flex items-center justify-center mb-4">
+        <AlertTriangle className="w-7 h-7 text-danger" />
       </div>
       <h3 className="text-base font-semibold text-slate-800 mb-1">{title}</h3>
       <p className="text-sm text-slate-500 max-w-sm mb-2">{message}</p>

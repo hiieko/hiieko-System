@@ -143,7 +143,7 @@ export function AvizCreateModal({ open, onClose, projectId, locale, onCreated }:
     <Modal open={open} onClose={onClose} title={t('avize.create_title', locale)} size="lg">
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {validationError && (
-          <p role="alert" className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+          <p role="alert" className="px-3 py-2 rounded-lg bg-danger-soft border border-danger/20 text-sm text-danger-foreground">
             {validationError}
           </p>
         )}

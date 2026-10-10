@@ -77,7 +77,7 @@ export function IssueDetailModal({ open, onClose, issue, locale }: IssueDetailMo
         </div>
 
         {/* Honesty note: why there are no status controls in this UI */}
-        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <p className="text-xs text-warning-foreground bg-warning-soft border border-warning/20 rounded-lg px-3 py-2">
           {t('issues.detail_readonly_note', locale)}
         </p>
 

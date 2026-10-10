@@ -31,7 +31,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               'focus:outline-none focus:ring-2',
               suffix && 'pr-11',
               error
-                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30'
+                ? 'border-danger focus:border-danger focus:ring-red-500/30'
                 : 'border-slate-300 focus:border-hii-500 focus:ring-hii-500/30',
               'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
               className,
@@ -44,7 +44,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
         {hint && !error && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
         {error && (
-          <p role="alert" className="mt-1.5 text-xs text-red-600">
+          <p role="alert" className="mt-1.5 text-xs text-danger">
             {error}
           </p>
         )}

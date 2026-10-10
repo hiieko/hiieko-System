@@ -121,11 +121,11 @@ export function WorkerAttendanceView() {
 
         <div className="p-6">
           {shiftStatus === 'noProject' && (
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-              <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 bg-warning-soft border border-warning/20 rounded-lg px-4 py-3">
+              <Info className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-amber-800">{t('worker.select_project', locale)}</p>
-                <p className="text-xs text-amber-700 mt-0.5">
+                <p className="text-sm font-semibold text-warning-foreground">{t('worker.select_project', locale)}</p>
+                <p className="text-xs text-warning-foreground mt-0.5">
                   {t('worker.site_picker_hint', locale)}
                 </p>
               </div>
@@ -172,7 +172,7 @@ export function WorkerAttendanceView() {
               <div className="flex items-center justify-center mb-5">
                 <div className="text-center">
                   <Badge variant="success" size="md" className="mb-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-success-soft0 animate-pulse" />
                     {locale === 'en' ? 'Active shift' : 'Tura activa'}
                   </Badge>
                   <div className="font-mono text-4xl font-bold text-slate-900 tabular-nums">{formatDuration(elapsedSeconds)}</div>
@@ -182,7 +182,7 @@ export function WorkerAttendanceView() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                   <div className="text-[10px] font-medium text-slate-400 uppercase">Sosire</div>
-                  <div className="text-lg font-bold mt-1 text-emerald-700">{formatTime(record.check_in_time)}</div>
+                  <div className="text-lg font-bold mt-1 text-success-foreground">{formatTime(record.check_in_time)}</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                   <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.distance_label', locale)}</div>
@@ -194,9 +194,9 @@ export function WorkerAttendanceView() {
                   <div className="text-[10px] font-medium text-slate-400 uppercase">Stare</div>
                   <div className="text-lg font-bold mt-1">
                     {record.is_within_geofence === false ? (
-                      <span className="text-amber-700 text-sm font-bold">{t('worker.geofence_outside', locale)}</span>
+                      <span className="text-warning-foreground text-sm font-bold">{t('worker.geofence_outside', locale)}</span>
                     ) : (
-                      <span className="text-emerald-700 text-sm font-bold">{t('worker.geofence_inside', locale)}</span>
+                      <span className="text-success-foreground text-sm font-bold">{t('worker.geofence_inside', locale)}</span>
                     )}
                   </div>
                 </div>
@@ -211,15 +211,15 @@ export function WorkerAttendanceView() {
           {shiftStatus === 'result' && lastResult && (
             <div>
               <div className="flex items-stretch gap-3 mb-5">
-                <div className="flex-1 bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-1" />
-                  <div className="text-[10px] font-medium text-emerald-700 uppercase">Ore lucrate</div>
+                <div className="flex-1 bg-success-soft border border-success/20 rounded-xl p-4 text-center">
+                  <CheckCircle2 className="w-6 h-6 text-success mx-auto mb-1" />
+                  <div className="text-[10px] font-medium text-success-foreground uppercase">Ore lucrate</div>
                   <div className="text-2xl font-bold text-emerald-900">{lastResult.regular_hours || 0}h</div>
                 </div>
-                <div className="flex-1 bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-                  <Timer className="w-6 h-6 text-amber-600 mx-auto mb-1" />
-                  <div className="text-[10px] font-medium text-amber-700 uppercase">Ore suplim.</div>
-                  <div className="text-2xl font-bold text-amber-900">
+                <div className="flex-1 bg-warning-soft border border-warning/20 rounded-xl p-4 text-center">
+                  <Timer className="w-6 h-6 text-warning mx-auto mb-1" />
+                  <div className="text-[10px] font-medium text-warning-foreground uppercase">Ore suplim.</div>
+                  <div className="text-2xl font-bold text-warning-foreground">
                     {lastResult.overtime_minutes > 0 ? (lastResult.overtime_minutes / 60).toFixed(1) + 'h' : '0h'}
                   </div>
                 </div>
@@ -281,7 +281,7 @@ export function WorkerAttendanceView() {
                 ))}
               </div>
             ) : tasksError ? (
-              <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              <div className="flex items-start gap-2 text-xs text-warning-foreground bg-warning-soft border border-warning/20 rounded-lg px-4 py-3">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span>
                   {locale === 'en'

@@ -91,7 +91,7 @@ export function RoofEditor({
   const modeBtn = (active: boolean) =>
     `flex-1 px-2 py-1.5 text-xs font-semibold rounded-lg border ${
       active
-        ? 'bg-amber-500 text-slate-950 border-amber-500'
+        ? 'bg-warning-soft0 text-slate-950 border-amber-500'
         : 'bg-white text-slate-600 border-slate-200'
     }`;
 

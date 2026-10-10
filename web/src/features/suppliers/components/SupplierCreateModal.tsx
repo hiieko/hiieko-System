@@ -68,7 +68,7 @@ export function SupplierCreateModal({ open, onClose, locale, onCreated }: Suppli
     <Modal open={open} onClose={onClose} title={t('suppliers.create_title', locale)} size="lg">
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {validationError && (
-          <p role="alert" className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">{validationError}</p>
+          <p role="alert" className="px-3 py-2 rounded-lg bg-danger-soft border border-danger/20 text-sm text-danger-foreground">{validationError}</p>
         )}
         {apiError && <ErrorState title={t('suppliers.toast_error', locale)} message={apiError} className="py-3" />}
 

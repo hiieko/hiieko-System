@@ -90,8 +90,8 @@ export function PlanningDaySummary({
 
   const toneClasses: Record<'slate' | 'emerald' | 'amber', string> = {
     slate: 'text-content-muted',
-    emerald: 'text-emerald-600',
-    amber: 'text-amber-600',
+    emerald: 'text-success',
+    amber: 'text-warning',
   };
 
   return (

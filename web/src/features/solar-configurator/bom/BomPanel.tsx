@@ -57,7 +57,7 @@ export function BomPanel({
         </tbody>
       </table>
 
-      <p className="text-[10px] text-amber-600">
+      <p className="text-[10px] text-warning">
         PROTOTIP — cantități demonstrative, nu reprezintă calcul ingineresc validat.
       </p>
     </div>

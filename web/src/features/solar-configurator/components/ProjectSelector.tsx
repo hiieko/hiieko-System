@@ -79,7 +79,7 @@ export function ProjectSelector({
                 onCreateDesign(name.trim());
                 setName('');
               }}
-              className="px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 text-sm font-semibold rounded-lg"
+              className="px-3 py-2 bg-warning-soft0 hover:bg-warning disabled:opacity-50 text-slate-950 text-sm font-semibold rounded-lg"
             >
               Creează
             </button>

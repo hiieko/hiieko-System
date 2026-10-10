@@ -173,9 +173,9 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
       className={clsx(
         'flex flex-col gap-3 p-3 rounded-lg border sm:flex-row sm:items-center',
         completed
-          ? 'bg-emerald-50 border-emerald-200'
+          ? 'bg-success-soft border-success/20'
           : taskStatus === 'BLOCKED'
-            ? 'bg-amber-50 border-amber-300'
+            ? 'bg-warning-soft border-warning/30'
             : 'bg-surface border-chrome-line',
       )}
     >
@@ -196,7 +196,7 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={clsx('text-sm font-medium truncate', completed ? 'text-emerald-800 line-through' : 'text-content')}>
+          <span className={clsx('text-sm font-medium truncate', completed ? 'text-success-foreground line-through' : 'text-content')}>
             {title}
           </span>
           {code && <span className="text-xs font-mono text-content-muted flex-shrink-0">{code}</span>}
@@ -246,8 +246,8 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
             'w-20 text-sm font-medium text-center py-1 rounded-md border bg-surface',
             'focus:outline-none focus:ring-2 focus:ring-hii-500',
             'disabled:bg-surface-muted disabled:text-content-muted disabled:cursor-not-allowed',
-            invalid ? 'border-red-300 bg-red-50' : 'border-chrome-line',
-            completed ? 'text-emerald-800' : 'text-content',
+            invalid ? 'border-danger/30 bg-danger-soft' : 'border-chrome-line',
+            completed ? 'text-success-foreground' : 'text-content',
           )}
         />
         <span className="text-content-muted text-sm font-medium">/</span>

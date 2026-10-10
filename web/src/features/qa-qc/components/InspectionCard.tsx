@@ -14,14 +14,14 @@ interface InspectionCardProps {
 function statusBadge(inspection: Inspection, locale: Locale) {
   if (inspection.status === 'COMPLETED') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-success-soft text-success-foreground">
         <ClipboardCheck className="h-3 w-3" aria-hidden="true" />
         {t('qa.status_completed', locale)}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-warning-soft text-warning-foreground">
       {t('qa.status_pending', locale)}
     </span>
   );
@@ -74,7 +74,7 @@ export function InspectionCard({ inspection, locale }: InspectionCardProps) {
             <Ruler className="h-3.5 w-3.5" aria-hidden="true" />
             {`${measurements.length} ${t('qa.measurements_count', locale)}`}
             {failedCount > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold">
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-danger-soft text-danger-foreground font-semibold">
                 {failedCount}
               </span>
             )}
@@ -92,7 +92,7 @@ export function InspectionCard({ inspection, locale }: InspectionCardProps) {
                   </span>
                   <span
                     aria-label={m.passed ? 'passed' : 'failed'}
-                    className={`h-2 w-2 rounded-full ${m.passed ? 'bg-emerald-500' : 'bg-red-500'}`}
+                    className={`h-2 w-2 rounded-full ${m.passed ? 'bg-success-soft0' : 'bg-danger-soft0'}`}
                   />
                 </span>
               </li>

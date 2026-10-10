@@ -116,9 +116,9 @@ export function AttendanceSessionDrawer({ record, onClose }: AttendanceSessionDr
             </dl>
           </div>
 
-          <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5">
+          <section className="rounded-xl border border-warning/20 bg-warning-soft/70 p-4 sm:p-5">
             <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-700" />
+              <AlertCircle className="mt-0.5 size-5 shrink-0 text-warning-foreground" />
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Solicitare de corectare</h3>
                 <p className="mt-1 text-xs leading-5 text-slate-600">Prototip local: datele de mai jos nu sunt trimise sau salvate pe server. Backend-ul nu expune un flux de corectare a pontajului.</p>
@@ -136,14 +136,14 @@ export function AttendanceSessionDrawer({ record, onClose }: AttendanceSessionDr
               <textarea value={reason} onChange={(event) => { setReason(event.target.value); setSuccess(false); }} rows={3} placeholder="Descrie motivul solicitării" className="mt-1.5 w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal" />
             </label>
             {hasChanges && (
-              <div className="mt-3 rounded-lg border border-amber-200 bg-white p-3 text-xs">
+              <div className="mt-3 rounded-lg border border-warning/20 bg-white p-3 text-xs">
                 <p className="font-semibold text-slate-800">Valori înainte / după</p>
                 <p className="mt-2 text-slate-600">Sosire: {formatValue(initialCheckIn)} <span className="font-semibold text-slate-900">→ {formatValue(nextCheckIn)}</span></p>
                 <p className="mt-1 text-slate-600">Plecare: {formatValue(initialCheckOut)} <span className="font-semibold text-slate-900">→ {formatValue(nextCheckOut)}</span></p>
               </div>
             )}
             <button type="button" onClick={savePrototypeCorrection} disabled={!canSubmit} className="mt-4 min-h-11 w-full rounded-lg bg-hii-700 px-4 text-sm font-semibold text-white hover:bg-hii-800 disabled:cursor-not-allowed disabled:opacity-50">Pregătește solicitarea (prototip)</button>
-            {success && <p role="status" className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">Solicitarea a fost pregătită local pentru demonstrație; nimic nu a fost trimis.</p>}
+            {success && <p role="status" className="mt-3 rounded-lg border border-success/20 bg-success-soft px-3 py-2 text-sm font-medium text-success-foreground">Solicitarea a fost pregătită local pentru demonstrație; nimic nu a fost trimis.</p>}
           </section>
 
           <section className="rounded-xl border border-slate-200 p-4">

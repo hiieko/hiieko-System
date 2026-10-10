@@ -92,13 +92,13 @@ export function WorkerMyDayTasks({
         )}
 
         {!loading && error && (
-          <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <div className="flex items-start gap-2 text-xs text-warning-foreground bg-warning-soft border border-warning/20 rounded-lg px-3 py-2.5">
             <div className="flex-1">
               <p className="font-medium">{error}</p>
               <button
                 type="button"
                 onClick={onRetry}
-                className="mt-1 text-amber-700 underline-offset-2 hover:underline text-xs"
+                className="mt-1 text-warning-foreground underline-offset-2 hover:underline text-xs"
               >
                 {t('general.retry', locale)}
               </button>

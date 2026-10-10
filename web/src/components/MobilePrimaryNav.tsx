@@ -58,7 +58,7 @@ export function MobilePrimaryNav() {
                     aria-expanded={moreOpen}
                     className={`flex min-h-12 w-full flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-semibold transition-colors ${moreOpen ? 'text-hii-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                   >
-                    <span className={`flex h-7 w-9 items-center justify-center rounded-lg ${moreOpen ? 'bg-emerald-50' : ''}`}>
+                    <span className={`flex h-7 w-9 items-center justify-center rounded-lg ${moreOpen ? 'bg-success-soft' : ''}`}>
                       <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <span className="max-w-full truncate">{label}</span>
@@ -78,7 +78,7 @@ export function MobilePrimaryNav() {
                   aria-current={active ? 'page' : undefined}
                   className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[10px] font-semibold transition-colors ${active ? 'text-hii-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
                 >
-                  <span className={`flex h-7 w-9 items-center justify-center rounded-lg ${active ? 'bg-emerald-50' : ''}`}>
+                  <span className={`flex h-7 w-9 items-center justify-center rounded-lg ${active ? 'bg-success-soft' : ''}`}>
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <span className="max-w-full truncate">{title}</span>

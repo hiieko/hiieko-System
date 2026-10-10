@@ -60,7 +60,7 @@ function ModuleTree({ audit }: { audit: ModuleAudit }) {
         </div>
         <div>
           <h4 className="mb-2 text-sm font-semibold text-slate-900">COMPONENT TREE</h4>
-          <ol className="flex flex-col gap-2 rounded-lg bg-slate-950 p-4 font-mono text-xs leading-5 text-emerald-100">
+          <ol className="flex flex-col gap-2 rounded-lg bg-slate-950 p-4 font-mono text-xs leading-5 text-success-soft">
             {audit.hierarchy.map((item) => <li key={item}>├─ {item}</li>)}
           </ol>
         </div>
@@ -75,7 +75,7 @@ export function DesignReviewArchitecture() {
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[.16em] text-emerald-700">HIIEKO · DESIGN REVIEW</p>
+            <p className="text-xs font-semibold uppercase tracking-[.16em] text-success-foreground">HIIEKO · DESIGN REVIEW</p>
             <h1 className="truncate text-lg font-bold sm:text-xl">Frontend Architecture</h1>
           </div>
           <Link href="/design-review" className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Back to Design Review</Link>

@@ -81,7 +81,7 @@ export function DropdownMenu({
               className={clsx(
                 'w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors',
                 item.variant === 'danger'
-                  ? 'text-red-600 hover:bg-red-50'
+                  ? 'text-danger hover:bg-danger-soft'
                   : 'text-slate-700 hover:bg-slate-50',
                 item.disabled && 'opacity-50 cursor-not-allowed',
               )}

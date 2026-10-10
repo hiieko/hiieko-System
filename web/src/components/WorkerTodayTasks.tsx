@@ -53,8 +53,8 @@ export function WorkerTodayTasks({
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <ClipboardList className="w-4.5 h-4.5 text-emerald-600" />
+            <div className="w-9 h-9 rounded-lg bg-success-soft flex items-center justify-center">
+              <ClipboardList className="w-4.5 h-4.5 text-success" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">{title}</h2>
@@ -71,8 +71,8 @@ export function WorkerTodayTasks({
       <div className="p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <ClipboardList className="w-4.5 h-4.5 text-emerald-600" />
+            <div className="w-9 h-9 rounded-lg bg-success-soft flex items-center justify-center">
+              <ClipboardList className="w-4.5 h-4.5 text-success" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">{title}</h2>
@@ -100,11 +100,11 @@ export function WorkerTodayTasks({
           </div>
         )}
         {error && (
-          <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <div className="flex items-start gap-2 text-xs text-warning-foreground bg-warning-soft border border-warning/20 rounded-lg px-3 py-2.5">
             <div className="flex-1">
               <p className="font-medium">{error}</p>
               <button onClick={onRetry}
-                className="mt-1 text-amber-700 underline-offset-2 hover:underline text-xs">
+                className="mt-1 text-warning-foreground underline-offset-2 hover:underline text-xs">
                 {t('general.retry', locale)}
               </button>
             </div>

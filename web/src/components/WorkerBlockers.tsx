@@ -56,11 +56,11 @@ export function WorkerBlockers({
   const getSeverityClass = (severity: string) => {
     switch (severity) {
       case 'CRITICAL':
-        return 'bg-red-100 text-red-700';
+        return 'bg-danger-soft text-danger-foreground';
       case 'HIGH':
-        return 'bg-red-100 text-red-700';
+        return 'bg-danger-soft text-danger-foreground';
       case 'MEDIUM':
-        return 'bg-amber-100 text-amber-700';
+        return 'bg-warning-soft text-warning-foreground';
       case 'LOW':
         return 'bg-slate-100 text-slate-600';
       default:
@@ -73,8 +73,8 @@ export function WorkerBlockers({
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
-              <TriangleAlert className="w-4.5 h-4.5 text-amber-600" />
+            <div className="w-9 h-9 rounded-lg bg-warning-soft flex items-center justify-center">
+              <TriangleAlert className="w-4.5 h-4.5 text-warning" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">{t('nav.issues', locale)}</h2>
@@ -91,8 +91,8 @@ export function WorkerBlockers({
       <div className="p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
-              <TriangleAlert className="w-4.5 h-4.5 text-amber-600" />
+            <div className="w-9 h-9 rounded-lg bg-warning-soft flex items-center justify-center">
+              <TriangleAlert className="w-4.5 h-4.5 text-warning" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">{t('nav.issues', locale)}</h2>
@@ -128,11 +128,11 @@ export function WorkerBlockers({
         )}
 
         {error && (
-          <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <div className="flex items-start gap-2 text-xs text-warning-foreground bg-warning-soft border border-warning/20 rounded-lg px-3 py-2.5">
             <div className="flex-1">
               <p className="font-medium">{error}</p>
               <button onClick={onRetry}
-                className="mt-1 text-amber-700 underline-offset-2 hover:underline text-xs">
+                className="mt-1 text-warning-foreground underline-offset-2 hover:underline text-xs">
                 {t('general.retry', locale)}
               </button>
             </div>
@@ -141,8 +141,8 @@ export function WorkerBlockers({
         {!loading && !error && displayedIssues.length === 0 && (
           <div className="text-center py-4">
             <div className="flex items-center justify-center gap-1.5 mb-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <p className="text-sm font-medium text-emerald-700">
+              <CheckCircle2 className="w-4 h-4 text-success" />
+              <p className="text-sm font-medium text-success-foreground">
                 {t('worker.blockers.none_title', locale)}
               </p>
             </div>

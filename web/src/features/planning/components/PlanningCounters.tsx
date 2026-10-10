@@ -23,17 +23,17 @@ interface PlanningCountersProps {
 const COUNTER_TONE: Record<DayCounterId, string> = {
   PLANNED: 'text-content-secondary',
   ASSIGNED: 'text-content-secondary',
-  IN_PROGRESS: 'text-amber-600',
-  COMPLETED: 'text-emerald-600',
-  BLOCKED: 'text-red-600',
+  IN_PROGRESS: 'text-warning',
+  COMPLETED: 'text-success',
+  BLOCKED: 'text-danger',
 };
 
 const COUNTER_DOT: Record<DayCounterId, string> = {
   PLANNED: 'bg-slate-400',
   ASSIGNED: 'bg-slate-400',
-  IN_PROGRESS: 'bg-amber-500',
-  COMPLETED: 'bg-emerald-500',
-  BLOCKED: 'bg-red-500',
+  IN_PROGRESS: 'bg-warning-soft0',
+  COMPLETED: 'bg-success-soft0',
+  BLOCKED: 'bg-danger-soft0',
 };
 
 /**

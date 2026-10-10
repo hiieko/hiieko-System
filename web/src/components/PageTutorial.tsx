@@ -95,7 +95,7 @@ export function PageTutorial({ sectionId, locale: localeProp, role }: PageTutori
           )}
 
           {content.importantKey ? (
-            <div className="bg-amber-500/10 border border-amber-500/40 rounded-lg px-3 py-2">
+            <div className="bg-warning-soft0/10 border border-amber-500/40 rounded-lg px-3 py-2">
               <p className="text-amber-200 text-xs font-semibold">⚠ {t(content.importantKey, locale)}</p>
             </div>
           ) : null}

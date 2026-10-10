@@ -166,11 +166,11 @@ export function WorkerDashboard() {
       </div>
 
       {actionResult && (
-        <div role="status" aria-live="polite" className={'p-3 rounded-lg text-sm font-medium ' + (actionResultIsError ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700')}>{actionResult}</div>
+        <div role="status" aria-live="polite" className={'p-3 rounded-lg text-sm font-medium ' + (actionResultIsError ? 'bg-danger-soft border border-danger/20 text-danger-foreground' : 'bg-success-soft border border-success/20 text-success-foreground')}>{actionResult}</div>
       )}
 
       {geoStatus.state !== 'idle' && geoStatus.state !== 'loading' && (
-        <div className={'flex items-center gap-2 p-2 rounded-lg text-xs ' + (geoStatus.state === 'granted' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200')}>
+        <div className={'flex items-center gap-2 p-2 rounded-lg text-xs ' + (geoStatus.state === 'granted' ? 'bg-success-soft text-success-foreground border border-success/20' : 'bg-warning-soft text-warning-foreground border border-warning/20')}>
           <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
           {geoStatus.state === 'granted' ? (locale === 'en' ? 'GPS location: ' : 'Locație GPS: ') + geoStatus.location.latitude.toFixed(4) + ', ' + geoStatus.location.longitude.toFixed(4) + (locale === 'en' ? ' (accuracy: ' : ' (precizie: ') + (geoStatus.location.accuracy !== null ? Math.round(geoStatus.location.accuracy) : '?') + 'm)' : geoStatus.error}
         </div>
@@ -183,13 +183,13 @@ export function WorkerDashboard() {
         {attLoading ? (
           <div className="p-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" aria-hidden="true" /></div>
         ) : attError ? (
-          <div className="p-8 text-center text-sm text-red-500">{attError}</div>
+          <div className="p-8 text-center text-sm text-danger">{attError}</div>
         ) : (
           <div className="p-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.arrival', locale)}</div>
-                <div className={'text-lg font-bold mt-0.5 ' + (checkInTime ? 'text-emerald-700' : 'text-slate-400')}>{checkInTime || '-'}</div>
+                <div className={'text-lg font-bold mt-0.5 ' + (checkInTime ? 'text-success-foreground' : 'text-slate-400')}>{checkInTime || '-'}</div>
               </div>
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.departure', locale)}</div>
@@ -201,7 +201,7 @@ export function WorkerDashboard() {
               </div>
               <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                 <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.overtime', locale)}</div>
-                <div className={'text-lg font-bold mt-0.5 ' + ((attendance?.overtime_minutes || 0) > 0 ? 'text-amber-700' : 'text-slate-400')}>
+                <div className={'text-lg font-bold mt-0.5 ' + ((attendance?.overtime_minutes || 0) > 0 ? 'text-warning-foreground' : 'text-slate-400')}>
                   {(attendance?.overtime_minutes || 0) > 0 ? (attendance.overtime_minutes / 60).toFixed(1) + 'h' : '0h'}
                 </div>
               </div>
@@ -209,13 +209,13 @@ export function WorkerDashboard() {
             <div className="flex flex-col sm:flex-row gap-3">
               {!isCheckedIn ? (
                 <button onClick={handleCheckIn} disabled={actionLoading || !selectedProject}
-                  className="flex-1 py-3 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 py-3 px-6 bg-emerald-600 hover:bg-success text-white font-bold text-sm rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <CheckCheck className="w-5 h-5" aria-hidden="true" />}
                   {t('worker.clock_in', locale)}
                 </button>
               ) : (
                 <button onClick={handleCheckOut} disabled={actionLoading}
-                  className="flex-1 py-3 px-6 bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                  className="flex-1 py-3 px-6 bg-warning hover:bg-warning text-white font-bold text-sm rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <LogOut className="w-5 h-5" aria-hidden="true" />}
                   {t('worker.clock_out', locale)}
                 </button>

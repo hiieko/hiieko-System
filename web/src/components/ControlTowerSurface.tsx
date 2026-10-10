@@ -197,7 +197,7 @@ export function ControlTowerSurface() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-amber-500 text-slate-950 uppercase tracking-wide">
+            <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-warning-soft0 text-slate-950 uppercase tracking-wide">
               {t('control_tower.badge', locale)}
             </span>
             <span className="text-xs text-slate-400 font-medium">
@@ -245,9 +245,9 @@ export function ControlTowerSurface() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start justify-between">
+        <div className="p-4 rounded-xl bg-warning-soft border border-warning/20 text-warning-foreground text-xs flex items-start justify-between">
           <div className="flex items-center space-x-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
             <span>{error}</span>
           </div>
           <button
@@ -275,7 +275,7 @@ export function ControlTowerSurface() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <div className="p-2 bg-info-soft text-info rounded-lg">
                     <Briefcase className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">{t('control_tower.active_projects', locale)}</h3>
@@ -332,10 +332,10 @@ export function ControlTowerSurface() {
                     overview.projects.upcomingDeadlinesList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
               >
                 <span className="font-medium">{t('control_tower.upcoming_deadlines_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-amber-950 rounded">
                   {overview.projects.upcomingDeadlines}
                 </span>
               </button>
@@ -347,7 +347,7 @@ export function ControlTowerSurface() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                  <div className="p-2 bg-success-soft text-success rounded-lg">
                     <Users className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">{t('control_tower.workforce', locale)}</h3>
@@ -371,7 +371,7 @@ export function ControlTowerSurface() {
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">{t('control_tower.valid_attendance', locale)}</span>
-                  <strong className="text-emerald-600 text-sm font-mono">
+                  <strong className="text-success text-sm font-mono">
                     {overview.workforce.checkedIn}
                   </strong>
                 </div>
@@ -405,10 +405,10 @@ export function ControlTowerSurface() {
                     overview.workforce.overtimeList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-blue-50/50 hover:bg-blue-100/60 text-blue-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-info-soft/50 hover:bg-info-soft/60 text-blue-900 transition-colors text-left"
               >
                 <span className="font-medium">{t('control_tower.overtime_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-blue-200 text-blue-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-info-soft text-blue-950 rounded">
                   {(overview.workforce.overtimeMinutes / 60).toFixed(1)} {t('control_tower.hours', locale)}
                 </span>
               </button>
@@ -420,12 +420,12 @@ export function ControlTowerSurface() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                  <div className="p-2 bg-warning-soft text-warning rounded-lg">
                     <Layers className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">{t('control_tower.production', locale)}</h3>
                 </div>
-                <span className="text-xl font-black text-amber-600 font-mono">
+                <span className="text-xl font-black text-warning font-mono">
                   {overview.production.completionPercentage}%
                 </span>
               </div>
@@ -434,7 +434,7 @@ export function ControlTowerSurface() {
               <div className="mt-3">
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                    className="bg-warning-soft0 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${overview.production.completionPercentage}%` }}
                   />
                 </div>
@@ -523,10 +523,10 @@ export function ControlTowerSurface() {
                     overview.materials.lowStockList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
               >
                 <span className="font-medium">{t('control_tower.low_stock_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-amber-950 rounded">
                   {overview.materials.lowStock} {t('control_tower.items', locale)}
                 </span>
               </button>
@@ -555,7 +555,7 @@ export function ControlTowerSurface() {
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                  <div className="p-2 bg-success-soft text-success rounded-lg">
                     <Euro className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-sm text-slate-900">{t('control_tower.finance', locale)}</h3>
@@ -563,7 +563,7 @@ export function ControlTowerSurface() {
                 <span
                   className={`text-xs font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
                     overview.finance.variance >= 0
-                      ? 'bg-emerald-100 text-emerald-800'
+                      ? 'bg-success-soft text-success-foreground'
                       : 'bg-rose-100 text-rose-800'
                   }`}
                 >
@@ -646,7 +646,7 @@ export function ControlTowerSurface() {
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">{t('control_tower.active_corrections', locale)}</span>
-                  <strong className="text-amber-600 text-sm font-mono">
+                  <strong className="text-warning text-sm font-mono">
                     {overview.quality.pendingCorrections}
                   </strong>
                 </div>
@@ -714,7 +714,7 @@ export function ControlTowerSurface() {
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                   <span className="text-slate-400 block text-[11px]">{t('control_tower.awaiting_approval', locale)}</span>
-                  <strong className="text-amber-600 text-sm font-mono">
+                  <strong className="text-warning text-sm font-mono">
                     {overview.documentation.awaitingApproval}
                   </strong>
                 </div>
@@ -731,10 +731,10 @@ export function ControlTowerSurface() {
                     overview.documentation.supersededDocumentsList,
                   )
                 }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-amber-50/50 hover:bg-amber-100/60 text-amber-900 transition-colors text-left"
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
               >
                 <span className="font-medium">{t('control_tower.replaced_documents_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-amber-200 text-amber-950 rounded">
+                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-amber-950 rounded">
                   {overview.documentation.supersededDocuments}
                 </span>
               </button>

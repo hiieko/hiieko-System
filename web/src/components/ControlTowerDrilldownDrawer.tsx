@@ -54,7 +54,7 @@ export function ControlTowerDrilldownDrawer({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-amber-500 text-slate-950 uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-warning-soft0 text-slate-950 uppercase tracking-wider">
               {data.category}
             </span>
             <span className="text-xs text-slate-400 font-mono">
@@ -86,7 +86,7 @@ export function ControlTowerDrilldownDrawer({
           <div className="overflow-y-auto p-6 space-y-4">
             {filteredItems.length === 0 ? (
               <div className="text-center py-16">
-                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+                <CheckCircle2 className="w-12 h-12 text-success-soft0 mx-auto mb-3" />
                 <h3 className="text-base font-semibold text-slate-900">
                   {t('control_tower.drawer.none_title', locale)}
                 </h3>
@@ -176,7 +176,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
               <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-200 text-slate-800 rounded">
                 {item.projectCode}
               </span>
-              <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 font-semibold rounded">
+              <span className="text-xs px-2 py-0.5 bg-warning-soft text-warning-foreground font-semibold rounded">
                 {item.stage}
               </span>
             </div>
@@ -204,7 +204,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
   // 3. UPCOMING DEADLINES
   if (item.daysUntilDeadline !== undefined) {
     return (
-      <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50/80 transition-colors shadow-sm">
+      <div className="p-4 rounded-xl border border-warning/20 bg-warning-soft/40 hover:bg-warning-soft/80 transition-colors shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <div>
             <span className="font-mono text-xs font-bold px-2 py-0.5 bg-slate-200 text-slate-800 rounded">
@@ -212,7 +212,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             </span>
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.projectName}</h4>
           </div>
-          <span className="px-2.5 py-1 text-xs font-bold bg-amber-500 text-slate-950 rounded-full">
+          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft0 text-slate-950 rounded-full">
             {t('control_tower.drawer.deadline_remaining', locale).replace('{days}', String(item.daysUntilDeadline))}
           </span>
         </div>
@@ -265,7 +265,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
   // 5. OVERTIME WORKFORCE
   if (item.overtimeMinutes !== undefined) {
     return (
-      <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/30 hover:bg-blue-50/70 transition-colors shadow-sm">
+      <div className="p-4 rounded-xl border border-info/20 bg-info-soft/30 hover:bg-info-soft/70 transition-colors shadow-sm">
         <div className="flex items-start justify-between">
           <div>
             <h4 className="text-sm font-semibold text-slate-900">{item.fullName}</h4>
@@ -273,7 +273,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
               {t('control_tower.drawer.site', locale)} <span className="font-medium text-slate-700">{item.projectName}</span>
             </p>
           </div>
-          <span className="px-2.5 py-1 text-xs font-bold bg-blue-600 text-white rounded-full">
+          <span className="px-2.5 py-1 text-xs font-bold bg-info text-white rounded-full">
             {item.overtimeHours} ({item.overtimeMinutes} min)
           </span>
         </div>
@@ -284,7 +284,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
   // 6. LOW STOCK MATERIALS
   if (item.deficit !== undefined) {
     return (
-      <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/30 hover:bg-amber-50/70 transition-colors shadow-sm">
+      <div className="p-4 rounded-xl border border-warning/20 bg-warning-soft/30 hover:bg-warning-soft/70 transition-colors shadow-sm">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center space-x-2">
@@ -297,7 +297,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             </div>
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.materialName}</h4>
           </div>
-          <span className="px-2.5 py-1 text-xs font-bold bg-amber-500 text-slate-950 rounded-full">
+          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft0 text-slate-950 rounded-full">
             Deficit: -{item.deficit} {item.unit}
           </span>
         </div>
@@ -394,7 +394,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             </span>
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.projectName}</h4>
           </div>
-          <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 rounded">
+          <span className="px-2 py-0.5 text-xs font-semibold bg-warning-soft text-warning-foreground rounded">
             {item.status}
           </span>
         </div>
@@ -410,7 +410,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
   // 10. SUPERSEDED DOCUMENTS
   if (item.latestVersion !== undefined) {
     return (
-      <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/30 hover:bg-amber-50/70 transition-colors shadow-sm">
+      <div className="p-4 rounded-xl border border-warning/20 bg-warning-soft/30 hover:bg-warning-soft/70 transition-colors shadow-sm">
         <div className="flex items-start justify-between">
           <div>
             <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-800 font-mono rounded">
@@ -419,7 +419,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.title}</h4>
             <p className="text-xs text-slate-500">{item.projectName}</p>
           </div>
-          <span className="px-2.5 py-1 text-xs font-bold bg-amber-500 text-slate-950 rounded-full">
+          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft0 text-slate-950 rounded-full">
             {t('control_tower.drawer.version', locale).replace('{current}', String(item.currentVersion)).replace('{latest}', String(item.latestVersion))}
           </span>
         </div>
@@ -438,7 +438,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
         className={`p-4 rounded-xl border ${
           isCritical
             ? 'border-rose-300 bg-rose-50/60'
-            : 'border-amber-300 bg-amber-50/60'
+            : 'border-warning/30 bg-warning-soft/60'
         } shadow-sm`}
       >
         <div className="flex items-start justify-between">
@@ -447,7 +447,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
               className={`px-2 py-0.5 text-xs font-bold rounded ${
                 isCritical
                   ? 'bg-rose-600 text-white'
-                  : 'bg-amber-500 text-slate-950'
+                  : 'bg-warning-soft0 text-slate-950'
               }`}
             >
               {item.severity}
@@ -487,7 +487,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
           <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.name || item.title}</h4>
         </div>
         {item.stage && (
-          <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+          <span className="px-2 py-0.5 text-xs font-semibold bg-info-soft text-info-foreground rounded">
             {item.stage}
           </span>
         )}
@@ -500,7 +500,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
           </div>
           <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-amber-500 h-1.5 rounded-full"
+              className="bg-warning-soft0 h-1.5 rounded-full"
               style={{ width: `${item.progressPercent}%` }}
             />
           </div>

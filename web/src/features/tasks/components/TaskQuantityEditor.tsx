@@ -140,7 +140,7 @@ export function TaskQuantityEditor({
           disabled={isDisabled}
           className={clsx(
             'hii-input flex-1',
-            !isValidNumber && value.length > 0 && '!border-red-300 !bg-red-50'
+            !isValidNumber && value.length > 0 && '!border-danger/30 !bg-danger-soft'
           )}
           aria-label={t('task.actual_quantity')}
           placeholder="0"

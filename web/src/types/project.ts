@@ -111,9 +111,9 @@ export const PROJECT_PHASE_LABELS: Record<string, string> = {
 
 /** Project status colour map */
 export const PROJECT_STATUS_COLORS: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-800',
+  active: 'bg-success-soft text-success-foreground',
   inactive: 'bg-slate-100 text-slate-600',
-  completed: 'bg-blue-100 text-blue-800',
-  on_hold: 'bg-amber-100 text-amber-800',
-  cancelled: 'bg-red-100 text-red-800',
+  completed: 'bg-info-soft text-info-foreground',
+  on_hold: 'bg-warning-soft text-warning-foreground',
+  cancelled: 'bg-danger-soft text-danger-foreground',
 };

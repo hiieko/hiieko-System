@@ -46,7 +46,7 @@ export function AttentionRequiredCard({ items, total, loading }: AttentionRequir
         </div>
       ) : items.length === 0 ? (
         <p className="mt-3 inline-flex items-start gap-1.5 text-xs text-content-muted">
-          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-600" aria-hidden="true" />
+          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-success" aria-hidden="true" />
           {t('planning.attention_empty', locale)}
         </p>
       ) : (
@@ -59,10 +59,10 @@ export function AttentionRequiredCard({ items, total, loading }: AttentionRequir
               >
                 <div className="flex items-start gap-2">
                   {item.kind === 'UNASSIGNED_TASK' ? (
-                    <UserX className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-600" aria-hidden="true" />
+                    <UserX className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-warning" aria-hidden="true" />
                   ) : (
                     <AlertTriangle
-                      className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${item.badgeVariant === 'danger' ? 'text-red-600' : 'text-amber-600'}`}
+                      className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${item.badgeVariant === 'danger' ? 'text-danger' : 'text-warning'}`}
                       aria-hidden="true"
                     />
                   )}

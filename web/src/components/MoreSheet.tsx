@@ -67,7 +67,7 @@ export function MoreSheet({ open, onClose }: MoreSheetProps) {
                       onClick={onClose}
                       aria-current={active ? 'page' : undefined}
                       className={`flex min-h-12 items-center gap-3 rounded-lg px-2 text-sm font-medium transition-colors ${
-                        active ? 'bg-emerald-50 text-hii-700' : 'text-slate-700 hover:bg-slate-50'
+                        active ? 'bg-success-soft text-hii-700' : 'text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <Icon className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />

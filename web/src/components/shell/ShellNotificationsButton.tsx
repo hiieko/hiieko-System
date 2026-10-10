@@ -92,7 +92,7 @@ export function ShellNotificationsButton({
       <Bell className="w-5 h-5" aria-hidden="true" />
       {hasUnread && (
         <span
-          className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ${dotRingClass}`}
+          className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-danger-soft0 ring-2 ${dotRingClass}`}
           aria-hidden="true"
         />
       )}

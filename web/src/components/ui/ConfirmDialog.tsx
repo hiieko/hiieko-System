@@ -108,8 +108,8 @@ export function ConfirmDialog({
             className={clsx(
               'mx-auto flex h-11 w-11 items-center justify-center rounded-full mb-4',
               isDanger
-                ? 'bg-red-100 text-red-600'
-                : 'bg-amber-100 text-amber-600',
+                ? 'bg-danger-soft text-danger'
+                : 'bg-warning-soft text-warning',
             )}
           >
             <Icon size={20} />
@@ -155,8 +155,8 @@ export function ConfirmDialog({
               'text-sm font-medium transition-all',
               'text-white',
               isDanger
-                ? 'bg-red-600 hover:bg-red-700 active:bg-red-800'
-                : 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800',
+                ? 'bg-danger hover:bg-danger active:bg-danger-foreground'
+                : 'bg-warning hover:bg-warning active:bg-amber-800',
               'shadow-sm hover:shadow-md',
               'focus:outline-none focus:ring-2 focus:ring-offset-1',
               isDanger

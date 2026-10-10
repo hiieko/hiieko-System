@@ -175,7 +175,7 @@ function SelectedTaskItem({
           onBlur={handleCommit}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          className={`w-16 text-center text-sm py-1.5 px-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-hii-500 disabled:opacity-50 ${hasError ? 'border-red-300 bg-red-50' : 'border-slate-300'}`}
+          className={`w-16 text-center text-sm py-1.5 px-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-hii-500 disabled:opacity-50 ${hasError ? 'border-danger/30 bg-danger-soft' : 'border-slate-300'}`}
         />
         <button
           type="button"
@@ -191,7 +191,7 @@ function SelectedTaskItem({
         type="button"
         onClick={onRemove}
         disabled={disabled}
-        className="shrink-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-50"
+        className="shrink-0 p-1.5 text-slate-400 hover:text-danger hover:bg-danger-soft rounded-lg disabled:opacity-50"
       >
         <Trash2 className="w-4 h-4" />
       </button>
@@ -302,7 +302,7 @@ export function TaskSelector({
               <Check className="w-3.5 h-3.5" />
               {t('planning.selected', locale).replace('{count}', String(selectedTasks.length))}
               {hasInvalid && (
-                <span className="text-red-500 font-normal normal-case">
+                <span className="text-danger font-normal normal-case">
                   • {t('planning.target_min_error', locale)}
                 </span>
               )}
@@ -311,7 +311,7 @@ export function TaskSelector({
               type="button"
               onClick={clearAll}
               disabled={disabled}
-              className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 disabled:opacity-50"
+              className="text-xs text-slate-400 hover:text-danger flex items-center gap-1 disabled:opacity-50"
             >
               <X className="w-3 h-3" />
               {t('planning.clear_selected', locale)}
@@ -359,8 +359,8 @@ export function TaskSelector({
 
       {/* Error */}
       {!loading && error && (
-        <div className="p-6 text-center bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700 mb-3">{error}</p>
+        <div className="p-6 text-center bg-danger-soft border border-danger/20 rounded-lg">
+          <p className="text-sm text-danger-foreground mb-3">{error}</p>
           <Button variant="secondary" size="sm" onClick={loadTasks} disabled={disabled}>
             {t('planning.retry', locale)}
           </Button>

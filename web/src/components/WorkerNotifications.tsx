@@ -56,10 +56,10 @@ export function WorkerNotifications({
 
   const getPriorityClass = (priority: string) => {
     if (priority === 'high' || priority === 'critical') {
-      return 'bg-red-100 text-red-700';
+      return 'bg-danger-soft text-danger-foreground';
     }
     if (priority === 'medium') {
-      return 'bg-amber-100 text-amber-700';
+      return 'bg-warning-soft text-warning-foreground';
     }
     return 'bg-slate-100 text-slate-600';
   };
@@ -130,11 +130,11 @@ export function WorkerNotifications({
         )}
 
         {error && (
-          <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <div className="flex items-start gap-2 text-xs text-warning-foreground bg-warning-soft border border-warning/20 rounded-lg px-3 py-2.5">
             <div className="flex-1">
               <p className="font-medium">{error}</p>
               <button onClick={onRetry}
-                className="mt-1 text-amber-700 underline-offset-2 hover:underline text-xs">
+                className="mt-1 text-warning-foreground underline-offset-2 hover:underline text-xs">
                 {t('general.retry', locale)}
               </button>
             </div>

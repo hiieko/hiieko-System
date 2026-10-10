@@ -62,9 +62,9 @@ export function TaskProgressBar({
   // Determine bar color
   let barColor = 'bg-hii-500'; // Default brand color
   if (progressPercent === 100) {
-    barColor = 'bg-emerald-500'; // Success
+    barColor = 'bg-success-soft0'; // Success
   } else if (progressPercent > 0) {
-    barColor = 'bg-amber-500'; // Warning/in progress
+    barColor = 'bg-warning-soft0'; // Warning/in progress
   }
 
   return (

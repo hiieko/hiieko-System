@@ -51,7 +51,7 @@ export function DailyReportWorkSection({ form, onChange }: Props) {
         <input type="date" value={form.reportDate} onChange={e => onChange({ reportDate: e.target.value })}
           className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500" />
         {isPrevious && (
-          <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
+          <p className="mt-1 text-xs text-warning flex items-center gap-1">
             <span>⚠️</span> {t('daily_report.previous_date_warning', locale)}
           </p>
         )}

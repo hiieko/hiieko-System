@@ -252,7 +252,7 @@ if (!projectId) {
       <form id="task-create-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Error message */}
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="p-3 bg-danger-soft border border-danger/20 rounded-lg text-sm text-danger-foreground">
             {error}
           </div>
         )}
@@ -272,7 +272,7 @@ if (!projectId) {
             {/* Title */}
             <div>
               <label className="hii-label">
-                {t('task.field_title')} <span className="text-red-500">*</span>
+                {t('task.field_title')} <span className="text-danger">*</span>
               </label>
               <input
                 type="text"
@@ -280,19 +280,19 @@ if (!projectId) {
                 onChange={(e) => updateField('title', e.target.value)}
                 className={clsx(
                   'hii-input',
-                  fieldErrors.title && '!border-red-300 !bg-red-50'
+                  fieldErrors.title && '!border-danger/30 !bg-danger-soft'
                 )}
                 placeholder={t('task.field_title')}
               />
               {fieldErrors.title && (
-                <p className="mt-1 text-xs text-red-500">{fieldErrors.title}</p>
+                <p className="mt-1 text-xs text-danger">{fieldErrors.title}</p>
               )}
             </div>
 
             {/* Code */}
             <div>
               <label className="hii-label">
-                {t('task.field_code')} <span className="text-red-500">*</span>
+                {t('task.field_code')} <span className="text-danger">*</span>
               </label>
               <div className="flex items-center gap-2">
                 <Hash className="w-4 h-4 text-slate-400" />
@@ -302,7 +302,7 @@ if (!projectId) {
                   onChange={(e) => updateField('code', e.target.value)}
                   className={clsx(
                     'hii-input flex-1 font-mono',
-                    fieldErrors.code && '!border-red-300 !bg-red-50'
+                    fieldErrors.code && '!border-danger/30 !bg-danger-soft'
                   )}
                   placeholder="TASK-001"
                 />
@@ -311,7 +311,7 @@ if (!projectId) {
                 {t('task.field_code_hint')}
               </p>
               {fieldErrors.code && (
-                <p className="mt-1 text-xs text-red-500">{fieldErrors.code}</p>
+                <p className="mt-1 text-xs text-danger">{fieldErrors.code}</p>
               )}
             </div>
 
@@ -391,12 +391,12 @@ if (!projectId) {
                   onChange={(e) => updateField('plannedQuantity', e.target.value)}
                   className={clsx(
                     'hii-input',
-                    fieldErrors.plannedQuantity && '!border-red-300 !bg-red-50'
+                    fieldErrors.plannedQuantity && '!border-danger/30 !bg-danger-soft'
                   )}
                   placeholder="0"
                 />
                 {fieldErrors.plannedQuantity && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p className="mt-1 text-xs text-danger">
                     {fieldErrors.plannedQuantity}
                   </p>
                 )}

@@ -126,7 +126,7 @@ export function TaskAssignModal({
     >
       {/* Error message */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="mb-4 p-3 bg-danger-soft border border-danger/20 rounded-lg text-sm text-danger-foreground">
           {error}
         </div>
       )}

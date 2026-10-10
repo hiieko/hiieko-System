@@ -77,7 +77,7 @@ export function WorkerBlockerList({ maxItems = 3 }: WorkerBlockerListProps) {
       <div className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+            <span className="w-9 h-9 rounded-lg bg-danger-soft flex items-center justify-center shrink-0">
               <AlertTriangle className="w-5 h-5 text-critical" aria-hidden="true" />
             </span>
             <div className="min-w-0">

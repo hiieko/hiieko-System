@@ -182,7 +182,7 @@ export function TaskCard({
                 )}
                 {task.actual_start && (
                   <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-emerald-500" />
+                    <Clock className="w-3 h-3 text-success-soft0" />
                     {formatDate(task.actual_start)}
                     {task.actual_end && (
                       <>
@@ -193,7 +193,7 @@ export function TaskCard({
                   </span>
                 )}
                 {task.status === 'VERIFIED' && task.verified_at && (
-                  <span className="flex items-center gap-1 text-emerald-600">
+                  <span className="flex items-center gap-1 text-success">
                     <CheckCircle2 className="w-3 h-3" />
                     {verifierLabel && (
                       <span className="font-medium">

@@ -30,7 +30,7 @@ export function DailyReportReviewSection({
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+        <CheckCircle2 className="w-5 h-5 text-success-soft0" />
         {t('daily_report.review_title', locale)}
       </h3>
 
@@ -38,7 +38,7 @@ export function DailyReportReviewSection({
         {/* Work */}
         <div className="border border-slate-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-amber-600" />
+            <Calendar className="w-4 h-4 text-warning" />
             <span className="text-xs font-semibold text-slate-700">{t('daily_report.section_work', locale)}</span>
           </div>
           <div className="text-xs text-slate-600 space-y-1">
@@ -52,7 +52,7 @@ export function DailyReportReviewSection({
         {/* OHS */}
         <div className="border border-slate-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-4 h-4 text-amber-600" />
+            <Shield className="w-4 h-4 text-warning" />
             <span className="text-xs font-semibold text-slate-700">{t('daily_report.section_ohs', locale)}</span>
           </div>
           <p className="text-xs text-slate-600">{ohsChecked}/{form.ohsRisks.length} {locale === 'ro' ? 'riscuri verificate' : 'risks checked'}</p>
@@ -61,7 +61,7 @@ export function DailyReportReviewSection({
         {/* Personnel */}
         <div className="border border-slate-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="w-4 h-4 text-amber-600" />
+            <Users className="w-4 h-4 text-warning" />
             <span className="text-xs font-semibold text-slate-700">{t('daily_report.section_personnel', locale)}</span>
           </div>
           {form.workers.length === 0 ? (
@@ -78,7 +78,7 @@ export function DailyReportReviewSection({
         {/* Materials */}
         <div className="border border-slate-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
-            <Package className="w-4 h-4 text-amber-600" />
+            <Package className="w-4 h-4 text-warning" />
             <span className="text-xs font-semibold text-slate-700">{t('daily_report.section_materials', locale)}</span>
           </div>
           {form.materials.length === 0 ? (
@@ -95,7 +95,7 @@ export function DailyReportReviewSection({
         {/* Tasks */}
         <div className="border border-slate-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
-            <ClipboardList className="w-4 h-4 text-amber-600" />
+            <ClipboardList className="w-4 h-4 text-warning" />
             <span className="text-xs font-semibold text-slate-700">{t('daily_report.section_tasks', locale)}</span>
           </div>
           {form.tasks.length === 0 ? (
@@ -112,7 +112,7 @@ export function DailyReportReviewSection({
         {/* Execution */}
         <div className="border border-slate-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
-            <Cloud className="w-4 h-4 text-amber-600" />
+            <Cloud className="w-4 h-4 text-warning" />
             <span className="text-xs font-semibold text-slate-700">{t('daily_report.section_execution', locale)}</span>
           </div>
           <div className="text-xs text-slate-600 space-y-1">
@@ -128,14 +128,14 @@ export function DailyReportReviewSection({
 
       {/* P4.4 — non-blocking warnings: they inform, they never disable submission. */}
       {!readOnly && warnings.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3" data-testid="submit-warnings">
-          <p className="text-xs font-semibold text-amber-800 flex items-center gap-1.5 mb-1.5">
+        <div className="rounded-lg border border-warning/20 bg-warning-soft p-3" data-testid="submit-warnings">
+          <p className="text-xs font-semibold text-warning-foreground flex items-center gap-1.5 mb-1.5">
             <AlertTriangle className="w-3.5 h-3.5" />
             {t('daily_report.submit_warnings_title', locale)}
           </p>
           <ul className="space-y-1">
             {warnings.map((key) => (
-              <li key={key} className="text-xs text-amber-800">• {t(key, locale)}</li>
+              <li key={key} className="text-xs text-warning-foreground">• {t(key, locale)}</li>
             ))}
           </ul>
         </div>

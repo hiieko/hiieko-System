@@ -220,7 +220,7 @@ export function PlanTaskTable({
                             className={clsx(
                               'block break-words text-sm font-medium',
                               row.planTask.completed
-                                ? 'text-emerald-800 line-through'
+                                ? 'text-success-foreground line-through'
                                 : 'text-content',
                             )}
                           >

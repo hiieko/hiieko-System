@@ -112,12 +112,12 @@ export function WorkerAttendanceCard() {
 
   const statusChip =
     shiftStatus === 'active' ? (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-positive-soft px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-positive-soft px-2.5 py-1 text-[11px] font-semibold text-success-foreground">
         <span className="w-1.5 h-1.5 rounded-full bg-positive" aria-hidden="true" />
         {t('worker.status_checked_in', locale)}
       </span>
     ) : shiftStatus === 'result' ? (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-positive-soft px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-positive-soft px-2.5 py-1 text-[11px] font-semibold text-success-foreground">
         <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
         {t('worker.shift_completed', locale)}
       </span>
@@ -188,13 +188,13 @@ export function WorkerAttendanceCard() {
         {shiftStatus === 'active' && (
           <div className="space-y-3">
             <div className="rounded-xl p-4 bg-accent-tile border border-accent-soft text-center">
-              <div className="text-[10px] font-semibold text-amber-800 uppercase tracking-wider mb-1">
+              <div className="text-[10px] font-semibold text-warning-foreground uppercase tracking-wider mb-1">
                 {t('worker.elapsed', locale)}
               </div>
               <div className="font-mono text-3xl font-bold text-accent-ink tabular-nums">
                 {formatDuration(elapsedSeconds)}
               </div>
-              <div className="text-xs text-amber-800 mt-1 flex items-center justify-center gap-1">
+              <div className="text-xs text-warning-foreground mt-1 flex items-center justify-center gap-1">
                 <Timer className="w-3 h-3" aria-hidden="true" />
                 {t('worker.arrival', locale)} {formatTime(record?.check_in_time)}
               </div>
@@ -223,7 +223,7 @@ export function WorkerAttendanceCard() {
               type="button"
               onClick={handleCheckOut}
               disabled={actionLoading}
-              className="w-full py-3.5 bg-critical-soft hover:bg-red-200 text-red-500 font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
+              className="w-full py-3.5 bg-critical-soft hover:bg-red-200 text-danger font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
             >
               {actionLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
@@ -240,7 +240,7 @@ export function WorkerAttendanceCard() {
             <div className="bg-positive-soft rounded-xl p-4 border border-positive text-center">
               <div className="flex items-center justify-center gap-1.5 mb-1">
                 <CheckCircle2 className="w-4 h-4 text-positive" aria-hidden="true" />
-                <span className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider">
+                <span className="text-[10px] font-semibold text-success-foreground uppercase tracking-wider">
                   {t('worker.shift_completed', locale)}
                 </span>
               </div>
@@ -275,7 +275,7 @@ export function WorkerAttendanceCard() {
                 <div className="text-[9px] font-medium text-slate-400 uppercase">
                   {t('worker.overtime', locale)}
                 </div>
-                <div className="text-sm font-bold mt-0.5 text-amber-700">
+                <div className="text-sm font-bold mt-0.5 text-warning-foreground">
                   {lastResult.overtime_minutes > 0 ? `${lastResult.overtime_minutes}m` : '0m'}
                 </div>
               </div>

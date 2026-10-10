@@ -32,7 +32,7 @@ export function PlanningFooterSummary({ counters, selectedDate }: PlanningFooter
         : t('planning.counter_unavailable', locale),
       dot: 'bg-slate-400',
     },
-    { key: 'blocked', label: t('planning.footer_blocked', locale).replace('{count}', String(counts.BLOCKED)), dot: 'bg-red-500' },
+    { key: 'blocked', label: t('planning.footer_blocked', locale).replace('{count}', String(counts.BLOCKED)), dot: 'bg-danger-soft0' },
   ];
 
   return (

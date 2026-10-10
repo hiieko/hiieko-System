@@ -308,8 +308,8 @@ export function RoleWorkspacePreview({ moduleId }: { moduleId: string }) {
   const handlePrototypeAction = () => {
     setPreviewState('success');
   };
-  const metricTone: Record<NonNullable<MetricSpec['tone']>, string> = { green: 'border-emerald-200 bg-emerald-50 text-emerald-800', amber: 'border-amber-200 bg-amber-50 text-amber-800', blue: 'border-sky-200 bg-sky-50 text-sky-800', red: 'border-rose-200 bg-rose-50 text-rose-800' };
-  const badgeTone: Record<QueueSpec['tone'], string> = { green: 'bg-emerald-50 text-emerald-700', amber: 'bg-amber-50 text-amber-800', blue: 'bg-sky-50 text-sky-800', red: 'bg-rose-50 text-rose-700', slate: 'bg-slate-100 text-slate-600' };
+  const metricTone: Record<NonNullable<MetricSpec['tone']>, string> = { green: 'border-success/20 bg-success-soft text-success-foreground', amber: 'border-warning/20 bg-warning-soft text-warning-foreground', blue: 'border-sky-200 bg-sky-50 text-sky-800', red: 'border-rose-200 bg-rose-50 text-rose-800' };
+  const badgeTone: Record<QueueSpec['tone'], string> = { green: 'bg-success-soft text-success-foreground', amber: 'bg-warning-soft text-warning-foreground', blue: 'bg-sky-50 text-sky-800', red: 'bg-rose-50 text-rose-700', slate: 'bg-slate-100 text-slate-600' };
   const activeOverlay = overlay === null ? null : spec.overlays[overlay];
 
   return <div className="role-preview" data-viewport={viewport}>

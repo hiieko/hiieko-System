@@ -109,7 +109,7 @@ export function WorkerActionsRequired({
     report?.state === 'sent' ? (
       <CheckCircle2 className="w-4 h-4 text-positive" aria-hidden="true" />
     ) : report?.state === 'draft' ? (
-      <PencilLine className="w-4 h-4 text-amber-600" aria-hidden="true" />
+      <PencilLine className="w-4 h-4 text-warning" aria-hidden="true" />
     ) : (
       <XCircle className="w-4 h-4 text-critical" aria-hidden="true" />
     );

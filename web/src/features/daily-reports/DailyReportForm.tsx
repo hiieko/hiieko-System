@@ -38,7 +38,7 @@ export function DailyReportForm({ reportId }: Props) {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h1 className="text-lg font-bold text-slate-900 sm:text-xl">{reportId ? t('daily_report.title_edit', locale) : t('daily_report.title_new', locale)}</h1>
-          {draftSavedAt && <div className="flex items-center gap-1.5 mt-1 text-xs text-emerald-600"><Clock className="w-3 h-3" /><span>{t('daily_report.draft_saved', locale)} {new Date(draftSavedAt).toLocaleTimeString(locale === 'ro' ? 'ro-RO' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span></div>}
+          {draftSavedAt && <div className="flex items-center gap-1.5 mt-1 text-xs text-success"><Clock className="w-3 h-3" /><span>{t('daily_report.draft_saved', locale)} {new Date(draftSavedAt).toLocaleTimeString(locale === 'ro' ? 'ro-RO' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span></div>}
         </div>
         <div className="flex items-center gap-2">
           {/* P4.4 — the badge tells the truth about the persisted state (DRAFT vs SUBMITTED). */}
@@ -54,9 +54,9 @@ export function DailyReportForm({ reportId }: Props) {
 
       {/* P4.4 — SUBMITTED reports are frozen: everything below is displayed, nothing is editable. */}
       {readOnly && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3" data-testid="read-only-banner">
-          <Lock className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
-          <p className="text-xs text-blue-800">{t('daily_report.submitted_locked', locale)}</p>
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-info/20 bg-info-soft p-3" data-testid="read-only-banner">
+          <Lock className="w-4 h-4 text-info-foreground shrink-0 mt-0.5" />
+          <p className="text-xs text-info-foreground">{t('daily_report.submitted_locked', locale)}</p>
         </div>
       )}
 
