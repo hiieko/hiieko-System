@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, Loader2, RefreshCw, Upload, Download, X, CheckCircle2 } from 'lucide-react';
+import { FileText, RefreshCw, Upload, Download, X, CheckCircle2 } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
-import { EmptyState } from '../../components/ui';
+import { PageHeader, Button, Card, ErrorState, Skeleton, EmptyState } from '../../components/ui';
 
 type Project = { id: string; name: string; code?: string };
 type DocumentRow = {
@@ -39,6 +39,10 @@ function formatSize(bytes: number) {
   return (bytes / 1024 / 1024).toFixed(1) + ' MB';
 }
 
+function errMessage(err: unknown, fallback: string) {
+  return err instanceof ApiError ? err.message : err instanceof Error ? err.message : fallback;
+}
+
 function DocumentsPage() {
   const { locale } = useLocale();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,6 +52,7 @@ function DocumentsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [documentType, setDocumentType] = useState('OTHER');
   const [title, setTitle] = useState('');
@@ -76,11 +81,11 @@ function DocumentsPage() {
 
   const load = async () => {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     try {
       await loadProjects();
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Eroare la încărcarea proiectelor.');
+      setLoadError(errMessage(err, 'Eroare la încărcarea proiectelor.'));
     } finally {
       setLoading(false);
     }
@@ -89,9 +94,17 @@ function DocumentsPage() {
   useEffect(() => { void load(); }, []);
   useEffect(() => {
     if (projectId) void loadDocuments(projectId).catch((err: unknown) => {
-      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Eroare la încărcarea documentelor.');
+      setLoadError(errMessage(err, 'Eroare la încărcarea documentelor.'));
     });
   }, [projectId]);
+
+  const retryLoad = () => {
+    setLoadError(null);
+    void load();
+    void loadDocuments().catch((err: unknown) => {
+      setLoadError(errMessage(err, 'Eroare la încărcarea documentelor.'));
+    });
+  };
 
   const submitUpload = async () => {
     setError(null);
@@ -115,7 +128,7 @@ function DocumentsPage() {
       if (inputRef.current) inputRef.current.value = '';
       await loadDocuments(projectId);
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Încărcarea documentului a eșuat.');
+      setError(errMessage(err, 'Încărcarea documentului a eșuat.'));
     } finally {
       setUploading(false);
     }
@@ -134,35 +147,35 @@ function DocumentsPage() {
       anchor.remove();
       URL.revokeObjectURL(url);
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Descărcarea documentului a eșuat.');
+      setError(errMessage(err, 'Descărcarea documentului a eșuat.'));
     }
   };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <FileText className="w-6 h-6 text-amber-600" />
-            Documente
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Documente reale, stocate pe server și asociate proiectului selectat.
-          </p>
-        </div>
-        <button
-          onClick={() => void loadDocuments()}
-          disabled={loading || uploading || !projectId}
-          className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50"
-        >
-          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />{t('general.refresh', locale)}
-        </button>
-      </div>
+      <PageHeader
+        icon={<FileText className="w-6 h-6 text-amber-600" />}
+        title="Documente"
+        subtitle="Documente reale, stocate pe server și asociate proiectului selectat."
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void loadDocuments()}
+            disabled={loading || uploading || !projectId}
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+          >
+            {t('general.refresh', locale)}
+          </Button>
+        }
+      />
 
       {error && (
         <div className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
           <span>{error}</span>
-          <button onClick={() => setError(null)}><X className="w-4 h-4" /></button>
+          <Button variant="ghost" size="icon" onClick={() => setError(null)} aria-label="Închide">
+            <X className="w-4 h-4" />
+          </Button>
         </div>
       )}
       {success && (
@@ -171,111 +184,132 @@ function DocumentsPage() {
         </div>
       )}
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1">Proiect</label>
-          <select
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
-            disabled={loading || uploading}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-          >
-            <option value="">Selectează proiectul</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.code ? project.code + ' — ' : ''}{project.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      {loadError ? (
+        <ErrorState
+          title="Eroare la încărcarea documentelor"
+          error={loadError}
+          onRetry={retryLoad}
+        />
+      ) : (
+        <>
+          <Card className="space-y-4">
+            <div>
+              <label htmlFor="documente-project" className="block text-xs font-semibold text-slate-600 mb-1">Proiect</label>
+              <select
+                id="documente-project"
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+                disabled={loading || uploading}
+                className="hii-select"
+              >
+                <option value="">Selectează proiectul</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.code ? project.code + ' — ' : ''}{project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Tip document</label>
-            <select
-              value={documentType}
-              onChange={(e) => setDocumentType(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-            >
-              {TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Titlu</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={file?.name || 'Titlu document'}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Fișier</label>
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".jpg,.jpeg,.png,.webp,.pdf,.xml"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="block w-full text-sm"
-            />
-          </div>
-        </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label htmlFor="documente-type" className="block text-xs font-semibold text-slate-600 mb-1">Tip document</label>
+                <select
+                  id="documente-type"
+                  value={documentType}
+                  onChange={(e) => setDocumentType(e.target.value)}
+                  className="hii-select"
+                >
+                  {TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="documente-title" className="block text-xs font-semibold text-slate-600 mb-1">Titlu</label>
+                <input
+                  id="documente-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder={file?.name || 'Titlu document'}
+                  className="hii-input"
+                />
+              </div>
+              <div>
+                <label htmlFor="documente-file" className="block text-xs font-semibold text-slate-600 mb-1">Fișier</label>
+                <input
+                  id="documente-file"
+                  ref={inputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,.pdf,.xml"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm"
+                />
+              </div>
+            </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">
-            {projectName ? `Proiect: ${projectName} · ` : ''}Maxim 10 MB. Fișierul este trimis către API-ul NestJS, nu este salvat în browser.
-          </p>
-          <button
-            onClick={() => void submitUpload()}
-            disabled={uploading || !projectId || !file}
-            className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-          >
-            {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-            {uploading ? 'Se încarcă…' : 'Încarcă documentul'}
-          </button>
-        </div>
-      </section>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-slate-500">
+                {projectName ? `Proiect: ${projectName} · ` : ''}Maxim 10 MB. Fișierul este trimis către API-ul NestJS, nu este salvat în browser.
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => void submitUpload()}
+                disabled={!projectId || !file}
+                loading={uploading}
+                icon={<Upload className="w-4 h-4" />}
+              >
+                {uploading ? 'Se încarcă…' : 'Încarcă documentul'}
+              </Button>
+            </div>
+          </Card>
 
-      <section className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200">
-          <h2 className="font-semibold text-slate-900">Documente proiect</h2>
-        </div>
-        {loading ? (
-          <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
-        ) : documents.length === 0 ? (
-          <EmptyState
-            icon={<FileText className="w-7 h-7" />}
-            title="No documents yet"
-            description="Upload project documents to keep them organized."
-            action={{ label: 'Upload document', onClick: () => inputRef.current?.click() }}
-          />
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {documents.map((doc) => {
-              const latest = doc.versions?.[0];
-              return (
-                <div key={doc.id} className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-slate-900 truncate">{doc.title}</div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      {TYPES.find(([value]) => value === doc.document_type)?.[1] || doc.document_type}
-                      {' · '}v{doc.current_version}
-                      {' · '}{formatSize(latest?.file_size || 0)}
-                      {' · '}{doc.updated_at ? new Date(doc.updated_at).toLocaleString(locale === 'ro' ? 'ro-RO' : 'en-GB') : '—'}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => void download(doc)}
-                    className="inline-flex shrink-0 items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                  >
-                    <Download className="w-4 h-4 mr-1.5" />Descarcă
-                  </button>
-                </div>
-              );
-            })}
+          <div className="space-y-3">
+            <h2 className="font-semibold text-slate-900">Documente proiect</h2>
+            {loading ? (
+              <Skeleton className="h-16" count={3} />
+            ) : documents.length === 0 ? (
+              <Card padding={false}>
+                <EmptyState
+                  icon={<FileText className="w-7 h-7" />}
+                  title="No documents yet"
+                  description="Upload project documents to keep them organized."
+                  action={{ label: 'Upload document', onClick: () => inputRef.current?.click() }}
+                />
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {documents.map((doc) => {
+                  const latest = doc.versions?.[0];
+                  return (
+                    <Card key={doc.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="w-5 h-5 text-slate-400 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-900 truncate">{doc.title}</div>
+                          <div className="text-xs text-slate-500 mt-1">
+                            {TYPES.find(([value]) => value === doc.document_type)?.[1] || doc.document_type}
+                            {' · '}v{doc.current_version}
+                            {' · '}{formatSize(latest?.file_size || 0)}
+                            {' · '}{doc.updated_at ? new Date(doc.updated_at).toLocaleString(locale === 'ro' ? 'ro-RO' : 'en-GB') : '—'}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Download className="w-4 h-4" />}
+                        onClick={() => void download(doc)}
+                        className="shrink-0"
+                      >
+                        Descarcă
+                      </Button>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </section>
+        </>
+      )}
     </div>
   );
 }
