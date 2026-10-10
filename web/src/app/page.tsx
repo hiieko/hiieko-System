@@ -48,11 +48,11 @@ export default function ControlTowerDashboardPage() {
   }
 
   // Preserve the existing landing destination for the other field roles.
+  // `site_manager` is a manager and lands on the Control Tower below (Test 11).
   const keepsWorkerDashboard =
     userRole === 'team_leader' ||
     userRole === 'technician' ||
-    userRole === 'foreman' ||
-    userRole === 'site_manager';
+    userRole === 'foreman';
   if (keepsWorkerDashboard) {
     return <WorkerDashboard />;
   }

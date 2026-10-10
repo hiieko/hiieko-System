@@ -118,17 +118,17 @@ export const WAREHOUSE_ROLES: string[] = ['admin', 'owner', 'manager', 'pm', 'pr
  * `/control-tower` (the canonical Control Tower route, and the surface `/`
  * renders for these roles).
  *
- * This list reproduces the existing role-home intent of `/`: every role that is
- * neither the worker home (`worker`) nor a field-home (`FIELD_HOME_ROLES`) has
- * always landed on the Control Tower there. Narrowing it would remove working
- * access for the operational read-only roles, which is an authorisation
- * decision, not a C2 navigation change (see ISSUES.md).
+ * This list reproduces the role-home intent of `/`: every role that is not the
+ * worker home (`WORKER_HOME_ROLES`) or a field-home (`FIELD_HOME_ROLES`) lands
+ * on the Control Tower there. `site_manager` is a manager landing here (Test 11
+ * of `docs/plan/02-phase0-real-login.md`); it is no longer a field home.
  */
 export const CONTROL_TOWER_ROLES: string[] = [
   'admin',
   'owner',
   'manager',
   'pm',
+  'site_manager',
   'procurement',
   'finance',
   'qa_qc',
@@ -146,7 +146,6 @@ export const FIELD_HOME_ROLES: string[] = [
   'technician',
   'team_leader',
   'foreman',
-  'site_manager',
 ];
 
 /** Every routed destination that has a role contract. */
