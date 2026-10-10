@@ -25,6 +25,7 @@ import {
 } from '@solar/shared';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { RoleGuard } from '../../lib/auth-guard';
+import { ROUTE_ROLES } from '../../config/route-roles';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import * as solarApi from '../../features/solar-configurator/api/solar';
 import {
@@ -706,7 +707,7 @@ function SolarConfiguratorPageInner() {
 
 export default function SolarConfiguratorPage() {
   return (
-    <RoleGuard allowedRoles={['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'technician', 'worker']}>
+    <RoleGuard allowedRoles={ROUTE_ROLES['/solar-configurator']}>
       <SolarConfiguratorPageInner />
     </RoleGuard>
   );
