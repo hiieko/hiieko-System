@@ -231,7 +231,7 @@ function AprobarePageInner() {
                     </label>
                     <textarea id={`approval-review-note-${exp.id}`} value={note} onChange={e => setNote(e.target.value)}
                       placeholder="Motiv pentru aprobare/respingere..." rows={2}
-                      className="w-full px-3 py-2 text-sm text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning-soft resize-none" />
+                      className="hii-input h-auto py-2 resize-none" />
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button variant="primary" size="sm" icon={<CheckCircle2 className="w-4 h-4" />} onClick={() => setPendingAction({ id: exp.id, status: 'APPROVED' })} disabled={!!acting || (status !== 'SUBMITTED' && status !== 'UNDER_REVIEW')}>
