@@ -7,6 +7,7 @@ import { t, useLocale } from '@solar/shared';
 import { useProject } from '../contexts/ProjectContext';
 import { useWorkerShift } from '../hooks/useWorkerShift';
 import { Skeleton } from './ui/Skeleton';
+import { Button } from './ui';
 
 /**
  * Worker attendance card (My Day).
@@ -169,15 +170,15 @@ export function WorkerAttendanceCard() {
         {shiftStatus === 'idle' && (
           <div className="space-y-3">
             {metaRows}
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full h-14 text-base font-bold"
               onClick={handleCheckIn}
-              disabled={actionLoading}
-              className="w-full py-3.5 bg-accent hover:bg-accent-hover text-accent-ink font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
+              loading={actionLoading}
             >
-              {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" /> : null}
               {t('worker.clock_in', locale)}
-            </button>
+            </Button>
             <p className="text-xs text-slate-500 text-center">{t('worker.clock_in_hint', locale)}</p>
             <p className="text-[11px] text-slate-400 text-center">
               {t('worker.attendance_gps_note', locale)}
