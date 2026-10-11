@@ -14,7 +14,7 @@ type DocumentRow = {
   project_id?: string | null;
   current_version: number;
   updated_at: string;
-  versions?: Array<{ version: number; file_size: number; uploaded_by?: string | null; storage_path: string }>;
+  versions?: Array<{ version: number; file_size: number; uploaded_by?: string | null; storage_path: string; created_at?: string }>;
 };
 
 const TYPES = [
@@ -279,28 +279,54 @@ function DocumentsPage() {
                 {documents.map((doc) => {
                   const latest = doc.versions?.[0];
                   return (
-                    <Card key={doc.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <FileText className="w-5 h-5 text-slate-400 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-900 truncate">{doc.title}</div>
-                          <div className="text-xs text-slate-500 mt-1">
-                            {TYPES.find(([value]) => value === doc.document_type)?.[1] || doc.document_type}
-                            {' · '}v{doc.current_version}
-                            {' · '}{formatSize(latest?.file_size || 0)}
-                            {' · '}{doc.updated_at ? new Date(doc.updated_at).toLocaleString(locale === 'ro' ? 'ro-RO' : 'en-GB') : '—'}
+                    <Card key={doc.id} className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileText className="w-5 h-5 text-slate-400 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-900 truncate">{doc.title}</div>
+                            <div className="text-xs text-slate-500 mt-1">
+                              {TYPES.find(([value]) => value === doc.document_type)?.[1] || doc.document_type}
+                              {' · '}v{doc.current_version}
+                              {' · '}{formatSize(latest?.file_size || 0)}
+                              {' · '}{doc.updated_at ? new Date(doc.updated_at).toLocaleString(locale === 'ro' ? 'ro-RO' : 'en-GB') : '—'}
+                            </div>
                           </div>
                         </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<Download className="w-4 h-4" />}
+                          onClick={() => void download(doc)}
+                          className="shrink-0"
+                        >
+                          Descarcă
+                        </Button>
                       </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={<Download className="w-4 h-4" />}
-                        onClick={() => void download(doc)}
-                        className="shrink-0"
-                      >
-                        Descarcă
-                      </Button>
+                      {doc.versions && doc.versions.length > 1 && (
+                        <div className="border-t border-slate-100 pt-3">
+                          <div className="text-xs font-semibold text-slate-600 mb-2">Istoric versiuni</div>
+                          <ul className="space-y-1.5">
+                            {doc.versions.map((v) => (
+                              <li key={v.version} className="flex items-center justify-between gap-3 text-xs text-slate-500">
+                                <span className="flex items-center gap-2 min-w-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" />
+                                  <span className="truncate">
+                                    v{v.version}
+                                    {v.version === doc.current_version && (
+                                      <span className="text-success-foreground font-medium"> · curentă</span>
+                                    )}
+                                  </span>
+                                </span>
+                                <span className="flex items-center gap-3 shrink-0">
+                                  {formatSize(v.file_size)}
+                                  {v.created_at ? new Date(v.created_at).toLocaleString(locale === 'ro' ? 'ro-RO' : 'en-GB') : '—'}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </Card>
                   );
                 })}
