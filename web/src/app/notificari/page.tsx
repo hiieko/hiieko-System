@@ -110,7 +110,10 @@ export default function NotificariPage() {
   };
 
   const pBadge = (p: string) => {
-    if (p === 'high') return <Badge variant="danger" size="sm">{t('notifications.urgent', locale)}</Badge>;
+    if (p === 'low') return <Badge variant="neutral" size="sm">{t('notifications.priority_low', locale)}</Badge>;
+    if (p === 'normal') return <Badge variant="info" size="sm">{t('notifications.priority_normal', locale)}</Badge>;
+    if (p === 'high') return <Badge variant="warning" size="sm">{t('notifications.priority_high', locale)}</Badge>;
+    if (p === 'urgent') return <Badge variant="danger" size="sm">{t('notifications.urgent', locale)}</Badge>;
     return null;
   };
 
