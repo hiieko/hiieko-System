@@ -494,7 +494,7 @@ function SolarConfiguratorPageInner() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12 xl:gap-6">
         {/* Left — controls */}
         <div className="min-w-0 space-y-4 md:col-span-1 xl:col-span-3 xl:space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">1. Proiect & Design</h2>
             <ProjectSelector
               projects={projects}
@@ -510,13 +510,13 @@ function SolarConfiguratorPageInner() {
 
           {designId && (
             <>
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
                 <h2 className="text-sm font-semibold text-slate-700 mb-3">2. Acoperiș</h2>
                 <RoofEditor onSave={saveRoof} saving={saving} />
               </div>
 
               {roofSections.length > 0 && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
                   <h2 className="text-sm font-semibold text-slate-700 mb-3">Secțiuni acoperiș</h2>
                   <div className="space-y-1.5">
                     {roofSections.map((r) => (
@@ -547,7 +547,7 @@ function SolarConfiguratorPageInner() {
               )}
 
               {selectedRoofSectionId && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
                   <h2 className="text-sm font-semibold text-slate-700 mb-3">Obstacole</h2>
                   <ObstacleEditor onAdd={addObstacle} adding={saving} />
                   <div className="mt-2 space-y-1.5">
@@ -571,7 +571,7 @@ function SolarConfiguratorPageInner() {
                 </div>
               )}
 
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
                 <h2 className="text-sm font-semibold text-slate-700 mb-3">3. Modul PV & Layout</h2>
                 <ModuleSelector
                   modules={modules}
@@ -595,13 +595,13 @@ function SolarConfiguratorPageInner() {
 
         {/* Center — 3D + 2D */}
         <div className="min-w-0 space-y-4 md:col-span-2 xl:col-span-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Vizualizare 3D</h2>
             <div className="h-[280px] overflow-hidden rounded-lg border border-slate-100 sm:h-[340px] xl:h-[380px]">
               <SolarScene roofSections={roofSections} placements={displayPlacements} obstacles={obstacles} />
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Plan 2D (editare)</h2>
             <EditorToolbar
               tool={tool}
@@ -662,7 +662,7 @@ function SolarConfiguratorPageInner() {
 
         {/* Right — summary + BOM */}
         <div className="min-w-0 space-y-4 md:col-span-1 xl:col-span-3 xl:space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">Sumar</h2>
             <SummaryPanel
               totalModules={totalModules}
@@ -670,7 +670,7 @@ function SolarConfiguratorPageInner() {
               mounting={result?.mounting ?? null}
             />
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
             <h2 className="text-sm font-semibold text-slate-700 mb-3">BOM (prototip)</h2>
             <BomPanel
               bom={result?.bom ?? []}
