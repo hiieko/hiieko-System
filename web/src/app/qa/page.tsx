@@ -129,7 +129,7 @@ function QaPageInner() {
       {!loading && !error && inspections.length > 0 && (
         <div className="space-y-3">
           {inspections.map((inspection) => (
-            <InspectionCard key={inspection.id} inspection={inspection} locale={locale} />
+            <InspectionCard key={inspection.id} inspection={inspection} locale={locale} projectId={selectedProjectId || ''} />
           ))}
         </div>
       )}

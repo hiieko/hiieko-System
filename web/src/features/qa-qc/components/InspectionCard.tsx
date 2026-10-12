@@ -1,13 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { t, type Locale } from '@solar/shared';
-import { ClipboardCheck, Ruler, FileWarning, User, Calendar } from 'lucide-react';
+import { ClipboardCheck, Ruler, FileWarning, User, Calendar, Camera } from 'lucide-react';
 import type { Inspection } from '../types';
+import { PhotoUpload } from '../../../components/ui/PhotoUpload';
 
 interface InspectionCardProps {
   inspection: Inspection;
   locale: Locale;
+  /** Project the inspection belongs to — required to scope photo attachments. */
+  projectId: string;
 }
 
 /** Mirrors the backend create behaviour: inspections are always recorded as COMPLETED. */
@@ -27,7 +30,8 @@ function statusBadge(inspection: Inspection, locale: Locale) {
   );
 }
 
-export function InspectionCard({ inspection, locale }: InspectionCardProps) {
+export function InspectionCard({ inspection, locale, projectId }: InspectionCardProps) {
+  const [showPhotos, setShowPhotos] = useState(false);
   const measurements = inspection.measurements ?? [];
   const ncrs = inspection.ncrs ?? [];
   const inspectedAt = new Date(inspection.inspected_at);
@@ -107,6 +111,27 @@ export function InspectionCard({ inspection, locale }: InspectionCardProps) {
           {`${ncrs.length} ${t('qa.ncrs_count', locale)}`}
         </p>
       )}
+
+      <div className="mt-3 border-t border-chrome-line pt-3">
+        <button
+          type="button"
+          onClick={() => setShowPhotos((v) => !v)}
+          aria-expanded={showPhotos}
+          className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-hii-600 hover:bg-hii-50 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-offset-1"
+        >
+          <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+          {locale === 'en' ? 'Photos' : 'Fotografii'}
+        </button>
+        {showPhotos && (
+          <div className="mt-3">
+            <PhotoUpload
+              targetType="inspection"
+              targetId={inspection.id}
+              projectId={projectId}
+            />
+          </div>
+        )}
+      </div>
     </article>
   );
 }
