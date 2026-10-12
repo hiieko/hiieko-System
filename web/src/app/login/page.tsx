@@ -111,7 +111,7 @@ function LoginForm() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Sign in</h1>
         <p className="mt-1 text-sm text-slate-500">Enter your email and password to access your workspace.</p>
 
