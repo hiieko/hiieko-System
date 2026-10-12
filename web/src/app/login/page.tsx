@@ -11,6 +11,7 @@ import { useAuth, SIGNED_OUT_FLASH_KEY } from '../../contexts/AuthContext';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
 const SIGNUP_EMAIL_KEY = 'hiieko_signup_email';
+const PASSWORD_RESET_FLASH_KEY = 'hiieko_password_reset_flash';
 
 function BrandPanel() {
   return (
@@ -58,6 +59,10 @@ function LoginForm() {
         window.sessionStorage.removeItem(SIGNUP_EMAIL_KEY);
       }
       toast.success('Account created. Sign in to continue.');
+    }
+  if (window.sessionStorage.getItem(PASSWORD_RESET_FLASH_KEY) === 'done') {
+      window.sessionStorage.removeItem(PASSWORD_RESET_FLASH_KEY);
+      toast.success('Password reset. Sign in.');
     }
   }, [toast]);
 
@@ -150,15 +155,12 @@ function LoginForm() {
               }
             />
             <div className="mt-1.5 flex justify-end">
-              <button
-                type="button"
-                onClick={() =>
-                  toast.info("Password reset isn't connected yet", 'It arrives in a later phase.')
-                }
+              <Link
+                href="/forgot-password"
                 className="text-sm font-medium text-hii-600 transition-colors hover:text-hii-700"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
           </div>
 
