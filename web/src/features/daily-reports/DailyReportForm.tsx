@@ -11,6 +11,7 @@ import { DailyReportPersonnelSection } from './DailyReportPersonnelSection';
 import { DailyReportMaterialsSection } from './DailyReportMaterialsSection';
 import { DailyReportTasksSection } from './DailyReportTasksSection';
 import { DailyReportExecutionSection } from './DailyReportExecutionSection';
+import { DailyReportPhotosSection } from './DailyReportPhotosSection';
 import { DailyReportReviewSection } from './DailyReportReviewSection';
 import { todayCompanyIso } from '../../lib/company-time';
 
@@ -81,6 +82,13 @@ export function DailyReportForm({ reportId }: Props) {
           {section === 'materials' && <DailyReportMaterialsSection form={form} onChange={update} />}
           {section === 'tasks' && <DailyReportTasksSection form={form} onChange={update} />}
           {section === 'execution' && <DailyReportExecutionSection form={form} onChange={update} />}
+          {section === 'photos' && (
+            <DailyReportPhotosSection
+              reportId={form.reportId}
+              projectId={form.projectId}
+              readOnly={readOnly}
+            />
+          )}
           {section === 'review' && (
             <DailyReportReviewSection
               form={form}

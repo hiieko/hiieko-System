@@ -4,10 +4,10 @@
 import type { DailyReport } from '@solar/shared';
 
 export type FormSection =
-  | 'work' | 'ohs' | 'personnel' | 'materials' | 'tasks' | 'execution' | 'review';
+  | 'work' | 'ohs' | 'personnel' | 'materials' | 'tasks' | 'execution' | 'photos' | 'review';
 
 export const FORM_SECTIONS: FormSection[] = [
-  'work', 'ohs', 'personnel', 'materials', 'tasks', 'execution', 'review',
+  'work', 'ohs', 'personnel', 'materials', 'tasks', 'execution', 'photos', 'review',
 ];
 
 export const SECTION_I18N_KEY: Record<FormSection, string> = {
@@ -17,6 +17,7 @@ export const SECTION_I18N_KEY: Record<FormSection, string> = {
   materials: 'daily_report.section_materials',
   tasks: 'daily_report.section_tasks',
   execution: 'daily_report.section_execution',
+  photos: 'daily_report.section_photos',
   review: 'daily_report.section_review',
 };
 
