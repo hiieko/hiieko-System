@@ -180,7 +180,7 @@ function AprobarePageInner() {
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-bold text-base text-slate-900">{catLabel}</h3>
+                      <h3 className="font-bold text-lg text-slate-900">{catLabel}</h3>
                       <Badge variant={statusVariant(status)} size="md">
                         {stLabel}
                       </Badge>
