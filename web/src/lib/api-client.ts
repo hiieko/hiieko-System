@@ -250,6 +250,8 @@ export class NestApiClient {
     '/api/auth/login',
     '/api/auth/register',
     '/api/auth/logout',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
   ];
 
   constructor(baseUrl: string) {
@@ -533,6 +535,28 @@ export class NestApiClient {
     }
     
     return response;
+  }
+
+  /**
+   * Phase 3 Piece 1 — request a password-reset email. Always resolves the same way
+   * (the backend deliberately answers 200 whether or not the account exists).
+   */
+  async forgotPassword(email: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  /**
+   * Phase 3 Piece 1 — complete a password reset with the single-use token from the email.
+   * Throws ApiError(400) when the token is invalid, already used, or expired.
+   */
+  async resetPassword(token: string, newPassword: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
   }
 
   async getMe(): Promise<ApiResponse<AuthUser>> {
