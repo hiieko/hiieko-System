@@ -168,7 +168,7 @@ export default function ControlTowerDashboardPage() {
       <div className="control-tower-heading flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-success-soft text-hii-700 uppercase tracking-[0.12em] border border-success-soft">
+            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-success-soft text-hii-700 uppercase tracking-[0.12em] border border-success-soft">
               Turn de Control HIIEKO
             </span>
             <span className="text-xs text-slate-400 font-medium">
@@ -270,7 +270,7 @@ export default function ControlTowerDashboardPage() {
 
               {/* Stage breakdown */}
               <div className="mt-4 space-y-2">
-                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   Proiecte după Fază
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -278,7 +278,7 @@ export default function ControlTowerDashboardPage() {
                     ([stage, count]) => (
                       <span
                         key={stage}
-                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+                        className="px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200"
                       >
                         {stage}: {count}
                       </span>
@@ -347,13 +347,13 @@ export default function ControlTowerDashboardPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Programați Astăzi</span>
+                  <span className="text-slate-400 block text-xs">Programați Astăzi</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.workforce.scheduledToday}
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Pontaj Valid (GPS)</span>
+                  <span className="text-slate-400 block text-xs">Pontaj Valid (GPS)</span>
                   <strong className="text-success text-sm font-mono">
                     {overview.workforce.checkedIn}
                   </strong>
@@ -421,7 +421,7 @@ export default function ControlTowerDashboardPage() {
                     style={{ width: `${overview.production.completionPercentage}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
+                <div className="flex justify-between text-xs text-slate-500 mt-1 font-mono">
                   <span>Realizat: {overview.production.actualToday} sarcini</span>
                   <span>Plan: {overview.production.plannedToday}</span>
                 </div>
@@ -482,13 +482,13 @@ export default function ControlTowerDashboardPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Materiale Lipsă</span>
+                  <span className="text-slate-400 block text-xs">Materiale Lipsă</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.materials.missingRequired}
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Supraconsum</span>
+                  <span className="text-slate-400 block text-xs">Supraconsum</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.materials.overconsumption}
                   </strong>
@@ -622,13 +622,13 @@ export default function ControlTowerDashboardPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Inspecții Eșuate</span>
+                  <span className="text-slate-400 block text-xs">Inspecții Eșuate</span>
                   <strong className="text-rose-600 text-sm font-mono">
                     {overview.quality.failedInspections}
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Corecții Active</span>
+                  <span className="text-slate-400 block text-xs">Corecții Active</span>
                   <strong className="text-warning text-sm font-mono">
                     {overview.quality.pendingCorrections}
                   </strong>
@@ -690,13 +690,13 @@ export default function ControlTowerDashboardPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Documente Lipsă</span>
+                  <span className="text-slate-400 block text-xs">Documente Lipsă</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.documentation.missingDocuments}
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">În Așteptare Aprobare</span>
+                  <span className="text-slate-400 block text-xs">În Așteptare Aprobare</span>
                   <strong className="text-warning text-sm font-mono">
                     {overview.documentation.awaitingApproval}
                   </strong>
