@@ -143,7 +143,7 @@ function LoginForm() {
                   type="button"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="rounded-md p-2 text-slate-400 transition-colors hover:text-slate-600"
+                  className="rounded-lg p-2 text-slate-400 transition-colors hover:text-slate-600"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
