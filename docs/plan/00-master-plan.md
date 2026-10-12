@@ -155,13 +155,15 @@ Mark phases as done as you complete them. Edit this file, or use a
 separate PROGRESS.md. Either way, keep it honest.
 
 - [x] 01-design-d0-d7
-- [ ] 02-phase0-real-login
-- [ ] 14-phase0-5-security
-- [ ] 03-phase1-routes-roles
-- [ ] 04-phase2-wire-apis
+- [x] 02-phase0-real-login
+- [x] 14-phase0-5-security
+- [x] 03-phase1-routes-roles
+- [~] 04-phase2-wire-apis  (partial: solar BOM + 3 endpoint gaps)
+  See docs/plan/STATUS.md for the gap list.
 - [ ] 05-phase3-missing-features
 - [ ] 06-phase4-execution-loop
-- [ ] 07-phase5-control-tower
+- [~] 07-phase5-control-tower  (partial: drilldown + red flags not wired)
+  See docs/plan/STATUS.md for the gap list.
 - [ ] 08-phase6-hardening
 - [ ] 09-phase7-sales
 - [ ] 13-d8-redesign
