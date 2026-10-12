@@ -146,7 +146,7 @@ function WorkforcePageInner() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="workforce" />
       {successMsg && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm font-semibold flex items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-success text-white px-4 py-3 rounded-lg shadow-lg text-sm font-semibold flex items-center gap-2">
           <Check className="w-4 h-4" />{successMsg}
         </div>
       )}
