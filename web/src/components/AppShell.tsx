@@ -15,7 +15,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { locale } = useLocale();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage =
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/forgot-password/');
   const isDesignReviewPage = pathname.startsWith('/design-review');
 
   if (isAuthPage || isDesignReviewPage) return <>{children}</>;
