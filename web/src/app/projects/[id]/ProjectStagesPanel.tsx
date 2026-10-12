@@ -91,7 +91,7 @@ export function ProjectStagesPanel({ projectId }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-slate-900">
           {locale === 'en' ? 'Project Stages' : 'Etape Proiect'}
         </h3>
         {canCreate && (
