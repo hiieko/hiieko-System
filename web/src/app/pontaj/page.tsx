@@ -233,37 +233,37 @@ function PontajPageInner() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Active now' : 'Pe șantier acum'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Active now' : 'Pe șantier acum'}</div>
             <div className="w-8 h-8 rounded-lg bg-success-soft flex items-center justify-center">
               <Users className="w-4 h-4 text-success" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{activeOnSite.length}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'workers currently on site' : 'de muncitori pe șantier'}</div>
+          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'workers currently on site' : 'de muncitori pe șantier'}</div>
         </Card>
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Completed today' : 'Finalizati azi'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Completed today' : 'Finalizati azi'}</div>
             <div className="w-8 h-8 rounded-lg bg-hii-50 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4 text-hii-600" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{todaySummary?.completedToday ?? '-'}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'shifts with check-out' : 'turnee cu ieșire înregistrată'}</div>
+          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'shifts with check-out' : 'turnee cu ieșire înregistrată'}</div>
         </Card>
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Workers today' : 'Muncitori azi'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Workers today' : 'Muncitori azi'}</div>
             <div className="w-8 h-8 rounded-lg bg-info-soft flex items-center justify-center">
               <Clock className="w-4 h-4 text-info" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{todaySummary?.totalWorkersToday ?? '-'}</div>
-          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'attendance records today' : 'inregistrari de pontaj azi'}</div>
+          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'attendance records today' : 'inregistrari de pontaj azi'}</div>
         </Card>
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] font-medium text-slate-400 uppercase">{locale === 'en' ? 'Overtime today' : 'Ore suplim. azi'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Overtime today' : 'Ore suplim. azi'}</div>
             <div className="w-8 h-8 rounded-lg bg-warning-soft flex items-center justify-center">
               <Timer className="w-4 h-4 text-warning" />
             </div>
@@ -272,7 +272,7 @@ function PontajPageInner() {
             {todaySummary ? (todaySummary.totalOvertimeMinutes / 60).toFixed(1) : '-'}
             <span className="text-sm text-slate-400 font-semibold ml-1">h</span>
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">{locale === 'en' ? 'overtime accumulated' : 'ore suplimentare acumulate'}</div>
+          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'overtime accumulated' : 'ore suplimentare acumulate'}</div>
         </Card>
       </div>
 
@@ -301,7 +301,7 @@ function PontajPageInner() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900 truncate">{r.user?.profile?.full_name || r.user?.email || 'Necunoscut'}</p>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-xs text-slate-400">
                         {r.check_in_time ? new Date(r.check_in_time).toLocaleTimeString(locale === 'en' ? 'en-GB' : 'ro-RO', { hour: '2-digit', minute: '2-digit' }) : ''}
                         {' · '}
                         {r.project?.name || '—'}
@@ -347,7 +347,7 @@ function PontajPageInner() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-900 truncate">{displayName(w)}</p>
-                      <p className="text-[11px] text-slate-400 capitalize">{String(w.role || '').replace('_', ' ')}</p>
+                      <p className="text-xs text-slate-400 capitalize">{String(w.role || '').replace('_', ' ')}</p>
                     </div>
                     <Badge variant="warning" size="sm">
                       <AlertCircle className="w-3 h-3" />
@@ -568,7 +568,7 @@ function PontajPageInner() {
                   <tr key={worker.id} className="hover:bg-slate-50">
                     <td className="py-3 px-4 text-left font-medium text-slate-900">
                       <div>{displayName(worker)}</div>
-                      <div className="text-[11px] text-slate-400 capitalize">{String(worker.role || '').replace('_', ' ')}</div>
+                      <div className="text-xs text-slate-400 capitalize">{String(worker.role || '').replace('_', ' ')}</div>
                     </td>
                     {daysInMonth.map((day) => {
                       const dayStr = `${selectedMonth}-${String(day).padStart(2, '0')}`;
@@ -587,7 +587,7 @@ function PontajPageInner() {
                       return (
                         <td key={day} className="py-2 px-1 border-r border-slate-100 font-mono">
                           <span className="text-slate-800 font-semibold">{dayRecord.regular_hours || 8}</span>
-                          {hasOt && <span className="block text-[10px] text-warning-foreground font-bold">+{Math.round((dayRecord.overtime_minutes || 0) / 60)}</span>}
+                          {hasOt && <span className="block text-xs text-warning-foreground font-bold">+{Math.round((dayRecord.overtime_minutes || 0) / 60)}</span>}
                         </td>
                       );
                     })}
