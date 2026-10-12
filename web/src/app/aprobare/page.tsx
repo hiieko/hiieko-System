@@ -172,7 +172,7 @@ function AprobarePageInner() {
           const stLabel = enumLabel(exp.status, EXPENSE_STATUS_LABELS);
           const catLabel = enumLabel(exp.category, EXPENSE_CATEGORY_LABELS);
           return (
-            <Card key={exp.id} padding={false} className="overflow-hidden hover:shadow-md transition-shadow">
+            <Card key={exp.id} padding={false} className="overflow-hidden hover:shadow-elevated transition-shadow">
               <div className="p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-start space-x-4">
                   <div className="p-2.5 bg-warning-soft text-warning rounded-lg shrink-0">
