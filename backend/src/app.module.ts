@@ -27,6 +27,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { OcrModule } from './modules/ocr/ocr.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { QaQcModule } from './modules/qa-qc/qa-qc.module';
 import { IssuesModule } from './modules/issues/issues.module';
 import { ChangeOrdersModule } from './modules/change-orders/change-orders.module';
@@ -66,6 +67,7 @@ import { SolarModule } from './modules/solar/solar.module';
     OcrModule,
     ExpensesModule,
     UploadModule,
+    AttachmentsModule,
     QaQcModule,
     IssuesModule,
     ChangeOrdersModule,
