@@ -73,7 +73,7 @@ function DepozitePageInner() {
             </Button>
           )}
           <button onClick={load} disabled={loading}
-            className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-sm disabled:opacity-50">
+            className="inline-flex items-center px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-card disabled:opacity-50">
             <Loader2 className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />{t('depozite.refresh', locale)}
           </button>
         </div>
@@ -107,7 +107,7 @@ function DepozitePageInner() {
             />
           </div>
 
-          <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -134,7 +134,7 @@ function DepozitePageInner() {
 
           <div className="md:hidden space-y-3">
             {filtered.map((w) => (
-              <div key={w.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div key={w.id} className="bg-white rounded-xl border border-slate-200 shadow-card p-4">
                 <div className="font-semibold text-slate-900">{w.name}</div>
                 <div className="text-xs font-mono text-slate-500 mt-0.5">{w.code}</div>
                 {w.address && <div className="text-xs text-slate-500 mt-1">{w.address}</div>}
