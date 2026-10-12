@@ -51,6 +51,7 @@ model User {
   report_approvals    DailyReportApproval[]    @relation("ReportApprover")
   report_revisions    DailyReportRevision[]    @relation("RevisionSubmitter")
   sessions            Session[]
+  password_reset_tokens PasswordResetToken[]
   attendance_corrections AttendanceCorrection[] @relation("AttendanceCorrections")
   verified_tasks      Task[]                   @relation("TaskVerifiedBy")
   organization        Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
@@ -102,6 +103,22 @@ model RefreshToken {
 
   @@index([session_id])
   @@map("refresh_tokens")
+}
+
+/// Password recovery (Phase 3, Piece 1) — one row per issued reset link.
+/// Only the SHA-256 hex of the raw token is ever persisted; the raw value is
+/// single-use, sent once in the reset email, and expires 30 minutes after issue.
+model PasswordResetToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token_hash String   @unique
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("password_reset_tokens")
 }
 
 model RateLimitBucket {
