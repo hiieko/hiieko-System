@@ -416,7 +416,7 @@ function RapoartePageInner() {
                       <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
                         <div>
                           <div className="text-xs font-semibold text-slate-800">{m.material_name}</div>
-                          <div className="text-[11px] text-slate-400">Cod: {m.material_code}</div>
+                          <div className="text-xs text-slate-400">Cod: {m.material_code}</div>
                         </div>
                         <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-1 rounded">
                           -{m.quantity} {m.unit}
@@ -434,7 +434,7 @@ function RapoartePageInner() {
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {presentWorkers.map(w => (
-                        <span key={w.id} className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-medium">
+                        <span key={w.id} className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg font-medium">
                           {w.full_name}
                         </span>
                       ))}
