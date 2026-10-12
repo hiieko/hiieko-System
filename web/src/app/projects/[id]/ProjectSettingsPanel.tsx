@@ -60,8 +60,8 @@ export function ProjectSettingsPanel({ project, onUpdate }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-      <h3 className="text-base font-semibold text-slate-900 mb-4">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-card p-6">
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">
           {locale === 'en' ? 'Project Settings' : 'Setări Proiect'}
       </h3>
       <div className="space-y-4 max-w-lg">
