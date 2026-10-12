@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 import { Task, TaskStatus, TASK_STATUS_I18N, TASK_STATUS_BADGE } from '../types';
-import { Badge, Button, Card, ConfirmDialog } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, PhotoUpload } from '@/components/ui';
 import { TaskProgressBar } from './TaskProgressBar';
 import { TaskDependencyChips } from './TaskDependencyChips';
 import { TaskStatusWorkflow } from './TaskStatusWorkflow';
@@ -49,6 +49,7 @@ export function TaskCard({
   className,
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
+  const [detailTab, setDetailTab] = useState<'details' | 'photos'>('details');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const { locale } = useLocale();
 
@@ -291,6 +292,43 @@ export function TaskCard({
             id={contentId}
             className="px-4 pb-4 border-t border-chrome-line pt-4 space-y-4"
           >
+            {/* Detail tabs: Details | Photos */}
+            <div className="flex gap-1" role="tablist">
+              {(['details', 'photos'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={detailTab === tab}
+                  onClick={() => setDetailTab(tab)}
+                  className={clsx(
+                    'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
+                    detailTab === tab
+                      ? 'bg-hii-600 text-white'
+                      : 'bg-surface-muted text-content-secondary hover:bg-surface-muted',
+                  )}
+                >
+                  {tab === 'details'
+                    ? locale === 'ro'
+                      ? 'Detalii'
+                      : 'Details'
+                    : locale === 'ro'
+                      ? 'Fotografii'
+                      : 'Photos'}
+                </button>
+              ))}
+            </div>
+
+            {detailTab === 'photos' && (
+              <PhotoUpload
+                targetType="task"
+                targetId={task.id}
+                projectId={task.project_id}
+              />
+            )}
+
+            {detailTab === 'details' && (
+              <>
             {/* Description */}
             {task.description && (
               <div>
@@ -332,6 +370,8 @@ export function TaskCard({
                   loading={updatingStatus}
                 />
               </div>
+            )}
+              </>
             )}
           </div>
         )}
