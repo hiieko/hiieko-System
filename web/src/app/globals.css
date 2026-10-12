@@ -131,7 +131,7 @@
   }
 
   .hii-badge-green {
-    @apply hii-badge bg-emerald-100 text-emerald-800;
+    @apply hii-badge bg-success-soft text-success-foreground;
   }
 
   .hii-badge-amber {
@@ -160,7 +160,7 @@
   }
 
   .hii-btn-secondary {
-    @apply hii-btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100 px-4 py-2 text-sm shadow-sm;
+    @apply hii-btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100 px-4 py-2 text-sm shadow-card;
   }
 
   .hii-btn-destructive {
@@ -176,7 +176,7 @@
   }
 
   .hii-btn-lg {
-    @apply px-6 py-3 text-base;
+    @apply px-6 py-3 text-lg;
   }
 
   /* Form elements (D0: 40px height, rounded-lg, neutral-300 border,
@@ -229,7 +229,7 @@
 
   /* Tab */
   .hii-tabs {
-    @apply flex items-center space-x-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit;
+    @apply flex items-center space-x-1 bg-white rounded-lg border border-slate-200 p-1 shadow-card w-fit;
   }
 
   .hii-tab {
@@ -237,7 +237,7 @@
   }
 
   .hii-tab-active {
-    @apply hii-tab bg-hii-500 text-white shadow-sm;
+    @apply hii-tab bg-hii-500 text-white shadow-card;
   }
 
   .hii-tab-inactive {
@@ -263,7 +263,7 @@
   }
 
   .hii-empty-title {
-    @apply text-base font-semibold text-slate-600;
+    @apply text-lg font-semibold text-slate-600;
   }
 
   .hii-empty-desc {
