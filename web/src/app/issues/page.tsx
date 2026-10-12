@@ -21,6 +21,7 @@ import {
   Info,
   AlertOctagon,
   Clock,
+  Camera,
 } from 'lucide-react';
 import {
   EmptyState,
@@ -32,6 +33,7 @@ import {
   ErrorState,
   Skeleton,
   Modal,
+  PhotoUpload,
 } from '../../components/ui';
 import type { IssueSeverity } from '../../features/issues/types';
 
@@ -104,6 +106,7 @@ function IssuesPageInner() {
   const [formError, setFormError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { selectedProjectId } = useProject();
   const { locale } = useLocale();
   const { user } = useAuth();
@@ -268,6 +271,27 @@ function IssuesPageInner() {
                         {issue.reporter && <span><User className="w-3 h-3 inline mr-1" />{issue.reporter.profile?.full_name || issue.reporter.email}</span>}
                       </div>
                     </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-chrome-line">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(expandedId === issue.id ? null : issue.id)}
+                      aria-expanded={expandedId === issue.id}
+                      className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-hii-600 hover:bg-hii-50 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-offset-1"
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                      {locale === 'en' ? 'Photos' : 'Fotografii'}
+                    </button>
+                    {expandedId === issue.id && (
+                      <div className="mt-3">
+                        <PhotoUpload
+                          targetType="issue"
+                          targetId={issue.id}
+                          projectId={issue.project_id}
+                        />
+                      </div>
+                    )}
                   </div>
                 </Card>
               ))}
