@@ -233,7 +233,7 @@ function ProjectDetailPageInner() {
       <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit">
         {(['overview', 'members', 'settings', 'stages'] as TabKey[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-md transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
+            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
             {t === 'overview' && 'Prezentare Generala'}
             {t === 'members' && 'Membri'}
             {t === 'settings' && 'Setari'}
