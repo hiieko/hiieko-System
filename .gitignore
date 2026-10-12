@@ -73,6 +73,10 @@ htmlcov/
 *.tmp
 _*.txt
 
+# ---- Database dumps / backups --------------------------------------
+*.dump
+/*.sql
+
 # ---- Cline / AI tools ---------------------------------------------
 .clinerules/
 
