@@ -134,6 +134,22 @@ export interface PaginatedResponse<T> {
   pageSize?: number;
 }
 
+/**
+ * A file linked to a construction target (task / daily_report / issue /
+ * inspection / project). `url` is the authenticated blob route
+ * (GET /api/upload/:documentId) — fetch it with `downloadDocument()`.
+ */
+export interface PhotoAttachment {
+  id: string;
+  target_type: string;
+  target_id: string;
+  file_name: string;
+  mime_type: string | null;
+  url: string;
+  caption: string | null;
+  created_at: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
 }
@@ -1453,6 +1469,97 @@ export class NestApiClient {
     return response.blob();
   }
 
+  // ============================================================================
+  // PHOTOS / ATTACHMENTS
+  // ============================================================================
+
+  /**
+   * Upload a single photo to the file store. Returns the stored document
+   * reference whose `documentId` is then linked via `createAttachment()`.
+   */
+  async uploadPhoto(
+    file: File,
+    projectId: string,
+  ): Promise<
+    ApiResponse<{
+      documentId: string;
+      url: string;
+      fileName: string;
+      mimeType: string;
+      size: number;
+      checksum: string;
+    }>
+  > {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers: Record<string, string> = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+
+    const response = await fetch(
+      `${this.baseUrl}/api/upload?projectId=${encodeURIComponent(projectId)}`,
+      { method: 'POST', headers, body: formData },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new ApiError(
+        data.message || data.error || 'Photo upload failed',
+        response.status,
+        data && data.success === false ? data : undefined,
+      );
+    }
+    return data;
+  }
+
+  /** List photos attached to one target, newest first. */
+  async listAttachments(params: {
+    targetType: string;
+    targetId: string;
+    projectId: string;
+  }): Promise<ApiResponse<PhotoAttachment[]>> {
+    const query = new URLSearchParams({
+      target_type: params.targetType,
+      target_id: params.targetId,
+      projectId: params.projectId,
+    });
+    return this.request<ApiResponse<PhotoAttachment[]>>(
+      `/api/attachments?${query.toString()}`,
+    );
+  }
+
+  /** Link an already-uploaded document to a target. */
+  async createAttachment(params: {
+    targetType: string;
+    targetId: string;
+    fileId: string;
+    projectId: string;
+  }): Promise<ApiResponse<PhotoAttachment>> {
+    const query = new URLSearchParams({ projectId: params.projectId });
+    return this.request<ApiResponse<PhotoAttachment>>(
+      `/api/attachments?${query.toString()}`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          target_type: params.targetType,
+          target_id: params.targetId,
+          file_id: params.fileId,
+        }),
+      },
+    );
+  }
+
+  /** Remove an attachment link. The stored blob is left in place. */
+  async deleteAttachment(
+    id: string,
+    projectId: string,
+  ): Promise<ApiResponse<{ id: string }>> {
+    const query = new URLSearchParams({ projectId });
+    return this.request<ApiResponse<{ id: string }>>(
+      `/api/attachments/${encodeURIComponent(id)}?${query.toString()}`,
+      { method: 'DELETE' },
+    );
+  }
+
 }
 
 // ============================================================================
@@ -1706,6 +1813,33 @@ export interface IApiClient {
     options: { projectId: string; documentType?: string; title?: string },
   ): Promise<ApiResponse<any>>;
   downloadDocument(documentId: string): Promise<Blob>;
+
+  // Photos / Attachments
+  uploadPhoto(
+    file: File,
+    projectId: string,
+  ): Promise<
+    ApiResponse<{
+      documentId: string;
+      url: string;
+      fileName: string;
+      mimeType: string;
+      size: number;
+      checksum: string;
+    }>
+  >;
+  listAttachments(params: {
+    targetType: string;
+    targetId: string;
+    projectId: string;
+  }): Promise<ApiResponse<PhotoAttachment[]>>;
+  createAttachment(params: {
+    targetType: string;
+    targetId: string;
+    fileId: string;
+    projectId: string;
+  }): Promise<ApiResponse<PhotoAttachment>>;
+  deleteAttachment(id: string, projectId: string): Promise<ApiResponse<{ id: string }>>;
 
   // File Upload
   uploadFile(
