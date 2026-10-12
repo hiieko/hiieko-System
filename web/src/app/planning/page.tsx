@@ -428,7 +428,7 @@ function PlanningPageInner() {
 
   const toggleBtnClass = (active: boolean) =>
     active
-      ? 'min-h-[44px] rounded-lg bg-surface px-4 text-sm font-semibold text-content shadow-sm focus:outline-none focus:ring-2 focus:ring-hii-500'
+      ? 'min-h-[44px] rounded-lg bg-surface px-4 text-sm font-semibold text-content shadow-card focus:outline-none focus:ring-2 focus:ring-hii-500'
       : 'min-h-[44px] rounded-lg px-4 text-sm font-medium text-content-muted hover:text-content-secondary focus:outline-none focus:ring-2 focus:ring-hii-500';
 
   return (
