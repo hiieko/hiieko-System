@@ -388,7 +388,7 @@ function CheltuieliPageInner() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:hidden">
           <div role="dialog" aria-modal="true" aria-label={locale === 'ro' ? 'Filtre' : 'Filters'} className="w-full max-h-[70vh] rounded-t-2xl bg-white shadow-xl overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 p-4">
-              <span className="text-base font-bold text-slate-900">{locale === 'ro' ? 'Filtre' : 'Filters'}</span>
+              <span className="text-lg font-bold text-slate-900">{locale === 'ro' ? 'Filtre' : 'Filters'}</span>
               <Button type="button" onClick={() => setFilterOpen(false)} aria-label="Închide" variant="ghost" size="icon"><X className="w-5 h-5" /></Button>
             </div>
             <div className="space-y-2 p-4">
