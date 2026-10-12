@@ -2,16 +2,22 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { JwtPayload } from '../../common/auth/auth.types';
 import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { SessionService } from './session.service';
+import { EmailService } from './email.service';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import {
+  PASSWORD_RESET_TOKEN_BYTES,
+  PASSWORD_RESET_TOKEN_TTL_MS,
   REFRESH_FAILURE_MESSAGE,
   SESSION_REVOKE_REASON,
   WEB_ACCESS_TOKEN_TTL_SECONDS,
@@ -71,6 +77,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly auditService: AuditService,
     private readonly sessionService: SessionService,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -139,6 +146,99 @@ export class AuthService {
         fullName: user.profile?.full_name,
       },
     };
+  }
+
+  /**
+   * Phase 3 Piece 1 — request a password-reset email.
+   *
+   * Always answers 200 (whether or not the account exists) so callers cannot enumerate
+   * accounts. When the account is real, a single-use 30-minute token is stored as its
+   * SHA-256 hash and an email is queued; a provider failure is logged and swallowed —
+   * the outer response STILL is 200.
+   */
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ success: true }> {
+    const email = dto.email.toLowerCase();
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, organization_id: true },
+    });
+
+    if (!user) {
+      return { success: true };
+    }
+
+    const rawToken = this.generatePasswordResetToken();
+    await this.prisma.passwordResetToken.create({
+      data: {
+        user_id: user.id,
+        token_hash: this.hashPasswordResetToken(rawToken),
+        expires_at: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS),
+      },
+    });
+
+    await this.auditService.record({
+      organizationId: user.organization_id || undefined,
+      actorId: user.id,
+      action: 'PASSWORD_RESET_REQUESTED',
+      entity: 'User',
+      entityId: user.id,
+    });
+
+    try {
+      await this.emailService.sendPasswordReset(email, rawToken);
+    } catch (err) {
+      this.logger.error(
+        `[AUTH] password-reset email failed for ${email}: ${err instanceof Error ? err.message : err}`,
+      );
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * Phase 3 Piece 1 — complete a password reset.
+   *
+   * - unknown, already-used, or expired token ⇒ 400 ("Invalid or expired reset token")
+   * - otherwise: hash the new password, persist it, mark the token `used_at`, and revoke
+   *   every active session of the user (a reset is a credential change — old sessions die).
+   */
+  async resetPassword(dto: ResetPasswordDto): Promise<{ success: true }> {
+    const row = await this.prisma.passwordResetToken.findUnique({
+      where: { token_hash: this.hashPasswordResetToken(dto.token) },
+      include: { user: { select: { id: true, organization_id: true } } },
+    });
+
+    if (!row || row.used_at || row.expires_at.getTime() <= Date.now()) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: row.user_id },
+        data: { password_hash: passwordHash },
+      });
+      await tx.passwordResetToken.update({
+        where: { id: row.id },
+        data: { used_at: new Date() },
+      });
+    });
+
+    await this.sessionService.revokeAllSessionsForUser(
+      row.user_id,
+      SESSION_REVOKE_REASON.PASSWORD_RESET,
+    );
+
+    await this.auditService.record({
+      organizationId: row.user.organization_id || undefined,
+      actorId: row.user_id,
+      action: 'USER_PASSWORD_RESET',
+      entity: 'User',
+      entityId: row.user_id,
+    });
+
+    return { success: true };
   }
 
   /**
@@ -381,5 +481,15 @@ export class AuthService {
     return ttlSeconds
       ? this.jwtService.sign(payload, { expiresIn: ttlSeconds })
       : this.jwtService.sign(payload);
+  }
+
+  /** 256-bit CSPRNG reset token. Sent once, in the email, raw. */
+  private generatePasswordResetToken(): string {
+    return randomBytes(PASSWORD_RESET_TOKEN_BYTES).toString('base64url');
+  }
+
+  /** The ONLY representation of a reset token that reaches the database. */
+  private hashPasswordResetToken(rawToken: string): string {
+    return createHash('sha256').update(rawToken).digest('hex');
   }
 }

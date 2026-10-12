@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { AuthService, RegisterDto, LoginDto } from './auth.service';
+import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RateLimit } from '../../common/auth/decorators/rate-limit.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
@@ -101,6 +102,34 @@ export class AuthController {
       this.clearRefreshCookie(res);
       throw err;
     }
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  // Spec: 3 requests per email per hour. An IP cap is added so an attacker cannot
+  // sweep many addresses from one host (default write limit is 30/min — too lax here).
+  @RateLimit(
+    { scope: 'email', limit: 3, windowMs: 3_600_000 },
+    { scope: 'ip', limit: 10, windowMs: 3_600_000 },
+  )
+  @ApiOperation({ summary: 'Request a password-reset email (always 200 — no account enumeration)' })
+  @ApiResponse({ status: 200, description: 'Accepted — reset email sent when the account exists' })
+  @ApiResponse({ status: 422, description: 'Malformed body (ValidationPipe)' })
+  @ApiResponse({ status: 429, description: 'Too many reset requests (rate limited)' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ scope: 'ip', limit: 10, windowMs: 3_600_000 })
+  @ApiOperation({ summary: 'Set a new password with a single-use reset token' })
+  @ApiResponse({ status: 200, description: 'Password updated and all sessions revoked' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
+  @ApiResponse({ status: 422, description: 'Malformed body (ValidationPipe)' })
+  @ApiResponse({ status: 429, description: 'Too many reset attempts (rate limited)' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @Get('me')

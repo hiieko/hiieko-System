@@ -20,6 +20,12 @@ export const LEGACY_ACCESS_TOKEN_TTL = '7d';
 /** 32 random bytes = 256-bit CSPRNG refresh token. */
 export const REFRESH_TOKEN_BYTES = 32;
 
+/** Phase 3 Piece 1 — password-reset link lifetime (30 minutes, standard). */
+export const PASSWORD_RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+
+/** 32 random bytes = 256-bit CSPRNG password-reset token (sent once, in email). */
+export const PASSWORD_RESET_TOKEN_BYTES = 32;
+
 /** httpOnly refresh cookie. Path is scoped to the auth router so it is never sent elsewhere. */
 export const REFRESH_COOKIE_NAME = 'hiieko_rt';
 export const REFRESH_COOKIE_PATH = '/api/auth';
@@ -29,6 +35,7 @@ export const SESSION_REVOKE_REASON = {
   LOGOUT: 'LOGOUT',
   REUSE_DETECTED: 'REFRESH_TOKEN_REUSE',
   SUSPENDED: 'SUSPENDED',
+  PASSWORD_RESET: 'PASSWORD_RESET',
 } as const;
 
 /** L9 — every refresh failure answers with one generic 401 and this exact message. */
