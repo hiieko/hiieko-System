@@ -487,7 +487,7 @@ function SolarConfiguratorPageInner() {
       {error && (
         <div role="alert" className="flex flex-col gap-3 rounded-lg border border-critical-soft bg-critical-soft p-3 text-sm text-critical-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>{error}</span>
-          <button type="button" onClick={() => { setError(null); if (designId) void loadDesign(designId); else setRetryToken((token) => token + 1); }} className="min-h-10 shrink-0 rounded-md border border-critical-soft bg-white px-3 font-semibold">Reîncearcă</button>
+          <button type="button" onClick={() => { setError(null); if (designId) void loadDesign(designId); else setRetryToken((token) => token + 1); }} className="min-h-10 shrink-0 rounded-lg border border-critical-soft bg-white px-3 font-semibold">Reîncearcă</button>
         </div>
       )}
 
