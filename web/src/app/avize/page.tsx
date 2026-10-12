@@ -148,7 +148,7 @@ function AvizePageInner() {
       ) : error ? (
         <ErrorState title="Eroare la încărcarea avizelor" error={error} onRetry={load} />
       ) : filteredDeliveries.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-card">
           {deliveries.length === 0 ? (
             <EmptyState
               icon={<Truck />}
@@ -176,7 +176,7 @@ function AvizePageInner() {
                     <Truck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="font-bold text-base text-slate-900">Aviz Nr: {dn.invoice_or_aviz_number}</h2>
+                    <h2 className="font-bold text-lg text-slate-900">Aviz Nr: {dn.invoice_or_aviz_number}</h2>
                     <p className="text-xs text-slate-500">Furnizor: <span className="font-semibold text-slate-700">{dn.supplier}</span></p>
                   </div>
                 </div>
