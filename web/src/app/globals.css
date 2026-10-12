@@ -233,7 +233,7 @@
   }
 
   .hii-tab {
-    @apply px-4 py-1.5 text-xs font-semibold rounded-md transition-colors;
+    @apply px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors;
   }
 
   .hii-tab-active {
