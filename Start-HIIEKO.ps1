@@ -45,10 +45,10 @@ foreach ($f in @("backend\.env","web\.env.local")) {
     }
 }
 
-if (Test-NetConnection 127.0.0.1 -Port 5434 -InformationLevel Quiet -WarningAction SilentlyContinue) {
-    Write-Host "PostgreSQL 5434 reachable" -ForegroundColor Green
+if (Test-NetConnection 127.0.0.1 -Port 5433 -InformationLevel Quiet -WarningAction SilentlyContinue) {
+    Write-Host "PostgreSQL 5433 reachable" -ForegroundColor Green
 } else {
-    Write-Warning "PostgreSQL 5434 is not reachable."
+    Write-Warning "PostgreSQL 5433 is not reachable."
 }
 
 $lanIps = @(
