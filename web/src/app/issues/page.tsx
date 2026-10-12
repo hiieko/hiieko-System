@@ -203,7 +203,7 @@ function IssuesPageInner() {
       {!selectedProjectId ? (
         <Card className="p-12 text-center">
           <AlertTriangle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600">Selecteaza un proiect</h3>
+          <h3 className="text-lg font-semibold text-slate-600">Selecteaza un proiect</h3>
           <p className="text-sm text-slate-400 mt-1">Foloseste selectorul de proiect din bara de sus</p>
         </Card>
       ) : (
@@ -219,7 +219,7 @@ function IssuesPageInner() {
               activeTab={filter}
               onTabChange={(key) => setFilter(key)}
             />
-            <label className="flex min-h-11 items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 shadow-sm sm:max-w-sm">
+            <label className="flex min-h-11 items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 shadow-card sm:max-w-sm">
               <Search className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
               <span className="sr-only">Caută după titlu, descriere sau severitate</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)}
