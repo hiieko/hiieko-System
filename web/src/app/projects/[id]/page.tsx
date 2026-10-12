@@ -18,6 +18,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { canCreateProjects } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
+import { PhotoUpload } from '../../../components/ui';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
 import { ProjectStagesPanel } from './ProjectStagesPanel';
 
@@ -67,7 +68,7 @@ const MEMBER_ROLE_LABELS: Record<string, string> = {
   MAINTENANCE_DIRECTOR:'Director Intretinere', TECHNICAL_DIRECTOR:'Director Tehnic',
 };
 
-type TabKey = 'overview' | 'members' | 'settings' | 'stages';
+type TabKey = 'overview' | 'members' | 'settings' | 'stages' | 'photos';
 
 function ProjectDetailPageInner() {
   const params = useParams();
@@ -231,13 +232,14 @@ function ProjectDetailPageInner() {
       </div>
 
       <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-card w-fit">
-        {(['overview', 'members', 'settings', 'stages'] as TabKey[]).map((t) => (
+        {(['overview', 'members', 'settings', 'stages', 'photos'] as TabKey[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-card' : 'text-slate-600 hover:bg-slate-100'}`}>
             {t === 'overview' && 'Prezentare Generala'}
             {t === 'members' && 'Membri'}
             {t === 'settings' && 'Setari'}
             {t === 'stages' && 'Etape'}
+            {t === 'photos' && 'Fotografii șantier'}
           </button>
         ))}
       </div>
@@ -388,6 +390,16 @@ function ProjectDetailPageInner() {
 
       {tab === 'stages' && project && (
         <ProjectStagesPanel projectId={project.id} />
+      )}
+
+      {tab === 'photos' && project && (
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-card sm:p-6">
+          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Fotografii șantier</h3>
+          <p className="mt-1 text-sm text-slate-500">Fotografii generale ale proiectului.</p>
+          <div className="mt-4">
+            <PhotoUpload targetType="project" targetId={project.id} projectId={project.id} />
+          </div>
+        </section>
       )}
     </div>
   );
