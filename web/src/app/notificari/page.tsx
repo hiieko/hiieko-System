@@ -204,7 +204,7 @@ export default function NotificariPage() {
                           {!n.is_read && <span className="w-1.5 h-1.5 bg-info rounded-full shrink-0" />}
                         </div>
                         <p className="text-xs text-slate-600 mt-0.5">{locale === 'ro' ? n.message_ro : (n.message_en || n.message_ro)}</p>
-                        <span className="text-[11px] text-slate-400 mt-1 block">
+                        <span className="text-xs text-slate-400 mt-1 block">
                           {new Date(n.created_at).toLocaleString('ro-RO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
