@@ -165,7 +165,7 @@ export default function ControlTowerDashboardPage() {
       <PageTutorial sectionId="dashboard" />
 
       {/* Control Tower Header & Global Filter Bar */}
-      <div className="control-tower-heading flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="control-tower-heading flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 md:p-6 rounded-xl border border-slate-200 shadow-card">
         <div>
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-success-soft text-hii-700 uppercase tracking-[0.12em] border border-success-soft">
@@ -175,7 +175,7 @@ export default function ControlTowerDashboardPage() {
               Ultima actualizare: {lastUpdated.toLocaleTimeString('ro-RO')}
             </span>
           </div>
-          <h1 className="text-2xl md:text-[1.75rem] font-extrabold text-slate-950 mt-2 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-950 mt-2 tracking-tight">
             Panou Operațional de Management
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -203,7 +203,7 @@ export default function ControlTowerDashboardPage() {
           <button
             onClick={() => loadControlTower(true)}
             disabled={refreshing}
-            className="flex items-center space-x-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60"
+            className="flex items-center space-x-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-card disabled:opacity-60"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Actualizează</span>
@@ -228,7 +228,7 @@ export default function ControlTowerDashboardPage() {
 
       {/* No projects yet: Control Tower has nothing to aggregate */}
       {overview && !hasProjects && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-card">
           <EmptyState
             icon={<Briefcase />}
             title="No projects yet"
@@ -744,10 +744,10 @@ export default function ControlTowerDashboardPage() {
       )}
 
       {/* QUICK WORKFLOW ACCESS */}
-      <div className="control-quick-links bg-slate-900 rounded-xl p-6 text-white shadow-sm border border-slate-800">
+      <div className="control-quick-links bg-slate-900 rounded-xl p-6 text-white shadow-card border border-slate-800">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-white tracking-tight">
+            <h3 className="text-lg font-bold text-white tracking-tight">
               Module Operaționale de Șantier
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
