@@ -174,9 +174,9 @@ function ProjectDetailPageInner() {
           </button>
           <h1 className="text-2xl font-bold text-slate-900">Proiect</h1>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-card p-12 text-center">
           <AlertTriangle className="w-12 h-12 text-critical mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-slate-600 mb-2">Eroare la incarcare</h3>
+          <h3 className="text-lg font-semibold text-slate-600 mb-2">Eroare la incarcare</h3>
           <p className="text-sm text-slate-500 mb-4">{error}</p>
           <button onClick={loadProject} className="px-4 py-2 bg-hii-500 hover:bg-hii-600 text-white text-sm font-semibold rounded-lg">
             <RefreshCw className="w-4 h-4 inline mr-1" />Reincarca
@@ -230,10 +230,10 @@ function ProjectDetailPageInner() {
         </button>
       </div>
 
-      <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-sm w-fit">
+      <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-card w-fit">
         {(['overview', 'members', 'settings', 'stages'] as TabKey[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
+            className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-card' : 'text-slate-600 hover:bg-slate-100'}`}>
             {t === 'overview' && 'Prezentare Generala'}
             {t === 'members' && 'Membri'}
             {t === 'settings' && 'Setari'}
@@ -245,7 +245,7 @@ function ProjectDetailPageInner() {
 
       {tab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-card p-6 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Building2 className="w-4 h-4 text-hii-500" />Informatii Generale
             </h3>
@@ -257,7 +257,7 @@ function ProjectDetailPageInner() {
               <div><label className="text-xs text-slate-500 block">Raza Geofence</label><p className="text-sm text-slate-900">{project.geofence_radius_meters || 300} m</p></div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-card p-6 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Sliders className="w-4 h-4 text-hii-500" />Detalii Proiect
             </h3>
@@ -271,7 +271,7 @@ function ProjectDetailPageInner() {
             </div>
           </div>
           {project.client && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4 lg:col-span-2">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-card p-6 space-y-4 lg:col-span-2">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-hii-500" />Client
               </h3>
@@ -282,7 +282,7 @@ function ProjectDetailPageInner() {
               </div>
             </div>
           )}
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 sm:p-6">
+          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-card lg:col-span-2 sm:p-6">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Spații de lucru ale proiectului</h3><p className="mt-1 text-sm text-slate-500">Navighează către fluxurile operaționale cu proiectul curent selectat.</p></div><span className="text-xs text-slate-400">{projectCode}</span></div>
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {PROJECT_WORKSPACES.map(({ href, label, description, icon: Icon }) => <Link key={href} href={href} className="group flex min-h-16 items-center gap-3 rounded-lg border border-slate-200 p-3 transition-colors hover:border-hii-300 hover:bg-hii-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hii-500"><span className="grid size-10 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-600 group-hover:bg-white group-hover:text-hii-700"><Icon className="size-4" /></span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{label}</span><span className="mt-0.5 block truncate text-xs text-slate-500">{description}</span></span><span aria-hidden="true" className="text-slate-300 transition-colors group-hover:text-hii-700">→</span></Link>)}
@@ -293,7 +293,7 @@ function ProjectDetailPageInner() {
 
 
       {tab === 'members' && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 space-y-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-card sm:p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Membri Proiect</h3>
             {canManage && (
