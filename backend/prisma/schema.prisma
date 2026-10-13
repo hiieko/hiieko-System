@@ -370,6 +370,8 @@ model Task {
   verified_by        String?
   is_archived        Boolean           @default(false)
   verified_at        DateTime?
+  blocked_reason     String?
+  blocked_at         DateTime?
   daily_report_tasks DailyReportTask[]
   assignments        TaskAssignment[]
   dependents         TaskDependency[]  @relation("PredecessorTask")
