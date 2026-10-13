@@ -161,7 +161,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             role={drawerOpen ? 'dialog' : undefined}
             aria-modal={drawerOpen ? true : undefined}
             aria-hidden={!drawerOpen}
-            inert={!drawerOpen}
+            inert={(!drawerOpen ? '' : undefined) as unknown as boolean}
             className={`fixed inset-y-0 left-0 z-drawer w-72 hii-shell-chrome flex flex-col shadow-2xl transform transition-transform duration-250 ease-in-out lg:hidden ${
               mobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
