@@ -30,6 +30,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { QaQcModule } from './modules/qa-qc/qa-qc.module';
 import { IssuesModule } from './modules/issues/issues.module';
+import { ActivityModule } from './modules/activity/activity.module';
 import { ChangeOrdersModule } from './modules/change-orders/change-orders.module';
 import { CostsModule } from './modules/costs/costs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -70,6 +71,7 @@ import { SolarModule } from './modules/solar/solar.module';
     AttachmentsModule,
     QaQcModule,
     IssuesModule,
+    ActivityModule,
     ChangeOrdersModule,
     CostsModule,
     NotificationsModule,

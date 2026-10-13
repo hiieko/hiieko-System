@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsISO8601,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -140,6 +141,12 @@ export class UpdateTaskDto {
   @Type(() => Number)
   @IsNumber()
   actualQuantity?: number;
+}
+
+export class BlockTaskDto {
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
 }
 
 @Injectable()
@@ -337,6 +344,90 @@ export class TasksService {
       after: statusData['status']
         ? { status: statusData['status'] }
         : (dto as any),
+    });
+
+    return updated;
+  }
+
+  /**
+   * Phase 4 (Step F/K/L) — report a blocker on a task.
+   *
+   * Blocking is a first-class task state: it records the human reason and
+   * timestamp AND flips `status` to BLOCKED (already part of TaskStatusEnum).
+   * A terminal task (COMPLETED/VERIFIED/CANCELLED) cannot be blocked.
+   */
+  async blockTask(id: string, reason: string, actorId?: string) {
+    const before = await this.findOne(id);
+    const trimmed = (reason ?? '').trim();
+    if (!trimmed) {
+      throw new BadRequestException('A blocker reason is required.');
+    }
+    if (
+      before.status === TaskStatusEnum.COMPLETED ||
+      before.status === TaskStatusEnum.VERIFIED ||
+      before.status === TaskStatusEnum.CANCELLED
+    ) {
+      throw new BadRequestException(`Cannot block a task in status ${before.status}`);
+    }
+
+    const updated = await this.prisma.task.update({
+      where: { id },
+      data: {
+        status: TaskStatusEnum.BLOCKED,
+        blocked_reason: trimmed,
+        blocked_at: new Date(),
+      },
+    });
+
+    await this.auditService.record({
+      actorId,
+      action: 'TASK_BLOCKED',
+      entity: 'Task',
+      entityId: id,
+      before: { status: before.status, blocked_reason: before.blocked_reason },
+      after: {
+        status: TaskStatusEnum.BLOCKED,
+        blocked_reason: trimmed,
+        projectId: before.project_id,
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Phase 4 (Step L) — clear a task blocker.
+   *
+   * Documented simplification: unblocking always restores status to
+   * IN_PROGRESS. The pre-block status is not persisted, so it cannot be
+   * restored exactly; IN_PROGRESS is the honest "work resumes" default.
+   */
+  async unblockTask(id: string, actorId?: string) {
+    const before = await this.findOne(id);
+    if (before.status !== TaskStatusEnum.BLOCKED && !before.blocked_reason) {
+      throw new BadRequestException('Task is not blocked.');
+    }
+
+    const updated = await this.prisma.task.update({
+      where: { id },
+      data: {
+        status: TaskStatusEnum.IN_PROGRESS,
+        blocked_reason: null,
+        blocked_at: null,
+      },
+    });
+
+    await this.auditService.record({
+      actorId,
+      action: 'TASK_UNBLOCKED',
+      entity: 'Task',
+      entityId: id,
+      before: { status: before.status, blocked_reason: before.blocked_reason },
+      after: {
+        status: TaskStatusEnum.IN_PROGRESS,
+        blocked_reason: null,
+        projectId: before.project_id,
+      },
     });
 
     return updated;

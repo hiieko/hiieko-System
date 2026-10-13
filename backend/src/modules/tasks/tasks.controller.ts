@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { TasksService, CreateTaskDto, UpdateTaskDto } from './tasks.service';
+import { TasksService, CreateTaskDto, UpdateTaskDto, BlockTaskDto } from './tasks.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
@@ -91,6 +91,48 @@ export class TasksController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.tasksService.update(id, dto, user.id, user.role);
+  }
+
+  @Patch(':id/block')
+  @RequireEntityProjectAccess('task', 'id')
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.OWNER,
+    UserRoleEnum.PM,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.SITE_MANAGER,
+    UserRoleEnum.FOREMAN,
+    UserRoleEnum.TEAM_LEADER,
+    UserRoleEnum.TECHNICIAN,
+    UserRoleEnum.WORKER,
+    UserRoleEnum.QA_QC,
+  )
+  @ApiOperation({ summary: 'Report a blocker on a task (sets status BLOCKED)' })
+  async block(
+    @Param('id') id: string,
+    @Body() dto: BlockTaskDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.tasksService.blockTask(id, dto.reason, user.id);
+  }
+
+  @Patch(':id/unblock')
+  @RequireEntityProjectAccess('task', 'id')
+  @Roles(
+    UserRoleEnum.ADMIN,
+    UserRoleEnum.OWNER,
+    UserRoleEnum.PM,
+    UserRoleEnum.MANAGER,
+    UserRoleEnum.SITE_MANAGER,
+    UserRoleEnum.FOREMAN,
+    UserRoleEnum.TEAM_LEADER,
+    UserRoleEnum.TECHNICIAN,
+    UserRoleEnum.WORKER,
+    UserRoleEnum.QA_QC,
+  )
+  @ApiOperation({ summary: 'Clear a task blocker (restores status IN_PROGRESS)' })
+  async unblock(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.tasksService.unblockTask(id, user.id);
   }
 
   @Post(':id/assign')
