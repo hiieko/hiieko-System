@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity,
   AlertCircle,
@@ -15,22 +22,33 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Search,
   Upload,
+  X,
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { useLocale } from '@solar/shared';
 import { RoleGuard } from '../../lib/auth-guard';
 import { OPERATIONAL_ROLES } from '../../config/route-roles';
+import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
+import { apiClient } from '../../lib/api-client';
 import { formatDate, formatDateTime } from '../../lib/formatters';
 import { getActivity } from '../../features/activity/api';
-import type { ActivityEvent } from '../../features/activity/types';
+import type {
+  ActivityActionFilter,
+  ActivityActor,
+  ActivityDateRange,
+  ActivityEvent,
+} from '../../features/activity/types';
 import {
+  Badge,
   Button,
   Card,
   EmptyState,
   ErrorState,
+  Input,
   PageHeader,
   Skeleton,
 } from '../../components/ui';
@@ -62,6 +80,22 @@ const ACTION_META: Record<
   ATTENDANCE_CHECK_IN: { icon: LogIn, tone: 'bg-info-soft text-info-foreground', ro: 'a făcut check-in', en: 'checked in' },
   ATTENDANCE_CHECK_OUT: { icon: LogOut, tone: 'bg-slate-100 text-slate-600', ro: 'a făcut check-out', en: 'checked out' },
 };
+
+const ACTION_OPTIONS: { value: ActivityActionFilter; ro: string; en: string }[] = [
+  { value: 'all', ro: 'Toate', en: 'All' },
+  { value: 'tasks', ro: 'Task-uri', en: 'Tasks' },
+  { value: 'reports', ro: 'Rapoarte', en: 'Reports' },
+  { value: 'issues', ro: 'Probleme', en: 'Issues' },
+  { value: 'attendance', ro: 'Pontaj', en: 'Attendance' },
+  { value: 'files', ro: 'Fișiere', en: 'Files' },
+];
+
+const RANGE_OPTIONS: { value: ActivityDateRange; ro: string; en: string }[] = [
+  { value: 'today', ro: 'Astăzi', en: 'Today' },
+  { value: 'week', ro: 'Săptămâna', en: 'This week' },
+  { value: 'month', ro: 'Luna', en: 'This month' },
+  { value: 'all', ro: 'Tot', en: 'All' },
+];
 
 function relativeTime(iso: string, locale: string): string {
   const then = new Date(iso).getTime();
@@ -137,12 +171,70 @@ function describe(event: ActivityEvent, locale: string): EventMeta {
   return { icon, tone, text, href: eventHref(event), subject: subjectOf(event) };
 }
 
+/** Best-effort mapping of a project-member row to an actor option. */
+function memberToActor(member: any): ActivityActor | null {
+  const user = member?.user ?? member;
+  const id = user?.id ?? member?.user_id;
+  if (!id) return null;
+  const name =
+    user?.profile?.full_name ||
+    user?.fullName ||
+    user?.name ||
+    user?.email ||
+    id;
+  return { id, name, email: user?.email ?? null };
+}
+
+function dedupeActors(list: ActivityActor[]): ActivityActor[] {
+  const map = new Map<string, ActivityActor>();
+  for (const actor of list) if (!map.has(actor.id)) map.set(actor.id, actor);
+  return Array.from(map.values());
+}
+
 function ActivityPageInner() {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [memberActors, setMemberActors] = useState<ActivityActor[]>([]);
   const { selectedProjectId } = useProject();
   const { locale } = useLocale();
+  const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const qParam = searchParams.get('q') ?? '';
+  const actionParam = (searchParams.get('action') ?? 'all') as ActivityActionFilter;
+  const actorIdParam = searchParams.get('actorId') ?? '';
+  const dateRangeParam = (searchParams.get('dateRange') ?? 'all') as ActivityDateRange;
+
+  const [searchInput, setSearchInput] = useState(qParam);
+
+  // Write filter state to the URL. `null`/empty/`all` clears the key.
+  const setParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const next = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === '' || value === 'all') next.delete(key);
+        else next.set(key, value);
+      });
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [searchParams, router, pathname],
+  );
+
+  // Keep the input in sync when the URL changes (back/forward, Clear all).
+  useEffect(() => {
+    setSearchInput(qParam);
+  }, [qParam]);
+
+  // Debounce typing → URL `q`.
+  useEffect(() => {
+    if (searchInput === qParam) return;
+    const timer = setTimeout(() => setParams({ q: searchInput || null }), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, qParam, setParams]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -150,6 +242,10 @@ function ActivityPageInner() {
     try {
       const response = await getActivity({
         projectId: selectedProjectId || undefined,
+        q: qParam || undefined,
+        action: actionParam !== 'all' ? actionParam : undefined,
+        actorId: actorIdParam || undefined,
+        dateRange: dateRangeParam !== 'all' ? dateRangeParam : undefined,
       });
       setEvents((response.data || []) as ActivityEvent[]);
     } catch (err) {
@@ -158,11 +254,46 @@ function ActivityPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId, qParam, actionParam, actorIdParam, dateRangeParam]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Actor dropdown source: project members when a project is selected,
+  // otherwise the distinct actors present in the loaded events.
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setMemberActors([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await apiClient.getProjectMembers(selectedProjectId);
+        if (cancelled) return;
+        const actors = (response.data || [])
+          .map(memberToActor)
+          .filter((a): a is ActivityActor => a !== null);
+        setMemberActors(dedupeActors(actors));
+      } catch {
+        if (!cancelled) setMemberActors([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProjectId]);
+
+  const derivedActors = useMemo(() => {
+    const map = new Map<string, ActivityActor>();
+    for (const event of events) {
+      if (event.actor && !map.has(event.actor.id)) map.set(event.actor.id, event.actor);
+    }
+    return Array.from(map.values());
+  }, [events]);
+
+  const actorOptions = selectedProjectId ? memberActors : derivedActors;
 
   const groups = useMemo(() => {
     const map = new Map<string, ActivityEvent[]>();
@@ -174,6 +305,55 @@ function ActivityPageInner() {
     }
     return Array.from(map.entries());
   }, [events]);
+
+  const actorNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const actor of actorOptions) map.set(actor.id, actor.name);
+    return map;
+  }, [actorOptions]);
+
+  const activeChips: { key: string; label: string; clear: () => void }[] = [];
+  if (qParam) {
+    activeChips.push({
+      key: 'q',
+      label: `${locale === 'ro' ? 'Căutare' : 'Search'}: "${qParam}"`,
+      clear: () => setParams({ q: null }),
+    });
+  }
+  if (actionParam !== 'all') {
+    const opt = ACTION_OPTIONS.find((o) => o.value === actionParam);
+    activeChips.push({
+      key: 'action',
+      label: opt ? (locale === 'ro' ? opt.ro : opt.en) : actionParam,
+      clear: () => setParams({ action: null }),
+    });
+  }
+  if (actorIdParam) {
+    const label =
+      actorIdParam === user?.id
+        ? locale === 'ro'
+          ? 'Doar eu'
+          : 'Only me'
+        : actorNameById.get(actorIdParam) || actorIdParam;
+    activeChips.push({
+      key: 'actorId',
+      label,
+      clear: () => setParams({ actorId: null }),
+    });
+  }
+  if (dateRangeParam !== 'all') {
+    const opt = RANGE_OPTIONS.find((o) => o.value === dateRangeParam);
+    activeChips.push({
+      key: 'dateRange',
+      label: opt ? (locale === 'ro' ? opt.ro : opt.en) : dateRangeParam,
+      clear: () => setParams({ dateRange: null }),
+    });
+  }
+
+  const clearAll = () => {
+    setSearchInput('');
+    setParams({ q: null, action: null, actorId: null, dateRange: null });
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -197,6 +377,112 @@ function ActivityPageInner() {
           </Button>
         }
       />
+
+      {/* Filter bar */}
+      <Card className="p-3 space-y-3">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex-1">
+            <Input
+              label={locale === 'ro' ? 'Caută' : 'Search'}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder={
+                locale === 'ro'
+                  ? 'Caută după nume, email, telefon sau subiect'
+                  : 'Search by name, email, phone, or subject'
+              }
+              suffix={<Search className="size-4 text-slate-400" aria-hidden="true" />}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="activity-action" className="text-sm font-medium text-slate-700">
+              {locale === 'ro' ? 'Tip' : 'Type'}
+            </label>
+            <select
+              id="activity-action"
+              value={actionParam}
+              onChange={(e) => setParams({ action: e.target.value })}
+              className="hii-select h-11"
+            >
+              {ACTION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {locale === 'ro' ? opt.ro : opt.en}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="activity-actor" className="text-sm font-medium text-slate-700">
+              {locale === 'ro' ? 'Utilizator' : 'Actor'}
+            </label>
+            <select
+              id="activity-actor"
+              value={actorIdParam}
+              onChange={(e) => setParams({ actorId: e.target.value })}
+              className="hii-select h-11"
+            >
+              <option value="">{locale === 'ro' ? 'Oricine' : 'Anyone'}</option>
+              {user?.id && (
+                <option value={user.id}>{locale === 'ro' ? 'Doar eu' : 'Only me'}</option>
+              )}
+              {actorOptions
+                .filter((actor) => actor.id !== user?.id)
+                .map((actor) => (
+                  <option key={actor.id} value={actor.id}>
+                    {actor.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Date range chips */}
+        <div className="flex flex-wrap gap-1.5">
+          {RANGE_OPTIONS.filter((opt) => opt.value !== 'all').map((opt) => (
+            <Button
+              key={opt.value}
+              variant={dateRangeParam === opt.value ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() =>
+                setParams({ dateRange: dateRangeParam === opt.value ? null : opt.value })
+              }
+            >
+              {locale === 'ro' ? opt.ro : opt.en}
+            </Button>
+          ))}
+          {dateRangeParam !== 'all' && (
+            <Button variant="ghost" size="sm" onClick={() => setParams({ dateRange: null })}>
+              {locale === 'ro' ? 'Toate' : 'All'}
+            </Button>
+          )}
+        </div>
+
+        {/* Active filter chips */}
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-chrome-line pt-3">
+            {activeChips.map((chip) => (
+              <Badge key={chip.key} variant="info" size="md" className="gap-1 pr-1">
+                {chip.label}
+                <button
+                  type="button"
+                  onClick={chip.clear}
+                  aria-label={`${locale === 'ro' ? 'Șterge filtrul' : 'Clear filter'}: ${chip.label}`}
+                  className="ml-0.5 rounded-full p-0.5 hover:bg-black/10"
+                >
+                  <X className="size-3" aria-hidden="true" />
+                </button>
+              </Badge>
+            ))}
+            <button
+              type="button"
+              onClick={clearAll}
+              className="ml-1 text-xs font-medium text-hii-600 hover:text-hii-700 underline"
+            >
+              {locale === 'ro' ? 'Șterge toate' : 'Clear all'}
+            </button>
+          </div>
+        )}
+      </Card>
 
       {error && (
         <ErrorState
@@ -271,7 +557,17 @@ function ActivityPageInner() {
 export default function ActivityPage() {
   return (
     <RoleGuard allowedRoles={OPERATIONAL_ROLES}>
-      <ActivityPageInner />
+      <Suspense
+        fallback={
+          <div className="space-y-3 max-w-4xl mx-auto">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-16 rounded-xl" />
+            ))}
+          </div>
+        }
+      >
+        <ActivityPageInner />
+      </Suspense>
     </RoleGuard>
   );
 }

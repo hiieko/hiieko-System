@@ -9,9 +9,17 @@ import type { ActivityEvent } from './types';
 export function getActivity(options?: {
   projectId?: string;
   limit?: number;
+  q?: string;
+  action?: string;
+  actorId?: string;
+  dateRange?: string;
 }): Promise<ApiResponse<ActivityEvent[]>> {
   return apiClient.get<ActivityEvent[]>('/api/activity', {
     projectId: options?.projectId,
     limit: options?.limit,
+    q: options?.q,
+    action: options?.action,
+    actorId: options?.actorId,
+    dateRange: options?.dateRange,
   });
 }

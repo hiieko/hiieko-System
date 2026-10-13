@@ -8,7 +8,26 @@
 export interface ActivityActor {
   id: string;
   name: string;
+  email?: string | null;
+  phone?: string | null;
   role?: string | null;
+}
+
+export type ActivityActionFilter =
+  | 'all'
+  | 'tasks'
+  | 'reports'
+  | 'issues'
+  | 'attendance'
+  | 'files';
+
+export type ActivityDateRange = 'all' | 'today' | 'week' | 'month';
+
+export interface ActivityFilters {
+  q?: string;
+  action?: ActivityActionFilter;
+  actorId?: string;
+  dateRange?: ActivityDateRange;
 }
 
 export interface ActivityEvent {
