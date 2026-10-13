@@ -15,11 +15,14 @@ import {
   AlertTriangle,
   Camera,
   CheckCircle2,
-  ChevronRight,
+  ChevronDown,
+  ExternalLink,
   FileText,
   LogIn,
   LogOut,
+  Mail,
   Pencil,
+  Phone,
   Plus,
   RefreshCw,
   Search,
@@ -170,6 +173,242 @@ function describe(event: ActivityEvent, locale: string): EventMeta {
     (locale === 'ro' ? 'a înregistrat o acțiune' : 'performed an action');
   return { icon, tone, text, href: eventHref(event), subject: subjectOf(event) };
 }
+
+const KEY_LABELS: Record<string, string> = {
+  status: 'Status',
+  title: 'Title',
+  name: 'Name',
+  description: 'Description',
+  reason: 'Reason',
+  blocked_reason: 'Reason',
+  blocked_at: 'Blocked at',
+  priority: 'Priority',
+  severity: 'Severity',
+  actual_quantity: 'Actual quantity',
+  planned_quantity: 'Planned quantity',
+  unit_of_measure: 'Unit',
+  actual_start: 'Actual start',
+  actual_end: 'Actual end',
+  planned_start: 'Planned start',
+  planned_end: 'Planned end',
+  assigned_to: 'Assigned to',
+  verified_by: 'Verified by',
+};
+
+function prettyKey(key: string): string {
+  if (KEY_LABELS[key]) return KEY_LABELS[key];
+  return key
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
+
+function formatValue(value: unknown): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number' || typeof value === 'string') return String(value);
+  if (Array.isArray(value)) {
+    return value.length ? value.map((v) => formatValue(v)).join(', ') : '—';
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function changedEntries(
+  before: Record<string, unknown> | null,
+  after: Record<string, unknown> | null,
+): { key: string; label: string; from: string; to: string }[] {
+  const b = before ?? {};
+  const a = after ?? {};
+  const keys = Array.from(new Set([...Object.keys(b), ...Object.keys(a)]));
+  const out: { key: string; label: string; from: string; to: string }[] = [];
+  for (const key of keys) {
+    if (JSON.stringify(b[key]) === JSON.stringify(a[key])) continue;
+    out.push({
+      key,
+      label: prettyKey(key),
+      from: formatValue(b[key]),
+      to: formatValue(a[key]),
+    });
+  }
+  return out;
+}
+
+function eventReason(event: ActivityEvent): string | null {
+  const after = event.after ?? {};
+  const raw = after.reason ?? after.blocked_reason ?? after.blockedReason;
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : null;
+}
+
+function eventPhotoUrl(event: ActivityEvent): string | null {
+  const after = event.after ?? {};
+  const raw = after.url ?? after.file_url ?? after.fileUrl;
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : null;
+}
+
+function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
+  const meta = describe(event, locale);
+  const Icon = meta.icon;
+  const actorName = event.actor?.name || (locale === 'ro' ? 'Sistem' : 'System');
+  const changes = changedEntries(event.before, event.after);
+  const reason = eventReason(event);
+  const photoUrl = eventPhotoUrl(event);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full items-start gap-3 p-4 text-left hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-inset"
+      >
+        <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${meta.tone}`}>
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-slate-800">
+            <span className="font-semibold text-slate-900">{actorName}</span>{' '}
+            {meta.text}
+            {meta.subject && <span className="text-slate-600"> — {meta.subject}</span>}
+          </p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {relativeTime(event.createdAt, locale)} · {formatDateTime(event.createdAt, locale === 'ro' ? 'ro' : 'en')}
+          </p>
+        </div>
+        <ChevronDown
+          className={`size-4 text-slate-300 shrink-0 mt-1 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 pt-3 space-y-4 border-t border-chrome-line">
+          {/* Actor */}
+          {event.actor && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                {locale === 'ro' ? 'Autor' : 'Actor'}
+              </p>
+              <p className="text-sm font-medium text-slate-900">{event.actor.name}</p>
+              <div className="mt-0.5 space-y-0.5 text-xs text-slate-500">
+                {event.actor.email && (
+                  <p className="flex items-center gap-1.5">
+                    <Mail className="size-3" aria-hidden="true" /> {event.actor.email}
+                  </p>
+                )}
+                {event.actor.phone && (
+                  <p className="flex items-center gap-1.5">
+                    <Phone className="size-3" aria-hidden="true" /> {event.actor.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* What changed */}
+          {changes.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                {locale === 'ro' ? 'Ce s-a schimbat' : 'What changed'}
+              </p>
+              <ul className="space-y-1">
+                {changes.map((change) => (
+                  <li key={change.key} className="text-sm text-slate-700">
+                    <span className="font-medium">{change.label}</span>:{' '}
+                    <span className="text-slate-400 line-through">{change.from}</span>{' '}
+                    <span className="text-slate-400">→</span>{' '}
+                    <span className="text-slate-900">{change.to}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Subject + view */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+              {locale === 'ro' ? 'Obiect' : 'Subject'}
+            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-slate-800 min-w-0 truncate">
+                {meta.subject || event.entity}
+              </p>
+              <Link
+                href={meta.href}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-hii-600 hover:bg-hii-50"
+              >
+                {locale === 'ro' ? 'Vezi' : 'View'}
+                <ExternalLink className="size-3.5" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Event-specific extra */}
+          {reason && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                {locale === 'ro' ? 'Motiv blocaj' : 'Blocker reason'}
+              </p>
+              <p className="rounded-lg border border-danger bg-danger-soft p-2 text-sm text-danger-foreground whitespace-pre-wrap">
+                {reason}
+              </p>
+            </div>
+          )}
+
+          {photoUrl && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                {locale === 'ro' ? 'Fotografie' : 'Photo'}
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoUrl}
+                alt={locale === 'ro' ? 'Fotografie atașată' : 'Attached photo'}
+                className="max-h-48 rounded-lg border border-chrome-line object-cover"
+              />
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-chrome-line pt-2 text-xs text-slate-400">
+            <span>{formatDateTime(event.createdAt, locale === 'ro' ? 'ro' : 'en')}</span>
+            <span>
+              {event.entity} · <span className="font-mono">{event.entityId}</span>
+            </span>
+          </div>
+
+          {/* Raw JSON */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowRaw((v) => !v)}
+              className="text-xs font-medium text-slate-500 hover:text-slate-700 underline"
+            >
+              {showRaw
+                ? locale === 'ro'
+                  ? 'Ascunde JSON'
+                  : 'Hide raw JSON'
+                : locale === 'ro'
+                  ? 'Arată JSON brut'
+                  : 'Show raw JSON'}
+            </button>
+            {showRaw && (
+              <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
+                {JSON.stringify({ before: event.before, after: event.after }, null, 2)}
+              </pre>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 /** Best-effort mapping of a project-member row to an actor option. */
 function memberToActor(member: any): ActivityActor | null {
@@ -517,35 +756,9 @@ function ActivityPageInner() {
               {dayLabel(items[0].createdAt, locale)}
             </h3>
             <Card padding={false} className="divide-y divide-chrome-line">
-              {items.map((event) => {
-                const meta = describe(event, locale);
-                const actor = event.actor?.name || (locale === 'ro' ? 'Sistem' : 'System');
-                const Icon = meta.icon;
-                return (
-                  <Link
-                    key={event.id}
-                    href={meta.href}
-                    className="flex items-start gap-3 p-4 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-inset"
-                  >
-                    <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${meta.tone}`}>
-                      <Icon className="size-4" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-slate-800">
-                        <span className="font-semibold text-slate-900">{actor}</span>{' '}
-                        {meta.text}
-                        {meta.subject && (
-                          <span className="text-slate-600"> — {meta.subject}</span>
-                        )}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        {relativeTime(event.createdAt, locale)} · {formatDateTime(event.createdAt, locale === 'ro' ? 'ro' : 'en')}
-                      </p>
-                    </div>
-                    <ChevronRight className="size-4 text-slate-300 shrink-0 mt-1" aria-hidden="true" />
-                  </Link>
-                );
-              })}
+              {items.map((event) => (
+                <EventRow key={event.id} event={event} locale={locale} />
+              ))}
             </Card>
           </div>
         ))
