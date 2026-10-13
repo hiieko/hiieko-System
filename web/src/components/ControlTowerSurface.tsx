@@ -37,6 +37,7 @@ import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
 import { t, useLocale } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
+import { ErrorState, Skeleton } from './ui';
 import { PageTutorial } from './PageTutorial';
 import { useProject } from '../contexts/ProjectContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -48,6 +49,10 @@ export function ControlTowerSurface() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  // Red flags — GET /api/control-tower/red-flags (separate from the overview payload)
+  const [redFlags, setRedFlags] = useState<RedFlag[]>([]);
+  const [redFlagsLoading, setRedFlagsLoading] = useState(true);
+  const [redFlagsError, setRedFlagsError] = useState<string | null>(null);
   const { locale } = useLocale();
   const { user } = useAuth();
   const { selectedProjectId, setSelectedProjectId } = useProject();
@@ -120,6 +125,26 @@ export function ControlTowerSurface() {
       } finally {
         setLoading(false);
         setRefreshing(false);
+      }
+
+      // Red flags are a separate endpoint; load them on the same triggers
+      // (mount, project change, manual refresh) as the overview.
+      setRedFlagsLoading(true);
+      setRedFlagsError(null);
+      try {
+        const flagsResponse = await apiClient.getControlTowerRedFlags(
+          selectedProjectId || undefined,
+        );
+        setRedFlags(flagsResponse.data ?? []);
+      } catch (err: unknown) {
+        setRedFlags([]);
+        setRedFlagsError(
+          err instanceof Error
+            ? err.message
+            : t('control_tower.load_error', locale),
+        );
+      } finally {
+        setRedFlagsLoading(false);
       }
     },
     [selectedProjectId, locale],
@@ -316,11 +341,20 @@ export function ControlTowerSurface() {
       )}
 
       {/* 1. CRITICAL ALERTS & RED FLAGS (Rule-based exceptions) */}
-      {overview && (
-        <ControlTowerRedFlagsCard
-          redFlags={overview.redFlags}
-          onInspect={openRedFlagInspect}
+      {redFlagsError ? (
+        <ErrorState
+          title={
+            locale === 'ro'
+              ? 'Eroare la încărcarea steagurilor roșii'
+              : 'Failed to load red flags'
+          }
+          error={redFlagsError}
+          onRetry={() => loadControlTower(true)}
         />
+      ) : redFlagsLoading && redFlags.length === 0 ? (
+        <Skeleton className="h-48 rounded-xl" />
+      ) : (
+        <ControlTowerRedFlagsCard redFlags={redFlags} onInspect={openRedFlagInspect} />
       )}
 
       {/* 2. THE 7 OPERATIONAL DOMAIN CARDS */}
