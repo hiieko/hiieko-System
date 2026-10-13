@@ -22,6 +22,9 @@ import { TaskDependencyChips } from './TaskDependencyChips';
 import { TaskStatusWorkflow } from './TaskStatusWorkflow';
 import { TaskQuantityEditor } from './TaskQuantityEditor';
 
+/** Statuses in which a new blocker can no longer be reported (backend rejects). */
+const TERMINAL_STATUSES: TaskStatus[] = ['COMPLETED', 'CANCELLED'];
+
 interface TaskCardProps {
   task: Task;
   currentUserId?: string;
@@ -441,7 +444,8 @@ export function TaskCard({
             )}
 
             {/* Blocker (Phase 4 — Step F/K/L) */}
-            {canBlock && (
+            {canBlock &&
+              (task.blocked_reason || !TERMINAL_STATUSES.includes(task.status)) && (
               <div className="pt-2 border-t border-chrome-line">
                 {task.blocked_reason ? (
                   <div className="rounded-lg border border-danger bg-danger-soft p-3">
