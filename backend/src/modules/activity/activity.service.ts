@@ -30,6 +30,41 @@ export const ACTIVITY_ACTIONS: string[] = [
   'ATTENDANCE_CHECK_OUT',
 ];
 
+/**
+ * Feature 2 — the `action` query param. Each key maps to an allowlist subset of
+ * `ACTIVITY_ACTIONS`; an unknown key (or `all`) applies no action restriction.
+ */
+export const ACTIVITY_ACTION_FILTERS: Record<string, string[]> = {
+  tasks: [
+    'TASK_CREATED',
+    'TASK_UPDATED',
+    'TASK_STATUS_CHANGED',
+    'TASK_BLOCKED',
+    'TASK_UNBLOCKED',
+  ],
+  reports: [
+    'DAILY_REPORT_SUBMITTED',
+    'DAILY_REPORT_APPROVED',
+    'DAILY_REPORT_REJECTED',
+  ],
+  issues: ['ISSUE_REPORTED', 'ISSUE_RESOLVED'],
+  attendance: ['ATTENDANCE_CHECK_IN', 'ATTENDANCE_CHECK_OUT'],
+  files: ['FILE_UPLOADED', 'ATTACHMENT_CREATED'],
+};
+
+export interface ActivityListOptions {
+  projectId?: string;
+  limit?: number;
+  /** Free-text search over actor name (profile.full_name) OR email. */
+  q?: string;
+  /** One of ACTIVITY_ACTION_FILTERS keys, or `all`. */
+  action?: string;
+  /** Restrict to a single actor. */
+  actorId?: string;
+  /** `today` | `week` | `month` | `all` (default). */
+  dateRange?: string;
+}
+
 @Injectable()
 export class ActivityService {
   constructor(private readonly prisma: PrismaService) {}
@@ -44,7 +79,9 @@ export class ActivityService {
    * filtered to those `(entity, entity_id)` pairs. Global-scope roles
    * (ADMIN/OWNER/MANAGER) see everything.
    */
-  async list(user: AuthenticatedUser, projectId?: string, limit = 50) {
+  async list(user: AuthenticatedUser, options: ActivityListOptions = {}) {
+    const { projectId, q, action, actorId, dateRange } = options;
+    const limit = options.limit ?? 50;
     const isGlobal = isGlobalProjectScopeRole(user.role);
 
     let memberProjectIds: string[] | null = null;
@@ -68,10 +105,47 @@ export class ActivityService {
 
     const entityFilters = await this.buildEntityFilters(scopedProjectIds);
 
-    const where: any = { action: { in: ACTIVITY_ACTIONS } };
+    // Project scoping and the free-text search both need `OR`, so each is
+    // wrapped in its own AND clause to keep the predicates intersected.
+    const and: any[] = [];
     if (entityFilters) {
-      where.OR = entityFilters;
+      and.push({ OR: entityFilters });
     }
+
+    const trimmedQ = (q ?? '').trim();
+    if (trimmedQ) {
+      and.push({
+        OR: [
+          { actor: { is: { email: { contains: trimmedQ, mode: 'insensitive' } } } },
+          {
+            actor: {
+              is: {
+                profile: {
+                  is: { full_name: { contains: trimmedQ, mode: 'insensitive' } },
+                },
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    if (actorId) {
+      and.push({ actor_id: actorId });
+    }
+
+    const actionFilter = action ? ACTIVITY_ACTION_FILTERS[action] : undefined;
+    if (actionFilter) {
+      and.push({ action: { in: actionFilter } });
+    }
+
+    const rangeStart = this.rangeStart(dateRange);
+    if (rangeStart) {
+      and.push({ created_at: { gte: rangeStart } });
+    }
+
+    const where: any = { action: { in: ACTIVITY_ACTIONS } };
+    if (and.length) where.AND = and;
 
     const rows = await this.prisma.auditLog.findMany({
       where,
@@ -90,6 +164,34 @@ export class ActivityService {
     });
 
     return rows.map((row) => this.toDto(row));
+  }
+
+  /**
+   * Start of the requested window, or `null` for `all`/unknown ranges.
+   * `today` = local midnight; `week` = Monday 00:00; `month` = 1st 00:00.
+   */
+  private rangeStart(range?: string): Date | null {
+    if (!range || range === 'all') return null;
+    const now = new Date();
+    if (range === 'today') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+    if (range === 'week') {
+      const start = new Date(now);
+      const isoDay = (start.getDay() + 6) % 7; // 0 = Monday
+      start.setDate(start.getDate() - isoDay);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+    if (range === 'month') {
+      const start = new Date(now);
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+    return null;
   }
 
   /**

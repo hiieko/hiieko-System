@@ -22,7 +22,18 @@ export class ActivityController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('projectId') projectId?: string,
     @Query('limit') limit = '50',
+    @Query('q') q?: string,
+    @Query('action') action?: string,
+    @Query('actorId') actorId?: string,
+    @Query('dateRange') dateRange?: string,
   ) {
-    return this.activityService.list(user, projectId, parseInt(limit, 10) || 50);
+    return this.activityService.list(user, {
+      projectId,
+      limit: parseInt(limit, 10) || 50,
+      q,
+      action,
+      actorId,
+      dateRange,
+    });
   }
 }
