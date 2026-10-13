@@ -739,15 +739,35 @@ function ActivityPageInner() {
         </div>
       ) : !error && events.length === 0 ? (
         <Card padding={false}>
-          <EmptyState
-            icon={<Activity />}
-            title={locale === 'ro' ? 'Nicio activitate încă' : 'No activity yet'}
-            description={
-              locale === 'ro'
-                ? 'Acțiunile din proiecte (task-uri, rapoarte, probleme) vor apărea aici.'
-                : 'Project actions (tasks, reports, issues) will appear here.'
-            }
-          />
+          {activeChips.length > 0 ? (
+            <EmptyState
+              icon={<Search />}
+              title={
+                locale === 'ro'
+                  ? 'Nicio activitate nu corespunde filtrelor'
+                  : 'No activity matches the filters'
+              }
+              description={
+                locale === 'ro'
+                  ? 'Încearcă să schimbi sau să ștergi filtrele active.'
+                  : 'Try changing or clearing the active filters.'
+              }
+              action={{
+                label: locale === 'ro' ? 'Șterge filtrele' : 'Clear filters',
+                onClick: clearAll,
+              }}
+            />
+          ) : (
+            <EmptyState
+              icon={<Activity />}
+              title={locale === 'ro' ? 'Nicio activitate încă' : 'No activity yet'}
+              description={
+                locale === 'ro'
+                  ? 'Acțiunile din proiecte (task-uri, rapoarte, probleme) vor apărea aici.'
+                  : 'Project actions (tasks, reports, issues) will appear here.'
+              }
+            />
+          )}
         </Card>
       ) : (
         groups.map(([key, items]) => (
