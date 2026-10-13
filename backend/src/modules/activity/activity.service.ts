@@ -83,7 +83,7 @@ export class ActivityService {
             id: true,
             email: true,
             role: true,
-            profile: { select: { full_name: true } },
+            profile: { select: { full_name: true, phone: true } },
           },
         },
       },
@@ -157,6 +157,8 @@ export class ActivityService {
         ? {
             id: row.actor.id,
             name: row.actor.profile?.full_name || row.actor.email,
+            email: row.actor.email,
+            phone: row.actor.profile?.phone ?? null,
             role: row.actor.role,
           }
         : null,
