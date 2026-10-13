@@ -11,6 +11,7 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Layers,
   Users,
@@ -34,10 +35,10 @@ import {
   Calendar,
 } from 'lucide-react';
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
-import { t, useLocale } from '@solar/shared';
+import { t, useLocale, canCreateProjects } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
-import { ErrorState, Skeleton } from './ui';
+import { EmptyState, ErrorState, Skeleton } from './ui';
 import { PageTutorial } from './PageTutorial';
 import { useProject } from '../contexts/ProjectContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -55,6 +56,7 @@ export function ControlTowerSurface() {
   const [redFlagsError, setRedFlagsError] = useState<string | null>(null);
   const { locale } = useLocale();
   const { user } = useAuth();
+  const router = useRouter();
   const { selectedProjectId, setSelectedProjectId } = useProject();
   const role = user?.role?.toLowerCase() || 'viewer';
   const roleProfile = (() => {
@@ -254,6 +256,8 @@ export function ControlTowerSurface() {
     }).format(val);
   };
 
+  const hasProjects = (overview?.projects.activeProjectsList.length ?? 0) > 0;
+
   return (
     <div className="space-y-6 pb-12">
       <PageTutorial sectionId="dashboard" />
@@ -340,25 +344,42 @@ export function ControlTowerSurface() {
         </div>
       )}
 
-      {/* 1. CRITICAL ALERTS & RED FLAGS (Rule-based exceptions) */}
-      {redFlagsError ? (
-        <ErrorState
-          title={
-            locale === 'ro'
-              ? 'Eroare la încărcarea steagurilor roșii'
-              : 'Failed to load red flags'
-          }
-          error={redFlagsError}
-          onRetry={() => loadControlTower(true)}
-        />
-      ) : redFlagsLoading && redFlags.length === 0 ? (
-        <Skeleton className="h-48 rounded-xl" />
-      ) : (
-        <ControlTowerRedFlagsCard redFlags={redFlags} onInspect={openRedFlagInspect} />
+      {/* No projects yet: Control Tower has nothing to aggregate */}
+      {overview && !hasProjects && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <EmptyState
+            icon={<Briefcase />}
+            title="No projects yet"
+            description="Your Control Tower will populate once projects exist."
+            action={
+              user && canCreateProjects(user.role as never)
+                ? { label: 'New project', onClick: () => router.push('/projects') }
+                : undefined
+            }
+          />
+        </div>
       )}
 
+      {/* 1. CRITICAL ALERTS & RED FLAGS (Rule-based exceptions) */}
+      {overview && hasProjects &&
+        (redFlagsError ? (
+          <ErrorState
+            title={
+              locale === 'ro'
+                ? 'Eroare la încărcarea steagurilor roșii'
+                : 'Failed to load red flags'
+            }
+            error={redFlagsError}
+            onRetry={() => loadControlTower(true)}
+          />
+        ) : redFlagsLoading && redFlags.length === 0 ? (
+          <Skeleton className="h-48 rounded-xl" />
+        ) : (
+          <ControlTowerRedFlagsCard redFlags={redFlags} onInspect={openRedFlagInspect} />
+        ))}
+
       {/* 2. THE 7 OPERATIONAL DOMAIN CARDS */}
-      {overview && (
+      {overview && hasProjects && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {/* DOMAIN 1: PROIECTE (Projects) */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
