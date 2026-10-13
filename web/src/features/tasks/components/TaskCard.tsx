@@ -23,7 +23,7 @@ import { TaskStatusWorkflow } from './TaskStatusWorkflow';
 import { TaskQuantityEditor } from './TaskQuantityEditor';
 
 /** Statuses in which a new blocker can no longer be reported (backend rejects). */
-const TERMINAL_STATUSES: TaskStatus[] = ['COMPLETED', 'CANCELLED'];
+const TERMINAL_STATUSES: TaskStatus[] = ['COMPLETED', 'VERIFIED', 'CANCELLED'];
 
 interface TaskCardProps {
   task: Task;
