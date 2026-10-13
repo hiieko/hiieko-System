@@ -96,6 +96,8 @@ export interface Task {
   unit_of_measure?: string | null;
   verified_by?: string | null;
   verified_at?: string | null;
+  blocked_reason?: string | null;
+  blocked_at?: string | null;
   created_at: string;
   updated_at: string;
 

@@ -16,7 +16,7 @@ import {
   TaskStatus,
   UpdateTaskDto,
 } from '../../features/tasks/types';
-import { getTasks, updateTask } from '../../features/tasks/api';
+import { getTasks, updateTask, blockTask, unblockTask } from '../../features/tasks/api';
 import {
   TaskCard,
   TaskFilters,
@@ -104,6 +104,7 @@ function TasksPageInner() {
   const [assignModalTask, setAssignModalTask] = useState<Task | null>(null);
   const [updatingStatusIds, setUpdatingStatusIds] = useState<Set<string>>(new Set());
   const [updatingQuantityIds, setUpdatingQuantityIds] = useState<Set<string>>(new Set());
+  const [blockingIds, setBlockingIds] = useState<Set<string>>(new Set());
 
   // ── Load tasks ──────────────────────────────────────────────────────────
 
@@ -248,6 +249,56 @@ function TasksPageInner() {
       toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
     } finally {
       setUpdatingQuantityIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    }
+  };
+
+  // ── Report blocker ──────────────────────────────────────────────────────
+
+  const handleBlock = async (taskId: string, reason: string) => {
+    setBlockingIds((prev) => new Set(prev).add(taskId));
+
+    try {
+      const res = await blockTask(taskId, reason);
+
+      if (res.data && !res.error) {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data! : t)));
+        toastSuccess(t('task.blocker_reported'));
+      } else {
+        toastError(t('task.generic_error'), res.error);
+      }
+    } catch (err) {
+      toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+    } finally {
+      setBlockingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    }
+  };
+
+  // ── Unblock ─────────────────────────────────────────────────────────────
+
+  const handleUnblock = async (taskId: string) => {
+    setBlockingIds((prev) => new Set(prev).add(taskId));
+
+    try {
+      const res = await unblockTask(taskId);
+
+      if (res.data && !res.error) {
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? res.data! : t)));
+        toastSuccess(t('task.blocker_resolved'));
+      } else {
+        toastError(t('task.generic_error'), res.error);
+      }
+    } catch (err) {
+      toastError(t('task.generic_error'), err instanceof Error ? err.message : undefined);
+    } finally {
+      setBlockingIds((prev) => {
         const next = new Set(prev);
         next.delete(taskId);
         return next;
@@ -450,6 +501,7 @@ function TasksPageInner() {
                 canUpdateStatus={userCanUpdateStatus}
                 canUpdateQuantity={userCanUpdateQuantity}
                 canAssign={userCanAssign}
+                canBlock={userCanUpdateStatus}
                 onStatusChange={(taskId, newStatus) =>
                   handleStatusChange(taskId, newStatus)
                 }
@@ -457,8 +509,11 @@ function TasksPageInner() {
                   handleQuantityChange(taskId, quantity)
                 }
                 onAssignClick={setAssignModalTask}
+                onBlock={handleBlock}
+                onUnblock={handleUnblock}
                 updatingStatus={updatingStatusIds.has(task.id)}
                 updatingQuantity={updatingQuantityIds.has(task.id)}
+                blocking={blockingIds.has(task.id)}
               />
             ))}
           </div>

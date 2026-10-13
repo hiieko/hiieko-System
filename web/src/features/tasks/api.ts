@@ -45,6 +45,16 @@ export function updateTask(id: string, data: UpdateTaskDto): Promise<ApiResponse
   return apiClient.patch<Task>(`/api/tasks/${id}`, data);
 }
 
+/** Report a blocker on a task — PATCH /api/tasks/:id/block (sets status BLOCKED) */
+export function blockTask(id: string, reason: string): Promise<ApiResponse<Task>> {
+  return apiClient.patch<Task>(`/api/tasks/${id}/block`, { reason });
+}
+
+/** Clear a task blocker — PATCH /api/tasks/:id/unblock (restores status IN_PROGRESS) */
+export function unblockTask(id: string): Promise<ApiResponse<Task>> {
+  return apiClient.patch<Task>(`/api/tasks/${id}/unblock`);
+}
+
 /** Assign a project member to a task — POST /api/tasks/:id/assign */
 export function assignTask(id: string, userId: string): Promise<ApiResponse<TaskAssignmentLike>> {
   return apiClient.post<TaskAssignmentLike>(`/api/tasks/${id}/assign`, { userId });

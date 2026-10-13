@@ -12,10 +12,11 @@ import {
   Hash,
   MapPin,
   CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 
 import { Task, TaskStatus, TASK_STATUS_I18N, TASK_STATUS_BADGE } from '../types';
-import { Badge, Button, Card, ConfirmDialog, PhotoUpload } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, Modal, PhotoUpload } from '@/components/ui';
 import { TaskProgressBar } from './TaskProgressBar';
 import { TaskDependencyChips } from './TaskDependencyChips';
 import { TaskStatusWorkflow } from './TaskStatusWorkflow';
@@ -27,11 +28,15 @@ interface TaskCardProps {
   canUpdateStatus: boolean;
   canUpdateQuantity: boolean;
   canAssign: boolean;
+  canBlock: boolean;
   onStatusChange: (taskId: string, newStatus: TaskStatus) => Promise<void>;
   onQuantityChange: (taskId: string, quantity: number) => Promise<void>;
   onAssignClick: (task: Task) => void;
+  onBlock: (taskId: string, reason: string) => Promise<void>;
+  onUnblock: (taskId: string) => Promise<void>;
   updatingStatus: boolean;
   updatingQuantity: boolean;
+  blocking: boolean;
   className?: string;
 }
 
@@ -41,16 +46,22 @@ export function TaskCard({
   canUpdateStatus,
   canUpdateQuantity,
   canAssign,
+  canBlock,
   onStatusChange,
   onQuantityChange,
   onAssignClick,
+  onBlock,
+  onUnblock,
   updatingStatus,
   updatingQuantity,
+  blocking,
   className,
 }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [detailTab, setDetailTab] = useState<'details' | 'photos'>('details');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [blockReason, setBlockReason] = useState('');
   const { locale } = useLocale();
 
   // Check if user is assigned to this task
@@ -103,6 +114,20 @@ export function TaskCard({
     await onQuantityChange(task.id, quantity);
   };
 
+  // Handle blocker report
+  const handleSubmitBlock = async () => {
+    const reason = blockReason.trim();
+    if (!reason) return;
+    await onBlock(task.id, reason);
+    setShowBlockModal(false);
+    setBlockReason('');
+  };
+
+  // Handle unblock
+  const handleUnblock = async () => {
+    await onUnblock(task.id);
+  };
+
   // Card content id for aria-controls
   const contentId = `task-content-${task.id}`;
 
@@ -119,6 +144,49 @@ export function TaskCard({
         variant="danger"
         onConfirm={handleConfirmCancel}
       />
+
+      {/* Report Blocker Modal */}
+      <Modal
+        open={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        title={t('task.blocker_modal_title')}
+        size="md"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowBlockModal(false)}
+            >
+              {t('task.blocker_cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSubmitBlock}
+              disabled={!blockReason.trim()}
+              loading={blocking}
+            >
+              {t('task.blocker_submit')}
+            </Button>
+          </div>
+        }
+      >
+        <label
+          htmlFor={`blocker-reason-${task.id}`}
+          className="block text-sm font-medium text-content-secondary mb-1"
+        >
+          {t('task.blocker_reason_label')}
+        </label>
+        <textarea
+          id={`blocker-reason-${task.id}`}
+          value={blockReason}
+          onChange={(e) => setBlockReason(e.target.value)}
+          rows={4}
+          placeholder={t('task.blocker_reason_placeholder')}
+          className="w-full rounded-lg border border-chrome-line bg-surface px-3 py-2 text-sm text-content focus:outline-none focus:ring-2 focus:ring-hii-500"
+        />
+      </Modal>
 
       {/* Task Card */}
       <Card
@@ -369,6 +437,47 @@ export function TaskCard({
                   onStatusChange={handleStatusChange}
                   loading={updatingStatus}
                 />
+              </div>
+            )}
+
+            {/* Blocker (Phase 4 — Step F/K/L) */}
+            {canBlock && (
+              <div className="pt-2 border-t border-chrome-line">
+                {task.blocked_reason ? (
+                  <div className="rounded-lg border border-danger bg-danger-soft p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-danger-foreground">
+                        <AlertTriangle className="w-4 h-4" />
+                        {t('task.blocker_active')}
+                      </span>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleUnblock}
+                        loading={blocking}
+                      >
+                        {t('task.blocker_unblock')}
+                      </Button>
+                    </div>
+                    <p className="mt-2 text-sm text-content-secondary whitespace-pre-wrap">
+                      {task.blocked_reason}
+                    </p>
+                    {task.blocked_at && (
+                      <p className="mt-1 text-xs text-content-muted">
+                        {t('task.blocker_reported_at')}: {formatDate(task.blocked_at)}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<AlertTriangle className="w-3.5 h-3.5" />}
+                    onClick={() => setShowBlockModal(true)}
+                  >
+                    {t('task.report_blocker')}
+                  </Button>
+                )}
               </div>
             )}
               </>

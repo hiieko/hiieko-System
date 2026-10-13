@@ -902,6 +902,20 @@ Object.assign(d, {
   'task.assigned': T('Task atribuit', 'Task assigned'),
   'task.generic_error': T('Eroare', 'Error'),
 
+  // --- Tasks: blocker reporting (Phase 4) ---
+  'task.report_blocker': T('Raportează blocaj', 'Report blocker'),
+  'task.blocker_modal_title': T('Raportează un blocaj', 'Report a blocker'),
+  'task.blocker_reason_label': T('Motiv', 'Reason'),
+  'task.blocker_reason_placeholder': T('Descrie problema care blochează acest task...', 'Describe the problem blocking this task...'),
+  'task.blocker_reason_required': T('Motivul este obligatoriu.', 'A reason is required.'),
+  'task.blocker_submit': T('Trimite blocajul', 'Report blocker'),
+  'task.blocker_cancel': T('Anulează', 'Cancel'),
+  'task.blocker_reported': T('Blocaj raportat', 'Blocker reported'),
+  'task.blocker_resolved': T('Blocaj rezolvat', 'Blocker resolved'),
+  'task.blocker_active': T('Task blocat', 'Task blocked'),
+  'task.blocker_unblock': T('Deblochează', 'Unblock'),
+  'task.blocker_reported_at': T('Raportat la', 'Reported at'),
+
   // --- Tasks: validation + translated network/API errors ---
   'task.err_required': T('Titlul și codul sunt obligatorii.', 'Title and code are required.'),
   'task.err_offline': T('Rețeaua nu a răspuns. Verifică conexiunea și încearcă din nou.', 'The network did not respond. Check your connection and try again.'),
