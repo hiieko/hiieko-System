@@ -566,6 +566,7 @@ Object.assign(d, {
   // `/control-tower` is the canonical destination (UX-R1A C2 redirects `/statistici` to it),
   // so it carries its own key instead of reusing the legacy `nav.statistici` label.
   'nav.control_tower': T('Turn de Control', 'Control Tower'),
+  'nav.activity': T('Activitate', 'Activity'),
   'nav.qa_qc': T('QA / QC', 'QA / QC'),
   // ── QA/QC Inspections (/qa) — mirrors GET/POST /api/qa-qc/inspections ──
   'qa.title': T('Inspecții QA / QC', 'QA / QC Inspections'),

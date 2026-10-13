@@ -11,7 +11,7 @@
 import {
   LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro,
   ClipboardCheck, Bell, Users, ShieldCheck, User, Gauge, Warehouse,
-  SunMedium, AlertTriangle, type LucideIcon,
+  SunMedium, AlertTriangle, Activity, type LucideIcon,
 } from 'lucide-react';
 import { ROUTE_ROLES } from './route-roles';
 
@@ -45,6 +45,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/avize', i18nKey: 'nav.avize', label: 'Procurement / Avize', icon: Truck },
       { href: '/stocuri', i18nKey: 'nav.stocuri', label: 'Materiale & Stoc', icon: Boxes },
       { href: '/cheltuieli', i18nKey: 'nav.cheltuieli', label: 'Cheltuieli', icon: Euro },
+      { href: '/activity', i18nKey: 'nav.activity', label: 'Activitate', icon: Activity },
     ],
   },
   {

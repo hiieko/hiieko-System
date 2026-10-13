@@ -162,6 +162,7 @@ export type AppRoute =
   | '/avize'
   | '/stocuri'
   | '/cheltuieli'
+  | '/activity'
   | '/projects'
   | '/projects/[id]'
   | '/teams'
@@ -196,6 +197,7 @@ export const ROUTE_ROLES = {
   '/avize': [...OPERATIONAL_ROLES, 'procurement'],
   '/stocuri': OPERATIONAL_ROLES,
   '/cheltuieli': [...OPERATIONAL_ROLES, 'finance'],
+  '/activity': OPERATIONAL_ROLES,
   '/projects': PROJECT_ROLES,
   // Detail route mirrors its list route (same guard on both pages today).
   '/projects/[id]': PROJECT_ROLES,
