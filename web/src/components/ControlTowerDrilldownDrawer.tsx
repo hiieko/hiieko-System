@@ -15,6 +15,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Drawer } from './ui/Drawer';
+import { Skeleton } from './ui/Skeleton';
 import { t, useLocale } from '@solar/shared';
 
 export interface DrilldownData {
@@ -23,15 +24,21 @@ export interface DrilldownData {
   category: string;
   ruleExplanation: string;
   items: any[];
+  total?: number;
+  hasMore?: boolean;
+  loading?: boolean;
+  error?: string | null;
 }
 
 interface ControlTowerDrilldownDrawerProps {
   data: DrilldownData | null;
+  onRetry?: () => void;
   onClose: () => void;
 }
 
 export function ControlTowerDrilldownDrawer({
   data,
+  onRetry,
   onClose,
 }: ControlTowerDrilldownDrawerProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,7 +65,7 @@ export function ControlTowerDrilldownDrawer({
               {data.category}
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              {filteredItems.length} {filteredItems.length === 1 ? t('control_tower.drawer.record', locale) : t('control_tower.drawer.records', locale)}
+              {data.loading ? '—' : (data.total ?? filteredItems.length)} {filteredItems.length === 1 ? t('control_tower.drawer.record', locale) : t('control_tower.drawer.records', locale)}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-md">
@@ -84,7 +91,27 @@ export function ControlTowerDrilldownDrawer({
 
           {/* List Content */}
           <div className="overflow-y-auto p-6 space-y-4">
-            {filteredItems.length === 0 ? (
+            {data.loading ? (
+              [1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+              ))
+            ) : data.error ? (
+              <div className="text-center py-16">
+                <AlertTriangle className="w-12 h-12 text-warning mx-auto mb-3" aria-hidden="true" />
+                <h3 className="text-base font-semibold text-slate-900">
+                  {locale === 'ro' ? 'Eroare la încărcare' : 'Failed to load'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">{data.error}</p>
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    className="mt-4 px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
+                  >
+                    {locale === 'ro' ? 'Reîncearcă' : 'Retry'}
+                  </button>
+                )}
+              </div>
+            ) : filteredItems.length === 0 ? (
               <div className="text-center py-16">
                 <CheckCircle2 className="w-12 h-12 text-success-soft0 mx-auto mb-3" />
                 <h3 className="text-base font-semibold text-slate-900">
@@ -103,7 +130,11 @@ export function ControlTowerDrilldownDrawer({
 
           {/* Footer */}
           <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
-            <span>{t('control_tower.drawer.source', locale)}</span>
+            <span>
+              {t('control_tower.drawer.source', locale)}
+              {data.hasMore &&
+                ` · ${locale === 'ro' ? 'Sunt disponibile mai multe rezultate' : 'More results available'}`}
+            </span>
             <button
               onClick={onClose}
               className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-medium transition-colors"

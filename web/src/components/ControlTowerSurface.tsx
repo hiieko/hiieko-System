@@ -9,7 +9,7 @@
  * `app/page.tsx` (the `/` role router) and `app/control-tower/page.tsx` (the
  * canonical route), so every hook below runs on one stable execution path.
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   Layers,
@@ -78,7 +78,7 @@ export function ControlTowerSurface() {
   })();
   const roleHasControlTower = CONTROL_TOWER_ROLES.includes(role);
 
-  // Drilldown Drawer State
+  // Drilldown Drawer State — items come from GET /api/control-tower/drilldown
   const [drilldown, setDrilldown] = useState<DrilldownData>({
     isOpen: false,
     title: '',
@@ -86,6 +86,12 @@ export function ControlTowerSurface() {
     ruleExplanation: '',
     items: [],
   });
+  const drilldownRequest = useRef<{
+    title: string;
+    category: string;
+    ruleExplanation: string;
+    itemId?: string;
+  } | null>(null);
 
   const loadControlTower = useCallback(
     async (isManualRefresh = false) => {
@@ -123,29 +129,79 @@ export function ControlTowerSurface() {
     loadControlTower();
   }, [loadControlTower]);
 
-  // Open drill-down drawer helper
-  const openDrilldown = (
-    title: string,
-    category: string,
-    ruleExplanation: string,
-    items: any[],
-  ) => {
-    setDrilldown({
-      isOpen: true,
-      title,
-      category,
-      ruleExplanation,
-      items,
-    });
-  };
+  const fetchDrilldown = useCallback(
+    async (request: {
+      title: string;
+      category: string;
+      ruleExplanation: string;
+      itemId?: string;
+    }) => {
+      drilldownRequest.current = request;
+      // Backend switch handles only these categories; PRODUCTION_BLOCKED is a
+      // frontend-only label (blocked work) folded into PRODUCTION.
+      const category =
+        request.category === 'PRODUCTION_BLOCKED' ? 'PRODUCTION' : request.category;
+      setDrilldown({
+        isOpen: true,
+        title: request.title,
+        category: request.category,
+        ruleExplanation: request.ruleExplanation,
+        items: [],
+        loading: true,
+        error: null,
+      });
+      try {
+        const response = await apiClient.getControlTowerDrillDown({
+          category,
+          projectId: selectedProjectId || undefined,
+        });
+        const data = response.data;
+        let items: any[] = data?.items ?? [];
+        if (request.itemId) {
+          items = items.filter((item: any) => item?.id === request.itemId);
+        }
+        setDrilldown((prev) => ({
+          ...prev,
+          loading: false,
+          items,
+          total: data?.total ?? items.length,
+          hasMore: data?.hasMore ?? false,
+        }));
+      } catch (err: unknown) {
+        setDrilldown((prev) => ({
+          ...prev,
+          loading: false,
+          error:
+            err instanceof Error
+              ? err.message
+              : t('control_tower.load_error', locale),
+        }));
+      }
+    },
+    [selectedProjectId, locale],
+  );
+
+  // Open drill-down drawer — fetches the real list behind the number
+  const openDrilldown = useCallback(
+    (title: string, category: string, ruleExplanation: string) => {
+      void fetchDrilldown({ title, category, ruleExplanation });
+    },
+    [fetchDrilldown],
+  );
+
+  const retryDrilldown = useCallback(() => {
+    if (drilldownRequest.current) {
+      void fetchDrilldown(drilldownRequest.current);
+    }
+  }, [fetchDrilldown]);
 
   const openRedFlagInspect = (flag: RedFlag) => {
-    openDrilldown(
-      `${t('control_tower.critical_alert', locale)}: ${flag.affectedEntity}`,
-      flag.category,
-      flag.reason,
-      [flag],
-    );
+    void fetchDrilldown({
+      title: `${t('control_tower.critical_alert', locale)}: ${flag.affectedEntity}`,
+      category: 'RED_FLAGS',
+      ruleExplanation: flag.reason,
+      itemId: flag.id,
+    });
   };
 
   if (loading && !overview) {
@@ -312,7 +368,6 @@ export function ControlTowerSurface() {
                     t('control_tower.overdue_projects', locale),
                     'PROJECTS',
                     t('control_tower.overdue_rule', locale),
-                    overview.projects.overdueProjectsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
@@ -329,7 +384,6 @@ export function ControlTowerSurface() {
                     t('control_tower.upcoming_deadlines', locale),
                     'PROJECTS',
                     t('control_tower.upcoming_deadlines_rule', locale),
-                    overview.projects.upcomingDeadlinesList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
@@ -385,7 +439,6 @@ export function ControlTowerSurface() {
                     t('control_tower.missing_attendance', locale),
                     'WORKFORCE',
                     t('control_tower.missing_attendance_rule', locale),
-                    overview.workforce.missingList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
@@ -402,7 +455,6 @@ export function ControlTowerSurface() {
                     t('control_tower.overtime_today', locale),
                     'WORKFORCE',
                     t('control_tower.overtime_rule', locale),
-                    overview.workforce.overtimeList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-info-soft/50 hover:bg-info-soft/60 text-blue-900 transition-colors text-left"
@@ -452,7 +504,6 @@ export function ControlTowerSurface() {
                     t('control_tower.blocked_work', locale),
                     'PRODUCTION_BLOCKED',
                     t('control_tower.blocked_work_rule', locale),
-                    overview.production.blockedTasksList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
@@ -469,7 +520,6 @@ export function ControlTowerSurface() {
                     t('control_tower.planned_tasks', locale),
                     'PRODUCTION',
                     t('control_tower.planned_tasks_rule', locale),
-                    overview.production.plannedTasksList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
@@ -520,7 +570,6 @@ export function ControlTowerSurface() {
                     t('control_tower.low_stock', locale),
                     'MATERIALS',
                     t('control_tower.low_stock_rule', locale),
-                    overview.materials.lowStockList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
@@ -537,7 +586,6 @@ export function ControlTowerSurface() {
                     t('control_tower.deliveries', locale),
                     'MATERIALS',
                     t('control_tower.deliveries_rule', locale),
-                    overview.materials.pendingDeliveriesList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
@@ -611,7 +659,6 @@ export function ControlTowerSurface() {
                     t('control_tower.finance_by_project', locale),
                     'FINANCE',
                     t('control_tower.finance_rule', locale),
-                    overview.finance.budgetByProject,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
@@ -660,7 +707,6 @@ export function ControlTowerSurface() {
                     t('control_tower.open_ncr', locale),
                     'QUALITY',
                     t('control_tower.open_ncr_rule', locale),
-                    overview.quality.openNCRsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
@@ -677,7 +723,6 @@ export function ControlTowerSurface() {
                     t('control_tower.failed_inspections', locale),
                     'QUALITY',
                     t('control_tower.failed_inspections_rule', locale),
-                    overview.quality.failedInspectionsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
@@ -728,7 +773,6 @@ export function ControlTowerSurface() {
                     t('control_tower.replaced_documents', locale),
                     'DOCUMENTATION',
                     t('control_tower.replaced_documents_rule', locale),
-                    overview.documentation.supersededDocumentsList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
@@ -745,7 +789,6 @@ export function ControlTowerSurface() {
                     t('control_tower.awaiting_documents', locale),
                     'DOCUMENTATION',
                     t('control_tower.awaiting_documents_rule', locale),
-                    overview.documentation.awaitingApprovalList,
                   )
                 }
                 className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
@@ -809,6 +852,7 @@ export function ControlTowerSurface() {
       {/* SLIDE-OVER DRILLDOWN DRAWER */}
       <ControlTowerDrilldownDrawer
         data={drilldown}
+        onRetry={retryDrilldown}
         onClose={() => setDrilldown((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
