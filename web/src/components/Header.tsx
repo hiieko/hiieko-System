@@ -8,7 +8,7 @@ import { Button } from './ui/Button';
 import { DropdownMenu, type DropdownMenuItem } from './ui/DropdownMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { useProject } from '../contexts/ProjectContext';
-import { t, useLocale } from '@solar/shared';
+import { getRoleLabel, t, useLocale } from '@solar/shared';
 import { NAV_GROUPS } from '../config/navigation';
 import { GlobalQuickSearch } from './GlobalQuickSearch';
 import { usePathname } from 'next/navigation';
@@ -36,18 +36,18 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const currentUser = loading
     ? t('general.loading', locale)
-    : user?.fullName || user?.email || 'Vizitator';
+    : user?.fullName || user?.email || t('header.visitator', locale);
 
   const userMenuItems: DropdownMenuItem[] = [
     {
       key: 'profile',
-      label: t('header.profile', locale) || 'Profilul meu',
+      label: t('header.profile', locale),
       onClick: () => window.location.assign('/profil'),
       icon: <User className="w-4 h-4" />,
     },
     {
       key: 'logout',
-      label: t('header.logout', locale) || 'Deconectare',
+      label: t('header.logout', locale),
       onClick: () => void signOut(),
       icon: <LogOut className="w-4 h-4" />,
       variant: 'danger',
@@ -64,18 +64,18 @@ export function Header({ onMenuClick }: HeaderProps) {
           size="icon"
           onClick={onMenuClick}
           className="lg:hidden shrink-0"
-          aria-label={t('header.menu', locale) || 'Deschide meniul'}
+          aria-label={t('header.menu', locale)}
         >
           <Menu className="w-5 h-5" />
         </Button>
 
         <nav
           className="hidden min-w-0 items-center gap-2 text-sm sm:flex"
-          aria-label={locale === 'en' ? 'Breadcrumb' : 'Navigare'}
+          aria-label={t('header.breadcrumb', locale)}
         >
           {pathname !== '/' && <span className="text-slate-300" aria-hidden="true">/</span>}
           <span className="max-w-36 truncate font-semibold text-slate-700">
-            {pathname === '/' ? (locale === 'en' ? 'Operations' : 'Operațiuni') : activeTitle}
+            {pathname === '/' ? t('header.home_title', locale) : activeTitle}
           </span>
         </nav>
 
@@ -84,8 +84,8 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div className="min-w-0 flex flex-col">
             <span className="hidden sm:block text-[10px] text-slate-400 font-medium leading-tight">
               {selectedProject
-                ? t('header.current_project', locale) || 'Proiect curent'
-                : t('header.all_projects', locale) || 'Toate proiectele'}
+                ? t('header.current_project', locale)
+                : t('header.all_projects', locale)}
             </span>
             <select
               value={selectedProjectId || 'all'}
@@ -94,7 +94,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               }
               className="block w-full max-w-full bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-xs sm:-mt-0.5 p-0 truncate"
               disabled={projectsLoading}
-              aria-label={t('header.select_project', locale) || 'Selectează proiect'}
+              aria-label={t('header.select_project', locale)}
             >
               <option value="all">{t('header.all_sites', locale)}</option>
               {projects.map((p) => (
@@ -117,7 +117,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         <Link
           href="/notificari"
-          aria-label={t('nav.notificari', locale) || 'Notificări'}
+          aria-label={t('nav.notificari', locale)}
           className="flex h-10 w-10 items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full relative shrink-0"
         >
           <Bell className="w-5 h-5" />
@@ -136,7 +136,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   {currentUser}
                 </div>
                 <div className="text-[11px] text-hii-600 font-medium capitalize">
-                  {loading ? '' : (user?.role || '').toLowerCase()}
+                  {loading ? '' : getRoleLabel(user?.role, locale)}
                 </div>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" aria-hidden="true" />
@@ -144,7 +144,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           }
           items={userMenuItems}
           align="right"
-          aria-label={t('header.user_menu', locale) || 'Meniul utilizator'}
+          aria-label={t('header.user_menu', locale)}
         />
       </div>
     </header>

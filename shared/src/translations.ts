@@ -1955,6 +1955,12 @@ Object.assign(d, {
   'activity.empty_message': T('Acțiunile din proiecte (task-uri, rapoarte, probleme) vor apărea aici.', 'Project actions (tasks, reports, issues) will appear here.'),
 });
 
+// i18n(header) — localise hardcoded Header strings
+Object.assign(d, {
+  'header.breadcrumb': T('Navigare', 'Breadcrumb'),
+  'header.home_title': T('Operațiuni', 'Operations'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
