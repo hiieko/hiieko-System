@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../../lib/api-client';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import {
   AlertTriangle,
   RefreshCw,
