@@ -1812,6 +1812,48 @@ Object.assign(d, {
   'reports.all_statuses': T('Toate stările', 'All statuses'),
 });
 
+// i18n(stocuri) — replace inline locale ternaries
+Object.assign(d, {
+  'stocuri.error_load': T('Nu s-au putut încărca datele de stoc.', 'Failed to load stock data.'),
+  'stocuri.error_select_material': T('Selectează materialul și introdu o cantitate mai mare decât 0.', 'Select a material and enter a quantity greater than 0.'),
+  'stocuri.error_project_receive': T('Selectează un proiect înainte de recepție.', 'Select a project before receiving stock.'),
+  'stocuri.error_project_consume': T('Selectează un proiect înainte de consum.', 'Select a project before consuming stock.'),
+  'stocuri.error_target_project': T('Selectează un proiect țintă diferit.', 'Select a different target project.'),
+  'stocuri.error_operation': T('Operațiunea de stoc a eșuat.', 'Stock operation failed.'),
+  'stocuri.action_receive_title': T('Recepționează stoc', 'Receive stock'),
+  'stocuri.action_consume_title': T('Consumă stoc', 'Consume stock'),
+  'stocuri.action_transfer_title': T('Transferă stoc', 'Transfer stock'),
+  'stocuri.eyebrow': T('Gestiune stocuri', 'Inventory'),
+  'stocuri.page_title': T('Stocuri și mișcări materiale', 'Stock & Material Movements'),
+  'stocuri.subtitle': T('Soldurile curente și jurnalul imutabil al mișcărilor, limitate la proiectele la care ai acces.', 'Current balances and the immutable movement ledger, scoped to your project access.'),
+  'stocuri.btn_receive': T('Recepție', 'Receive'),
+  'stocuri.btn_consume': T('Consum', 'Consume'),
+  'stocuri.btn_transfer': T('Transfer', 'Transfer'),
+  'stocuri.summary_materials_in_stock': T('Materiale cu stoc', 'Materials in stock'),
+  'stocuri.summary_movement_entries': T('Mișcări', 'Movement entries'),
+  'stocuri.summary_visible_materials': T('Materiale disponibile', 'Visible materials'),
+  'stocuri.error_load_title': T('Nu s-au putut încărca stocurile', 'Could not load stock'),
+  'stocuri.current_stock': T('Stoc curent', 'Current stock'),
+  'stocuri.search_placeholder': T('Caută material…', 'Search material…'),
+  'stocuri.low_badge': T('Low', 'Low'),
+  'stocuri.no_threshold': T('Fără prag', 'No threshold'),
+  'stocuri.ok': T('OK', 'OK'),
+  'stocuri.audit_title': T('Jurnal imutabil al mișcărilor', 'Immutable movement audit trail'),
+  'stocuri.all_movement_types': T('Toate tipurile', 'All movement types'),
+  'stocuri.movement_RECEIPT': T('Recepție', 'Receipt'),
+  'stocuri.movement_CONSUMPTION': T('Consum', 'Consumption'),
+  'stocuri.movement_TRANSFER_OUT': T('Transfer ieșire', 'Transfer out'),
+  'stocuri.movement_TRANSFER_IN': T('Transfer intrare', 'Transfer in'),
+  'stocuri.saving': T('Se salvează…', 'Saving…'),
+  'stocuri.operation_note': T('Operațiunea este salvată prin API-ul de inventar și jurnalul imutabil.', 'This operation is persisted through the inventory API and immutable ledger.'),
+  'stocuri.field_material': T('Material', 'Material'),
+  'stocuri.field_quantity': T('Cantitate', 'Quantity'),
+  'stocuri.field_target_project': T('Proiect țintă', 'Target project'),
+  'stocuri.field_notes': T('Observații', 'Notes'),
+  'stocuri.select_material': T('Selectează materialul', 'Select material'),
+  'stocuri.select_target_project': T('Selectează proiectul țintă', 'Select target project'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

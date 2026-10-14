@@ -3,7 +3,7 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { RoleGuard } from '../../lib/auth-guard';
@@ -82,7 +82,7 @@ function StocuriPageInner() {
         }
       }
     } catch (err: unknown) {
-      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : (locale === 'en' ? 'Failed to load stock data.' : 'Nu s-au putut încărca datele de stoc.'));
+      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : t('stocuri.error_load', locale));
     } finally {
       setLoading(false);
     }
@@ -123,67 +123,67 @@ function StocuriPageInner() {
 
   const submitAction = async () => {
     if (!action || !materialId || !(Number(quantity) > 0)) {
-      setFormError(locale === 'en' ? 'Select a material and enter a quantity greater than 0.' : 'Selectează materialul și introdu o cantitate mai mare decât 0.');
+      setFormError(t('stocuri.error_select_material', locale));
       return;
     }
     setSaving(true); setFormError(null);
     try {
       const idempotencyKey = crypto.randomUUID();
       if (action === 'receive') {
-        if (!selectedProjectId) throw new Error(locale === 'en' ? 'Select a project before receiving stock.' : 'Selectează un proiect înainte de recepție.');
+        if (!selectedProjectId) throw new Error(t('stocuri.error_project_receive', locale));
         await apiClient.receiveStock({ projectId: selectedProjectId, materialId, quantity: Number(quantity), notes: notes.trim() || undefined, idempotencyKey });
       } else if (action === 'consume') {
-        if (!selectedProjectId) throw new Error(locale === 'en' ? 'Select a project before consuming stock.' : 'Selectează un proiect înainte de consum.');
+        if (!selectedProjectId) throw new Error(t('stocuri.error_project_consume', locale));
         await apiClient.consumeStock({ projectId: selectedProjectId, materialId, quantity: Number(quantity), notes: notes.trim() || undefined, idempotencyKey });
       } else {
         if (!selectedProjectId || !targetProjectId || targetProjectId === selectedProjectId) {
-          throw new Error(locale === 'en' ? 'Select a different target project.' : 'Selectează un proiect țintă diferit.');
+          throw new Error(t('stocuri.error_target_project', locale));
         }
         await apiClient.transferStock({ sourceProjectId: selectedProjectId, targetProjectId, materialId, quantity: Number(quantity), notes: notes.trim() || undefined });
       }
       setAction(null);
       await loadData();
     } catch (err: unknown) {
-      setFormError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : (locale === 'en' ? 'Stock operation failed.' : 'Operațiunea de stoc a eșuat.'));
+      setFormError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : t('stocuri.error_operation', locale));
     } finally { setSaving(false); }
   };
 
   const actionLabel = action === 'receive'
-    ? (locale === 'en' ? 'Receive stock' : 'Recepționează stoc')
+    ? t('stocuri.action_receive_title', locale)
     : action === 'consume'
-      ? (locale === 'en' ? 'Consume stock' : 'Consumă stoc')
-      : (locale === 'en' ? 'Transfer stock' : 'Transferă stoc');
+      ? t('stocuri.action_consume_title', locale)
+      : t('stocuri.action_transfer_title', locale);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="stock" />
       <PageHeader
         className="!mb-0"
-        eyebrow={locale === 'en' ? 'Inventory' : 'Gestiune stocuri'}
-        title={locale === 'en' ? 'Stock & Material Movements' : 'Stocuri și mișcări materiale'}
-        subtitle={locale === 'en' ? 'Current balances and the immutable movement ledger, scoped to your project access.' : 'Soldurile curente și jurnalul imutabil al mișcărilor, limitate la proiectele la care ai acces.'}
+        eyebrow={t('stocuri.eyebrow', locale)}
+        title={t('stocuri.page_title', locale)}
+        subtitle={t('stocuri.subtitle', locale)}
         actions={
           <div className="flex flex-wrap gap-2">
-            {MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId && <Button type="button" variant="primary" onClick={() => openAction('receive')} icon={<Plus className="w-4 h-4" />}>{locale === 'en' ? 'Receive' : 'Recepție'}</Button>}
-            {MUTATION_ROLES.consume.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('consume')} icon={<ArrowDownRight className="w-4 h-4" />}>{locale === 'en' ? 'Consume' : 'Consum'}</Button>}
-            {MUTATION_ROLES.transfer.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('transfer')} icon={<ArrowLeftRight className="w-4 h-4" />}>{locale === 'en' ? 'Transfer' : 'Transfer'}</Button>}
+            {MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId && <Button type="button" variant="primary" onClick={() => openAction('receive')} icon={<Plus className="w-4 h-4" />}>{t('stocuri.btn_receive', locale)}</Button>}
+            {MUTATION_ROLES.consume.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('consume')} icon={<ArrowDownRight className="w-4 h-4" />}>{t('stocuri.btn_consume', locale)}</Button>}
+            {MUTATION_ROLES.transfer.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('transfer')} icon={<ArrowLeftRight className="w-4 h-4" />}>{t('stocuri.btn_transfer', locale)}</Button>}
             <Button type="button" variant="secondary" onClick={() => void loadData()} disabled={loading} icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}>
-              {locale === 'en' ? 'Refresh' : 'Reîmprospătează'}
+              {t('general.refresh', locale)}
             </Button>
           </div>
         }
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Summary label={locale === 'en' ? 'Materials in stock' : 'Materiale cu stoc'} value={balances.length} />
-        <Summary label={locale === 'en' ? 'Critical' : 'Critice'} value={criticalCount} attention={criticalCount > 0} />
-        <Summary label={locale === 'en' ? 'Movement entries' : 'Mișcări'} value={movements.length} />
-        <Summary label={locale === 'en' ? 'Visible materials' : 'Materiale disponibile'} value={materials.length} />
+        <Summary label={t('stocuri.summary_materials_in_stock', locale)} value={balances.length} />
+        <Summary label={t('issues.summary_critical', locale)} value={criticalCount} attention={criticalCount > 0} />
+        <Summary label={t('stocuri.summary_movement_entries', locale)} value={movements.length} />
+        <Summary label={t('stocuri.summary_visible_materials', locale)} value={materials.length} />
       </div>
 
       {error ? (
         <ErrorState
-          title={locale === 'en' ? 'Could not load stock' : 'Nu s-au putut încărca stocurile'}
+          title={t('stocuri.error_load_title', locale)}
           error={error}
           onRetry={() => void loadData()}
         />
@@ -197,11 +197,11 @@ function StocuriPageInner() {
         <>
           <Card padding={false} className="overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Boxes className="w-4 h-4 text-warning" />{locale === 'en' ? 'Current stock' : 'Stoc curent'}</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Boxes className="w-4 h-4 text-warning" />{t('stocuri.current_stock', locale)}</div>
               <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder={locale === 'en' ? 'Search material…' : 'Caută material…'} className="hii-input pl-10" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('stocuri.search_placeholder', locale)} className="hii-input pl-10" />
                 </div>
               </div>
             </div>
@@ -239,7 +239,7 @@ function StocuriPageInner() {
                       const threshold = material?.min_stock_threshold;
                       const critical = typeof threshold === 'number' && qty <= threshold;
                       return <tr key={balance.id} className="hover:bg-slate-50">
-                        <td className="py-3.5 px-4 font-mono font-bold">{material?.code || '—'}</td><td className="py-3.5 px-4 font-medium">{material?.name || '—'}</td><td className="py-3.5 px-4 text-xs text-slate-500">{material?.category || '—'}</td><td className="py-3.5 px-4 font-mono text-xs text-slate-500">{material?.barcode || '—'}</td><td className="py-3.5 px-4 text-right text-xs text-slate-500">{threshold == null ? '—' : `${threshold} ${material?.unit || ''}`}</td><td className="py-3.5 px-4 text-right font-extrabold">{qty} <span className="text-xs font-normal text-slate-500">{material?.unit || ''}</span></td><td className="py-3.5 px-4 text-center">{critical ? <Badge variant="danger" size="sm"><AlertTriangle className="w-3 h-3" />{locale === 'en' ? 'Low' : 'Low'}</Badge> : <span className="text-xs text-slate-500">{threshold == null ? (locale === 'en' ? 'No threshold' : 'Fără prag') : (locale === 'en' ? 'OK' : 'OK')}</span>}</td>
+                        <td className="py-3.5 px-4 font-mono font-bold">{material?.code || '—'}</td><td className="py-3.5 px-4 font-medium">{material?.name || '—'}</td><td className="py-3.5 px-4 text-xs text-slate-500">{material?.category || '—'}</td><td className="py-3.5 px-4 font-mono text-xs text-slate-500">{material?.barcode || '—'}</td><td className="py-3.5 px-4 text-right text-xs text-slate-500">{threshold == null ? '—' : `${threshold} ${material?.unit || ''}`}</td><td className="py-3.5 px-4 text-right font-extrabold">{qty} <span className="text-xs font-normal text-slate-500">{material?.unit || ''}</span></td><td className="py-3.5 px-4 text-center">{critical ? <Badge variant="danger" size="sm"><AlertTriangle className="w-3 h-3" />{t('stocuri.low_badge', locale)}</Badge> : <span className="text-xs text-slate-500">{threshold == null ? t('stocuri.no_threshold', locale) : t('stocuri.ok', locale)}</span>}</td>
                       </tr>;
                     })}
                 </tbody>
@@ -249,9 +249,9 @@ function StocuriPageInner() {
 
           <Card padding={false} className="overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><History className="w-4 h-4 text-warning" />{locale === 'en' ? 'Immutable movement audit trail' : 'Jurnal imutabil al mișcărilor'}</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><History className="w-4 h-4 text-warning" />{t('stocuri.audit_title', locale)}</div>
               <select value={movementFilter} onChange={e => setMovementFilter(e.target.value)} className="hii-select !w-auto text-xs">
-                <option value="ALL">{locale === 'en' ? 'All movement types' : 'Toate tipurile'}</option>
+                <option value="ALL">{t('stocuri.all_movement_types', locale)}</option>
                 {Array.from(new Set(movements.map(m => m.movement_type))).map(type => <option key={type} value={type}>{type}</option>)}
               </select>
             </div>
@@ -280,7 +280,7 @@ function StocuriPageInner() {
                     movementRows.map(mv => {
                       const type = mv.movement_type.toUpperCase();
                       const positive = type === 'RECEIPT' || type === 'TRANSFER_IN' || type === 'RETURN' || (type === 'ADJUSTMENT' && Number(mv.quantity) >= 0);
-                      const label = type === 'RECEIPT' ? (locale === 'en' ? 'Receipt' : 'Recepție') : type === 'CONSUMPTION' ? (locale === 'en' ? 'Consumption' : 'Consum') : type === 'TRANSFER_OUT' ? (locale === 'en' ? 'Transfer out' : 'Transfer ieșire') : type === 'TRANSFER_IN' ? (locale === 'en' ? 'Transfer in' : 'Transfer intrare') : type;
+                      const label = type === 'RECEIPT' ? t('stocuri.movement_RECEIPT', locale) : type === 'CONSUMPTION' ? t('stocuri.movement_CONSUMPTION', locale) : type === 'TRANSFER_OUT' ? t('stocuri.movement_TRANSFER_OUT', locale) : type === 'TRANSFER_IN' ? t('stocuri.movement_TRANSFER_IN', locale) : type;
                       const badgeVariant = type === 'CONSUMPTION' ? 'info' : (type === 'TRANSFER_OUT' || type === 'TRANSFER_IN') ? 'neutral' : 'success';
                       return <tr key={mv.id} className="hover:bg-slate-50"><td className="py-3 px-4 font-mono text-slate-600">{new Date(mv.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}</td><td className="py-3 px-4"><Badge variant={badgeVariant} size="sm">{positive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}{label}</Badge></td><td className="py-3 px-4 font-medium">{mv.material?.name || materials.find(m => m.id === mv.material_id)?.name || '—'}</td><td className="py-3 px-4 text-right font-bold">{positive ? '+' : '-'}{Number(mv.quantity)} {mv.material?.unit || materials.find(m => m.id === mv.material_id)?.unit || ''}</td><td className="py-3 px-4">{mv.project?.name || '—'}</td><td className="py-3 px-4 text-slate-500">{mv.notes || '—'}</td></tr>;
                     })}
@@ -301,37 +301,37 @@ function StocuriPageInner() {
               Cancel
             </Button>
             <Button type="button" variant="primary" onClick={() => void submitAction()} loading={saving} disabled={saving}>
-              {saving ? (locale === 'en' ? 'Saving…' : 'Se salvează…') : actionLabel}
+              {saving ? t('stocuri.saving', locale) : actionLabel}
             </Button>
           </div>
         }
       >
         <p className="text-xs text-slate-500 -mt-2">
-          {locale === 'en' ? 'This operation is persisted through the inventory API and immutable ledger.' : 'Operațiunea este salvată prin API-ul de inventar și jurnalul imutabil.'}
+          {t('stocuri.operation_note', locale)}
         </p>
         <div className="space-y-4">
           <div>
-            <label className="hii-label">{locale === 'en' ? 'Material' : 'Material'}</label>
+            <label className="hii-label">{t('stocuri.field_material', locale)}</label>
             <select value={materialId} onChange={e => setMaterialId(e.target.value)} className="hii-select">
-              <option value="">{locale === 'en' ? 'Select material' : 'Selectează materialul'}</option>
+              <option value="">{t('stocuri.select_material', locale)}</option>
               {materials.map(m => <option key={m.id} value={m.id}>{m.code} — {m.name} ({m.unit})</option>)}
             </select>
           </div>
           <div>
-            <label className="hii-label">{locale === 'en' ? 'Quantity' : 'Cantitate'}</label>
+            <label className="hii-label">{t('stocuri.field_quantity', locale)}</label>
             <input type="number" min="0.0001" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} className="hii-input" />
           </div>
           {action === 'transfer' && (
             <div>
-              <label className="hii-label">{locale === 'en' ? 'Target project' : 'Proiect țintă'}</label>
+              <label className="hii-label">{t('stocuri.field_target_project', locale)}</label>
               <select value={targetProjectId} onChange={e => setTargetProjectId(e.target.value)} className="hii-select">
-                <option value="">{locale === 'en' ? 'Select target project' : 'Selectează proiectul țintă'}</option>
+                <option value="">{t('stocuri.select_target_project', locale)}</option>
                 {projects.filter(p => p.id !== selectedProjectId).map(p => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
               </select>
             </div>
           )}
           <div>
-            <label className="hii-label">{locale === 'en' ? 'Notes' : 'Observații'}</label>
+            <label className="hii-label">{t('stocuri.field_notes', locale)}</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none" />
           </div>
           {formError && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{formError}</div>}
