@@ -33,6 +33,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { seedDemo } from './seed-demo';
 
 // Load env from backend/.env (this script runs from backend/prisma/)
 const envPath = path.join(__dirname, '..', '.env');
@@ -329,7 +330,55 @@ main()
       workers.push(user);
     }
 
+    // Create role demo users (one per role) for full feature coverage
+    console.log();
+    console.log('[6/8] Creating role users...');
+    const roleUsers: Array<{ email: string; fullName: string; role: string }> = [
+      { email: 'owner@hiieko.local', fullName: 'Elena Vasilescu', role: 'OWNER' },
+      { email: 'manager@hiieko.local', fullName: 'George Ionescu', role: 'MANAGER' },
+      { email: 'pm@hiieko.local', fullName: 'Ana Dumitru', role: 'PM' },
+      { email: 'site.manager@hiieko.local', fullName: 'Mihai Radu', role: 'SITE_MANAGER' },
+      { email: 'foreman@hiieko.local', fullName: 'Vasile Pop', role: 'FOREMAN' },
+      { email: 'qa@hiieko.local', fullName: 'Cristina Dobre', role: 'QA_QC' },
+      { email: 'finance@hiieko.local', fullName: 'Dana Marin', role: 'FINANCE' },
+      { email: 'procurement@hiieko.local', fullName: 'Radu Stan', role: 'PROCUREMENT' },
+      { email: 'viewer@hiieko.local', fullName: 'Observator Demo', role: 'VIEWER' },
+    ];
+
+    const roleUsersCreated: string[] = [];
+    for (const data of roleUsers) {
+      const existing = await prisma.user.findUnique({
+        where: { email: data.email.toLowerCase() },
+      });
+      if (existing) {
+        console.log(`      Found: ${existing.email} (${existing.role})`);
+        roleUsersCreated.push(existing.email);
+        continue;
+      }
+      const passwordHash = await bcrypt.hash(DEV_SEED_PASSWORD, SALT_ROUNDS);
+      const created = await prisma.user.create({
+        data: {
+          email: data.email.toLowerCase(),
+          password_hash: passwordHash,
+          role: data.role as any,
+          is_active: true,
+          organization_id: organization.id,
+          profile: {
+            create: {
+              full_name: data.fullName,
+              language: 'ro',
+            },
+          },
+        },
+      });
+      console.log(`      Created: ${created.email} (${created.role})`);
+      roleUsersCreated.push(created.email);
+    }
+
     await seedSolarDemoCatalog();
+
+    // Full demo environment (all roles / all pages)
+    await seedDemo(prisma);
 
     console.log();
     console.log('[6/8] Creating Site Manager...');
@@ -338,6 +387,7 @@ main()
     console.log('Organization:', organization.name);
     console.log('Team Leaders:', teamLeaders.length);
     console.log('Workers:     ', workers.length);
+    console.log('Role users:  ', roleUsersCreated.length);
     console.log();
     console.log('Login: POST http://localhost:4000/api/auth/login');
     console.log(`  { \"email\": \"${DEV_SEED_EMAIL}\", \"password\": \"***\" }`);
