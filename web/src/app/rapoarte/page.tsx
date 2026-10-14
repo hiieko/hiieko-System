@@ -196,17 +196,17 @@ function RapoartePageInner() {
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder={locale === 'en' ? 'Search site, team leader, notes, tasks, materials…' : 'Caută șantier, șef de echipă, observații, task-uri, materiale…'}
+            placeholder={t('reports.search_placeholder', locale)}
             className="hii-input flex-1"
-            aria-label={locale === 'en' ? 'Search daily reports' : 'Caută rapoarte zilnice'}
+            aria-label={t('reports.search_aria', locale)}
           />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
             className="hii-select">
-            {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? (locale === 'en' ? 'All statuses' : 'Toate stările') : status}</option>)}
+            {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? t('reports.all_statuses', locale) : status}</option>)}
           </select>
           {(searchQuery || statusFilter !== 'ALL') && (
             <Button type="button" variant="secondary" size="md" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }}>
-              {locale === 'en' ? 'Clear filters' : 'Șterge filtrele'}
+              {t('projects.clear_filters', locale)}
             </Button>
           )}
         </Card>

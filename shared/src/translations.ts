@@ -1805,6 +1805,13 @@ Object.assign(d, {
   'expenses.toast_approve_failed': T('Aprobare eșuată', 'Approval failed'),
 });
 
+// i18n(issues) and i18n(rapoarte) — replace inline locale ternaries
+Object.assign(d, {
+  'reports.search_placeholder': T('Caută șantier, șef de echipă, observații, task-uri, materiale…', 'Search site, team leader, notes, tasks, materials…'),
+  'reports.search_aria': T('Caută rapoarte zilnice', 'Search daily reports'),
+  'reports.all_statuses': T('Toate stările', 'All statuses'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
