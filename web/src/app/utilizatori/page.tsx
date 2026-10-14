@@ -142,7 +142,7 @@ function UtilizatoriPageInner() {
       <PageTutorial sectionId="users" />
       <PageHeader
         title={t('users.title', locale)}
-        subtitle={locale === 'en' ? 'Manage organization users, roles, status, and permissions.' : 'Gestionează utilizatorii organizației, rolurile, statusul și permisiunile.'}
+        subtitle={t('users.page_subtitle', locale)}
         actions={
           <Button onClick={() => { void loadUsers(); void loadRoles(); }} disabled={loading || rolesLoading} variant="secondary" icon={<RefreshCw className={`w-4 h-4 ${loading || rolesLoading ? 'animate-spin' : ''}`} />}>
             {t('general.refresh', locale)}
@@ -152,7 +152,7 @@ function UtilizatoriPageInner() {
 
       {error ? (
         <ErrorState
-          title={locale === 'en' ? 'Could not load users and roles' : 'Nu s-au putut încărca utilizatorii și rolurile'}
+          title={t('users.load_error_title', locale)}
           error={error}
           onRetry={() => { void loadUsers(); void loadRoles(); }}
         />
@@ -160,8 +160,8 @@ function UtilizatoriPageInner() {
         <>
           <Tabs
             tabs={[
-              { key: 'users', label: `${locale === 'en' ? 'Users' : 'Utilizatori'} (${users.length})` },
-              { key: 'roles', label: `${locale === 'en' ? 'Roles & permissions' : 'Roluri și permisiuni'} (${roles.length})` },
+              { key: 'users', label: `${t('nav.users', locale)} (${users.length})` },
+              { key: 'roles', label: `${t('users.tab_roles', locale)} (${roles.length})` },
             ]}
             activeTab={tab}
             onTabChange={(key) => setTab(key as 'users' | 'roles')}
@@ -173,15 +173,15 @@ function UtilizatoriPageInner() {
                 <label className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input value={search} onChange={(event) => setSearch(event.target.value)}
-                    placeholder={locale === 'en' ? 'Search name or email' : 'Caută nume sau email'}
+                    placeholder={t('users.search_placeholder', locale)}
                     className="hii-input pl-9" />
                 </label>
                 <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)} className="hii-select">
-                  <option value="ALL">{locale === 'en' ? 'All roles' : 'Toate rolurile'}</option>
+                  <option value="ALL">{t('users.all_roles', locale)}</option>
                   {roles.map((role) => <option key={role.code} value={role.code}>{getRoleLabel(role.code.toLowerCase(), locale) || role.code}</option>)}
                 </select>
                 <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="hii-select">
-                  <option value="ALL">{locale === 'en' ? 'All statuses' : 'Toate statusurile'}</option>
+                  <option value="ALL">{t('users.all_statuses', locale)}</option>
                   <option value="ACTIVE">{statusLabel('ACTIVE', locale)}</option>
                   <option value="PENDING">{statusLabel('PENDING', locale)}</option>
                   <option value="SUSPENDED">{statusLabel('SUSPENDED', locale)}</option>
@@ -194,7 +194,7 @@ function UtilizatoriPageInner() {
                 <Card padding={false}>
                   <EmptyState
                     icon={<Users />}
-                    title={locale === 'en' ? 'No users found' : 'Nu există utilizatori'}
+                    title={t('users.empty_title', locale)}
                   />
                 </Card>
               ) : (
@@ -202,10 +202,10 @@ function UtilizatoriPageInner() {
                   <div className="overflow-x-auto">
                     <table className="hii-table">
                       <thead><tr>
-                        <th>{locale === 'en' ? 'User' : 'Utilizator'}</th>
-                        <th>{locale === 'en' ? 'Role' : 'Rol'}</th>
-                        <th>{locale === 'en' ? 'Status' : 'Status'}</th>
-                        <th>{locale === 'en' ? 'Projects' : 'Proiecte'}</th>
+                        <th>{t('users.col_user', locale)}</th>
+                        <th>{t('users.role', locale)}</th>
+                        <th>{t('users.col_status', locale)}</th>
+                        <th>{t('users.projects', locale)}</th>
                       </tr></thead>
                       <tbody>
                         {filteredUsers.map((item) => {
@@ -246,7 +246,7 @@ function UtilizatoriPageInner() {
                                 )}
                               </td>
                               <td className="text-xs text-slate-600">
-                                {item.project_members?.length || 0}{isSelf && <span className="ml-2 text-slate-400">({locale === 'en' ? 'you' : 'tu'})</span>}
+                                {item.project_members?.length || 0}{isSelf && <span className="ml-2 text-slate-400">({t('users.you', locale)})</span>}
                               </td>
                             </tr>
                           );
@@ -267,7 +267,7 @@ function UtilizatoriPageInner() {
                 <Card padding={false} className="lg:col-span-2">
                   <EmptyState
                     icon={<Shield />}
-                    title={locale === 'en' ? 'No roles returned by the API' : 'API-ul nu a returnat roluri'}
+                    title={t('users.no_roles', locale)}
                   />
                 </Card>
               ) : roles.map((role) => (

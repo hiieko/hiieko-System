@@ -1906,6 +1906,23 @@ Object.assign(d, {
   'notifications.marked_read': T('Notificări marcate ca citite', 'All notifications marked as read'),
 });
 
+// i18n(utilizatori) and i18n(profil) — replace inline locale ternaries
+Object.assign(d, {
+  'users.page_subtitle': T('Gestionează utilizatorii organizației, rolurile, statusul și permisiunile.', 'Manage organization users, roles, status, and permissions.'),
+  'users.load_error_title': T('Nu s-au putut încărca utilizatorii și rolurile', 'Could not load users and roles'),
+  'users.tab_roles': T('Roluri și permisiuni', 'Roles & permissions'),
+  'users.search_placeholder': T('Caută nume sau email', 'Search name or email'),
+  'users.all_roles': T('Toate rolurile', 'All roles'),
+  'users.all_statuses': T('Toate statusurile', 'All statuses'),
+  'users.empty_title': T('Nu există utilizatori', 'No users found'),
+  'users.col_user': T('Utilizator', 'User'),
+  'users.col_status': T('Status', 'Status'),
+  'users.you': T('tu', 'you'),
+  'users.no_roles': T('API-ul nu a returnat roluri', 'No roles returned by the API'),
+  'profile.load_error_title': T('Profilul nu a putut fi încărcat', 'Could not load profile'),
+  'profile.load_error_message': T('Verifică conexiunea și încearcă din nou.', 'Check your connection and try again.'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
