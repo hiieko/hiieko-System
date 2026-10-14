@@ -202,13 +202,13 @@ function CheltuieliPageInner() {
     try {
       await apiClient.approveExpense(exp.id, { status: 'APPROVED' });
       toastSuccess(
-        locale === 'ro' ? 'Cheltuială aprobată' : 'Expense approved',
+        t('expenses.toast_approved', locale),
         exp.description || undefined
       );
       await loadData();
     } catch (err) {
       toastError(
-        locale === 'ro' ? 'Aprobare eșuată' : 'Approval failed',
+        t('expenses.toast_approve_failed', locale),
         err instanceof ApiError ? err.message : err instanceof Error ? err.message : undefined
       );
     } finally {
@@ -261,53 +261,53 @@ function CheltuieliPageInner() {
       <Modal
         open={showNew}
         onClose={() => setShowNew(false)}
-        title={locale === 'ro' ? 'Cheltuiala nouă' : 'New Expense'}
+        title={t('expenses.create_title', locale)}
         size="lg"
         footer={
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
             <Button type="button" onClick={() => setShowNew(false)} variant="secondary">
-              {locale === 'ro' ? 'Anulează' : 'Cancel'}
+              {t('general.cancel', locale)}
             </Button>
             <Button type="button" disabled={!formAmount || Number(formAmount) <= 0} loading={submitting} onClick={() => void handleCreateExpense()}
               variant="primary" className="w-full sm:w-auto">
-              {submitting ? (locale === 'ro' ? 'Se trimite...' : 'Submitting...') : (locale === 'ro' ? 'Trimite spre aprobare' : 'Submit for approval')}
+              {submitting ? t('expenses.submitting', locale) : t('expenses.submit_for_approval', locale)}
             </Button>
           </div>
         }
       >
-        <p className="text-xs text-slate-500 mb-4">{locale === 'ro' ? 'Completeaza detaliile și trimite spre aprobare.' : 'Fill in the details and submit for approval.'}</p>
+        <p className="text-xs text-slate-500 mb-4">{t('expenses.form_hint', locale)}</p>
         <div className="space-y-4">
           {!user && <p className="rounded-lg bg-warning-soft p-3 text-sm text-warning-foreground">Trebuie să te autentifici pentru a trimite o cheltuială. <Link href="/login" className="font-semibold underline">Mergi la autentificare</Link></p>}
           {/* --- OCR Upload Section --- */}
           <Card className="p-4 bg-slate-50" padding={false}>
-            <p className="text-xs font-semibold text-slate-600 mb-2">{locale === 'ro' ? 'Scanare document (opțională)' : 'Document scan (optional)'}</p>
+            <p className="text-xs font-semibold text-slate-600 mb-2">{t('expenses.scan_optional', locale)}</p>
             <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-warning-soft bg-warning-soft/50 px-4 text-center hover:bg-warning-soft">
               <Upload className="mb-2 h-6 w-6 text-warning" />
-              <span className="text-sm font-semibold text-slate-800">{receipt ? receipt.name : (locale === 'ro' ? 'Încarcă bonul fiscal sau factura' : 'Upload receipt or invoice')}</span>
+              <span className="text-sm font-semibold text-slate-800">{receipt ? receipt.name : t('expenses.upload_cta', locale)}</span>
               <span className="mt-1 text-xs text-slate-500">JPG, PNG, WEBP sau PDF</span>
               <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" className="sr-only"
                 onChange={e => setReceipt(e.target.files?.[0] || null)} />
             </label>
-            {receipt && !ocrResult && <p className="text-xs text-success-foreground mt-2">{locale === 'ro' ? 'Document selectat. Apasă "Procesează documentul" pentru OCR.' : 'Document selected. Press \"Process document\" for OCR.'}</p>}
+            {receipt && !ocrResult && <p className="text-xs text-success-foreground mt-2">{t('expenses.document_selected', locale)}</p>}
             {receipt && (
               <Button type="button" disabled={processing} onClick={() => void processReceipt()} variant="primary" fullWidth className="mt-2">
-                {processing ? (locale === 'ro' ? 'Se procesează...' : 'Processing...') : (locale === 'ro' ? 'Procesează documentul' : 'Process document')}
+                {processing ? t('expenses.processing', locale) : t('expenses.process_document', locale)}
               </Button>
             )}
             {scanError && <p className="text-sm text-critical-foreground mt-2">{scanError}</p>}
             {ocrResult && (
               <Card className="p-3 bg-success-soft border-success-soft mt-2" padding={false}>
-                <p className="font-semibold text-success-foreground text-xs">{locale === 'ro' ? 'Date extrase — verifică înainte de trimitere' : 'Extracted data — verify before submitting'}</p>
+                <p className="font-semibold text-success-foreground text-xs">{t('expenses.extracted_title', locale)}</p>
                 <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-700">
                   {([
-                    [locale === 'ro' ? 'Furnizor' : 'Merchant', ocrResult.merchant_name],
+                    [t('expenses.field_merchant', locale), ocrResult.merchant_name],
                     ['CUI', ocrResult.merchant_cui],
-                    [locale === 'ro' ? 'Nr. document' : 'Doc. no.', ocrResult.document_number],
-                    [locale === 'ro' ? 'Data' : 'Date', ocrResult.document_date],
-                    [locale === 'ro' ? 'Subtotal' : 'Subtotal', ocrResult.subtotal],
+                    [t('expenses.field_doc_number', locale), ocrResult.document_number],
+                    [t('expenses.field_date', locale), ocrResult.document_date],
+                    [t('expenses.field_subtotal', locale), ocrResult.subtotal],
                     ['TVA', ocrResult.vat],
-                    [locale === 'ro' ? 'Total' : 'Total', ocrResult.total],
-                    [locale === 'ro' ? 'Moneda' : 'Currency', ocrResult.currency],
+                    [t('expenses.field_total', locale), ocrResult.total],
+                    [t('expenses.field_currency', locale), ocrResult.currency],
                   ] as Array<[string, string | number | undefined]>).map(([label, value]) => value !== undefined && (
                     <div key={label}><dt className="font-medium text-slate-500">{label}</dt><dd className="font-semibold">{String(value)}</dd></div>
                   ))}
@@ -318,7 +318,7 @@ function CheltuieliPageInner() {
           {/* --- Expense Form Fields --- */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="hii-label">{locale === 'ro' ? 'Categorie' : 'Category'}</label>
+              <label className="hii-label">{t('expenses.category', locale)}</label>
               <select value={formCategory} onChange={e => setFormCategory(e.target.value)} className="hii-select">
                 {['FUEL','ACCOMMODATION','FOOD','TRANSPORT','PARKING','TOLLS','MATERIALS','TOOLS','EQUIPMENT','OTHER'].map(c => (
                   <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</option>
@@ -326,21 +326,21 @@ function CheltuieliPageInner() {
               </select>
             </div>
             <div>
-              <label className="hii-label">{locale === 'ro' ? 'Metoda plata' : 'Payment'}</label>
+              <label className="hii-label">{t('expenses.field_payment_method', locale)}</label>
               <select value={formPaymentMethod} onChange={e => setFormPaymentMethod(e.target.value)} className="hii-select">
-                <option value="COMPANY_CARD">{locale === 'ro' ? 'Card companie' : 'Company card'}</option>
-                <option value="PERSONAL">{locale === 'ro' ? 'Personal' : 'Personal'}</option>
-                <option value="COMPANY_CASH">{locale === 'ro' ? 'Cash avans' : 'Company cash'}</option>
-                <option value="OTHER">{locale === 'ro' ? 'Alta' : 'Other'}</option>
+                <option value="COMPANY_CARD">{t('expenses.payment_company_card', locale)}</option>
+                <option value="PERSONAL">{t('expenses.payment_personal', locale)}</option>
+                <option value="COMPANY_CASH">{t('expenses.payment_company_cash', locale)}</option>
+                <option value="OTHER">{t('expenses.payment_other', locale)}</option>
               </select>
             </div>
             <div>
-              <label className="hii-label">{locale === 'ro' ? 'Suma' : 'Amount'}</label>
+              <label className="hii-label">{t('expenses.amount', locale)}</label>
               <input type="number" step="0.01" min="0" value={formAmount} onChange={e => setFormAmount(e.target.value)}
                 className="hii-input" placeholder="0.00" />
             </div>
             <div>
-              <label className="hii-label">{locale === 'ro' ? 'Moneda' : 'Currency'}</label>
+              <label className="hii-label">{t('expenses.field_currency', locale)}</label>
               <select value={formCurrency} onChange={e => setFormCurrency(e.target.value)} className="hii-select">
                 <option value="RON">RON</option>
                 <option value="EUR">EUR</option>
@@ -348,20 +348,20 @@ function CheltuieliPageInner() {
               </select>
             </div>
             <div>
-              <label className="hii-label">{locale === 'ro' ? 'Data' : 'Date'}</label>
+              <label className="hii-label">{t('expenses.field_date', locale)}</label>
               <input type="date" value={formExpenseDate} onChange={e => setFormExpenseDate(e.target.value)} className="hii-input" />
             </div>
             <div>
-              <label className="hii-label">{locale === 'ro' ? 'Furnizor' : 'Merchant'}</label>
+              <label className="hii-label">{t('expenses.field_merchant', locale)}</label>
               <input type="text" value={formMerchantName} onChange={e => setFormMerchantName(e.target.value)}
-                className="hii-input" placeholder={locale === 'ro' ? 'Nume furnizor' : 'Merchant name'} />
+                className="hii-input" placeholder={t('expenses.field_merchant_placeholder', locale)} />
             </div>
           </div>
           <div>
-            <label className="hii-label">{locale === 'ro' ? 'Descriere' : 'Description'}</label>
+            <label className="hii-label">{t('expenses.field_description', locale)}</label>
             <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={2}
               className="hii-input h-auto py-2 resize-none"
-              placeholder={locale === 'ro' ? 'Descrie cheltuiala...' : 'Describe the expense...'} />
+              placeholder={t('expenses.field_description_placeholder', locale)} />
           </div>
           {submitError && <p className="text-sm text-critical-foreground">{submitError}</p>}
         </div>
@@ -373,12 +373,12 @@ function CheltuieliPageInner() {
             className="hii-input pl-10" />
         </div>
         <Button onClick={() => setFilterOpen(true)} aria-haspopup="dialog" variant="secondary" className="sm:hidden" icon={<SlidersHorizontal className="w-4 h-4" />}>
-          {locale === 'ro' ? 'Filtre' : 'Filters'}
+          {t('expenses.filters', locale)}
         </Button>
         <div className="hidden sm:flex flex-wrap gap-2">
           {['all','submitted','approved','rejected','reimbursed'].map(s => (
             <Button key={s} onClick={() => setFilter(s)} size="sm" variant={filter === s ? 'primary' : 'secondary'}>
-              {s === 'all' ? (locale === 'ro' ? 'Toate' : 'All') : t('status.' + s, locale)}
+              {s === 'all' ? t('expenses.all', locale) : t('status.' + s, locale)}
             </Button>
           ))}
         </div>
@@ -386,9 +386,9 @@ function CheltuieliPageInner() {
 
       {filterOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:hidden">
-          <div role="dialog" aria-modal="true" aria-label={locale === 'ro' ? 'Filtre' : 'Filters'} className="w-full max-h-[70vh] rounded-t-2xl bg-white shadow-xl overflow-y-auto">
+          <div role="dialog" aria-modal="true" aria-label={t('expenses.filters', locale)} className="w-full max-h-[70vh] rounded-t-2xl bg-white shadow-xl overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 p-4">
-              <span className="text-lg font-bold text-slate-900">{locale === 'ro' ? 'Filtre' : 'Filters'}</span>
+              <span className="text-lg font-bold text-slate-900">{t('expenses.filters', locale)}</span>
               <Button type="button" onClick={() => setFilterOpen(false)} aria-label="Închide" variant="ghost" size="icon"><X className="w-5 h-5" /></Button>
             </div>
             <div className="space-y-2 p-4">
@@ -396,7 +396,7 @@ function CheltuieliPageInner() {
                 <Button key={s} onClick={() => { setFilter(s); setFilterOpen(false); }} fullWidth
                   variant={filter === s ? 'primary' : 'secondary'} className="justify-between font-semibold"
                   icon={filter === s ? <Check className="w-4 h-4 text-success" aria-hidden="true" /> : undefined} iconPosition="right">
-                  <span>{s === 'all' ? (locale === 'ro' ? 'Toate' : 'All') : t('status.' + s, locale)}</span>
+                  <span>{s === 'all' ? t('expenses.all', locale) : t('status.' + s, locale)}</span>
                 </Button>
               ))}
             </div>
@@ -422,7 +422,7 @@ function CheltuieliPageInner() {
                 <th>Data</th><th>Categorie</th>
                 <th>Descriere</th><th className="text-right">Suma</th>
                 <th>Plata</th><th className="text-center">Stare</th>
-                {canApprove && <th className="text-center">{locale === 'ro' ? 'Acțiuni' : 'Actions'}</th>}
+                {canApprove && <th className="text-center">{t('expenses.actions', locale)}</th>}
               </tr></thead>
               <tbody>
                 {filtered.map(exp => (
@@ -437,7 +437,7 @@ function CheltuieliPageInner() {
                       <td className="text-center">
                         {isPendingExpense(exp.status) ? (
                           <Button size="sm" variant="primary" loading={approvingId === exp.id} disabled={!!approvingId} onClick={() => void handleApprove(exp)} icon={<Check className="w-3.5 h-3.5" />}>
-                            {locale === 'ro' ? 'Aprobă' : 'Approve'}
+                            {t('expenses.approve_button', locale)}
                           </Button>
                         ) : (
                           <span className="text-slate-300" aria-hidden="true">—</span>
@@ -465,7 +465,7 @@ function CheltuieliPageInner() {
               </div>
               {canApprove && isPendingExpense(exp.status) && (
                 <Button size="sm" variant="primary" fullWidth loading={approvingId === exp.id} disabled={!!approvingId} onClick={() => void handleApprove(exp)} icon={<Check className="w-3.5 h-3.5" />}>
-                  {locale === 'ro' ? 'Aprobă cheltuiala' : 'Approve expense'}
+                  {t('expenses.approve_expense', locale)}
                 </Button>
               )}
             </Card>

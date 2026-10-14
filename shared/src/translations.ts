@@ -1770,6 +1770,41 @@ Object.assign(d, {
   'sidebar.navigation': T('Navigare principală', 'Main navigation'),
 });
 
+// i18n(cheltuieli) — replace inline locale ternaries in /cheltuieli
+Object.assign(d, {
+  'expenses.create_title': T('Cheltuială nouă', 'New Expense'),
+  'expenses.submit_for_approval': T('Trimite spre aprobare', 'Submit for approval'),
+  'expenses.submitting': T('Se trimite...', 'Submitting...'),
+  'expenses.form_hint': T('Completează detaliile și trimite spre aprobare.', 'Fill in the details and submit for approval.'),
+  'expenses.scan_optional': T('Scanare document (opțională)', 'Document scan (optional)'),
+  'expenses.upload_cta': T('Încarcă bonul fiscal sau factura', 'Upload receipt or invoice'),
+  'expenses.document_selected': T('Document selectat. Apasă „Procesează documentul” pentru OCR.', 'Document selected. Press "Process document" for OCR.'),
+  'expenses.process_document': T('Procesează documentul', 'Process document'),
+  'expenses.processing': T('Se procesează...', 'Processing...'),
+  'expenses.extracted_title': T('Date extrase — verifică înainte de trimitere', 'Extracted data — verify before submitting'),
+  'expenses.field_merchant': T('Furnizor', 'Merchant'),
+  'expenses.field_doc_number': T('Nr. document', 'Doc. no.'),
+  'expenses.field_date': T('Data', 'Date'),
+  'expenses.field_subtotal': T('Subtotal', 'Subtotal'),
+  'expenses.field_total': T('Total', 'Total'),
+  'expenses.field_currency': T('Moneda', 'Currency'),
+  'expenses.field_payment_method': T('Metoda plata', 'Payment'),
+  'expenses.field_amount': T('Suma', 'Amount'),
+  'expenses.field_description': T('Descriere', 'Description'),
+  'expenses.field_description_placeholder': T('Descrie cheltuiala...', 'Describe the expense...'),
+  'expenses.field_merchant_placeholder': T('Nume furnizor', 'Merchant name'),
+  'expenses.payment_company_card': T('Card companie', 'Company card'),
+  'expenses.payment_personal': T('Personal', 'Personal'),
+  'expenses.payment_company_cash': T('Cash avans', 'Company cash'),
+  'expenses.payment_other': T('Alta', 'Other'),
+  'expenses.filters': T('Filtre', 'Filters'),
+  'expenses.actions': T('Acțiuni', 'Actions'),
+  'expenses.approve_button': T('Aprobă', 'Approve'),
+  'expenses.approve_expense': T('Aprobă cheltuiala', 'Approve expense'),
+  'expenses.toast_approved': T('Cheltuială aprobată', 'Expense approved'),
+  'expenses.toast_approve_failed': T('Aprobare eșuată', 'Approval failed'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
