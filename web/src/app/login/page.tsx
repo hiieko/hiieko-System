@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff } from 'lucide-react';
-import { Button, Input, ToastProvider, useToast } from '../../components/ui';
+import { Copy, Eye, EyeOff } from 'lucide-react';
+import { Button, Input, Skeleton, ToastProvider, useToast } from '../../components/ui';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useAuth, SIGNED_OUT_FLASH_KEY } from '../../contexts/AuthContext';
 
@@ -12,6 +12,89 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
 const SIGNUP_EMAIL_KEY = 'hiieko_signup_email';
 const PASSWORD_RESET_FLASH_KEY = 'hiieko_password_reset_flash';
+
+/**
+ * Demo credential quick-fill.
+ *
+ * Gated behind NEXT_PUBLIC_DEMO_MODE — when it is not exactly 'true' the section never
+ * mounts. The passwords live only here (never fetched from the API, never logged) and are
+ * keyed by email. The seed uses three passwords: the standard demo password for
+ * office/role accounts, a team-leader password, and a worker password. An account returned
+ * by the endpoint that is missing from this map is skipped, so we never render a button
+ * that cannot log in.
+ */
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+const DEMO_ACCOUNTS_ENDPOINT = '/api/demo/accounts';
+
+const DEMO_PASSWORD_BY_EMAIL: Record<string, string> = {
+  'dev@hiieko.local': 'DevPassword123!',
+  'owner@hiieko.local': 'DevPassword123!',
+  'manager@hiieko.local': 'DevPassword123!',
+  'pm@hiieko.local': 'DevPassword123!',
+  'site.manager@hiieko.local': 'DevPassword123!',
+  'foreman@hiieko.local': 'DevPassword123!',
+  'qa@hiieko.local': 'DevPassword123!',
+  'finance@hiieko.local': 'DevPassword123!',
+  'procurement@hiieko.local': 'DevPassword123!',
+  'viewer@hiieko.local': 'DevPassword123!',
+  'ion.munteanu@hiieko.local': 'TeamLeader123!',
+  'costin.dumitrescu@hiieko.local': 'Worker123!',
+};
+
+const DEMO_LABEL_BY_EMAIL: Record<string, string> = {
+  'dev@hiieko.local': 'Admin',
+  'owner@hiieko.local': 'Owner',
+  'manager@hiieko.local': 'Manager',
+  'pm@hiieko.local': 'Project Manager',
+  'site.manager@hiieko.local': 'Site Manager',
+  'foreman@hiieko.local': 'Foreman',
+  'qa@hiieko.local': 'QA/QC',
+  'finance@hiieko.local': 'Finance',
+  'procurement@hiieko.local': 'Procurement',
+  'viewer@hiieko.local': 'Viewer',
+  'ion.munteanu@hiieko.local': 'Team Leader',
+  'costin.dumitrescu@hiieko.local': 'Worker',
+};
+
+interface DemoAccountResponse {
+  role: string;
+  label: string;
+  email: string;
+  hasData: boolean;
+}
+
+interface DemoAccountEntry {
+  email: string;
+  label: string;
+  password: string;
+}
+
+/** Copies text to the clipboard, falling back to the legacy execCommand path. */
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Clipboard API unavailable/denied — fall through to the legacy path.
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 function BrandPanel() {
   return (
@@ -31,6 +114,124 @@ function BrandPanel() {
         </p>
       </div>
       <p className="text-xs text-white/60">hiieko.app</p>
+    </div>
+  );
+}
+
+function DemoAccounts({
+  onFill,
+}: {
+  onFill: (email: string, password: string) => void;
+}) {
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<DemoAccountEntry[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await apiClient.get<DemoAccountResponse[]>(DEMO_ACCOUNTS_ENDPOINT);
+        if (cancelled) return;
+        const rows = Array.isArray(response.data) ? response.data : [];
+        const visible = rows
+          .filter((row) => row?.hasData !== false)
+          .map((row) => {
+            const email = (row.email || '').toLowerCase();
+            const password = DEMO_PASSWORD_BY_EMAIL[email];
+            const label = DEMO_LABEL_BY_EMAIL[email];
+            if (!password || !label) return null;
+            return { email, label, password };
+          })
+          .filter((entry): entry is DemoAccountEntry => entry !== null);
+        setAccounts(visible);
+      } catch {
+        // Silent fallback: the login form keeps working without the demo section.
+        if (!cancelled) setAccounts([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!loading && accounts.length === 0) {
+    return null;
+  }
+
+  const copyOne = async (entry: DemoAccountEntry) => {
+    const ok = await copyToClipboard(`${entry.email} / ${entry.password}`);
+    if (ok) toast.success(`Copied ${entry.label} credentials`);
+    else toast.error('Could not copy');
+  };
+
+  const copyAll = async () => {
+    const text = accounts
+      .map((entry) => `${entry.label} — ${entry.email} / ${entry.password}`)
+      .join('\n');
+    const ok = await copyToClipboard(text);
+    if (ok) toast.success('Copied all demo credentials');
+    else toast.error('Could not copy');
+  };
+
+  return (
+    <div className="mt-6 border-t border-slate-200 pt-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Demo accounts
+      </p>
+
+      {loading ? (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" height={30} />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {accounts.map((entry) => (
+            <div key={entry.email} className="flex items-stretch gap-1">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="min-w-0 flex-1 justify-start"
+                onClick={() => onFill(entry.email, entry.password)}
+              >
+                <span className="truncate">{entry.label}</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-[30px] w-[30px]"
+                aria-label={`Copy ${entry.label} credentials`}
+                title="Copy email / password"
+                onClick={() => copyOne(entry)}
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          fullWidth
+          className="mt-2"
+          icon={<Copy className="h-3.5 w-3.5" />}
+          onClick={copyAll}
+        >
+          Copy all
+        </Button>
+      )}
     </div>
   );
 }
@@ -108,6 +309,12 @@ function LoginForm() {
     }
   };
 
+  const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setErrors({});
+  };
+
   return (
     <div className="w-full">
       <div className="mb-6 text-center lg:hidden">
@@ -175,6 +382,8 @@ function LoginForm() {
             Sign up
           </Link>
         </p>
+
+        {DEMO_MODE && <DemoAccounts onFill={fillDemoCredentials} />}
       </div>
     </div>
   );
