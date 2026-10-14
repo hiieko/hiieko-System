@@ -36,6 +36,7 @@ import { CostsModule } from './modules/costs/costs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ControlTowerModule } from './modules/control-tower/control-tower.module';
 import { SolarModule } from './modules/solar/solar.module';
+import { DemoModule } from './modules/demo/demo.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { SolarModule } from './modules/solar/solar.module';
     NotificationsModule,
     ControlTowerModule,
     SolarModule,
+    DemoModule,
   ],
   controllers: [AuditController],
 })
