@@ -39,11 +39,9 @@ export class ProcurementService {
     private readonly auditService: AuditService,
   ) {}
 
-  async findAllPurchaseOrders(projectId?: string, projectScopeWhere?: Record<string, any>) {
-    const where: any = { ...projectScopeWhere };
-    if (projectId) where.project_id = projectId;
+  async findAllPurchaseOrders(organizationId: string) {
     return this.prisma.purchaseOrder.findMany({
-      where,
+      where: { supplier: { organization_id: organizationId } },
       include: {
         supplier: true,
         items: { include: { material: true } },

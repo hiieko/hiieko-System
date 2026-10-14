@@ -25,13 +25,9 @@ export class ProcurementController {
 
   @Get('purchase-orders')
   @RequireProjectAccess('projectId', 'optional')
-  @ApiOperation({ summary: 'List purchase orders (project-scoped)' })
-  async getPurchaseOrders(
-    @ProjectScope() scope: ProjectScopeType,
-    @Query('projectId') projectId?: string,
-  ) {
-    const where = buildScopedProjectWhere(scope, projectId);
-    return this.procurementService.findAllPurchaseOrders(projectId, where);
+  @ApiOperation({ summary: 'List purchase orders (organization-scoped)' })
+  async getPurchaseOrders(@CurrentUser() user: AuthenticatedUser) {
+    return this.procurementService.findAllPurchaseOrders(user.organizationId);
   }
 
   @Post('purchase-orders')
