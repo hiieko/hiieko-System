@@ -281,7 +281,7 @@ function IssuesPageInner() {
                       className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-hii-600 hover:bg-hii-50 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-offset-1"
                     >
                       <Camera className="w-3.5 h-3.5" />
-                      {locale === 'en' ? 'Photos' : 'Fotografii'}
+                      {t('reports.photos', locale)}
                     </button>
                     {expandedId === issue.id && (
                       <div className="mt-3">
