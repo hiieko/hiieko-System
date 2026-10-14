@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-14T13:14:16.230Z",
+    "generatedAt": "2026-10-14T21:16:17.476Z",
     "baseUrl": "http://127.0.0.1:4000",
     "nodeVersion": "v22.23.3",
     "endpointCount": 25,
@@ -10,7 +10,7 @@
   "health": {
     "live": {
       "status": 200,
-      "ms": 43,
+      "ms": 45,
       "body": {
         "status": "ok",
         "service": "hiieko-api"
@@ -18,7 +18,7 @@
     },
     "ready": {
       "status": 200,
-      "ms": 41,
+      "ms": 43,
       "body": {
         "status": "ready",
         "service": "hiieko-api",
@@ -139,126 +139,126 @@
   "login": {
     "dev": {
       "status": 200,
-      "ms": 402,
+      "ms": 543,
       "role": "ADMIN",
       "ok": true,
       "error": null
     },
     "owner": {
       "status": 200,
-      "ms": 62,
+      "ms": 85,
       "role": "OWNER",
       "ok": true,
       "error": null
     },
     "manager": {
       "status": 200,
-      "ms": 62,
+      "ms": 85,
       "role": "MANAGER",
       "ok": true,
       "error": null
     },
     "pm": {
       "status": 200,
-      "ms": 62,
+      "ms": 85,
       "role": "PM",
       "ok": true,
       "error": null
     },
     "site_manager": {
       "status": 200,
-      "ms": 61,
+      "ms": 82,
       "role": "SITE_MANAGER",
       "ok": true,
       "error": null
     },
     "foreman": {
       "status": 200,
-      "ms": 64,
+      "ms": 87,
       "role": "FOREMAN",
       "ok": true,
       "error": null
     },
     "qa": {
       "status": 200,
-      "ms": 61,
+      "ms": 92,
       "role": "QA_QC",
       "ok": true,
       "error": null
     },
     "finance": {
       "status": 200,
-      "ms": 63,
+      "ms": 83,
       "role": "FINANCE",
       "ok": true,
       "error": null
     },
     "procurement": {
       "status": 200,
-      "ms": 63,
+      "ms": 93,
       "role": "PROCUREMENT",
       "ok": true,
       "error": null
     },
     "viewer": {
       "status": 200,
-      "ms": 64,
+      "ms": 86,
       "role": "VIEWER",
       "ok": true,
       "error": null
     },
     "tl_ion": {
       "status": 200,
-      "ms": 65,
+      "ms": 81,
       "role": "TEAM_LEADER",
       "ok": true,
       "error": null
     },
     "tl_maria": {
       "status": 200,
-      "ms": 61,
+      "ms": 84,
       "role": "TEAM_LEADER",
       "ok": true,
       "error": null
     },
     "tl_andrei": {
       "status": 200,
-      "ms": 60,
+      "ms": 89,
       "role": "TEAM_LEADER",
       "ok": true,
       "error": null
     },
     "w_costin": {
       "status": 200,
-      "ms": 58,
+      "ms": 90,
       "role": "WORKER",
       "ok": true,
       "error": null
     },
     "w_ramona": {
       "status": 200,
-      "ms": 58,
+      "ms": 80,
       "role": "WORKER",
       "ok": true,
       "error": null
     },
     "w_daniel": {
       "status": 200,
-      "ms": 62,
+      "ms": 82,
       "role": "WORKER",
       "ok": true,
       "error": null
     },
     "w_ioana": {
       "status": 200,
-      "ms": 58,
+      "ms": 81,
       "role": "WORKER",
       "ok": true,
       "error": null
     },
     "w_alexandru": {
       "status": 200,
-      "ms": 61,
+      "ms": 83,
       "role": "WORKER",
       "ok": true,
       "error": null
@@ -395,7 +395,7 @@
     "/api/auth/me": {
       "dev": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -416,7 +416,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 6,
+        "ms": 44,
         "topKeys": [
           "statusCode",
           "data"
@@ -437,7 +437,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -458,7 +458,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 3,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -479,7 +479,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -500,7 +500,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -521,7 +521,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -542,7 +542,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -563,7 +563,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -584,7 +584,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -605,7 +605,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -626,7 +626,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -647,7 +647,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 3,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -668,7 +668,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 3,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -689,7 +689,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -710,7 +710,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 3,
+        "ms": 5,
         "topKeys": [
           "statusCode",
           "data"
@@ -731,7 +731,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -752,7 +752,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -775,7 +775,7 @@
     "/api/projects": {
       "dev": {
         "status": 200,
-        "ms": 26,
+        "ms": 40,
         "topKeys": [
           "statusCode",
           "data"
@@ -788,7 +788,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 7,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -801,7 +801,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 8,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -814,7 +814,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 6,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -827,7 +827,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 7,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -840,7 +840,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -853,7 +853,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -866,7 +866,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -879,7 +879,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -892,7 +892,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -905,7 +905,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 8,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -918,7 +918,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -931,7 +931,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 7,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -944,7 +944,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 5,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -957,7 +957,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 6,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -970,7 +970,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 9,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -983,7 +983,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 6,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -996,7 +996,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -1011,7 +1011,7 @@
     "/api/teams": {
       "dev": {
         "status": 200,
-        "ms": 13,
+        "ms": 24,
         "topKeys": [
           "statusCode",
           "data"
@@ -1024,7 +1024,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1037,7 +1037,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -1050,7 +1050,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 7,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -1063,7 +1063,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 6,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -1076,7 +1076,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -1089,7 +1089,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -1102,7 +1102,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -1115,7 +1115,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 6,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -1128,7 +1128,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -1141,7 +1141,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -1154,7 +1154,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 7,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -1167,7 +1167,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -1180,7 +1180,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 5,
+        "ms": 15,
         "topKeys": [
           "statusCode",
           "data"
@@ -1193,7 +1193,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 6,
+        "ms": 23,
         "topKeys": [
           "statusCode",
           "data"
@@ -1206,7 +1206,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 4,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -1219,7 +1219,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1232,7 +1232,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -1247,7 +1247,7 @@
     "/api/employees": {
       "dev": {
         "status": 200,
-        "ms": 9,
+        "ms": 14,
         "topKeys": [
           "statusCode",
           "data"
@@ -1260,7 +1260,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -1273,7 +1273,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -1286,7 +1286,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 4,
+        "ms": 5,
         "topKeys": [
           "statusCode",
           "data"
@@ -1299,7 +1299,7 @@
       },
       "site_manager": {
         "status": 403,
-        "ms": 4,
+        "ms": 5,
         "topKeys": [
           "success",
           "statusCode",
@@ -1313,11 +1313,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: SITE_MANAGER\",\"timestamp\":\"2026-10-14T13:14:13.464"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: SITE_MANAGER\",\"timestamp\":\"2026-10-14T21:16:12.494"
       },
       "foreman": {
         "status": 403,
-        "ms": 3,
+        "ms": 5,
         "topKeys": [
           "success",
           "statusCode",
@@ -1331,11 +1331,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: FOREMAN\",\"timestamp\":\"2026-10-14T13:14:13.468Z\",\"p"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: FOREMAN\",\"timestamp\":\"2026-10-14T21:16:12.500Z\",\"p"
       },
       "qa": {
         "status": 403,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -1349,11 +1349,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: QA_QC\",\"timestamp\":\"2026-10-14T13:14:13.472Z\",\"pat"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: QA_QC\",\"timestamp\":\"2026-10-14T21:16:12.507Z\",\"pat"
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -1366,7 +1366,7 @@
       },
       "procurement": {
         "status": 403,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -1380,11 +1380,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: PROCUREMENT\",\"timestamp\":\"2026-10-14T13:14:13.479Z"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: PROCUREMENT\",\"timestamp\":\"2026-10-14T21:16:12.519Z"
       },
       "viewer": {
         "status": 403,
-        "ms": 3,
+        "ms": 5,
         "topKeys": [
           "success",
           "statusCode",
@@ -1398,11 +1398,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: VIEWER\",\"timestamp\":\"2026-10-14T13:14:13.482Z\",\"pa"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: VIEWER\",\"timestamp\":\"2026-10-14T21:16:12.524Z\",\"pa"
       },
       "tl_ion": {
         "status": 403,
-        "ms": 3,
+        "ms": 10,
         "topKeys": [
           "success",
           "statusCode",
@@ -1416,11 +1416,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: TEAM_LEADER\",\"timestamp\":\"2026-10-14T13:14:13.486Z"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: TEAM_LEADER\",\"timestamp\":\"2026-10-14T21:16:12.533Z"
       },
       "tl_maria": {
         "status": 403,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "success",
           "statusCode",
@@ -1434,11 +1434,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: TEAM_LEADER\",\"timestamp\":\"2026-10-14T13:14:13.489Z"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: TEAM_LEADER\",\"timestamp\":\"2026-10-14T21:16:12.544Z"
       },
       "tl_andrei": {
         "status": 403,
-        "ms": 3,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -1452,11 +1452,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: TEAM_LEADER\",\"timestamp\":\"2026-10-14T13:14:13.492Z"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: TEAM_LEADER\",\"timestamp\":\"2026-10-14T21:16:12.551Z"
       },
       "w_costin": {
         "status": 403,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -1470,11 +1470,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T13:14:13.495Z\",\"pa"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T21:16:12.557Z\",\"pa"
       },
       "w_ramona": {
         "status": 403,
-        "ms": 2,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -1488,11 +1488,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T13:14:13.498Z\",\"pa"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T21:16:12.563Z\",\"pa"
       },
       "w_daniel": {
         "status": 403,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "success",
           "statusCode",
@@ -1506,11 +1506,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T13:14:13.501Z\",\"pa"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T21:16:12.571Z\",\"pa"
       },
       "w_ioana": {
         "status": 403,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "success",
           "statusCode",
@@ -1524,11 +1524,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T13:14:13.505Z\",\"pa"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T21:16:12.579Z\",\"pa"
       },
       "w_alexandru": {
         "status": 403,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "success",
           "statusCode",
@@ -1542,13 +1542,13 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T13:14:13.510Z\",\"pa"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, MANAGER, PM, FINANCE], current role: WORKER\",\"timestamp\":\"2026-10-14T21:16:12.587Z\",\"pa"
       }
     },
     "/api/expenses": {
       "dev": {
         "status": 200,
-        "ms": 20,
+        "ms": 40,
         "topKeys": [
           "statusCode",
           "data"
@@ -1561,7 +1561,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 7,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -1574,7 +1574,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 7,
+        "ms": 21,
         "topKeys": [
           "statusCode",
           "data"
@@ -1587,7 +1587,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1600,7 +1600,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 9,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -1613,7 +1613,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 6,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -1626,7 +1626,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -1639,7 +1639,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 6,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -1652,7 +1652,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -1665,7 +1665,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -1678,7 +1678,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 6,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -1691,7 +1691,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1704,7 +1704,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1717,7 +1717,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1730,7 +1730,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -1743,7 +1743,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1756,7 +1756,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1769,7 +1769,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 5,
+        "ms": 23,
         "topKeys": [
           "statusCode",
           "data"
@@ -1784,7 +1784,7 @@
     "/api/notifications": {
       "dev": {
         "status": 200,
-        "ms": 49,
+        "ms": 189,
         "topKeys": [
           "statusCode",
           "data"
@@ -1802,7 +1802,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 18,
+        "ms": 30,
         "topKeys": [
           "statusCode",
           "data"
@@ -1820,7 +1820,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -1838,7 +1838,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -1856,7 +1856,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -1874,7 +1874,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1892,7 +1892,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1910,7 +1910,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -1928,7 +1928,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -1946,7 +1946,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 7,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -1964,7 +1964,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -1982,7 +1982,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2000,7 +2000,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 6,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -2018,7 +2018,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2036,7 +2036,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2054,7 +2054,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2072,7 +2072,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2090,7 +2090,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 4,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2110,7 +2110,7 @@
     "/api/documents": {
       "dev": {
         "status": 200,
-        "ms": 13,
+        "ms": 29,
         "topKeys": [
           "statusCode",
           "data"
@@ -2123,7 +2123,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2136,7 +2136,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2149,7 +2149,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2162,7 +2162,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -2175,7 +2175,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 7,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2188,7 +2188,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -2201,7 +2201,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -2214,7 +2214,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2227,7 +2227,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2240,7 +2240,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2253,7 +2253,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 4,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2266,7 +2266,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 6,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -2279,7 +2279,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2292,7 +2292,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -2305,7 +2305,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2318,7 +2318,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2331,7 +2331,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2346,7 +2346,7 @@
     "/api/users": {
       "dev": {
         "status": 200,
-        "ms": 8,
+        "ms": 15,
         "topKeys": [
           "statusCode",
           "data"
@@ -2359,7 +2359,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2372,7 +2372,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2385,7 +2385,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 5,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -2398,7 +2398,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 4,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -2411,7 +2411,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2424,7 +2424,7 @@
       },
       "qa": {
         "status": 403,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -2442,7 +2442,7 @@
       },
       "finance": {
         "status": 403,
-        "ms": 3,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -2460,7 +2460,7 @@
       },
       "procurement": {
         "status": 403,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -2478,7 +2478,7 @@
       },
       "viewer": {
         "status": 403,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -2496,7 +2496,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2509,7 +2509,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2522,7 +2522,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -2535,7 +2535,7 @@
       },
       "w_costin": {
         "status": 403,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -2553,7 +2553,7 @@
       },
       "w_ramona": {
         "status": 403,
-        "ms": 4,
+        "ms": 5,
         "topKeys": [
           "success",
           "statusCode",
@@ -2571,7 +2571,7 @@
       },
       "w_daniel": {
         "status": 403,
-        "ms": 2,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -2589,7 +2589,7 @@
       },
       "w_ioana": {
         "status": 403,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -2607,7 +2607,7 @@
       },
       "w_alexandru": {
         "status": 403,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -2627,7 +2627,7 @@
     "/api/users/profile": {
       "dev": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -2650,7 +2650,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -2673,7 +2673,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2696,7 +2696,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 4,
+        "ms": 5,
         "topKeys": [
           "statusCode",
           "data"
@@ -2719,7 +2719,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2742,7 +2742,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 4,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -2765,7 +2765,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 4,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -2788,7 +2788,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 14,
         "topKeys": [
           "statusCode",
           "data"
@@ -2811,7 +2811,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 4,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -2834,7 +2834,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -2857,7 +2857,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2880,7 +2880,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2903,7 +2903,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2926,7 +2926,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -2972,7 +2972,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -2995,7 +2995,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 4,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -3018,7 +3018,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3043,7 +3043,7 @@
     "/api/attendance": {
       "dev": {
         "status": 200,
-        "ms": 20,
+        "ms": 28,
         "topKeys": [
           "statusCode",
           "data"
@@ -3056,7 +3056,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 8,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -3069,7 +3069,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 9,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -3082,7 +3082,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 10,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -3095,7 +3095,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 8,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -3108,7 +3108,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 9,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -3121,7 +3121,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3134,7 +3134,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -3147,7 +3147,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3160,7 +3160,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3173,7 +3173,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 7,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -3199,7 +3199,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 6,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -3212,7 +3212,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 8,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -3225,7 +3225,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 7,
+        "ms": 14,
         "topKeys": [
           "statusCode",
           "data"
@@ -3238,7 +3238,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 8,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -3251,7 +3251,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 7,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -3264,7 +3264,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -3279,20 +3279,20 @@
     "/api/attendance/my-logs": {
       "dev": {
         "status": 200,
-        "ms": 7,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 1,
-        "empty": false,
+        "rowCount": 0,
+        "empty": true,
         "error": null
       },
       "owner": {
         "status": 200,
-        "ms": 6,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -3305,7 +3305,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3318,7 +3318,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -3357,7 +3357,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3370,7 +3370,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3383,7 +3383,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3396,7 +3396,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -3409,20 +3409,20 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 1,
-        "empty": false,
+        "rowCount": 0,
+        "empty": true,
         "error": null
       },
       "tl_maria": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -3435,7 +3435,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -3448,74 +3448,74 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 1,
-        "empty": false,
+        "rowCount": 0,
+        "empty": true,
         "error": null
       },
       "w_ramona": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 1,
-        "empty": false,
+        "rowCount": 0,
+        "empty": true,
         "error": null
       },
       "w_daniel": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 1,
-        "empty": false,
+        "rowCount": 0,
+        "empty": true,
         "error": null
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 1,
-        "empty": false,
+        "rowCount": 0,
+        "empty": true,
         "error": null
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 1,
-        "empty": false,
+        "rowCount": 0,
+        "empty": true,
         "error": null
       }
     },
     "/api/daily-reports": {
       "dev": {
         "status": 200,
-        "ms": 37,
+        "ms": 64,
         "topKeys": [
           "statusCode",
           "data"
@@ -3528,7 +3528,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 13,
+        "ms": 15,
         "topKeys": [
           "statusCode",
           "data"
@@ -3541,7 +3541,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 11,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -3554,7 +3554,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 11,
+        "ms": 18,
         "topKeys": [
           "statusCode",
           "data"
@@ -3567,7 +3567,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 13,
+        "ms": 17,
         "topKeys": [
           "statusCode",
           "data"
@@ -3580,7 +3580,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 11,
+        "ms": 19,
         "topKeys": [
           "statusCode",
           "data"
@@ -3593,7 +3593,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3606,7 +3606,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 7,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -3619,7 +3619,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3632,7 +3632,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3645,7 +3645,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 10,
+        "ms": 15,
         "topKeys": [
           "statusCode",
           "data"
@@ -3658,7 +3658,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 9,
+        "ms": 17,
         "topKeys": [
           "statusCode",
           "data"
@@ -3671,7 +3671,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 9,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -3684,7 +3684,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 10,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -3697,7 +3697,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 9,
+        "ms": 15,
         "topKeys": [
           "statusCode",
           "data"
@@ -3710,7 +3710,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 10,
+        "ms": 40,
         "topKeys": [
           "statusCode",
           "data"
@@ -3723,7 +3723,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 9,
+        "ms": 19,
         "topKeys": [
           "statusCode",
           "data"
@@ -3736,7 +3736,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 8,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -3751,7 +3751,7 @@
     "/api/materials": {
       "dev": {
         "status": 200,
-        "ms": 17,
+        "ms": 27,
         "topKeys": [
           "statusCode",
           "data"
@@ -3764,7 +3764,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3777,7 +3777,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 8,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3790,7 +3790,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 10,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3803,7 +3803,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 9,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3816,7 +3816,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 10,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3829,7 +3829,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 7,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -3842,7 +3842,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 10,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3855,7 +3855,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -3868,7 +3868,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -3881,7 +3881,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3894,7 +3894,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -3907,7 +3907,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3920,7 +3920,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3933,7 +3933,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -3946,7 +3946,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 4,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -3959,7 +3959,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3972,7 +3972,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -3987,7 +3987,7 @@
     "/api/inventory/stock": {
       "dev": {
         "status": 200,
-        "ms": 8,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -4000,7 +4000,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4013,7 +4013,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4039,7 +4039,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4052,7 +4052,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4065,7 +4065,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4078,7 +4078,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4091,7 +4091,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4104,7 +4104,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4117,7 +4117,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 8,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -4130,7 +4130,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4143,7 +4143,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4156,7 +4156,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4169,7 +4169,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4182,7 +4182,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4195,7 +4195,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -4208,7 +4208,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 6,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4223,7 +4223,7 @@
     "/api/inventory/movements": {
       "dev": {
         "status": 200,
-        "ms": 18,
+        "ms": 23,
         "topKeys": [
           "statusCode",
           "data"
@@ -4236,7 +4236,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 8,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -4249,7 +4249,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 8,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -4262,7 +4262,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 9,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -4275,7 +4275,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 7,
+        "ms": 14,
         "topKeys": [
           "statusCode",
           "data"
@@ -4288,7 +4288,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 6,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -4301,7 +4301,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4327,7 +4327,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4340,7 +4340,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4353,7 +4353,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 8,
+        "ms": 34,
         "topKeys": [
           "statusCode",
           "data"
@@ -4366,7 +4366,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 6,
+        "ms": 23,
         "topKeys": [
           "statusCode",
           "data"
@@ -4379,7 +4379,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4392,7 +4392,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 6,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -4405,7 +4405,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 7,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -4418,7 +4418,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 8,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -4431,7 +4431,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 7,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -4444,7 +4444,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4459,7 +4459,7 @@
     "/api/procurement/purchase-orders": {
       "dev": {
         "status": 200,
-        "ms": 17,
+        "ms": 28,
         "topKeys": [
           "statusCode",
           "data"
@@ -4472,7 +4472,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4485,7 +4485,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4497,280 +4497,205 @@
         "error": null
       },
       "pm": {
-        "status": 500,
-        "ms": 8,
+        "status": 200,
+        "ms": 9,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "site_manager": {
-        "status": 500,
-        "ms": 5,
+        "status": 200,
+        "ms": 8,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "foreman": {
-        "status": 500,
-        "ms": 6,
+        "status": 200,
+        "ms": 10,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "qa": {
-        "status": 500,
-        "ms": 5,
+        "status": 200,
+        "ms": 8,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "finance": {
-        "status": 500,
-        "ms": 4,
+        "status": 200,
+        "ms": 12,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "procurement": {
-        "status": 500,
-        "ms": 5,
+        "status": 200,
+        "ms": 8,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "viewer": {
-        "status": 500,
-        "ms": 5,
+        "status": 200,
+        "ms": 9,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "tl_ion": {
-        "status": 500,
-        "ms": 4,
+        "status": 200,
+        "ms": 9,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "tl_maria": {
-        "status": 500,
-        "ms": 5,
+        "status": 200,
+        "ms": 8,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "tl_andrei": {
-        "status": 500,
-        "ms": 6,
+        "status": 200,
+        "ms": 7,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "w_costin": {
-        "status": 500,
-        "ms": 5,
+        "status": 200,
+        "ms": 9,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "w_ramona": {
-        "status": 500,
-        "ms": 4,
+        "status": 200,
+        "ms": 8,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "w_daniel": {
-        "status": 500,
-        "ms": 6,
+        "status": 200,
+        "ms": 8,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "w_ioana": {
-        "status": 500,
-        "ms": 5,
+        "status": 200,
+        "ms": 9,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       },
       "w_alexandru": {
-        "status": 500,
-        "ms": 4,
+        "status": 200,
+        "ms": 9,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":500,\"code\":\"INTERNAL_ERROR\",\"message\":\"\\nInvalid `this.prisma.purchaseOrder.findMany()` invocation in\\nC:\\\\Users\\\\NaderGuesmi\\\\hiieko-System\\\\backend\\\\dist\\\\modules\\\\proc"
+        "rowCount": 3,
+        "empty": false,
+        "error": null
       }
     },
     "/api/qa-qc/inspections": {
       "dev": {
         "status": 200,
-        "ms": 17,
+        "ms": 29,
         "topKeys": [
           "statusCode",
           "data"
@@ -4783,7 +4708,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 7,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -4796,7 +4721,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -4809,7 +4734,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 5,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -4822,7 +4747,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 7,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -4835,7 +4760,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4848,7 +4773,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4861,7 +4786,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -4874,7 +4799,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4887,7 +4812,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -4900,7 +4825,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 4,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -4913,7 +4838,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -4926,7 +4851,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 5,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -4939,7 +4864,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 4,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -4952,7 +4877,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -4965,7 +4890,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4978,7 +4903,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -4991,7 +4916,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5006,7 +4931,7 @@
     "/api/suppliers": {
       "dev": {
         "status": 200,
-        "ms": 10,
+        "ms": 17,
         "topKeys": [
           "statusCode",
           "data"
@@ -5019,7 +4944,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 8,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -5032,7 +4957,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 6,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5045,7 +4970,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5058,7 +4983,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 6,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5071,7 +4996,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5084,7 +5009,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5097,7 +5022,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5110,7 +5035,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5123,7 +5048,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 4,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5136,7 +5061,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5149,7 +5074,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 3,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5162,7 +5087,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5175,7 +5100,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5188,7 +5113,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5201,7 +5126,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5214,7 +5139,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5227,7 +5152,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 4,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -5242,7 +5167,7 @@
     "/api/warehouses": {
       "dev": {
         "status": 200,
-        "ms": 6,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -5255,7 +5180,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 7,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -5268,7 +5193,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5281,7 +5206,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5294,7 +5219,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "statusCode",
           "data"
@@ -5307,7 +5232,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 4,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5320,7 +5245,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 4,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5333,7 +5258,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 5,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -5346,7 +5271,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 3,
+        "ms": 26,
         "topKeys": [
           "statusCode",
           "data"
@@ -5359,7 +5284,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 3,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -5372,7 +5297,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5385,7 +5310,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5398,7 +5323,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5411,7 +5336,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5424,7 +5349,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5437,7 +5362,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 6,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -5450,7 +5375,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -5463,7 +5388,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 4,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5478,7 +5403,7 @@
     "/api/procurement/delivery-notes": {
       "dev": {
         "status": 200,
-        "ms": 11,
+        "ms": 17,
         "topKeys": [
           "statusCode",
           "data"
@@ -5491,7 +5416,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 7,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5504,7 +5429,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 6,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -5517,7 +5442,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5530,7 +5455,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 4,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5543,7 +5468,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 6,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5556,7 +5481,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 3,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5569,7 +5494,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 3,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5582,7 +5507,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5595,7 +5520,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5608,7 +5533,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5621,7 +5546,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 4,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -5634,7 +5559,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 6,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5647,7 +5572,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -5660,7 +5585,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -5673,7 +5598,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 7,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -5686,7 +5611,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -5699,7 +5624,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -5714,7 +5639,7 @@
     "/api/tasks": {
       "dev": {
         "status": 200,
-        "ms": 26,
+        "ms": 34,
         "topKeys": [
           "statusCode",
           "data"
@@ -5727,7 +5652,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 9,
+        "ms": 18,
         "topKeys": [
           "statusCode",
           "data"
@@ -5740,7 +5665,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 8,
+        "ms": 19,
         "topKeys": [
           "statusCode",
           "data"
@@ -5753,7 +5678,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 11,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -5766,7 +5691,7 @@
       },
       "site_manager": {
         "status": 200,
-        "ms": 10,
+        "ms": 22,
         "topKeys": [
           "statusCode",
           "data"
@@ -5779,7 +5704,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 11,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -5792,7 +5717,7 @@
       },
       "qa": {
         "status": 200,
-        "ms": 6,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -5805,7 +5730,7 @@
       },
       "finance": {
         "status": 403,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -5823,7 +5748,7 @@
       },
       "procurement": {
         "status": 403,
-        "ms": 3,
+        "ms": 9,
         "topKeys": [
           "success",
           "statusCode",
@@ -5841,7 +5766,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 5,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -5854,7 +5779,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 9,
+        "ms": 15,
         "topKeys": [
           "statusCode",
           "data"
@@ -5867,7 +5792,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 8,
+        "ms": 22,
         "topKeys": [
           "statusCode",
           "data"
@@ -5880,7 +5805,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 9,
+        "ms": 13,
         "topKeys": [
           "statusCode",
           "data"
@@ -5893,7 +5818,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 8,
+        "ms": 14,
         "topKeys": [
           "statusCode",
           "data"
@@ -5906,7 +5831,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 9,
+        "ms": 16,
         "topKeys": [
           "statusCode",
           "data"
@@ -5919,7 +5844,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 8,
+        "ms": 14,
         "topKeys": [
           "statusCode",
           "data"
@@ -5932,7 +5857,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 11,
+        "ms": 15,
         "topKeys": [
           "statusCode",
           "data"
@@ -5945,7 +5870,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 7,
+        "ms": 18,
         "topKeys": [
           "statusCode",
           "data"
@@ -5960,6 +5885,242 @@
     "/api/daily-plans": {
       "dev": {
         "status": 200,
+        "ms": 19,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "owner": {
+        "status": 200,
+        "ms": 6,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "manager": {
+        "status": 200,
+        "ms": 7,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "pm": {
+        "status": 200,
+        "ms": 6,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "site_manager": {
+        "status": 200,
+        "ms": 6,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "foreman": {
+        "status": 200,
+        "ms": 7,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "qa": {
+        "status": 200,
+        "ms": 9,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "finance": {
+        "status": 200,
+        "ms": 10,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "procurement": {
+        "status": 200,
+        "ms": 7,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "viewer": {
+        "status": 200,
+        "ms": 9,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "tl_ion": {
+        "status": 200,
+        "ms": 8,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "tl_maria": {
+        "status": 200,
+        "ms": 7,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "tl_andrei": {
+        "status": 200,
+        "ms": 7,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "w_costin": {
+        "status": 200,
+        "ms": 8,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "w_ramona": {
+        "status": 200,
+        "ms": 9,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "w_daniel": {
+        "status": 200,
+        "ms": 7,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "w_ioana": {
+        "status": 200,
+        "ms": 7,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      },
+      "w_alexandru": {
+        "status": 200,
+        "ms": 9,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 0,
+        "empty": true,
+        "error": null
+      }
+    },
+    "/api/issues": {
+      "dev": {
+        "status": 200,
         "ms": 15,
         "topKeys": [
           "statusCode",
@@ -5967,242 +6128,6 @@
         ],
         "dataType": "array",
         "dataKeys": null,
-        "rowCount": 4,
-        "empty": false,
-        "error": null
-      },
-      "owner": {
-        "status": 200,
-        "ms": 7,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 4,
-        "empty": false,
-        "error": null
-      },
-      "manager": {
-        "status": 200,
-        "ms": 6,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 4,
-        "empty": false,
-        "error": null
-      },
-      "pm": {
-        "status": 200,
-        "ms": 5,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 4,
-        "empty": false,
-        "error": null
-      },
-      "site_manager": {
-        "status": 200,
-        "ms": 6,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 4,
-        "empty": false,
-        "error": null
-      },
-      "foreman": {
-        "status": 200,
-        "ms": 5,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 4,
-        "empty": false,
-        "error": null
-      },
-      "qa": {
-        "status": 200,
-        "ms": 5,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 0,
-        "empty": true,
-        "error": null
-      },
-      "finance": {
-        "status": 200,
-        "ms": 7,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 0,
-        "empty": true,
-        "error": null
-      },
-      "procurement": {
-        "status": 200,
-        "ms": 4,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 0,
-        "empty": true,
-        "error": null
-      },
-      "viewer": {
-        "status": 200,
-        "ms": 4,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 0,
-        "empty": true,
-        "error": null
-      },
-      "tl_ion": {
-        "status": 200,
-        "ms": 6,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      },
-      "tl_maria": {
-        "status": 200,
-        "ms": 5,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      },
-      "tl_andrei": {
-        "status": 200,
-        "ms": 5,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      },
-      "w_costin": {
-        "status": 200,
-        "ms": 8,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      },
-      "w_ramona": {
-        "status": 200,
-        "ms": 5,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      },
-      "w_daniel": {
-        "status": 200,
-        "ms": 4,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      },
-      "w_ioana": {
-        "status": 200,
-        "ms": 6,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      },
-      "w_alexandru": {
-        "status": 200,
-        "ms": 4,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 2,
-        "empty": false,
-        "error": null
-      }
-    },
-    "/api/issues": {
-      "dev": {
-        "status": 200,
-        "ms": 10,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
         "rowCount": 12,
         "empty": false,
         "error": null
@@ -6221,21 +6146,21 @@
         "error": null
       },
       "manager": {
-        "status": 200,
-        "ms": 6,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "array",
-        "dataKeys": null,
-        "rowCount": 12,
-        "empty": false,
-        "error": null
-      },
-      "pm": {
         "status": 200,
         "ms": 9,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "array",
+        "dataKeys": null,
+        "rowCount": 12,
+        "empty": false,
+        "error": null
+      },
+      "pm": {
+        "status": 200,
+        "ms": 8,
         "topKeys": [
           "statusCode",
           "data"
@@ -6261,7 +6186,7 @@
       },
       "foreman": {
         "status": 200,
-        "ms": 9,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -6287,7 +6212,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -6300,7 +6225,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -6313,7 +6238,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 5,
+        "ms": 22,
         "topKeys": [
           "statusCode",
           "data"
@@ -6326,7 +6251,7 @@
       },
       "tl_ion": {
         "status": 200,
-        "ms": 7,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -6339,7 +6264,7 @@
       },
       "tl_maria": {
         "status": 200,
-        "ms": 5,
+        "ms": 12,
         "topKeys": [
           "statusCode",
           "data"
@@ -6352,7 +6277,7 @@
       },
       "tl_andrei": {
         "status": 200,
-        "ms": 5,
+        "ms": 9,
         "topKeys": [
           "statusCode",
           "data"
@@ -6365,7 +6290,7 @@
       },
       "w_costin": {
         "status": 200,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -6378,7 +6303,7 @@
       },
       "w_ramona": {
         "status": 200,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "statusCode",
           "data"
@@ -6391,7 +6316,7 @@
       },
       "w_daniel": {
         "status": 200,
-        "ms": 5,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -6404,7 +6329,7 @@
       },
       "w_ioana": {
         "status": 200,
-        "ms": 5,
+        "ms": 11,
         "topKeys": [
           "statusCode",
           "data"
@@ -6417,7 +6342,7 @@
       },
       "w_alexandru": {
         "status": 200,
-        "ms": 5,
+        "ms": 10,
         "topKeys": [
           "statusCode",
           "data"
@@ -6431,6 +6356,156 @@
     },
     "/api/control-tower/overview": {
       "dev": {
+        "status": 200,
+        "ms": 86,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "object",
+        "dataKeys": [
+          "projects",
+          "workforce",
+          "production",
+          "materials",
+          "finance",
+          "quality",
+          "documentation",
+          "redFlags"
+        ],
+        "rowCount": 22,
+        "empty": false,
+        "error": null
+      },
+      "owner": {
+        "status": 200,
+        "ms": 41,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "object",
+        "dataKeys": [
+          "projects",
+          "workforce",
+          "production",
+          "materials",
+          "finance",
+          "quality",
+          "documentation",
+          "redFlags"
+        ],
+        "rowCount": 22,
+        "empty": false,
+        "error": null
+      },
+      "manager": {
+        "status": 200,
+        "ms": 40,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "object",
+        "dataKeys": [
+          "projects",
+          "workforce",
+          "production",
+          "materials",
+          "finance",
+          "quality",
+          "documentation",
+          "redFlags"
+        ],
+        "rowCount": 22,
+        "empty": false,
+        "error": null
+      },
+      "pm": {
+        "status": 200,
+        "ms": 39,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "object",
+        "dataKeys": [
+          "projects",
+          "workforce",
+          "production",
+          "materials",
+          "finance",
+          "quality",
+          "documentation",
+          "redFlags"
+        ],
+        "rowCount": 22,
+        "empty": false,
+        "error": null
+      },
+      "site_manager": {
+        "status": 200,
+        "ms": 50,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "object",
+        "dataKeys": [
+          "projects",
+          "workforce",
+          "production",
+          "materials",
+          "finance",
+          "quality",
+          "documentation",
+          "redFlags"
+        ],
+        "rowCount": 22,
+        "empty": false,
+        "error": null
+      },
+      "foreman": {
+        "status": 403,
+        "ms": 24,
+        "topKeys": [
+          "success",
+          "statusCode",
+          "code",
+          "message",
+          "timestamp",
+          "path",
+          "method"
+        ],
+        "dataType": null,
+        "dataKeys": null,
+        "rowCount": null,
+        "empty": null,
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
+      },
+      "qa": {
+        "status": 200,
+        "ms": 43,
+        "topKeys": [
+          "statusCode",
+          "data"
+        ],
+        "dataType": "object",
+        "dataKeys": [
+          "projects",
+          "workforce",
+          "production",
+          "materials",
+          "finance",
+          "quality",
+          "documentation",
+          "redFlags"
+        ],
+        "rowCount": 22,
+        "empty": false,
+        "error": null
+      },
+      "finance": {
         "status": 200,
         "ms": 37,
         "topKeys": [
@@ -6452,155 +6527,9 @@
         "empty": false,
         "error": null
       },
-      "owner": {
-        "status": 200,
-        "ms": 26,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "object",
-        "dataKeys": [
-          "projects",
-          "workforce",
-          "production",
-          "materials",
-          "finance",
-          "quality",
-          "documentation",
-          "redFlags"
-        ],
-        "rowCount": 22,
-        "empty": false,
-        "error": null
-      },
-      "manager": {
-        "status": 200,
-        "ms": 26,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "object",
-        "dataKeys": [
-          "projects",
-          "workforce",
-          "production",
-          "materials",
-          "finance",
-          "quality",
-          "documentation",
-          "redFlags"
-        ],
-        "rowCount": 22,
-        "empty": false,
-        "error": null
-      },
-      "pm": {
-        "status": 200,
-        "ms": 26,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "object",
-        "dataKeys": [
-          "projects",
-          "workforce",
-          "production",
-          "materials",
-          "finance",
-          "quality",
-          "documentation",
-          "redFlags"
-        ],
-        "rowCount": 22,
-        "empty": false,
-        "error": null
-      },
-      "site_manager": {
-        "status": 403,
-        "ms": 4,
-        "topKeys": [
-          "success",
-          "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
-        ],
-        "dataType": null,
-        "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
-      },
-      "foreman": {
-        "status": 403,
-        "ms": 4,
-        "topKeys": [
-          "success",
-          "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
-        ],
-        "dataType": null,
-        "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
-      },
-      "qa": {
-        "status": 200,
-        "ms": 23,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "object",
-        "dataKeys": [
-          "projects",
-          "workforce",
-          "production",
-          "materials",
-          "finance",
-          "quality",
-          "documentation",
-          "redFlags"
-        ],
-        "rowCount": 22,
-        "empty": false,
-        "error": null
-      },
-      "finance": {
-        "status": 200,
-        "ms": 22,
-        "topKeys": [
-          "statusCode",
-          "data"
-        ],
-        "dataType": "object",
-        "dataKeys": [
-          "projects",
-          "workforce",
-          "production",
-          "materials",
-          "finance",
-          "quality",
-          "documentation",
-          "redFlags"
-        ],
-        "rowCount": 22,
-        "empty": false,
-        "error": null
-      },
       "procurement": {
         "status": 200,
-        "ms": 21,
+        "ms": 33,
         "topKeys": [
           "statusCode",
           "data"
@@ -6622,7 +6551,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 22,
+        "ms": 47,
         "topKeys": [
           "statusCode",
           "data"
@@ -6643,6 +6572,42 @@
         "error": null
       },
       "tl_ion": {
+        "status": 403,
+        "ms": 8,
+        "topKeys": [
+          "success",
+          "statusCode",
+          "code",
+          "message",
+          "timestamp",
+          "path",
+          "method"
+        ],
+        "dataType": null,
+        "dataKeys": null,
+        "rowCount": null,
+        "empty": null,
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
+      },
+      "tl_maria": {
+        "status": 403,
+        "ms": 9,
+        "topKeys": [
+          "success",
+          "statusCode",
+          "code",
+          "message",
+          "timestamp",
+          "path",
+          "method"
+        ],
+        "dataType": null,
+        "dataKeys": null,
+        "rowCount": null,
+        "empty": null,
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
+      },
+      "tl_andrei": {
         "status": 403,
         "ms": 6,
         "topKeys": [
@@ -6658,9 +6623,27 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
-      "tl_maria": {
+      "w_costin": {
+        "status": 403,
+        "ms": 6,
+        "topKeys": [
+          "success",
+          "statusCode",
+          "code",
+          "message",
+          "timestamp",
+          "path",
+          "method"
+        ],
+        "dataType": null,
+        "dataKeys": null,
+        "rowCount": null,
+        "empty": null,
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
+      },
+      "w_ramona": {
         "status": 403,
         "ms": 5,
         "topKeys": [
@@ -6676,65 +6659,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
-      },
-      "tl_andrei": {
-        "status": 403,
-        "ms": 4,
-        "topKeys": [
-          "success",
-          "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
-        ],
-        "dataType": null,
-        "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
-      },
-      "w_costin": {
-        "status": 403,
-        "ms": 3,
-        "topKeys": [
-          "success",
-          "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
-        ],
-        "dataType": null,
-        "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
-      },
-      "w_ramona": {
-        "status": 403,
-        "ms": 3,
-        "topKeys": [
-          "success",
-          "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
-        ],
-        "dataType": null,
-        "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_daniel": {
         "status": 403,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "success",
           "statusCode",
@@ -6748,11 +6677,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_ioana": {
         "status": 403,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "success",
           "statusCode",
@@ -6766,11 +6695,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_alexandru": {
         "status": 403,
-        "ms": 3,
+        "ms": 8,
         "topKeys": [
           "success",
           "statusCode",
@@ -6784,13 +6713,13 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       }
     },
     "/api/control-tower/red-flags": {
       "dev": {
         "status": 200,
-        "ms": 23,
+        "ms": 36,
         "topKeys": [
           "statusCode",
           "data"
@@ -6803,7 +6732,7 @@
       },
       "owner": {
         "status": 200,
-        "ms": 24,
+        "ms": 44,
         "topKeys": [
           "statusCode",
           "data"
@@ -6816,7 +6745,7 @@
       },
       "manager": {
         "status": 200,
-        "ms": 23,
+        "ms": 44,
         "topKeys": [
           "statusCode",
           "data"
@@ -6829,7 +6758,7 @@
       },
       "pm": {
         "status": 200,
-        "ms": 21,
+        "ms": 46,
         "topKeys": [
           "statusCode",
           "data"
@@ -6841,26 +6770,21 @@
         "error": null
       },
       "site_manager": {
-        "status": 403,
-        "ms": 5,
+        "status": 200,
+        "ms": 36,
         "topKeys": [
-          "success",
           "statusCode",
-          "code",
-          "message",
-          "timestamp",
-          "path",
-          "method"
+          "data"
         ],
-        "dataType": null,
+        "dataType": "array",
         "dataKeys": null,
-        "rowCount": null,
-        "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "rowCount": 22,
+        "empty": false,
+        "error": null
       },
       "foreman": {
         "status": 403,
-        "ms": 5,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -6874,11 +6798,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "qa": {
         "status": 200,
-        "ms": 21,
+        "ms": 36,
         "topKeys": [
           "statusCode",
           "data"
@@ -6891,7 +6815,7 @@
       },
       "finance": {
         "status": 200,
-        "ms": 22,
+        "ms": 37,
         "topKeys": [
           "statusCode",
           "data"
@@ -6904,7 +6828,7 @@
       },
       "procurement": {
         "status": 200,
-        "ms": 22,
+        "ms": 44,
         "topKeys": [
           "statusCode",
           "data"
@@ -6917,7 +6841,7 @@
       },
       "viewer": {
         "status": 200,
-        "ms": 22,
+        "ms": 54,
         "topKeys": [
           "statusCode",
           "data"
@@ -6930,7 +6854,7 @@
       },
       "tl_ion": {
         "status": 403,
-        "ms": 4,
+        "ms": 22,
         "topKeys": [
           "success",
           "statusCode",
@@ -6944,11 +6868,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "tl_maria": {
         "status": 403,
-        "ms": 3,
+        "ms": 24,
         "topKeys": [
           "success",
           "statusCode",
@@ -6962,11 +6886,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "tl_andrei": {
         "status": 403,
-        "ms": 5,
+        "ms": 12,
         "topKeys": [
           "success",
           "statusCode",
@@ -6980,11 +6904,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_costin": {
         "status": 403,
-        "ms": 4,
+        "ms": 7,
         "topKeys": [
           "success",
           "statusCode",
@@ -6998,11 +6922,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_ramona": {
         "status": 403,
-        "ms": 4,
+        "ms": 9,
         "topKeys": [
           "success",
           "statusCode",
@@ -7016,11 +6940,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_daniel": {
         "status": 403,
-        "ms": 3,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -7034,11 +6958,11 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_ioana": {
         "status": 403,
-        "ms": 5,
+        "ms": 6,
         "topKeys": [
           "success",
           "statusCode",
@@ -7052,7 +6976,7 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       },
       "w_alexandru": {
         "status": 403,
@@ -7070,7 +6994,7 @@
         "dataKeys": null,
         "rowCount": null,
         "empty": null,
-        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, MAINTENANCE_DI"
+        "error": "{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"Insufficient permissions. Required role: [ADMIN, OWNER, MANAGER, PM, SITE_MANAGER, PROCUREMENT, FINANCE, QA_QC, VIEWER, SITE_LOGISTICS, "
       }
     }
   }
