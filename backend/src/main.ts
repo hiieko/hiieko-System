@@ -14,6 +14,16 @@ import { assertJwtSecretStrength } from './common/config/env-security';
 const DEFAULT_CORS_ORIGINS = ['http://localhost:3000', 'http://localhost:19006'];
 
 /**
+ * Netlify deploy-preview origins for the HIIEKO site. Each preview deploy is served from a
+ * per-build host of the form `<hash>--fluffy-halva-c0e8d4.netlify.app`. The production site
+ * itself has no `--<hash>` prefix and must still be listed explicitly in `CORS_ORIGIN`.
+ *
+ * This pattern is intentionally narrow: only the HIIEKO Netlify site's preview subdomains
+ * match, never an arbitrary origin.
+ */
+const NETLIFY_PREVIEW_ORIGIN = /^https:\/\/[a-z0-9]+--fluffy-halva-c0e8d4\.netlify\.app$/i;
+
+/**
  * Slice 2 (L4) — turns `CORS_ORIGIN` (comma-separated) into the CORS allowlist.
  *
  * An explicit list is required because credentialed requests (`credentials: true`) can
@@ -125,7 +135,16 @@ async function bootstrap() {
   const allowedOrigins = parseCorsOrigins(process.env.CORS_ORIGIN);
 
   app.enableCors({
-    origin: allowedOrigins,
+    // Origin is a function, not a static list, so Netlify deploy-preview origins can be
+    // accepted in addition to the explicit CORS_ORIGIN allowlist. Arbitrary origins are
+    // still rejected: only exact allowlist entries or the HIIEKO Netlify preview pattern pass.
+    origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || allowedOrigins.includes(origin) || NETLIFY_PREVIEW_ORIGIN.test(origin)) {
+        cb(null, true);
+        return;
+      }
+      cb(new Error('Not allowed'), false);
+    },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     // P4.4 (D2): Mobile's offline queue sends its replay key as the `Idempotency-Key` header
