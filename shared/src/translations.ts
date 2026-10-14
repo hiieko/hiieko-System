@@ -1854,6 +1854,52 @@ Object.assign(d, {
   'stocuri.select_target_project': T('Selectează proiectul țintă', 'Select target project'),
 });
 
+// i18n(pontaj) — replace inline locale ternaries
+Object.assign(d, {
+  'pontaj.error_correct': T('Corecția pontajului a eșuat', 'Failed to correct attendance'),
+  'pontaj.subtitle': T('Evidența orelor de lucru, verificarea sosirii și calculul automat al orelor suplimentare.', 'Team attendance, missing check-ins, active workers and overtime.'),
+  'pontaj.tab_daily': T('Prezență Zilnică', 'Daily Attendance'),
+  'pontaj.tab_monthly': T('Pontaj Lunar', 'Monthly Matrix'),
+  'pontaj.stat_active_now': T('Pe șantier acum', 'Active now'),
+  'pontaj.stat_active_now_hint': T('de muncitori pe șantier', 'workers currently on site'),
+  'pontaj.stat_completed_today': T('Finalizati azi', 'Completed today'),
+  'pontaj.stat_completed_today_hint': T('turnee cu ieșire înregistrată', 'shifts with check-out'),
+  'pontaj.stat_workers_today': T('Muncitori azi', 'Workers today'),
+  'pontaj.stat_workers_today_hint': T('inregistrari de pontaj azi', 'attendance records today'),
+  'pontaj.stat_overtime_today': T('Ore suplim. azi', 'Overtime today'),
+  'pontaj.stat_overtime_today_hint': T('ore suplimentare acumulate', 'overtime accumulated'),
+  'pontaj.on_site_now': T('Pe Șantier Acum', 'On Site Now'),
+  'pontaj.active_count': T('activi', 'active'),
+  'pontaj.no_active_shifts': T('Nicio tura activa acum.', 'No active shifts right now.'),
+  'pontaj.missing_attendance': T('Lipsa Pontaj', 'Missing Attendance'),
+  'pontaj.missing_count': T('lipsa', 'missing'),
+  'pontaj.restricted_directory_hint': T('Directorul de utilizatori este restrictionat pe acest backend la rolurile ADMIN / MANAGER / PM, deci lista de lipsa nu poate fi calculata pentru rolul tau.', 'The user directory is restricted on this backend to ADMIN / MANAGER / PM roles, so the missing-attendance list cannot be computed for your role here.'),
+  'pontaj.all_checked_in': T('Toti s-au pontat azi.', 'Everyone checked in today.'),
+  'pontaj.no_checkin': T('Fără pontaj', 'No check-in'),
+  'pontaj.corrections_note': T('Corecțiile sunt auditate. Modificarea orelor de sosire/plecare recalculează orele normale și suplimentare pe server; motivul corecției este obligatoriu.', 'Corrections are audited. Changing check-in/out times recalculates regular and overtime hours on the server; a correction reason is required.'),
+  'pontaj.register_title': T('Registru Prezență', 'Daily Attendance Register'),
+  'pontaj.standard_shift': T('Program standard: 09:00 - 18:00 (1h pauza)', 'Standard shift: 09:00 - 18:00 (1h break)'),
+  'pontaj.col_worker': T('Muncitor / Șef de Echipă', 'Worker / Team Leader'),
+  'pontaj.col_site': T('Șantier', 'Site'),
+  'pontaj.col_checkin': T('AM VENIT', 'Check-in'),
+  'pontaj.col_checkout': T('AM PLECAT', 'Check-out'),
+  'pontaj.col_gps': T('Verificare GPS', 'GPS'),
+  'pontaj.col_regular': T('Ore Normale', 'Regular hours'),
+  'pontaj.col_overtime': T('Ore Suplimentare', 'Overtime'),
+  'pontaj.col_status': T('Stare', 'Status'),
+  'pontaj.col_actions': T('Acțiuni', 'Actions'),
+  'pontaj.error_load': T('Eroare la incarcarea pontajului', 'Failed to load attendance'),
+  'pontaj.status_completed': T('Finalizat', 'Completed'),
+  'pontaj.status_on_site': T('Pe șantier', 'On site'),
+  'pontaj.correct': T('Corectează', 'Correct'),
+  'pontaj.matrix_title': T('Matrice Pontaj Lunar', 'Monthly Attendance Matrix'),
+  'pontaj.legend': T('Legenda: 8 = ore normale, +1 = ore suplimentare', 'Legend: 8 = regular hours, +1 = overtime'),
+  'pontaj.col_name': T('Nume & Prenume', 'Name'),
+  'pontaj.col_total_hours': T('Total Ore', 'Total Hours'),
+  'pontaj.matrix_restricted': T('Matricea lunara necesita directorul de utilizatori, limitat la ADMIN / MANAGER / PM pe acest backend.', 'Monthly matrix requires the user directory, which is limited to ADMIN / MANAGER / PM on this backend.'),
+  'pontaj.no_workers': T('Niciun muncitor in director inca.', 'No workers in the directory yet.'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

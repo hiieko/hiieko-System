@@ -133,7 +133,7 @@ function PontajPageInner() {
       setCorrectionTarget(null);
       await Promise.all([loadData(), loadToday()]);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : (locale === 'en' ? 'Failed to correct attendance' : 'Corecția pontajului a eșuat'));
+      setError(err instanceof Error ? err.message : t('pontaj.error_correct', locale));
     } finally {
       setSavingCorrection(false);
     }
@@ -188,11 +188,7 @@ function PontajPageInner() {
       <PageHeader
         className="!mb-0"
         title={t('attendance.title', locale)}
-        subtitle={
-          locale === 'en'
-            ? 'Team attendance, missing check-ins, active workers and overtime.'
-            : 'Evidența orelor de lucru, verificarea sosirii și calculul automat al orelor suplimentare.'
-        }
+        subtitle={t('pontaj.subtitle', locale)}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -218,8 +214,8 @@ function PontajPageInner() {
 
       <Tabs
         tabs={[
-          { key: 'daily', label: locale === 'en' ? 'Daily Attendance' : 'Prezență Zilnică', icon: Calendar },
-          { key: 'monthly', label: locale === 'en' ? 'Monthly Matrix' : 'Pontaj Lunar' },
+          { key: 'daily', label: t('pontaj.tab_daily', locale), icon: Calendar },
+          { key: 'monthly', label: t('pontaj.tab_monthly', locale) },
         ]}
         activeTab={activeTab}
         onTabChange={(key) => setActiveTab(key as 'daily' | 'monthly')}
@@ -233,37 +229,37 @@ function PontajPageInner() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Active now' : 'Pe șantier acum'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{t('pontaj.stat_active_now', locale)}</div>
             <div className="w-8 h-8 rounded-lg bg-success-soft flex items-center justify-center">
               <Users className="w-4 h-4 text-success" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{activeOnSite.length}</div>
-          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'workers currently on site' : 'de muncitori pe șantier'}</div>
+          <div className="text-xs text-slate-400 mt-1">{t('pontaj.stat_active_now_hint', locale)}</div>
         </Card>
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Completed today' : 'Finalizati azi'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{t('pontaj.stat_completed_today', locale)}</div>
             <div className="w-8 h-8 rounded-lg bg-hii-50 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4 text-hii-600" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{todaySummary?.completedToday ?? '-'}</div>
-          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'shifts with check-out' : 'turnee cu ieșire înregistrată'}</div>
+          <div className="text-xs text-slate-400 mt-1">{t('pontaj.stat_completed_today_hint', locale)}</div>
         </Card>
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Workers today' : 'Muncitori azi'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{t('pontaj.stat_workers_today', locale)}</div>
             <div className="w-8 h-8 rounded-lg bg-info-soft flex items-center justify-center">
               <Clock className="w-4 h-4 text-info" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{todaySummary?.totalWorkersToday ?? '-'}</div>
-          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'attendance records today' : 'inregistrari de pontaj azi'}</div>
+          <div className="text-xs text-slate-400 mt-1">{t('pontaj.stat_workers_today_hint', locale)}</div>
         </Card>
         <Card padding={false} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-medium text-slate-400 uppercase">{locale === 'en' ? 'Overtime today' : 'Ore suplim. azi'}</div>
+            <div className="text-xs font-medium text-slate-400 uppercase">{t('pontaj.stat_overtime_today', locale)}</div>
             <div className="w-8 h-8 rounded-lg bg-warning-soft flex items-center justify-center">
               <Timer className="w-4 h-4 text-warning" />
             </div>
@@ -272,7 +268,7 @@ function PontajPageInner() {
             {todaySummary ? (todaySummary.totalOvertimeMinutes / 60).toFixed(1) : '-'}
             <span className="text-sm text-slate-400 font-semibold ml-1">h</span>
           </div>
-          <div className="text-xs text-slate-400 mt-1">{locale === 'en' ? 'overtime accumulated' : 'ore suplimentare acumulate'}</div>
+          <div className="text-xs text-slate-400 mt-1">{t('pontaj.stat_overtime_today_hint', locale)}</div>
         </Card>
       </div>
 
@@ -282,15 +278,15 @@ function PontajPageInner() {
         {/* Active workers on site */}
         <Card padding={false} className="overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">{locale === 'en' ? 'On Site Now' : 'Pe Șantier Acum'}</h3>
-            <span className="text-xs text-slate-400">{activeOnSite.length} {locale === 'en' ? 'active' : 'activi'}</span>
+            <h3 className="text-sm font-bold text-slate-900">{t('pontaj.on_site_now', locale)}</h3>
+            <span className="text-xs text-slate-400">{activeOnSite.length} {t('pontaj.active_count', locale)}</span>
           </div>
           <div className="p-4">
             {activeOnSite.length === 0 ? (
               <EmptyState
                 variant="compact"
                 icon={<MapPin className="w-4 h-4" />}
-                title={locale === 'en' ? 'No active shifts right now.' : 'Nicio tura activa acum.'}
+                title={t('pontaj.no_active_shifts', locale)}
               />
             ) : (
               <div className="space-y-2">
@@ -321,22 +317,20 @@ function PontajPageInner() {
         {/* Missing attendance */}
         <Card padding={false} className="overflow-hidden">
           <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">{locale === 'en' ? 'Missing Attendance' : 'Lipsa Pontaj'}</h3>
-            {canReadUsers && <span className="text-xs text-warning">{missingWorkers.length} {locale === 'en' ? 'missing' : 'lipsa'}</span>}
+            <h3 className="text-sm font-bold text-slate-900">{t('pontaj.missing_attendance', locale)}</h3>
+            {canReadUsers && <span className="text-xs text-warning">{missingWorkers.length} {t('pontaj.missing_count', locale)}</span>}
           </div>
           <div className="p-4">
             {!canReadUsers ? (
               <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-4 py-3">
                 <Info className="w-4 h-4 flex-shrink-0 mt-0.5 text-slate-400" />
                 <span>
-                  {locale === 'en'
-                    ? 'The user directory is restricted on this backend to ADMIN / MANAGER / PM roles, so the missing-attendance list cannot be computed for your role here.'
-                    : 'Directorul de utilizatori este restrictionat pe acest backend la rolurile ADMIN / MANAGER / PM, deci lista de lipsa nu poate fi calculata pentru rolul tau.'}
+                  {t('pontaj.restricted_directory_hint', locale)}
                 </span>
               </div>
             ) : missingWorkers.length === 0 ? (
               <div className="text-center py-6 text-slate-400 text-sm">
-                {locale === 'en' ? 'Everyone checked in today.' : 'Toti s-au pontat azi.'}
+                {t('pontaj.all_checked_in', locale)}
               </div>
             ) : (
               <div className="space-y-2">
@@ -351,7 +345,7 @@ function PontajPageInner() {
                     </div>
                     <Badge variant="warning" size="sm">
                       <AlertCircle className="w-3 h-3" />
-                      {locale === 'en' ? 'No check-in' : 'Fără pontaj'}
+                      {t('pontaj.no_checkin', locale)}
                     </Badge>
                   </div>
                 ))}
@@ -365,9 +359,7 @@ function PontajPageInner() {
         <div className="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-slate-500">
-            {locale === 'en'
-              ? 'Corrections are audited. Changing check-in/out times recalculates regular and overtime hours on the server; a correction reason is required.'
-              : 'Corecțiile sunt auditate. Modificarea orelor de sosire/plecare recalculează orele normale și suplimentare pe server; motivul corecției este obligatoriu.'}
+            {t('pontaj.corrections_note', locale)}
           </p>
         </div>
       )}
@@ -379,7 +371,7 @@ function PontajPageInner() {
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
               <Calendar className="w-4 h-4 text-warning" />
-              <span>{locale === 'en' ? 'Daily Attendance Register' : 'Registru Prezență'}</span>
+              <span>{t('pontaj.register_title', locale)}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -389,7 +381,7 @@ function PontajPageInner() {
                 className="hii-input !w-auto text-xs"
               />
               <div className="text-xs text-slate-500">
-                {locale === 'en' ? 'Standard shift: 09:00 - 18:00 (1h break)' : 'Program standard: 09:00 - 18:00 (1h pauza)'}
+                {t('pontaj.standard_shift', locale)}
               </div>
             </div>
           </div>
@@ -398,14 +390,14 @@ function PontajPageInner() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold uppercase text-slate-500">
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Worker / Team Leader' : 'Muncitor / Șef de Echipă'}</th>
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Site' : 'Șantier'}</th>
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Check-in' : 'AM VENIT'}</th>
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Check-out' : 'AM PLECAT'}</th>
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'GPS' : 'Verificare GPS'}</th>
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Regular hours' : 'Ore Normale'}</th>
-                  <th className="py-3.5 px-4">{locale === 'en' ? 'Overtime' : 'Ore Suplimentare'}</th>
-                  <th className="py-3.5 px-4 text-right">{locale === 'en' ? 'Status' : 'Stare'}</th>\n                  {canCorrectAttendance && <th className="py-3.5 px-4 text-right">{locale === 'en' ? 'Actions' : 'Acțiuni'}</th>}
+                  <th className="py-3.5 px-4">{t('pontaj.col_worker', locale)}</th>
+                  <th className="py-3.5 px-4">{t('pontaj.col_site', locale)}</th>
+                  <th className="py-3.5 px-4">{t('pontaj.col_checkin', locale)}</th>
+                  <th className="py-3.5 px-4">{t('pontaj.col_checkout', locale)}</th>
+                  <th className="py-3.5 px-4">{t('pontaj.col_gps', locale)}</th>
+                  <th className="py-3.5 px-4">{t('pontaj.col_regular', locale)}</th>
+                  <th className="py-3.5 px-4">{t('pontaj.col_overtime', locale)}</th>
+                  <th className="py-3.5 px-4 text-right">{t('pontaj.col_status', locale)}</th>\n                  {canCorrectAttendance && <th className="py-3.5 px-4 text-right">{t('pontaj.col_actions', locale)}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -423,7 +415,7 @@ function PontajPageInner() {
                   <tr>
                     <td colSpan={8} className="py-8 px-4">
                       <ErrorState
-                        title={locale === 'en' ? 'Failed to load attendance' : 'Eroare la incarcarea pontajului'}
+                        title={t('pontaj.error_load', locale)}
                         error={error}
                         onRetry={loadData}
                       />
@@ -483,19 +475,19 @@ function PontajPageInner() {
                         <td className="py-3.5 px-4 text-right">
                           {log.check_out_time ? (
                             <Badge variant="neutral" size="sm">
-                              {locale === 'en' ? 'Completed' : 'Finalizat'}
+                              {t('pontaj.status_completed', locale)}
                             </Badge>
                           ) : (
                             <Badge variant="success" size="sm">
                               <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                              {locale === 'en' ? 'On site' : 'Pe șantier'}
+                              {t('pontaj.status_on_site', locale)}
                             </Badge>
                           )}
                         </td>
                         {canCorrectAttendance && (
                           <td className="py-3.5 px-4 text-right">
                             <Button variant="secondary" size="sm" onClick={() => setCorrectionTarget(log)}>
-                              {locale === 'en' ? 'Correct' : 'Corectează'}
+                              {t('pontaj.correct', locale)}
                             </Button>
                           </td>
                         )}
@@ -513,7 +505,7 @@ function PontajPageInner() {
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center space-x-2 text-sm font-bold text-slate-800">
               <Calendar className="w-4 h-4 text-warning" />
-              <span>{locale === 'en' ? 'Monthly Attendance Matrix' : 'Matrice Pontaj Lunar'}</span>
+              <span>{t('pontaj.matrix_title', locale)}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -523,7 +515,7 @@ function PontajPageInner() {
                 className="hii-input !w-auto text-xs"
               />
               <div className="text-xs text-slate-500">
-                {locale === 'en' ? 'Legend: 8 = regular hours, +1 = overtime' : 'Legenda: 8 = ore normale, +1 = ore suplimentare'}
+                {t('pontaj.legend', locale)}
               </div>
             </div>
           </div>
@@ -532,24 +524,22 @@ function PontajPageInner() {
             <table className="w-full text-center border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-100 text-slate-700 font-semibold">
-                  <th className="py-3 px-4 text-left min-w-[200px]">{locale === 'en' ? 'Name' : 'Nume & Prenume'}</th>
+                  <th className="py-3 px-4 text-left min-w-[200px]">{t('pontaj.col_name', locale)}</th>
 
                   {daysInMonth.map((day) => (
                     <th key={day} className="py-2 px-1.5 min-w-[32px] border-r border-slate-200/50">
                       {day}
                     </th>
                   ))}
-                  <th className="py-3 px-3 bg-warning-soft text-warning-foreground font-bold min-w-[90px]">{locale === 'en' ? 'Total Hours' : 'Total Ore'}</th>
-                  <th className="py-3 px-3 bg-warning-soft text-warning-foreground font-extrabold min-w-[100px]">{locale === 'en' ? 'OVERTIME' : 'ORE SUPLIM.'}</th>
+                  <th className="py-3 px-3 bg-warning-soft text-warning-foreground font-bold min-w-[90px]">{t('pontaj.col_total_hours', locale)}</th>
+                  <th className="py-3 px-3 bg-warning-soft text-warning-foreground font-extrabold min-w-[100px]">{t('attendance.overtime', locale)}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {workers.length === 0 && !canReadUsers && (
                   <tr>
                     <td colSpan={daysInMonth.length + 3} className="py-10 text-center text-slate-400">
-                      {locale === 'en'
-                        ? 'Monthly matrix requires the user directory, which is limited to ADMIN / MANAGER / PM on this backend.'
-                        : 'Matricea lunara necesita directorul de utilizatori, limitat la ADMIN / MANAGER / PM pe acest backend.'}
+                      {t('pontaj.matrix_restricted', locale)}
                     </td>
                   </tr>
                 )}
@@ -559,7 +549,7 @@ function PontajPageInner() {
                       <EmptyState
                         variant="compact"
                         icon={<Users className="w-4 h-4" />}
-                        title={locale === 'en' ? 'No workers in the directory yet.' : 'Niciun muncitor in director inca.'}
+                        title={t('pontaj.no_workers', locale)}
                       />
                     </td>
                   </tr>
