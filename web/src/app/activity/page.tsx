@@ -31,7 +31,7 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { useLocale } from '@solar/shared';
+import { t, useLocale, type Locale } from '@solar/shared';
 import { RoleGuard } from '../../lib/auth-guard';
 import { OPERATIONAL_ROLES } from '../../config/route-roles';
 import { useAuth } from '../../contexts/AuthContext';
@@ -100,7 +100,7 @@ const RANGE_OPTIONS: { value: ActivityDateRange; ro: string; en: string }[] = [
   { value: 'all', ro: 'Tot', en: 'All' },
 ];
 
-function relativeTime(iso: string, locale: string): string {
+function relativeTime(iso: string, locale: Locale): string {
   const then = new Date(iso).getTime();
   if (isNaN(then)) return '';
   const diffSeconds = Math.round((then - Date.now()) / 1000);
@@ -123,13 +123,13 @@ function dayKey(iso: string): string {
   return isNaN(d.getTime()) ? 'unknown' : d.toLocaleDateString('en-CA');
 }
 
-function dayLabel(iso: string, locale: string): string {
+function dayLabel(iso: string, locale: Locale): string {
   const key = dayKey(iso);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (key === dayKey(today.toISOString())) return locale === 'ro' ? 'Astăzi' : 'Today';
-  if (key === dayKey(yesterday.toISOString())) return locale === 'ro' ? 'Ieri' : 'Yesterday';
+  if (key === dayKey(today.toISOString())) return t('notifications.today', locale);
+  if (key === dayKey(yesterday.toISOString())) return t('planning.yesterday', locale);
   return formatDate(iso, locale === 'ro' ? 'ro' : 'en');
 }
 
@@ -163,14 +163,14 @@ function eventHref(event: ActivityEvent): string {
   }
 }
 
-function describe(event: ActivityEvent, locale: string): EventMeta {
+function describe(event: ActivityEvent, locale: Locale): EventMeta {
   const meta = ACTION_META[event.action];
   const icon = meta?.icon ?? Activity;
   const tone = meta?.tone ?? 'bg-slate-100 text-slate-600';
   const known = meta ? meta[locale === 'ro' ? 'ro' : 'en'] : null;
   const text =
     known ??
-    (locale === 'ro' ? 'a înregistrat o acțiune' : 'performed an action');
+    t('activity.action_fallback', locale);
   return { icon, tone, text, href: eventHref(event), subject: subjectOf(event) };
 }
 
@@ -249,12 +249,12 @@ function eventPhotoUrl(event: ActivityEvent): string | null {
   return typeof raw === 'string' && raw.trim() ? raw.trim() : null;
 }
 
-function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
+function EventRow({ event, locale }: { event: ActivityEvent; locale: Locale }) {
   const [expanded, setExpanded] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const meta = describe(event, locale);
   const Icon = meta.icon;
-  const actorName = event.actor?.name || (locale === 'ro' ? 'Sistem' : 'System');
+  const actorName = event.actor?.name || t('activity.system', locale);
   const changes = changedEntries(event.before, event.after);
   const reason = eventReason(event);
   const photoUrl = eventPhotoUrl(event);
@@ -292,7 +292,7 @@ function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
           {event.actor && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                {locale === 'ro' ? 'Autor' : 'Actor'}
+                {t('activity.actor_label', locale)}
               </p>
               <p className="text-sm font-medium text-slate-900">{event.actor.name}</p>
               <div className="mt-0.5 space-y-0.5 text-xs text-slate-500">
@@ -314,7 +314,7 @@ function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
           {changes.length > 0 && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                {locale === 'ro' ? 'Ce s-a schimbat' : 'What changed'}
+                {t('activity.what_changed', locale)}
               </p>
               <ul className="space-y-1">
                 {changes.map((change) => (
@@ -332,7 +332,7 @@ function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
           {/* Subject + view */}
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-              {locale === 'ro' ? 'Obiect' : 'Subject'}
+              {t('activity.subject', locale)}
             </p>
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-slate-800 min-w-0 truncate">
@@ -342,7 +342,7 @@ function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
                 href={meta.href}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-hii-600 hover:bg-hii-50"
               >
-                {locale === 'ro' ? 'Vezi' : 'View'}
+                {t('activity.view', locale)}
                 <ExternalLink className="size-3.5" aria-hidden="true" />
               </Link>
             </div>
@@ -352,7 +352,7 @@ function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
           {reason && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                {locale === 'ro' ? 'Motiv blocaj' : 'Blocker reason'}
+                {t('activity.blocker_reason', locale)}
               </p>
               <p className="rounded-lg border border-danger bg-danger-soft p-2 text-sm text-danger-foreground whitespace-pre-wrap">
                 {reason}
@@ -363,12 +363,12 @@ function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
           {photoUrl && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                {locale === 'ro' ? 'Fotografie' : 'Photo'}
+                {t('activity.photo', locale)}
               </p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={photoUrl}
-                alt={locale === 'ro' ? 'Fotografie atașată' : 'Attached photo'}
+                alt={t('activity.photo_alt', locale)}
                 className="max-h-48 rounded-lg border border-chrome-line object-cover"
               />
             </div>
@@ -390,12 +390,8 @@ function EventRow({ event, locale }: { event: ActivityEvent; locale: string }) {
               className="text-xs font-medium text-slate-500 hover:text-slate-700 underline"
             >
               {showRaw
-                ? locale === 'ro'
-                  ? 'Ascunde JSON'
-                  : 'Hide raw JSON'
-                : locale === 'ro'
-                  ? 'Arată JSON brut'
-                  : 'Show raw JSON'}
+                ? t('activity.hide_raw_json', locale)
+                : t('activity.show_raw_json', locale)}
             </button>
             {showRaw && (
               <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
@@ -555,7 +551,7 @@ function ActivityPageInner() {
   if (qParam) {
     activeChips.push({
       key: 'q',
-      label: `${locale === 'ro' ? 'Căutare' : 'Search'}: "${qParam}"`,
+      label: `${t('activity.filter_search', locale)}: "${qParam}"`,
       clear: () => setParams({ q: null }),
     });
   }
@@ -570,9 +566,7 @@ function ActivityPageInner() {
   if (actorIdParam) {
     const label =
       actorIdParam === user?.id
-        ? locale === 'ro'
-          ? 'Doar eu'
-          : 'Only me'
+        ? t('activity.only_me', locale)
         : actorNameById.get(actorIdParam) || actorIdParam;
     activeChips.push({
       key: 'actorId',
@@ -598,12 +592,8 @@ function ActivityPageInner() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <PageHeader
         className="!mb-0"
-        title={locale === 'ro' ? 'Activitate' : 'Activity'}
-        subtitle={
-          locale === 'ro'
-            ? 'Ce s-a întâmplat recent în proiectele tale'
-            : 'What happened recently across your projects'
-        }
+        title={t('activity.title', locale)}
+        subtitle={t('activity.subtitle', locale)}
         actions={
           <Button
             variant="secondary"
@@ -612,7 +602,7 @@ function ActivityPageInner() {
             onClick={load}
             disabled={loading}
           >
-            {locale === 'ro' ? 'Reîmprospătează' : 'Refresh'}
+            {t('general.refresh', locale)}
           </Button>
         }
       />
@@ -622,20 +612,16 @@ function ActivityPageInner() {
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1">
             <Input
-              label={locale === 'ro' ? 'Caută' : 'Search'}
+              label={t('activity.search_label', locale)}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={
-                locale === 'ro'
-                  ? 'Caută după nume, email, telefon sau subiect'
-                  : 'Search by name, email, phone, or subject'
-              }
+              placeholder={t('activity.search_placeholder', locale)}
               suffix={<Search className="size-4 text-slate-400" aria-hidden="true" />}
             />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="activity-action" className="text-sm font-medium text-slate-700">
-              {locale === 'ro' ? 'Tip' : 'Type'}
+              {t('activity.type', locale)}
             </label>
             <select
               id="activity-action"
@@ -652,7 +638,7 @@ function ActivityPageInner() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="activity-actor" className="text-sm font-medium text-slate-700">
-              {locale === 'ro' ? 'Utilizator' : 'Actor'}
+              {t('activity.actor_field', locale)}
             </label>
             <select
               id="activity-actor"
@@ -660,9 +646,9 @@ function ActivityPageInner() {
               onChange={(e) => setParams({ actorId: e.target.value })}
               className="hii-select h-11"
             >
-              <option value="">{locale === 'ro' ? 'Oricine' : 'Anyone'}</option>
+              <option value="">{t('activity.anyone', locale)}</option>
               {user?.id && (
-                <option value={user.id}>{locale === 'ro' ? 'Doar eu' : 'Only me'}</option>
+                <option value={user.id}>{t('activity.only_me', locale)}</option>
               )}
               {actorOptions
                 .filter((actor) => actor.id !== user?.id)
@@ -691,7 +677,7 @@ function ActivityPageInner() {
           ))}
           {dateRangeParam !== 'all' && (
             <Button variant="ghost" size="sm" onClick={() => setParams({ dateRange: null })}>
-              {locale === 'ro' ? 'Toate' : 'All'}
+              {t('activity.all', locale)}
             </Button>
           )}
         </div>
@@ -705,7 +691,7 @@ function ActivityPageInner() {
                 <button
                   type="button"
                   onClick={chip.clear}
-                  aria-label={`${locale === 'ro' ? 'Șterge filtrul' : 'Clear filter'}: ${chip.label}`}
+                  aria-label={`${t('activity.clear_filter', locale)}: ${chip.label}`}
                   className="ml-0.5 rounded-full p-0.5 hover:bg-black/10"
                 >
                   <X className="size-3" aria-hidden="true" />
@@ -717,7 +703,7 @@ function ActivityPageInner() {
               onClick={clearAll}
               className="ml-1 text-xs font-medium text-hii-600 hover:text-hii-700 underline"
             >
-              {locale === 'ro' ? 'Șterge toate' : 'Clear all'}
+              {t('activity.clear_all', locale)}
             </button>
           </div>
         )}
@@ -725,7 +711,7 @@ function ActivityPageInner() {
 
       {error && (
         <ErrorState
-          title={locale === 'ro' ? 'Eroare la încărcarea activității' : 'Failed to load activity'}
+          title={t('activity.error_load', locale)}
           error={error}
           onRetry={load}
         />
@@ -742,30 +728,18 @@ function ActivityPageInner() {
           {activeChips.length > 0 ? (
             <EmptyState
               icon={<Search />}
-              title={
-                locale === 'ro'
-                  ? 'Nicio activitate nu corespunde filtrelor'
-                  : 'No activity matches the filters'
-              }
-              description={
-                locale === 'ro'
-                  ? 'Încearcă să schimbi sau să ștergi filtrele active.'
-                  : 'Try changing or clearing the active filters.'
-              }
+              title={t('activity.empty_filtered_title', locale)}
+              description={t('activity.empty_filtered_message', locale)}
               action={{
-                label: locale === 'ro' ? 'Șterge filtrele' : 'Clear filters',
+                label: t('projects.clear_filters', locale),
                 onClick: clearAll,
               }}
             />
           ) : (
             <EmptyState
               icon={<Activity />}
-              title={locale === 'ro' ? 'Nicio activitate încă' : 'No activity yet'}
-              description={
-                locale === 'ro'
-                  ? 'Acțiunile din proiecte (task-uri, rapoarte, probleme) vor apărea aici.'
-                  : 'Project actions (tasks, reports, issues) will appear here.'
-              }
+              title={t('activity.empty_title', locale)}
+              description={t('activity.empty_message', locale)}
             />
           )}
         </Card>

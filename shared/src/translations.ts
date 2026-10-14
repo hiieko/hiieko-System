@@ -1923,6 +1923,38 @@ Object.assign(d, {
   'profile.load_error_message': T('Verifică conexiunea și încearcă din nou.', 'Check your connection and try again.'),
 });
 
+// i18n(activity) — replace inline locale ternaries
+Object.assign(d, {
+  'activity.action_fallback': T('a înregistrat o acțiune', 'performed an action'),
+  'activity.system': T('Sistem', 'System'),
+  'activity.actor_label': T('Autor', 'Actor'),
+  'activity.what_changed': T('Ce s-a schimbat', 'What changed'),
+  'activity.subject': T('Obiect', 'Subject'),
+  'activity.view': T('Vezi', 'View'),
+  'activity.blocker_reason': T('Motiv blocaj', 'Blocker reason'),
+  'activity.photo': T('Fotografie', 'Photo'),
+  'activity.photo_alt': T('Fotografie atașată', 'Attached photo'),
+  'activity.hide_raw_json': T('Ascunde JSON', 'Hide raw JSON'),
+  'activity.show_raw_json': T('Arată JSON brut', 'Show raw JSON'),
+  'activity.filter_search': T('Căutare', 'Search'),
+  'activity.only_me': T('Doar eu', 'Only me'),
+  'activity.title': T('Activitate', 'Activity'),
+  'activity.subtitle': T('Ce s-a întâmplat recent în proiectele tale', 'What happened recently across your projects'),
+  'activity.search_label': T('Caută', 'Search'),
+  'activity.search_placeholder': T('Caută după nume, email, telefon sau subiect', 'Search by name, email, phone, or subject'),
+  'activity.type': T('Tip', 'Type'),
+  'activity.actor_field': T('Utilizator', 'Actor'),
+  'activity.anyone': T('Oricine', 'Anyone'),
+  'activity.all': T('Toate', 'All'),
+  'activity.clear_filter': T('Șterge filtrul', 'Clear filter'),
+  'activity.clear_all': T('Șterge toate', 'Clear all'),
+  'activity.error_load': T('Eroare la încărcarea activității', 'Failed to load activity'),
+  'activity.empty_filtered_title': T('Nicio activitate nu corespunde filtrelor', 'No activity matches the filters'),
+  'activity.empty_filtered_message': T('Încearcă să schimbi sau să ștergi filtrele active.', 'Try changing or clearing the active filters.'),
+  'activity.empty_title': T('Nicio activitate încă', 'No activity yet'),
+  'activity.empty_message': T('Acțiunile din proiecte (task-uri, rapoarte, probleme) vor apărea aici.', 'Project actions (tasks, reports, issues) will appear here.'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
