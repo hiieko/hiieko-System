@@ -2,7 +2,7 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { apiClient } from '../../lib/api-client';
 import { Save, CheckCircle2, AlertCircle } from 'lucide-react';
 import { PageHeader, Button, Card, Input, Skeleton, ErrorState } from '../../components/ui';
@@ -96,8 +96,8 @@ export default function ProfilPage() {
     return (
       <ErrorState
         fullPage
-        title={locale === 'en' ? 'Could not load profile' : 'Profilul nu a putut fi încărcat'}
-        message={locale === 'en' ? 'Check your connection and try again.' : 'Verifică conexiunea și încearcă din nou.'}
+        title={t('profile.load_error_title', locale)}
+        message={t('profile.load_error_message', locale)}
         error={loadError}
         onRetry={loadProfile}
       />
