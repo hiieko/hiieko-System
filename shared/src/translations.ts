@@ -1900,6 +1900,12 @@ Object.assign(d, {
   'pontaj.no_workers': T('Niciun muncitor in director inca.', 'No workers in the directory yet.'),
 });
 
+// i18n(notificari) — replace inline locale ternaries
+Object.assign(d, {
+  'notifications.today': T('Astăzi', 'Today'),
+  'notifications.marked_read': T('Notificări marcate ca citite', 'All notifications marked as read'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

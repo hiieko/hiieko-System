@@ -71,10 +71,10 @@ export default function NotificariPage() {
     let label: string;
     if (ts === todayStart) {
       key = 'today';
-      label = locale === 'ro' ? 'Astăzi' : 'Today';
+      label = t('notifications.today', locale);
     } else if (ts === yesterdayStart) {
       key = 'yesterday';
-      label = locale === 'ro' ? 'Ieri' : 'Yesterday';
+      label = t('planning.yesterday', locale);
     } else {
       key = String(ts);
       label = new Date(n.created_at).toLocaleDateString(locale === 'ro' ? 'ro-RO' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -100,7 +100,7 @@ export default function NotificariPage() {
     try {
       await apiClient.markAllNotificationsRead();
       setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
-      toastSuccess(locale === 'ro' ? 'Notificări marcate ca citite' : 'All notifications marked as read');
+      toastSuccess(t('notifications.marked_read', locale));
     } catch (err) {
       toastError(
         t('notifications.load_error', locale),
