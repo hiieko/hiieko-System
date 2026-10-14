@@ -61,6 +61,9 @@ backend/test-web-api-flow.js
 # ---- Uploaded blob storage (ISSUE-013) ------------------------------
 backend/storage/
 
+# ---- Functional audit scratch credentials (NOT source) --------------
+scripts/audit-functional.json
+
 # ---- Test / coverage caches ----------------------------------------
 coverage/
 coverage.xml
