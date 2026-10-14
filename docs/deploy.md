@@ -60,6 +60,49 @@ real secrets. Names mirror `backend/.env.example`.
 
 ---
 
+## 2. Production Postgres
+
+Use a managed PostgreSQL instance — either **Render Postgres** or **Neon**.
+
+### Create the database
+
+- **Render:** Dashboard → **New +** → **Postgres**. Choose a name, region, and plan, then create.
+  Copy the **Internal Database URL** (same-region service) or **External Database URL**.
+- **Neon:** Create a project → branch/database, then copy the **pooled** connection string.
+
+### Set `DATABASE_URL`
+
+Add the connection string to the Render backend service environment as `DATABASE_URL` (see §1).
+It has the shape:
+
+```
+postgresql://USER:PASSWORD@HOST:5432/DB?schema=public
+```
+
+### Run migrations
+
+Apply the committed migrations (never `migrate dev`, which can reset/prompt) from the repo root:
+
+```
+npm run migrate:deploy --workspace=backend
+```
+
+This runs `prisma migrate deploy`, which applies pending migrations without generating new ones.
+
+### Verify
+
+```
+npx prisma migrate status
+```
+
+Run it from the `backend` workspace (or with `--schema backend/prisma/schema.prisma`). Confirm there
+are no pending migrations and the schema is up to date.
+
+> **WARNING:** do **not** run `prisma db seed` (or `npm run seed`) against production. The seed
+> script is for local/demo data only and would write fixture records into the live database.
+
+---
+
 ## 3. Netlify frontend config
 
 1. Create the site from this repository; set the base directory / build settings so the `web`
