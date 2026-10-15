@@ -47,7 +47,7 @@ import {
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
 import { getActivity } from '../features/activity/api';
 import type { ActivityEvent } from '../features/activity/types';
-import { t, useLocale, canCreateProjects } from '@solar/shared';
+import { t, useLocale, canCreateProjects, type Locale } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
 import { EmptyState, ErrorState, Skeleton } from './ui';
@@ -61,25 +61,24 @@ type ActivityBucket = 'hour' | 'today' | 'yesterday';
 interface ActivityMeta {
   icon: LucideIcon;
   tone: string;
-  ro: string;
-  en: string;
+  i18nKey: string;
 }
 
 const ACTIVITY_META: Record<string, ActivityMeta> = {
-  TASK_CREATED: { icon: Plus, tone: 'bg-info-soft text-info-foreground', ro: 'a creat un task', en: 'created a task' },
-  TASK_UPDATED: { icon: Pencil, tone: 'bg-slate-100 text-slate-600', ro: 'a actualizat un task', en: 'updated a task' },
-  TASK_STATUS_CHANGED: { icon: Pencil, tone: 'bg-slate-100 text-slate-600', ro: 'a schimbat statusul unui task', en: 'changed the status of a task' },
-  TASK_BLOCKED: { icon: AlertTriangle, tone: 'bg-danger-soft text-danger-foreground', ro: 'a raportat un blocaj', en: 'reported a blocker' },
-  TASK_UNBLOCKED: { icon: CheckCircle2, tone: 'bg-success-soft text-success-foreground', ro: 'a rezolvat un blocaj', en: 'resolved a blocker' },
-  DAILY_REPORT_SUBMITTED: { icon: FileText, tone: 'bg-info-soft text-info-foreground', ro: 'a trimis raportul zilnic', en: 'submitted a daily report' },
-  DAILY_REPORT_APPROVED: { icon: CheckCircle2, tone: 'bg-success-soft text-success-foreground', ro: 'a aprobat raportul zilnic', en: 'approved a daily report' },
-  DAILY_REPORT_REJECTED: { icon: XCircle, tone: 'bg-danger-soft text-danger-foreground', ro: 'a respins raportul zilnic', en: 'rejected a daily report' },
-  ISSUE_REPORTED: { icon: AlertCircle, tone: 'bg-warning-soft text-warning-foreground', ro: 'a raportat o problemă', en: 'reported an issue' },
-  ISSUE_RESOLVED: { icon: CheckCircle2, tone: 'bg-success-soft text-success-foreground', ro: 'a rezolvat o problemă', en: 'resolved an issue' },
-  FILE_UPLOADED: { icon: Upload, tone: 'bg-slate-100 text-slate-600', ro: 'a încărcat un fișier', en: 'uploaded a file' },
-  ATTACHMENT_CREATED: { icon: Camera, tone: 'bg-slate-100 text-slate-600', ro: 'a atașat o fotografie', en: 'attached a photo' },
-  ATTENDANCE_CHECK_IN: { icon: LogIn, tone: 'bg-info-soft text-info-foreground', ro: 'a făcut check-in', en: 'checked in' },
-  ATTENDANCE_CHECK_OUT: { icon: LogOut, tone: 'bg-slate-100 text-slate-600', ro: 'a făcut check-out', en: 'checked out' },
+  TASK_CREATED: { icon: Plus, tone: 'bg-info-soft text-info-foreground', i18nKey: 'control_tower.activity_action.TASK_CREATED' },
+  TASK_UPDATED: { icon: Pencil, tone: 'bg-slate-100 text-slate-600', i18nKey: 'control_tower.activity_action.TASK_UPDATED' },
+  TASK_STATUS_CHANGED: { icon: Pencil, tone: 'bg-slate-100 text-slate-600', i18nKey: 'control_tower.activity_action.TASK_STATUS_CHANGED' },
+  TASK_BLOCKED: { icon: AlertTriangle, tone: 'bg-danger-soft text-danger-foreground', i18nKey: 'control_tower.activity_action.TASK_BLOCKED' },
+  TASK_UNBLOCKED: { icon: CheckCircle2, tone: 'bg-success-soft text-success-foreground', i18nKey: 'control_tower.activity_action.TASK_UNBLOCKED' },
+  DAILY_REPORT_SUBMITTED: { icon: FileText, tone: 'bg-info-soft text-info-foreground', i18nKey: 'control_tower.activity_action.DAILY_REPORT_SUBMITTED' },
+  DAILY_REPORT_APPROVED: { icon: CheckCircle2, tone: 'bg-success-soft text-success-foreground', i18nKey: 'control_tower.activity_action.DAILY_REPORT_APPROVED' },
+  DAILY_REPORT_REJECTED: { icon: XCircle, tone: 'bg-danger-soft text-danger-foreground', i18nKey: 'control_tower.activity_action.DAILY_REPORT_REJECTED' },
+  ISSUE_REPORTED: { icon: AlertCircle, tone: 'bg-warning-soft text-warning-foreground', i18nKey: 'control_tower.activity_action.ISSUE_REPORTED' },
+  ISSUE_RESOLVED: { icon: CheckCircle2, tone: 'bg-success-soft text-success-foreground', i18nKey: 'control_tower.activity_action.ISSUE_RESOLVED' },
+  FILE_UPLOADED: { icon: Upload, tone: 'bg-slate-100 text-slate-600', i18nKey: 'control_tower.activity_action.FILE_UPLOADED' },
+  ATTACHMENT_CREATED: { icon: Camera, tone: 'bg-slate-100 text-slate-600', i18nKey: 'control_tower.activity_action.ATTACHMENT_CREATED' },
+  ATTENDANCE_CHECK_IN: { icon: LogIn, tone: 'bg-info-soft text-info-foreground', i18nKey: 'control_tower.activity_action.ATTENDANCE_CHECK_IN' },
+  ATTENDANCE_CHECK_OUT: { icon: LogOut, tone: 'bg-slate-100 text-slate-600', i18nKey: 'control_tower.activity_action.ATTENDANCE_CHECK_OUT' },
 };
 
 function activityRelativeTime(iso: string, locale: string): string {
@@ -130,11 +129,11 @@ function activityHref(event: ActivityEvent): string {
   }
 }
 
-function activityMeta(event: ActivityEvent, locale: string): { icon: LucideIcon; tone: string; text: string; href: string; subject: string | null } {
+function activityMeta(event: ActivityEvent, locale: Locale): { icon: LucideIcon; tone: string; text: string; href: string; subject: string | null } {
   const meta = ACTIVITY_META[event.action];
   const icon = meta?.icon ?? Activity;
   const tone = meta?.tone ?? 'bg-slate-100 text-slate-600';
-  const text = meta ? meta[locale === 'ro' ? 'ro' : 'en'] : locale === 'ro' ? 'a înregistrat o acțiune' : 'performed an action';
+  const text = t(meta?.i18nKey ?? 'control_tower.activity_action.default', locale);
   return { icon, tone, text, href: activityHref(event), subject: activitySubject(event) };
 }
 
@@ -151,10 +150,10 @@ function activityBucketOf(iso: string): ActivityBucket | null {
   return null;
 }
 
-const ACTIVITY_BUCKET_ORDER: { key: ActivityBucket; ro: string; en: string }[] = [
-  { key: 'hour', ro: 'Ultima oră', en: 'Last hour' },
-  { key: 'today', ro: 'Astăzi', en: 'Today' },
-  { key: 'yesterday', ro: 'Ieri', en: 'Yesterday' },
+const ACTIVITY_BUCKET_ORDER: { key: ActivityBucket; i18nKey: string }[] = [
+  { key: 'hour', i18nKey: 'control_tower.bucket_hour' },
+  { key: 'today', i18nKey: 'control_tower.bucket_today' },
+  { key: 'yesterday', i18nKey: 'control_tower.bucket_yesterday' },
 ];
 
 export function ControlTowerSurface() {
@@ -499,11 +498,11 @@ export function ControlTowerSurface() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <EmptyState
             icon={<Briefcase />}
-            title="No projects yet"
-            description="Your Control Tower will populate once projects exist."
+            title={t('control_tower.empty_projects_title', locale)}
+            description={t('control_tower.empty_projects_message', locale)}
             action={
               user && canCreateProjects(user.role as never)
-                ? { label: 'New project', onClick: () => router.push('/projects') }
+                ? { label: t('control_tower.empty_projects_action', locale), onClick: () => router.push('/projects') }
                 : undefined
             }
           />
@@ -514,11 +513,7 @@ export function ControlTowerSurface() {
       {overview && hasProjects &&
         (redFlagsError ? (
           <ErrorState
-            title={
-              locale === 'ro'
-                ? 'Eroare la încărcarea steagurilor roșii'
-                : 'Failed to load red flags'
-            }
+            title={t('control_tower.red_flags_error_title', locale)}
             error={redFlagsError}
             onRetry={() => loadControlTower(true)}
           />
@@ -748,7 +743,7 @@ export function ControlTowerSurface() {
                   <h3 className="font-bold text-sm text-slate-900">{t('control_tower.materials', locale)}</h3>
                 </div>
                 <span className="text-xl font-black text-slate-900">
-                  {overview.materials.pendingDeliveries} avize
+                  {overview.materials.pendingDeliveries} {t('control_tower.avize_unit', locale)}
                 </span>
               </div>
 
@@ -760,7 +755,7 @@ export function ControlTowerSurface() {
                   </strong>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">Supraconsum</span>
+                  <span className="text-slate-400 block text-[11px]">{t('control_tower.overconsumption', locale)}</span>
                   <strong className="text-slate-900 text-sm font-mono">
                     {overview.materials.overconsumption}
                   </strong>
@@ -831,7 +826,7 @@ export function ControlTowerSurface() {
 
               <div className="mt-3 space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-500">
-                  <span>Buget Total:</span>
+                  <span>{t('control_tower.budget_total', locale)}</span>
                   <strong className="text-slate-900 font-mono">
                     {formatCurrency(overview.finance.budget)}
                   </strong>
@@ -1062,30 +1057,24 @@ export function ControlTowerSurface() {
               id="activity-since-yesterday-title"
               className="text-base font-bold text-slate-900 tracking-tight"
             >
-              {locale === 'ro' ? 'Activitate de ieri' : 'Activity since yesterday'}
+              {t('control_tower.activity_title', locale)}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              {locale === 'ro'
-                ? 'Ce s-a schimbat în ultimele 24 de ore'
-                : 'What changed in the last 24 hours'}
+              {t('control_tower.activity_subtitle', locale)}
             </p>
           </div>
           <Link
             href="/activity"
             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
           >
-            {locale === 'ro' ? 'Vezi tot' : 'View all'}
+            {t('control_tower.view_all', locale)}
             <ExternalLink className="size-3.5" aria-hidden="true" />
           </Link>
         </div>
 
         {activityError ? (
           <ErrorState
-            title={
-              locale === 'ro'
-                ? 'Eroare la încărcarea activității'
-                : 'Failed to load activity'
-            }
+            title={t('control_tower.activity_error_title', locale)}
             error={activityError}
             onRetry={() => loadControlTower(true)}
           />
@@ -1099,12 +1088,8 @@ export function ControlTowerSurface() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
             <EmptyState
               icon={<Activity />}
-              title={locale === 'ro' ? 'Nicio activitate recentă' : 'No recent activity'}
-              description={
-                locale === 'ro'
-                  ? 'Nimic nu s-a schimbat în ultimele 24 de ore.'
-                  : 'Nothing changed in the last 24 hours.'
-              }
+              title={t('control_tower.activity_empty_title', locale)}
+              description={t('control_tower.activity_empty_message', locale)}
             />
           </div>
         ) : (
@@ -1112,14 +1097,14 @@ export function ControlTowerSurface() {
             {activityGroups.map((group) => (
               <div key={group.key} className="space-y-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 px-1">
-                  {locale === 'ro' ? group.ro : group.en}
+                  {t(group.i18nKey, locale)}
                 </h3>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-chrome-line">
                   {group.items.map((event) => {
                     const meta = activityMeta(event, locale);
                     const Icon = meta.icon;
                     const actorName =
-                      event.actor?.name || (locale === 'ro' ? 'Sistem' : 'System');
+                      event.actor?.name || t('activity.system', locale);
                     return (
                       <Link
                         key={event.id}

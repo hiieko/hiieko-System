@@ -1961,6 +1961,41 @@ Object.assign(d, {
   'header.home_title': T('Operațiuni', 'Operations'),
 });
 
+// i18n(control-tower) — localise ControlTowerSurface hardcoded/ternary strings
+Object.assign(d, {
+  'control_tower.activity_title': T('Activitate de ieri', 'Activity since yesterday'),
+  'control_tower.activity_subtitle': T('Ce s-a schimbat în ultimele 24 de ore', 'What changed in the last 24 hours'),
+  'control_tower.activity_empty_title': T('Nicio activitate recentă', 'No recent activity'),
+  'control_tower.activity_empty_message': T('Nimic nu s-a schimbat în ultimele 24 de ore.', 'Nothing changed in the last 24 hours.'),
+  'control_tower.activity_error_title': T('Eroare la încărcarea activității', 'Failed to load activity'),
+  'control_tower.red_flags_error_title': T('Eroare la încărcarea steagurilor roșii', 'Failed to load red flags'),
+  'control_tower.empty_projects_title': T('Niciun proiect încă', 'No projects yet'),
+  'control_tower.empty_projects_message': T('Turnul de Control se va popula odată ce există proiecte.', 'Your Control Tower will populate once projects exist.'),
+  'control_tower.empty_projects_action': T('Proiect nou', 'New project'),
+  'control_tower.view_all': T('Vezi tot', 'View all'),
+  'control_tower.avize_unit': T('avize', 'delivery notes'),
+  'control_tower.overconsumption': T('Supraconsum', 'Overconsumption'),
+  'control_tower.budget_total': T('Buget Total:', 'Total Budget:'),
+  'control_tower.bucket_hour': T('Ultima oră', 'Last hour'),
+  'control_tower.bucket_today': T('Astăzi', 'Today'),
+  'control_tower.bucket_yesterday': T('Ieri', 'Yesterday'),
+  'control_tower.activity_action.default': T('a înregistrat o acțiune', 'performed an action'),
+  'control_tower.activity_action.TASK_CREATED': T('a creat un task', 'created a task'),
+  'control_tower.activity_action.TASK_UPDATED': T('a actualizat un task', 'updated a task'),
+  'control_tower.activity_action.TASK_STATUS_CHANGED': T('a schimbat statusul unui task', 'changed the status of a task'),
+  'control_tower.activity_action.TASK_BLOCKED': T('a raportat un blocaj', 'reported a blocker'),
+  'control_tower.activity_action.TASK_UNBLOCKED': T('a rezolvat un blocaj', 'resolved a blocker'),
+  'control_tower.activity_action.DAILY_REPORT_SUBMITTED': T('a trimis raportul zilnic', 'submitted a daily report'),
+  'control_tower.activity_action.DAILY_REPORT_APPROVED': T('a aprobat raportul zilnic', 'approved a daily report'),
+  'control_tower.activity_action.DAILY_REPORT_REJECTED': T('a respins raportul zilnic', 'rejected a daily report'),
+  'control_tower.activity_action.ISSUE_REPORTED': T('a raportat o problemă', 'reported an issue'),
+  'control_tower.activity_action.ISSUE_RESOLVED': T('a rezolvat o problemă', 'resolved an issue'),
+  'control_tower.activity_action.FILE_UPLOADED': T('a încărcat un fișier', 'uploaded a file'),
+  'control_tower.activity_action.ATTACHMENT_CREATED': T('a atașat o fotografie', 'attached a photo'),
+  'control_tower.activity_action.ATTENDANCE_CHECK_IN': T('a făcut check-in', 'checked in'),
+  'control_tower.activity_action.ATTENDANCE_CHECK_OUT': T('a făcut check-out', 'checked out'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
