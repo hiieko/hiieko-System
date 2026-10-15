@@ -1823,13 +1823,6 @@ export interface IApiClient {
     projectId: string;
   }): Promise<ApiResponse<PhotoAttachment>>;
   deleteAttachment(id: string, projectId: string): Promise<ApiResponse<{ id: string }>>;
-
-  // File Upload
-  uploadFile(
-    file: { uri?: string; type: string; name: string },
-    entityType: string,
-    entityId: string
-  ): Promise<ApiResponse<{ url: string }>>;
 }
 
 // ============================================================================
