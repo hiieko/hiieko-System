@@ -2070,6 +2070,40 @@ Object.assign(d, {
   'worker.refresh_attendance': T('Reîmprospătează pontajul', 'Refresh attendance'),
 });
 
+// i18n(workforce) — localise workforce/page.tsx hardcoded strings
+Object.assign(d, {
+  'workforce.subtitle': T('Angajați și personal activ', 'Employees and active staff'),
+  'workforce.reload': T('Reîncarcă angajații', 'Reload employees'),
+  'workforce.search_aria': T('Caută angajați', 'Search employees'),
+  'workforce.clear_search': T('Șterge căutarea', 'Clear search'),
+  'workforce.empty_search_title': T('Niciun rezultat', 'No matching results'),
+  'workforce.empty_search_desc': T('Niciun angajat nu corespunde căutării curente.', 'No employees match the current search.'),
+  'workforce.empty_title': T('Niciun angajat încă', 'No employees yet'),
+  'workforce.empty_desc': T('Adaugă angajați pentru a-i atribui echipelor și task-urilor.', 'Add employees to assign them to teams and tasks.'),
+  'workforce.rate': T('Tarif', 'Rate'),
+  'workforce.actions': T('Acțiuni', 'Actions'),
+  'workforce.edit': T('Editează', 'Edit'),
+  'workforce.archive': T('Arhivează', 'Archive'),
+  'workforce.no_email': T('Fără e-mail asociat', 'No linked email'),
+  'workforce.edit_details': T('Editează datele', 'Edit details'),
+  'workforce.archive_employee': T('Arhivează angajatul', 'Archive employee'),
+  'workforce.edit_title': T('Editează angajat', 'Edit employee'),
+  'workforce.hourly_rate_ron': T('Tarif orar (RON)', 'Hourly rate (RON)'),
+  'workforce.hourly_rate_aria': T('Tarif orar în RON', 'Hourly rate in RON'),
+  'workforce.user_account_label': T('Utilizator asociat', 'Linked user'),
+  'workforce.no_account': T('Fără cont', 'No account'),
+  'workforce.archive_confirm_title': T('Arhivează angajatul?', 'Archive employee?'),
+  'workforce.archive_confirm_message': T('Angajatul va fi marcat ca inactiv și nu va mai apărea în listele active.', 'The employee will be marked inactive and will no longer appear in active lists.'),
+  'workforce.archiving': T('Se arhivează...', 'Archiving...'),
+  'workforce.create': T('Creează', 'Create'),
+  'workforce.updated': T('Angajat actualizat', 'Employee updated'),
+  'workforce.archived': T('Angajat arhivat', 'Employee archived'),
+  'workforce.create_error': T('Eroare la creare', 'Error creating'),
+  'workforce.update_error': T('Eroare la actualizare', 'Error updating'),
+  'workforce.archive_error': T('Eroare la arhivare', 'Error archiving'),
+  'workforce.name_required': T('Prenumele și numele sunt obligatorii', 'First and last name are required'),
+});
+
 // i18n(avize) — localise avize/page.tsx hardcoded strings
 Object.assign(d, {
   'avize.list.load_error': T('Eroare la încărcarea avizelor.', 'Failed to load delivery notes.'),

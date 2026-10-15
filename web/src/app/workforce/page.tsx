@@ -5,6 +5,7 @@ import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
+import { getRoleLabel, t, useLocale } from '@solar/shared';
 import { Users, RefreshCw, Search, X, Edit3, Trash2, Check, Plus, Save } from 'lucide-react';
 import { displayName } from '../../lib/formatters';
 import { PageHeader, Button, Card, Badge, Modal, ConfirmDialog, ErrorState, Skeleton, EmptyState } from '../../components/ui';
@@ -15,12 +16,8 @@ interface Employee {
   user?: { id: string; email: string; role: string };
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN:'Admin',MANAGER:'Manager',TEAM_LEADER:'Șef echipă',WORKER:'Muncitor',
-  PM:'Project Manager',SITE_MANAGER:'Șef șantier',VIEWER:'Vizualizare',
-};
-
 function WorkforcePageInner() {
+  const { locale } = useLocale();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -60,7 +57,7 @@ function WorkforcePageInner() {
       setEmployees((res.data || []) as Employee[]);
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
-      else setError('Eroare la încărcare');
+      else setError(t('workforce.load_error', locale));
     } finally { setLoading(false); }
   };
 
@@ -82,7 +79,7 @@ function WorkforcePageInner() {
 
   const handleEditSave = async () => {
     if (!editEmployee) return;
-    if (!editFirstName.trim() || !editLastName.trim()) { setError('Prenumele și numele sunt obligatorii'); return; }
+    if (!editFirstName.trim() || !editLastName.trim()) { setError(t('workforce.name_required', locale)); return; }
     setEditSaving(true);
     try {
       await apiClient.updateEmployee(editEmployee.id, {
@@ -93,11 +90,11 @@ function WorkforcePageInner() {
         userId: editUserId || undefined,
       });
       setShowEdit(false);
-      showSuccess('Angajat actualizat');
+      showSuccess(t('workforce.updated', locale));
       await load();
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
-      else setError('Eroare la actualizare');
+      else setError(t('workforce.update_error', locale));
     } finally { setEditSaving(false); }
   };
 
@@ -106,16 +103,16 @@ function WorkforcePageInner() {
     try {
       await apiClient.deleteEmployee(id);
       setConfirmDelete(null);
-      showSuccess('Angajat arhivat');
+      showSuccess(t('workforce.archived', locale));
       await load();
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
-      else setError('Eroare la arhivare');
+      else setError(t('workforce.archive_error', locale));
     } finally { setDeleting(false); }
   };
 
   const handleCreate = async () => {
-    if (!createFirstName.trim() || !createLastName.trim()) { setError('Prenumele și numele sunt obligatorii'); return; }
+    if (!createFirstName.trim() || !createLastName.trim()) { setError(t('workforce.name_required', locale)); return; }
     setCreateSaving(true);
     try {
       await apiClient.createEmployee({
@@ -127,11 +124,11 @@ function WorkforcePageInner() {
       });
       setCreateFirstName(''); setCreateLastName(''); setCreatePosition(''); setCreateHourlyRate(''); setCreateUserId('');
       setShowCreate(false);
-      showSuccess('Angajat creat cu succes');
+      showSuccess(t('workforce.create_success', locale));
       await load();
     } catch (err) {
       if (err instanceof ApiError) setError(err.message);
-      else setError('Eroare la creare');
+      else setError(t('workforce.create_error', locale));
     } finally { setCreateSaving(false); }
   };
 
@@ -151,14 +148,14 @@ function WorkforcePageInner() {
         </div>
       )}
       <PageHeader
-        title="Forța de Muncă"
-        subtitle="Angajați și personal activ"
+        title={t('workforce.title', locale)}
+        subtitle={t('workforce.subtitle', locale)}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => { setShowCreate(true); }}>
-              Angajat Nou
+              {t('workforce.new', locale)}
             </Button>
-            <Button type="button" variant="secondary" size="icon" onClick={load} disabled={loading} aria-label="Reîncarcă angajații">
+            <Button type="button" variant="secondary" size="icon" onClick={load} disabled={loading} aria-label={t('workforce.reload', locale)}>
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
             </Button>
           </div>
@@ -166,29 +163,29 @@ function WorkforcePageInner() {
       />
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" aria-label="Caută angajați" placeholder="Caută angajați..." value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" aria-label={t('workforce.search_aria', locale)} placeholder={t('workforce.search', locale)} value={search} onChange={(e) => setSearch(e.target.value)}
           className="hii-input pl-10 pr-10" />
-        {search && <Button type="button" variant="ghost" size="icon" aria-label="Șterge căutarea" onClick={() => setSearch('')} className="absolute right-1 top-1/2 -translate-y-1/2"><X className="w-4 h-4" aria-hidden="true" /></Button>}
+        {search && <Button type="button" variant="ghost" size="icon" aria-label={t('workforce.clear_search', locale)} onClick={() => setSearch('')} className="absolute right-1 top-1/2 -translate-y-1/2"><X className="w-4 h-4" aria-hidden="true" /></Button>}
       </div>
       {loading ? (
         <Skeleton className="h-12" count={6} />
       ) : error ? (
-        <ErrorState title="Eroare la încărcarea angajaților" error={error} onRetry={load} />
+        <ErrorState title={t('workforce.load_error', locale)} error={error} onRetry={load} />
       ) : filtered.length === 0 ? (
         <Card padding={false}>
           {search ? (
             <EmptyState
               icon={<Search />}
-              title="No matching results"
-              description="No employees match the current search."
-              action={{ label: 'Clear search', onClick: () => setSearch('') }}
+              title={t('workforce.empty_search_title', locale)}
+              description={t('workforce.empty_search_desc', locale)}
+              action={{ label: t('workforce.clear_search', locale), onClick: () => setSearch('') }}
             />
           ) : (
             <EmptyState
               icon={<Users />}
-              title="No employees yet"
-              description="Add employees to assign them to teams and tasks."
-              action={{ label: 'Add employee', onClick: () => setShowCreate(true) }}
+              title={t('workforce.empty_title', locale)}
+              description={t('workforce.empty_desc', locale)}
+              action={{ label: t('workforce.new', locale), onClick: () => setShowCreate(true) }}
             />
           )}
         </Card>
@@ -198,13 +195,13 @@ function WorkforcePageInner() {
           <table className="hii-table min-w-[1050px]">
             <thead>
               <tr>
-                <th>Nume</th>
-                <th>Email</th>
-                <th>Poziție</th>
-                <th>Rol</th>
-                <th className="text-right">Tarif</th>
-                <th className="text-center">Stare</th>
-                <th className="text-center">Acțiuni</th>
+                <th>{t('workforce.name', locale)}</th>
+                <th>{t('workforce.email', locale)}</th>
+                <th>{t('workforce.position', locale)}</th>
+                <th>{t('workforce.role', locale)}</th>
+                <th className="text-right">{t('workforce.rate', locale)}</th>
+                <th className="text-center">{t('workforce.status', locale)}</th>
+                <th className="text-center">{t('workforce.actions', locale)}</th>
               </tr>
             </thead>
             <tbody>
@@ -213,18 +210,18 @@ function WorkforcePageInner() {
                   <td className="font-medium">{e.first_name} {e.last_name}</td>
                   <td className="text-xs text-slate-600">{e.user?.email || '—'}</td>
                   <td className="text-xs text-slate-700">{e.position || '—'}</td>
-                  <td><Badge variant="neutral" size="sm">{ROLE_LABELS[e.user?.role || ''] || e.user?.role || '—'}</Badge></td>
+                  <td><Badge variant="neutral" size="sm">{getRoleLabel(e.user?.role, locale) || '—'}</Badge></td>
                   <td className="text-right text-xs">{e.hourly_rate ? Number(e.hourly_rate).toFixed(2) + ' RON' : '—'}</td>
-                  <td className="text-center"><Badge variant={e.is_active !== false ? 'success' : 'neutral'} size="sm">{e.is_active !== false ? 'Activ' : 'Inactiv'}</Badge></td>
+                  <td className="text-center"><Badge variant={e.is_active !== false ? 'success' : 'neutral'} size="sm">{e.is_active !== false ? t('workforce.active', locale) : t('workforce.inactive', locale)}</Badge></td>
                   <td className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       <Button variant="ghost" size="icon" onClick={() => openEdit(e)}
-                        title="Editează" aria-label={`Editează ${e.first_name} ${e.last_name}`}>
+                        title={t('workforce.edit', locale)} aria-label={`${t('workforce.edit', locale)} ${e.first_name} ${e.last_name}`}>
                         <Edit3 className="w-3.5 h-3.5" />
                       </Button>
                       {e.is_active !== false && (
                         <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(e.id)}
-                          title="Arhivează" aria-label={`Arhivează ${e.first_name} ${e.last_name}`} className="hover:bg-critical-soft hover:text-critical">
+                          title={t('workforce.archive', locale)} aria-label={`${t('workforce.archive', locale)} ${e.first_name} ${e.last_name}`} className="hover:bg-critical-soft hover:text-critical">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       )}
@@ -241,18 +238,18 @@ function WorkforcePageInner() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="break-words text-sm font-bold text-slate-900">{employee.first_name} {employee.last_name}</h2>
-                  <p className="mt-1 break-all text-xs text-slate-600">{employee.user?.email || 'Fără e-mail asociat'}</p>
+                  <p className="mt-1 break-all text-xs text-slate-600">{employee.user?.email || t('workforce.no_email', locale)}</p>
                 </div>
-                <Badge variant={employee.is_active !== false ? 'success' : 'neutral'} size="md" className="shrink-0">{employee.is_active !== false ? 'Activ' : 'Inactiv'}</Badge>
+                <Badge variant={employee.is_active !== false ? 'success' : 'neutral'} size="md" className="shrink-0">{employee.is_active !== false ? t('workforce.active', locale) : t('workforce.inactive', locale)}</Badge>
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-slate-100 pt-3 text-xs">
-                <div><dt className="text-slate-500">Poziție</dt><dd className="mt-0.5 font-medium text-slate-800">{employee.position || '—'}</dd></div>
-                <div><dt className="text-slate-500">Rol</dt><dd className="mt-0.5 font-medium text-slate-800">{ROLE_LABELS[employee.user?.role || ''] || employee.user?.role || '—'}</dd></div>
-                <div className="col-span-2"><dt className="text-slate-500">Tarif</dt><dd className="mt-0.5 font-medium text-slate-800">{employee.hourly_rate ? `${Number(employee.hourly_rate).toFixed(2)} RON` : '—'}</dd></div>
+                <div><dt className="text-slate-500">{t('workforce.position', locale)}</dt><dd className="mt-0.5 font-medium text-slate-800">{employee.position || '—'}</dd></div>
+                <div><dt className="text-slate-500">{t('workforce.role', locale)}</dt><dd className="mt-0.5 font-medium text-slate-800">{getRoleLabel(employee.user?.role, locale) || '—'}</dd></div>
+                <div className="col-span-2"><dt className="text-slate-500">{t('workforce.rate', locale)}</dt><dd className="mt-0.5 font-medium text-slate-800">{employee.hourly_rate ? `${Number(employee.hourly_rate).toFixed(2)} RON` : '—'}</dd></div>
               </dl>
               <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                <Button type="button" variant="secondary" onClick={() => openEdit(employee)} className="min-h-10 flex-1 text-xs font-semibold">Editează datele</Button>
-                {employee.is_active !== false && <Button type="button" variant="danger" onClick={() => setConfirmDelete(employee.id)} className="min-h-10 flex-1 text-xs font-semibold">Arhivează angajatul</Button>}
+                <Button type="button" variant="secondary" onClick={() => openEdit(employee)} className="min-h-10 flex-1 text-xs font-semibold">{t('workforce.edit_details', locale)}</Button>
+                {employee.is_active !== false && <Button type="button" variant="danger" onClick={() => setConfirmDelete(employee.id)} className="min-h-10 flex-1 text-xs font-semibold">{t('workforce.archive_employee', locale)}</Button>}
               </div>
             </Card>
           ))}
@@ -264,34 +261,34 @@ function WorkforcePageInner() {
       <Modal
         open={showEdit && !!editEmployee}
         onClose={() => setShowEdit(false)}
-        title="Editează angajat"
+        title={t('workforce.edit_title', locale)}
         footer={
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => setShowEdit(false)}>Anulează</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowEdit(false)}>{t('workforce.cancel', locale)}</Button>
             <Button variant="primary" icon={<Save className="w-4 h-4" />} loading={editSaving} disabled={!editFirstName.trim() || !editLastName.trim()} onClick={handleEditSave}>
-              {editSaving ? 'Se salvează...' : 'Salvează'}
+              {editSaving ? t('workforce.saving', locale) : t('workforce.save', locale)}
             </Button>
           </div>
         }
       >
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div><label className="hii-label">Prenume *</label>
-              <input aria-label="Prenume" value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="hii-input" />
+            <div><label className="hii-label">{t('workforce.first_name', locale)} *</label>
+              <input aria-label={t('workforce.first_name', locale)} value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="hii-input" />
             </div>
-            <div><label className="hii-label">Nume *</label>
-              <input aria-label="Nume" value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="hii-input" />
+            <div><label className="hii-label">{t('workforce.last_name', locale)} *</label>
+              <input aria-label={t('workforce.last_name', locale)} value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="hii-input" />
             </div>
           </div>
-          <div><label className="hii-label">Poziție</label>
-            <input aria-label="Poziție" value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className="hii-input" />
+          <div><label className="hii-label">{t('workforce.position', locale)}</label>
+            <input aria-label={t('workforce.position', locale)} value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className="hii-input" />
           </div>
-          <div><label className="hii-label">Tarif orar (RON)</label>
-            <input aria-label="Tarif orar în RON" type="number" step="0.01" min="0" value={editHourlyRate} onChange={(e) => setEditHourlyRate(e.target.value)} className="hii-input" />
+          <div><label className="hii-label">{t('workforce.hourly_rate_ron', locale)}</label>
+            <input aria-label={t('workforce.hourly_rate_aria', locale)} type="number" step="0.01" min="0" value={editHourlyRate} onChange={(e) => setEditHourlyRate(e.target.value)} className="hii-input" />
           </div>
-          <div><label className="hii-label">Utilizator asociat</label>
-            <select aria-label="Utilizator asociat" value={editUserId} onChange={(e) => setEditUserId(e.target.value)} className="hii-select">
-              <option value="">Fără cont</option>
+          <div><label className="hii-label">{t('workforce.user_account_label', locale)}</label>
+            <select aria-label={t('workforce.user_account_label', locale)} value={editUserId} onChange={(e) => setEditUserId(e.target.value)} className="hii-select">
+              <option value="">{t('workforce.no_account', locale)}</option>
               {users.filter((u: any) => u.is_active !== false).map((u: any) => (
                 <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
               ))}
@@ -304,10 +301,10 @@ function WorkforcePageInner() {
         <ConfirmDialog
           open={!!confirmDelete}
           variant="danger"
-          title="Arhivează angajatul?"
-          message="Angajatul va fi marcat ca inactiv si nu va mai aparea in listele active."
-          confirmLabel={deleting ? 'Se arhiveaza...' : 'Arhiveaza'}
-          cancelLabel="Anulează"
+          title={t('workforce.archive_confirm_title', locale)}
+          message={t('workforce.archive_confirm_message', locale)}
+          confirmLabel={deleting ? t('workforce.archiving', locale) : t('workforce.archive', locale)}
+          cancelLabel={t('workforce.cancel', locale)}
           loading={deleting}
           onConfirm={() => handleDeleteEmployee(confirmDelete)}
           onCancel={() => setConfirmDelete(null)}
@@ -318,34 +315,34 @@ function WorkforcePageInner() {
       <Modal
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        title="Angajat nou"
+        title={t('workforce.new', locale)}
         footer={
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => setShowCreate(false)}>Anulează</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowCreate(false)}>{t('workforce.cancel', locale)}</Button>
             <Button variant="primary" icon={<Plus className="w-4 h-4" />} loading={createSaving} disabled={!createFirstName.trim() || !createLastName.trim()} onClick={handleCreate}>
-              {createSaving ? 'Se salvează...' : 'Creează'}
+              {createSaving ? t('workforce.saving', locale) : t('workforce.create', locale)}
             </Button>
           </div>
         }
       >
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div><label className="hii-label">Prenume *</label>
-              <input aria-label="Prenume" value={createFirstName} onChange={(e) => setCreateFirstName(e.target.value)} className="hii-input" />
+            <div><label className="hii-label">{t('workforce.first_name', locale)} *</label>
+              <input aria-label={t('workforce.first_name', locale)} value={createFirstName} onChange={(e) => setCreateFirstName(e.target.value)} className="hii-input" />
             </div>
-            <div><label className="hii-label">Nume *</label>
-              <input aria-label="Nume" value={createLastName} onChange={(e) => setCreateLastName(e.target.value)} className="hii-input" />
+            <div><label className="hii-label">{t('workforce.last_name', locale)} *</label>
+              <input aria-label={t('workforce.last_name', locale)} value={createLastName} onChange={(e) => setCreateLastName(e.target.value)} className="hii-input" />
             </div>
           </div>
-          <div><label className="hii-label">Poziție</label>
-            <input aria-label="Poziție" value={createPosition} onChange={(e) => setCreatePosition(e.target.value)} className="hii-input" />
+          <div><label className="hii-label">{t('workforce.position', locale)}</label>
+            <input aria-label={t('workforce.position', locale)} value={createPosition} onChange={(e) => setCreatePosition(e.target.value)} className="hii-input" />
           </div>
-          <div><label className="hii-label">Tarif orar (RON)</label>
-            <input aria-label="Tarif orar în RON" type="number" step="0.01" min="0" value={createHourlyRate} onChange={(e) => setCreateHourlyRate(e.target.value)} className="hii-input" />
+          <div><label className="hii-label">{t('workforce.hourly_rate_ron', locale)}</label>
+            <input aria-label={t('workforce.hourly_rate_aria', locale)} type="number" step="0.01" min="0" value={createHourlyRate} onChange={(e) => setCreateHourlyRate(e.target.value)} className="hii-input" />
           </div>
-          <div><label className="hii-label">Utilizator asociat</label>
-            <select aria-label="Utilizator asociat" value={createUserId} onChange={(e) => setCreateUserId(e.target.value)} className="hii-select">
-              <option value="">Fără cont</option>
+          <div><label className="hii-label">{t('workforce.user_account_label', locale)}</label>
+            <select aria-label={t('workforce.user_account_label', locale)} value={createUserId} onChange={(e) => setCreateUserId(e.target.value)} className="hii-select">
+              <option value="">{t('workforce.no_account', locale)}</option>
               {users.filter((u: any) => u.is_active !== false).map((u: any) => (
                 <option key={u.id} value={u.id}>{displayName(u)} ({u.email})</option>
               ))}
