@@ -26,5 +26,6 @@ export { DropdownMenu } from './DropdownMenu';
 export type { DropdownMenuItem, DropdownMenuProps } from './DropdownMenu';
 export { Breadcrumbs } from './Breadcrumbs';
 export type { BreadcrumbItem } from './Breadcrumbs';
+export { Pagination } from './Pagination';
 export { PhotoUpload } from './PhotoUpload';
 export type { PhotoUploadProps, PhotoTargetType } from './PhotoUpload';

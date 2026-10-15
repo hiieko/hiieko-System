@@ -2189,6 +2189,14 @@ Object.assign(d, {
 });
 
 
+// Phase B UX — shared Pagination component copy
+Object.assign(d, {
+  'pagination.label': T('Paginare', 'Pagination'),
+  'pagination.summary': T('Afișate {from}–{to} din {total}', 'Showing {from}–{to} of {total}'),
+  'pagination.prev': T('Anterior', 'Prev'),
+  'pagination.next': T('Următor', 'Next'),
+});
+
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;
