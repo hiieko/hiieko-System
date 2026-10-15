@@ -19,23 +19,11 @@ import {
 import type { FieldTaskRow } from '../features/planning';
 import { WorkerTodayTasks } from './WorkerTodayTasks';
 
-const FIELD_HOME_COPY = {
-  team_leader: {
-    en: { title: 'Team Day', question: 'What is my team doing today?', tasks: "Today's team work" },
-    ro: { title: 'Ziua echipei', question: 'Ce face echipa mea astăzi?', tasks: 'Lucrările echipei de azi' },
-  },
-  foreman: {
-    en: { title: 'Site Day', question: 'What is happening across the site today?', tasks: "Today's site work" },
-    ro: { title: 'Ziua șantierului', question: 'Ce se întâmplă pe șantier astăzi?', tasks: 'Lucrările de pe șantier de azi' },
-  },
-  site_manager: {
-    en: { title: 'Site Control', question: 'Is the site under control today?', tasks: "Today's site plan" },
-    ro: { title: 'Control șantier', question: 'Este șantierul sub control astăzi?', tasks: 'Planul șantierului de azi' },
-  },
-  technician: {
-    en: { title: 'My Day', question: 'What do I need to do today?', tasks: "Today's work" },
-    ro: { title: 'Ziua mea', question: 'Ce trebuie să fac astăzi?', tasks: 'Lucrările de azi' },
-  },
+const FIELD_HOME_KEY = {
+  team_leader: 'worker.home.team_leader',
+  foreman: 'worker.home.foreman',
+  site_manager: 'worker.home.site_manager',
+  technician: 'worker.home.technician',
 } as const;
 
 export function WorkerDashboard() {
@@ -43,9 +31,8 @@ export function WorkerDashboard() {
   const { selectedProject } = useProject();
   const { geoStatus, requestLocation } = useGeoLocation();
   const { locale } = useLocale();
-  const role = user?.role?.toLowerCase() as keyof typeof FIELD_HOME_COPY;
-  const roleHome = FIELD_HOME_COPY[role] ?? FIELD_HOME_COPY.technician;
-  const copy = roleHome[locale === 'en' ? 'en' : 'ro'];
+  const role = user?.role?.toLowerCase() as keyof typeof FIELD_HOME_KEY;
+  const roleHomeKey = FIELD_HOME_KEY[role] ?? FIELD_HOME_KEY.technician;
   const [attendance, setAttendance] = useState<any>(null);
   const [attLoading, setAttLoading] = useState(true);
   const [attError, setAttError] = useState<string | null>(null);
@@ -156,8 +143,8 @@ export function WorkerDashboard() {
             {(user?.fullName || 'U').slice(0, 2).toUpperCase()}
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-hii-600">{copy.title}</p>
-            <h1 className="text-xl font-bold text-slate-900">{copy.question}</h1>
+            <p className="text-xs font-semibold uppercase tracking-wide text-hii-600">{t(roleHomeKey + '.title', locale)}</p>
+            <h1 className="text-xl font-bold text-slate-900">{t(roleHomeKey + '.question', locale)}</h1>
             <p className="text-sm text-slate-500">
               {selectedProject ? selectedProject.name + ' (' + selectedProject.code + ')' : t('worker.select_project', locale)}
             </p>
@@ -172,7 +159,7 @@ export function WorkerDashboard() {
       {geoStatus.state !== 'idle' && geoStatus.state !== 'loading' && (
         <div className={'flex items-center gap-2 p-2 rounded-lg text-xs ' + (geoStatus.state === 'granted' ? 'bg-success-soft text-success-foreground border border-success/20' : 'bg-warning-soft text-warning-foreground border border-warning/20')}>
           <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
-          {geoStatus.state === 'granted' ? (locale === 'en' ? 'GPS location: ' : 'Locație GPS: ') + geoStatus.location.latitude.toFixed(4) + ', ' + geoStatus.location.longitude.toFixed(4) + (locale === 'en' ? ' (accuracy: ' : ' (precizie: ') + (geoStatus.location.accuracy !== null ? Math.round(geoStatus.location.accuracy) : '?') + 'm)' : geoStatus.error}
+          {geoStatus.state === 'granted' ? t('worker.gps_location', locale) + geoStatus.location.latitude.toFixed(4) + ', ' + geoStatus.location.longitude.toFixed(4) + t('worker.gps_accuracy', locale) + (geoStatus.location.accuracy !== null ? Math.round(geoStatus.location.accuracy) : '?') + 'm)' : geoStatus.error}
         </div>
       )}
 
@@ -220,7 +207,7 @@ export function WorkerDashboard() {
                   {t('worker.clock_out', locale)}
                 </button>
               )}
-              <button onClick={loadAttendance} disabled={attLoading} aria-label={locale === 'en' ? 'Refresh attendance' : 'Reîmprospătează pontajul'} className="py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm rounded-xl disabled:opacity-50 transition-colors">
+              <button onClick={loadAttendance} disabled={attLoading} aria-label={t('worker.refresh_attendance', locale)} className="py-3 px-4 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm rounded-xl disabled:opacity-50 transition-colors">
                 <RefreshCw className={'w-4 h-4 ' + (attLoading ? 'animate-spin' : '')} aria-hidden="true" />
               </button>
             </div>
@@ -229,7 +216,7 @@ export function WorkerDashboard() {
       </div>
 
       <section aria-labelledby="field-home-work">
-        <h2 id="field-home-work" className="mb-3 text-base font-bold text-slate-900">{copy.tasks}</h2>
+        <h2 id="field-home-work" className="mb-3 text-base font-bold text-slate-900">{t(roleHomeKey + '.tasks', locale)}</h2>
         <WorkerTodayTasks
           rows={taskRows}
           loading={tasksLoading}

@@ -2051,6 +2051,25 @@ Object.assign(d, {
   'worker.assigned_unavailable': T('Lucrarile atribuite nu sunt disponibile pentru rolul tau pe acest backend inca.', 'Assigned work is not available for your role on this backend yet.'),
 });
 
+// i18n(worker-dashboard) — localise WorkerDashboard FIELD_HOME_COPY + misc strings
+Object.assign(d, {
+  'worker.home.team_leader.title': T('Ziua echipei', 'Team Day'),
+  'worker.home.team_leader.question': T('Ce face echipa mea astăzi?', 'What is my team doing today?'),
+  'worker.home.team_leader.tasks': T('Lucrările echipei de azi', "Today's team work"),
+  'worker.home.foreman.title': T('Ziua șantierului', 'Site Day'),
+  'worker.home.foreman.question': T('Ce se întâmplă pe șantier astăzi?', 'What is happening across the site today?'),
+  'worker.home.foreman.tasks': T('Lucrările de pe șantier de azi', "Today's site work"),
+  'worker.home.site_manager.title': T('Control șantier', 'Site Control'),
+  'worker.home.site_manager.question': T('Este șantierul sub control astăzi?', 'Is the site under control today?'),
+  'worker.home.site_manager.tasks': T('Planul șantierului de azi', "Today's site plan"),
+  'worker.home.technician.title': T('Ziua mea', 'My Day'),
+  'worker.home.technician.question': T('Ce trebuie să fac astăzi?', 'What do I need to do today?'),
+  'worker.home.technician.tasks': T('Lucrările de azi', "Today's work"),
+  'worker.gps_location': T('Locație GPS: ', 'GPS location: '),
+  'worker.gps_accuracy': T(' (precizie: ', ' (accuracy: '),
+  'worker.refresh_attendance': T('Reîmprospătează pontajul', 'Refresh attendance'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
