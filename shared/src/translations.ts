@@ -1996,6 +1996,27 @@ Object.assign(d, {
   'control_tower.activity_action.ATTENDANCE_CHECK_OUT': T('a făcut check-out', 'checked out'),
 });
 
+// i18n(control-tower) — localise ControlTowerRedFlagsCard hardcoded strings
+Object.assign(d, {
+  'control_tower.red_flags.empty_title': T('Steaguri Roșii & Alerte Deterministe: 0 Alerte Active', 'Red Flags & Deterministic Alerts: 0 Active Alerts'),
+  'control_tower.red_flags.empty_desc': T('Toate regulile de siguranță, stoc, pontaj, financiare și execuție sunt în parametri normali.', 'All safety, stock, attendance, financial and execution rules are within normal parameters.'),
+  'control_tower.red_flags.title': T('Alerte Operaționale Deterministe (Steaguri Roșii)', 'Deterministic Operational Alerts (Red Flags)'),
+  'control_tower.red_flags.subtitle': T('Declanșate exclusiv prin reguli obiective și praguri matematice verificate', 'Triggered exclusively by objective rules and verified mathematical thresholds'),
+  'control_tower.red_flags.filter_all': T('Toate', 'All'),
+  'control_tower.red_flags.filter_critical': T('Critice', 'Critical'),
+  'control_tower.red_flags.filter_high': T('Înalte', 'High'),
+  'control_tower.red_flags.filter_medium': T('Medii', 'Medium'),
+  'control_tower.red_flags.col_severity': T('Severitate', 'Severity'),
+  'control_tower.red_flags.col_category': T('Categorie', 'Category'),
+  'control_tower.red_flags.col_entity': T('Entitate Afectată', 'Affected Entity'),
+  'control_tower.red_flags.col_reason': T('Motiv / Regulă Verificată', 'Reason / Verified Rule'),
+  'control_tower.red_flags.col_responsible': T('Responsabil', 'Responsible'),
+  'control_tower.red_flags.col_timestamp': T('Data / Ora', 'Date / Time'),
+  'control_tower.red_flags.col_source': T('Sursă', 'Source'),
+  'control_tower.red_flags.col_action': T('Acțiune', 'Action'),
+  'control_tower.red_flags.inspect': T('Detalii', 'Details'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

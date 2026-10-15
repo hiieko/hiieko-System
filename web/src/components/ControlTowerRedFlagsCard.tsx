@@ -11,6 +11,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { RedFlag } from '../lib/api-client';
+import { t, useLocale } from '@solar/shared';
 
 interface ControlTowerRedFlagsCardProps {
   redFlags: RedFlag[];
@@ -21,6 +22,7 @@ export function ControlTowerRedFlagsCard({
   redFlags,
   onInspect,
 }: ControlTowerRedFlagsCardProps) {
+  const { locale } = useLocale();
   const [selectedSeverity, setSelectedSeverity] = useState<string>('ALL');
 
   const criticalCount = redFlags.filter((f) => f.severity === 'CRITICAL').length;
@@ -41,10 +43,10 @@ export function ControlTowerRedFlagsCard({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-900">
-              Steaguri Roșii & Alerte Deterministe: 0 Alerte Active
+              {t('control_tower.red_flags.empty_title', locale)}
             </h3>
             <p className="text-xs text-slate-500">
-              Toate regulile de siguranță, stoc, pontaj, financiare și execuție sunt în parametri normali.
+              {t('control_tower.red_flags.empty_desc', locale)}
             </p>
           </div>
         </div>
@@ -63,14 +65,14 @@ export function ControlTowerRedFlagsCard({
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="text-base font-bold text-white tracking-tight">
-                Alerte Operaționale Deterministe (Steaguri Roșii)
+                {t('control_tower.red_flags.title', locale)}
               </h3>
               <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white">
                 {redFlags.length}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
-              Declanșate exclusiv prin reguli obiective și praguri matematice verificate
+              {t('control_tower.red_flags.subtitle', locale)}
             </p>
           </div>
         </div>
@@ -85,7 +87,7 @@ export function ControlTowerRedFlagsCard({
                 : 'text-slate-300 hover:text-white'
             }`}
           >
-            Toate ({redFlags.length})
+            {t('control_tower.red_flags.filter_all', locale)} ({redFlags.length})
           </button>
           {criticalCount > 0 && (
             <button
@@ -96,7 +98,7 @@ export function ControlTowerRedFlagsCard({
                   : 'text-rose-400 hover:bg-rose-950/40'
               }`}
             >
-              Critice ({criticalCount})
+              {t('control_tower.red_flags.filter_critical', locale)} ({criticalCount})
             </button>
           )}
           {highCount > 0 && (
@@ -108,7 +110,7 @@ export function ControlTowerRedFlagsCard({
                   : 'text-amber-400 hover:bg-amber-950/40'
               }`}
             >
-              Înalte ({highCount})
+              {t('control_tower.red_flags.filter_high', locale)} ({highCount})
             </button>
           )}
           {mediumCount > 0 && (
@@ -120,7 +122,7 @@ export function ControlTowerRedFlagsCard({
                   : 'text-slate-400 hover:bg-slate-700'
               }`}
             >
-              Medii ({mediumCount})
+              {t('control_tower.red_flags.filter_medium', locale)} ({mediumCount})
             </button>
           )}
         </div>
@@ -131,14 +133,14 @@ export function ControlTowerRedFlagsCard({
         <table className="w-full text-left text-xs text-slate-600">
           <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
             <tr>
-              <th className="py-3 px-4">Severitate</th>
-              <th className="py-3 px-4">Categorie</th>
-              <th className="py-3 px-4">Entitate Afectată</th>
-              <th className="py-3 px-4">Motiv / Regulă Verificată</th>
-              <th className="py-3 px-4">Responsabil</th>
-              <th className="py-3 px-4">Data / Ora</th>
-              <th className="py-3 px-4">Sursă</th>
-              <th className="py-3 px-4 text-right">Acțiune</th>
+              <th className="py-3 px-4">{t('control_tower.red_flags.col_severity', locale)}</th>
+              <th className="py-3 px-4">{t('control_tower.red_flags.col_category', locale)}</th>
+              <th className="py-3 px-4">{t('control_tower.red_flags.col_entity', locale)}</th>
+              <th className="py-3 px-4">{t('control_tower.red_flags.col_reason', locale)}</th>
+              <th className="py-3 px-4">{t('control_tower.red_flags.col_responsible', locale)}</th>
+              <th className="py-3 px-4">{t('control_tower.red_flags.col_timestamp', locale)}</th>
+              <th className="py-3 px-4">{t('control_tower.red_flags.col_source', locale)}</th>
+              <th className="py-3 px-4 text-right">{t('control_tower.red_flags.col_action', locale)}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -163,7 +165,7 @@ export function ControlTowerRedFlagsCard({
                           : 'bg-slate-200 text-slate-700'
                       }`}
                     >
-                      {flag.severity}
+                      {t('issues.severity_' + flag.severity, locale)}
                     </span>
                   </td>
                   <td className="py-3 px-4 font-semibold text-slate-800 whitespace-nowrap">
@@ -194,7 +196,7 @@ export function ControlTowerRedFlagsCard({
                       onClick={() => onInspect(flag)}
                       className="px-2.5 py-1 text-xs font-semibold text-warning hover:text-warning-foreground hover:bg-warning-soft rounded border border-warning/20 transition-colors inline-flex items-center space-x-1"
                     >
-                      <span>Detalii</span>
+                      <span>{t('control_tower.red_flags.inspect', locale)}</span>
                       <ExternalLink className="w-3 h-3" />
                     </button>
                   </td>
