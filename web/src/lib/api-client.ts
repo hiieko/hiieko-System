@@ -1227,10 +1227,6 @@ export class NestApiClient {
     );
   }
 
-  async getAviz(id: string): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>(`/api/procurement/delivery-notes/${id}`);
-  }
-
   async createAviz(data: {
     projectId: string;
     avizNumber: string;
@@ -1686,7 +1682,6 @@ export interface IApiClient {
     projectId?: string;
     status?: string;
   }): Promise<ApiResponse<any[]>>;
-  getAviz(id: string): Promise<ApiResponse<any>>;
   createAviz(data: {
     projectId: string;
     avizNumber: string;
