@@ -42,6 +42,7 @@ import {
   Pencil,
   Plus,
   Upload,
+  ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
@@ -50,7 +51,7 @@ import type { ActivityEvent } from '../features/activity/types';
 import { t, useLocale, canCreateProjects, type Locale } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
-import { EmptyState, ErrorState, Skeleton } from './ui';
+import { EmptyState, ErrorState, Skeleton, Pagination } from './ui';
 import { PageTutorial } from './PageTutorial';
 import { useProject } from '../contexts/ProjectContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -156,6 +157,73 @@ const ACTIVITY_BUCKET_ORDER: { key: ActivityBucket; i18nKey: string }[] = [
   { key: 'yesterday', i18nKey: 'control_tower.bucket_yesterday' },
 ];
 
+const ACTIVITY_PAGE_SIZE = 10;
+const CT_COLLAPSE_PREFIX = 'hiieko.ct.collapsed.';
+
+function usePersistentCollapse(
+  section: string,
+  defaultCollapsed: boolean,
+): [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(`${CT_COLLAPSE_PREFIX}${section}`);
+      if (stored === 'true') setCollapsed(true);
+      else if (stored === 'false') setCollapsed(false);
+    } catch {
+    }
+  }, [section]);
+  const toggle = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(`${CT_COLLAPSE_PREFIX}${section}`, String(next));
+      } catch {
+      }
+      return next;
+    });
+  }, [section]);
+  return [collapsed, toggle];
+}
+
+function ControlTowerSectionHeader({
+  id,
+  title,
+  subtitle,
+  collapsed,
+  onToggle,
+}: {
+  id: string;
+  title: string;
+  subtitle?: string;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  const { locale } = useLocale();
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <h2 id={id} className="text-base font-bold text-slate-900 tracking-tight">
+          {title}
+        </h2>
+        {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={!collapsed}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+      >
+        {t(collapsed ? 'planning.expand' : 'planning.collapse', locale)}
+        <ChevronDown
+          className={`size-3.5 transition-transform ${collapsed ? '-rotate-90' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+    </div>
+  );
+}
+
 export function ControlTowerSurface() {
   const [overview, setOverview] = useState<ControlTowerOverviewDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,6 +238,11 @@ export function ControlTowerSurface() {
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [redFlagsCollapsed, toggleRedFlags] = usePersistentCollapse('redFlags', false);
+  const [domainsCollapsed, toggleDomains] = usePersistentCollapse('domains', false);
+  const [quickActionsCollapsed, toggleQuickActions] = usePersistentCollapse('quickActions', true);
+  const [activityCollapsed, toggleActivity] = usePersistentCollapse('activity', true);
+  const [activityPage, setActivityPage] = useState(1);
   const { locale } = useLocale();
   const { user } = useAuth();
   const router = useRouter();
@@ -298,6 +371,10 @@ export function ControlTowerSurface() {
     loadControlTower();
   }, [loadControlTower]);
 
+  useEffect(() => {
+    setActivityPage(1);
+  }, [activityEvents]);
+
   const fetchDrilldown = useCallback(
     async (request: {
       title: string;
@@ -400,9 +477,19 @@ export function ControlTowerSurface() {
 
   const hasProjects = (overview?.projects.activeProjectsList.length ?? 0) > 0;
 
+  const activityTotalPages = Math.max(
+    1,
+    Math.ceil(activityEvents.length / ACTIVITY_PAGE_SIZE),
+  );
+  const safeActivityPage = Math.min(activityPage, activityTotalPages);
+  const pagedActivityEvents = activityEvents.slice(
+    (safeActivityPage - 1) * ACTIVITY_PAGE_SIZE,
+    safeActivityPage * ACTIVITY_PAGE_SIZE,
+  );
+
   const activityGroups = ACTIVITY_BUCKET_ORDER.map((bucket) => ({
     ...bucket,
-    items: activityEvents.filter(
+    items: pagedActivityEvents.filter(
       (event) => activityBucketOf(event.createdAt) === bucket.key,
     ),
   })).filter((bucket) => bucket.items.length > 0);
@@ -510,21 +597,39 @@ export function ControlTowerSurface() {
       )}
 
       {/* 1. CRITICAL ALERTS & RED FLAGS (Rule-based exceptions) */}
-      {overview && hasProjects &&
-        (redFlagsError ? (
-          <ErrorState
-            title={t('control_tower.red_flags_error_title', locale)}
-            error={redFlagsError}
-            onRetry={() => loadControlTower(true)}
+      {overview && hasProjects && (
+        <section aria-labelledby="red-flags-title" className="space-y-3">
+          <ControlTowerSectionHeader
+            id="red-flags-title"
+            title={t('control_tower.critical_alert', locale)}
+            collapsed={redFlagsCollapsed}
+            onToggle={toggleRedFlags}
           />
-        ) : redFlagsLoading && redFlags.length === 0 ? (
-          <Skeleton className="h-48 rounded-xl" />
-        ) : (
-          <ControlTowerRedFlagsCard redFlags={redFlags} onInspect={openRedFlagInspect} />
-        ))}
+          {!redFlagsCollapsed &&
+            (redFlagsError ? (
+              <ErrorState
+                title={t('control_tower.red_flags_error_title', locale)}
+                error={redFlagsError}
+                onRetry={() => loadControlTower(true)}
+              />
+            ) : redFlagsLoading && redFlags.length === 0 ? (
+              <Skeleton className="h-48 rounded-xl" />
+            ) : (
+              <ControlTowerRedFlagsCard redFlags={redFlags} onInspect={openRedFlagInspect} />
+            ))}
+        </section>
+      )}
 
       {/* 2. THE 7 OPERATIONAL DOMAIN CARDS */}
       {overview && hasProjects && (
+        <section aria-labelledby="domains-title" className="space-y-3">
+          <ControlTowerSectionHeader
+            id="domains-title"
+            title={locale === 'en' ? 'Operational domains' : 'Domenii operaționale'}
+            collapsed={domainsCollapsed}
+            onToggle={toggleDomains}
+          />
+          {!domainsCollapsed && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {/* DOMAIN 1: PROIECTE (Projects) */}
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
@@ -1001,6 +1106,8 @@ export function ControlTowerSurface() {
             </div>
           </div>
         </div>
+          )}
+        </section>
       )}
 
       {/* QUICK WORKFLOW ACCESS */}
@@ -1014,37 +1121,53 @@ export function ControlTowerSurface() {
               {t('control_tower.quick_modules_detail', locale)}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/pontaj"
-              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
+          <div className="flex flex-wrap items-center gap-2">
+            {!quickActionsCollapsed && (
+              <>
+                <Link
+                  href="/pontaj"
+                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
+                >
+                  {t('control_tower.hours', locale)}
+                </Link>
+                <Link
+                  href="/rapoarte"
+                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
+                >
+                  {t('control_tower.daily_reports', locale)}
+                </Link>
+                <Link
+                  href="/avize"
+                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
+                >
+                  {t('control_tower.delivery_intake', locale)}
+                </Link>
+                <Link
+                  href="/stocuri"
+                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
+                >
+                  {t('control_tower.stock', locale)}
+                </Link>
+                <Link
+                  href="/cheltuieli"
+                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
+                >
+                  {t('control_tower.expenses_ocr', locale)}
+                </Link>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={toggleQuickActions}
+              aria-expanded={!quickActionsCollapsed}
+              aria-label={t(quickActionsCollapsed ? 'planning.expand' : 'planning.collapse', locale)}
+              className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-300 transition-colors hover:bg-slate-700"
             >
-              {t('control_tower.hours', locale)}
-            </Link>
-            <Link
-              href="/rapoarte"
-              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-            >
-              {t('control_tower.daily_reports', locale)}
-            </Link>
-            <Link
-              href="/avize"
-              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-            >
-              {t('control_tower.delivery_intake', locale)}
-            </Link>
-            <Link
-              href="/stocuri"
-              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-            >
-              {t('control_tower.stock', locale)}
-            </Link>
-            <Link
-              href="/cheltuieli"
-              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-            >
-              {t('control_tower.expenses_ocr', locale)}
-            </Link>
+              <ChevronDown
+                className={`size-4 transition-transform ${quickActionsCollapsed ? '-rotate-90' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
           </div>
         </div>
       </div>
@@ -1063,16 +1186,30 @@ export function ControlTowerSurface() {
               {t('control_tower.activity_subtitle', locale)}
             </p>
           </div>
-          <Link
-            href="/activity"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
-          >
-            {t('control_tower.view_all', locale)}
-            <ExternalLink className="size-3.5" aria-hidden="true" />
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/activity"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+            >
+              {t('control_tower.view_all', locale)}
+              <ExternalLink className="size-3.5" aria-hidden="true" />
+            </Link>
+            <button
+              type="button"
+              onClick={toggleActivity}
+              aria-expanded={!activityCollapsed}
+              aria-label={t(activityCollapsed ? 'planning.expand' : 'planning.collapse', locale)}
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-100"
+            >
+              <ChevronDown
+                className={`size-4 transition-transform ${activityCollapsed ? '-rotate-90' : ''}`}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
         </div>
 
-        {activityError ? (
+        {!activityCollapsed && (activityError ? (
           <ErrorState
             title={t('control_tower.activity_error_title', locale)}
             error={activityError}
@@ -1139,6 +1276,15 @@ export function ControlTowerSurface() {
               </div>
             ))}
           </div>
+        ))}
+        {!activityCollapsed && activityEvents.length > 0 && (
+          <Pagination
+            page={safeActivityPage}
+            pageSize={ACTIVITY_PAGE_SIZE}
+            total={activityEvents.length}
+            onPageChange={setActivityPage}
+            className="mt-2"
+          />
         )}
       </section>
 
