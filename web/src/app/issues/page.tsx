@@ -34,8 +34,10 @@ import {
   Skeleton,
   Modal,
   PhotoUpload,
+  Pagination,
 } from '../../components/ui';
 import type { IssueSeverity } from '../../features/issues/types';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface IssueItem {
   id: string;
@@ -155,12 +157,30 @@ function IssuesPageInner() {
     return matchesStatus && matchesSearch;
   });
 
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 10 : 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [filter, search, selectedProjectId, pageSize]);
+  const totalFiltered = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedIssues = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const severityCount = (s: string) => issues.filter(i => i.severity === s).length;
+  const summaryCards = [
+    { label: t('issues.kpi_critical', locale), value: severityCount('CRITICAL') },
+    { label: t('issues.kpi_high', locale), value: severityCount('HIGH') },
+    { label: t('issues.kpi_medium', locale), value: severityCount('MEDIUM') },
+    { label: t('issues.kpi_low', locale), value: severityCount('LOW') },
+  ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageTutorial sectionId="issues" />
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
       <PageHeader
-        className="!mb-0"
+        className="py-3 !mb-0"
         title="Probleme & Blocaje"
         subtitle="Raporteaza problemele intalnite pe santier si urmareste rezolvarea lor"
         actions={
@@ -188,7 +208,29 @@ function IssuesPageInner() {
         }
       />
 
+      {selectedProjectId && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-3">
+          <Tabs
+            tabs={[
+              { key: 'all', label: 'Toate' },
+              { key: 'open', label: 'Deschise' },
+              { key: 'RESOLVED', label: 'Rezolvate' },
+              { key: 'CLOSED', label: 'Inchise' },
+            ]}
+            activeTab={filter}
+            onTabChange={(key) => setFilter(key)}
+          />
+          <label className="flex min-h-11 items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 shadow-card sm:max-w-sm">
+            <Search className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
+            <span className="sr-only">Caută după titlu, descriere sau severitate</span>
+            <input value={search} onChange={(event) => setSearch(event.target.value)}
+              placeholder="Caută probleme..." className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
+          </label>
+        </div>
+      )}
+      </div>
 
+      <div className="pt-6 space-y-6">
       {successMsg && (
         <div className="p-3 bg-success-soft border border-success-soft rounded-lg text-sm text-success-foreground flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 shrink-0" />{successMsg}
@@ -211,24 +253,14 @@ function IssuesPageInner() {
         </Card>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <Tabs
-              tabs={[
-                { key: 'all', label: 'Toate' },
-                { key: 'open', label: 'Deschise' },
-                { key: 'RESOLVED', label: 'Rezolvate' },
-                { key: 'CLOSED', label: 'Inchise' },
-              ]}
-              activeTab={filter}
-              onTabChange={(key) => setFilter(key)}
-            />
-            <label className="flex min-h-11 items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 shadow-card sm:max-w-sm">
-              <Search className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
-              <span className="sr-only">Caută după titlu, descriere sau severitate</span>
-              <input value={search} onChange={(event) => setSearch(event.target.value)}
-                placeholder="Caută probleme..." className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
-            </label>
-          </div>
+          <section aria-label="Probleme" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            {summaryCards.map(({ label, value }) => (
+              <Card key={label} padding={false} className="p-4">
+                <p className="text-xs font-medium text-content-muted">{label}</p>
+                <p className="mt-2 text-2xl font-semibold tabular-nums text-content">{value}</p>
+              </Card>
+            ))}
+          </section>
 
           {loading ? (
             <div className="space-y-3">
@@ -256,7 +288,7 @@ function IssuesPageInner() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {filtered.map((issue) => (
+              {pagedIssues.map((issue) => (
                 <Card key={issue.id} padding={false} className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -295,11 +327,12 @@ function IssuesPageInner() {
                   </div>
                 </Card>
               ))}
+              <Pagination page={safePage} pageSize={pageSize} total={totalFiltered} onPageChange={setPage} />
             </div>
           )}
         </>
       )}
-
+      </div>
 
       {/* Create Issue Modal */}
       <Modal

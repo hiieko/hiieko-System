@@ -2211,6 +2211,14 @@ Object.assign(d, {
   'reports.kpi_rejected': T('Respinse', 'Rejected'),
 });
 
+// Phase B UX — /issues KPI strip
+Object.assign(d, {
+  'issues.kpi_critical': T('Critice', 'Critical'),
+  'issues.kpi_high': T('Ridicate', 'High'),
+  'issues.kpi_medium': T('Medii', 'Medium'),
+  'issues.kpi_low': T('Scăzute', 'Low'),
+});
+
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;
