@@ -2044,6 +2044,13 @@ Object.assign(d, {
   'nav.more': T('Mai multe', 'More'),
 });
 
+// i18n(worker-attendance) — localise WorkerAttendanceView hardcoded strings
+Object.assign(d, {
+  'worker.active_shift': T('Tura activa', 'Active shift'),
+  'worker.state_label': T('Stare', 'Status'),
+  'worker.assigned_unavailable': T('Lucrarile atribuite nu sunt disponibile pentru rolul tau pe acest backend inca.', 'Assigned work is not available for your role on this backend yet.'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

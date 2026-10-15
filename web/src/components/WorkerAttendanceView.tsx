@@ -144,19 +144,19 @@ export function WorkerAttendanceView() {
             <div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Sosire</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.arrival', locale)}</div>
                   <div className="text-lg font-bold mt-1 text-slate-400">-</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Plecare</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.departure', locale)}</div>
                   <div className="text-lg font-bold mt-1 text-slate-400">-</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Ore lucrate</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.hours_worked', locale)}</div>
                   <div className="text-lg font-bold mt-1 text-slate-400">0h</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Ore suplim.</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.overtime', locale)}</div>
                   <div className="text-lg font-bold mt-1 text-slate-400">0h</div>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export function WorkerAttendanceView() {
                 <div className="text-center">
                   <Badge variant="success" size="md" className="mb-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-success-soft0 animate-pulse" />
-                    {locale === 'en' ? 'Active shift' : 'Tura activa'}
+                    {t('worker.active_shift', locale)}
                   </Badge>
                   <div className="font-mono text-4xl font-bold text-slate-900 tabular-nums">{formatDuration(elapsedSeconds)}</div>
                   <div className="text-xs text-slate-400 mt-1">{t('worker.elapsed_since_checkin', locale)}</div>
@@ -181,7 +181,7 @@ export function WorkerAttendanceView() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Sosire</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.arrival', locale)}</div>
                   <div className="text-lg font-bold mt-1 text-success-foreground">{formatTime(record.check_in_time)}</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
@@ -191,7 +191,7 @@ export function WorkerAttendanceView() {
                   </div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Stare</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.state_label', locale)}</div>
                   <div className="text-lg font-bold mt-1">
                     {record.is_within_geofence === false ? (
                       <span className="text-warning-foreground text-sm font-bold">{t('worker.geofence_outside', locale)}</span>
@@ -213,12 +213,12 @@ export function WorkerAttendanceView() {
               <div className="flex items-stretch gap-3 mb-5">
                 <div className="flex-1 bg-success-soft border border-success/20 rounded-xl p-4 text-center">
                   <CheckCircle2 className="w-6 h-6 text-success mx-auto mb-1" />
-                  <div className="text-[10px] font-medium text-success-foreground uppercase">Ore lucrate</div>
+                  <div className="text-[10px] font-medium text-success-foreground uppercase">{t('worker.hours_worked', locale)}</div>
                   <div className="text-2xl font-bold text-emerald-900">{lastResult.regular_hours || 0}h</div>
                 </div>
                 <div className="flex-1 bg-warning-soft border border-warning/20 rounded-xl p-4 text-center">
                   <Timer className="w-6 h-6 text-warning mx-auto mb-1" />
-                  <div className="text-[10px] font-medium text-warning-foreground uppercase">Ore suplim.</div>
+                  <div className="text-[10px] font-medium text-warning-foreground uppercase">{t('worker.overtime', locale)}</div>
                   <div className="text-2xl font-bold text-warning-foreground">
                     {lastResult.overtime_minutes > 0 ? (lastResult.overtime_minutes / 60).toFixed(1) + 'h' : '0h'}
                   </div>
@@ -226,11 +226,11 @@ export function WorkerAttendanceView() {
               </div>
               <div className="grid grid-cols-3 gap-3 mb-5">
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Sosire</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.arrival', locale)}</div>
                   <div className="text-sm font-bold mt-1 text-slate-800">{formatTime(lastResult.check_in_time)}</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
-                  <div className="text-[10px] font-medium text-slate-400 uppercase">Plecare</div>
+                  <div className="text-[10px] font-medium text-slate-400 uppercase">{t('worker.departure', locale)}</div>
                   <div className="text-sm font-bold mt-1 text-slate-800">{formatTime(lastResult.check_out_time)}</div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-center">
@@ -241,7 +241,7 @@ export function WorkerAttendanceView() {
                 </div>
               </div>
               <Button onClick={resetForNewShift} variant="secondary" size="lg" fullWidth>
-                {locale === 'en' ? 'New Shift' : 'Tura Noua'}
+                {t('worker.new_shift', locale)}
               </Button>
             </div>
           )}
@@ -265,7 +265,7 @@ export function WorkerAttendanceView() {
               </div>
               <div>
                 <h2 className="text-sm font-bold text-slate-900">{t('worker.my_tasks', locale)}</h2>
-                <p className="text-xs text-slate-400">{locale === 'en' ? 'Work assigned to you on this site' : t('worker.assigned_work_site', locale)}</p>
+                <p className="text-xs text-slate-400">{t('worker.assigned_work_site', locale)}</p>
               </div>
             </div>
             <Button onClick={() => loadTasks(selectedProject.id)} variant="ghost" size="icon" className="text-slate-400"
@@ -284,9 +284,7 @@ export function WorkerAttendanceView() {
               <div className="flex items-start gap-2 text-xs text-warning-foreground bg-warning-soft border border-warning/20 rounded-lg px-4 py-3">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span>
-                  {locale === 'en'
-                    ? 'Assigned work is not available for your role on this backend yet.'
-                    : 'Lucrarile atribuite nu sunt disponibile pentru rolul tau pe acest backend inca.'}
+                  {t('worker.assigned_unavailable', locale)}
                 </span>
               </div>
             ) : assignedTasks.length === 0 ? (
