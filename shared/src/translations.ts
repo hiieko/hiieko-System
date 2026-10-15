@@ -2070,6 +2070,35 @@ Object.assign(d, {
   'worker.refresh_attendance': T('Reîmprospătează pontajul', 'Refresh attendance'),
 });
 
+// i18n(avize) — localise avize/page.tsx hardcoded strings
+Object.assign(d, {
+  'avize.list.load_error': T('Eroare la încărcarea avizelor.', 'Failed to load delivery notes.'),
+  'avize.list.page_title': T('Avize de Însoțire a Mărfii & Recepții', 'Delivery Notes & Goods Receipts'),
+  'avize.list.page_subtitle': T('Evidența avizelor recepționate în șantier, fotografii documente și încărcarea automată a stocului.', 'Record of delivery notes received on site, document photos and automatic stock update.'),
+  'avize.list.select_project_first': T('Selectează mai întâi un proiect', 'Select a project first'),
+  'avize.list.count': T('{shown} din {total} avize', '{shown} of {total} delivery notes'),
+  'avize.list.search_sr': T('Caută livrări', 'Search deliveries'),
+  'avize.list.search_placeholder': T('Aviz, furnizor, material sau proiect', 'Aviz, supplier, material or project'),
+  'avize.list.empty_title': T('Niciun aviz încă', 'No delivery notes yet'),
+  'avize.list.empty_desc': T('Avizele apar aici când sunt înregistrate recepții.', 'Avize appear here when deliveries are recorded.'),
+  'avize.list.empty_search_title': T('Niciun rezultat', 'No matching results'),
+  'avize.list.empty_search_desc': T('Niciun aviz nu corespunde căutării curente.', 'No delivery notes match the current search.'),
+  'avize.list.clear_search': T('Golește căutarea', 'Clear search'),
+  'avize.list.aviz_nr': T('Aviz Nr:', 'Aviz No:'),
+  'avize.list.supplier_label': T('Furnizor:', 'Supplier:'),
+  'avize.list.delivery_date_label': T('Data livrării:', 'Delivery date:'),
+  'avize.list.destination_label': T('Destinație:', 'Destination:'),
+  'avize.list.unknown': T('Necunoscut', 'Unknown'),
+  'avize.list.status_recorded': T('Aviz înregistrat', 'Aviz recorded'),
+  'avize.list.received_materials_heading': T('Materiale Recepționate pe Aviz', 'Materials Received on Aviz'),
+  'avize.list.col_code': T('Cod Material', 'Material Code'),
+  'avize.list.col_name': T('Denumire Material', 'Material Name'),
+  'avize.list.transport_details': T('Detalii transport', 'Transport details'),
+  'avize.list.driver_label': T('Șofer', 'Driver'),
+  'avize.list.vehicle_label': T('Număr vehicul', 'Vehicle number'),
+  'avize.list.preview_note': T('Previzualizarea documentului nu este inclusă în datele returnate de endpoint-ul curent.', 'Document preview is not included in the data returned by the current endpoint.'),
+});
+
 // i18n(photo-upload) — localise PhotoUpload I18N map
 Object.assign(d, {
   'photo_upload.title': T('Fotografii', 'Photos'),

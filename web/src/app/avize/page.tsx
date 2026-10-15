@@ -5,7 +5,7 @@ import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { 
@@ -58,7 +58,7 @@ function AvizePageInner() {
       const mapped = data.map((aviz: any) => ({
         id: aviz.id,
         invoice_or_aviz_number: aviz.aviz_number || '',
-        supplier: aviz.supplier?.name || 'Necunoscut',
+        supplier: aviz.supplier?.name || t('avize.list.unknown', locale),
         project_id: aviz.project_id || '',
         delivery_date: aviz.delivery_date || aviz.created_at,
         photo_url: '',
@@ -97,12 +97,12 @@ function AvizePageInner() {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError(err instanceof Error ? err.message : 'Eroare la încărcarea avizelor.');
+        setError(err instanceof Error ? err.message : t('avize.list.load_error', locale));
       }
     } finally {
       setLoading(false);
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId, locale]);
   useEffect(() => { load(); }, [load]);
 
   const filteredDeliveries = deliveries.filter((delivery) => {
@@ -115,52 +115,52 @@ function AvizePageInner() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="deliveries" />
       <PageHeader
-        title="Avize de Însoțire a Mărfii & Recepții"
-        subtitle="Evidența avizelor recepționate în șantier, fotografii documente și încărcarea automată a stocului."
+        title={t('avize.list.page_title', locale)}
+        subtitle={t('avize.list.page_subtitle', locale)}
         actions={
           <div className="flex items-center gap-2">
             {canCreate && (
-              <span title={!selectedProjectId ? 'Select a project first' : undefined} className="inline-flex">
+              <span title={!selectedProjectId ? t('avize.list.select_project_first', locale) : undefined} className="inline-flex">
                 <Button
                   onClick={() => setCreateOpen(true)}
                   disabled={!selectedProjectId}
                   variant="primary"
                   icon={<Plus className="w-4 h-4" />}
                 >
-                  Aviz Nou
+                  {t('avize.action_new', locale)}
                 </Button>
               </span>
             )}
             <Button onClick={load} disabled={loading} variant="secondary" icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}>
-              Reimprospateaza
+              {t('general.refresh', locale)}
             </Button>
           </div>
         }
       />
       <Card padding={false} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-        <p className="px-1 text-xs text-slate-500">{filteredDeliveries.length} din {deliveries.length} avize</p>
-        <label className="relative flex w-full items-center sm:max-w-md"><Search className="absolute left-3 size-4 shrink-0 text-slate-400" /><span className="sr-only">Caută livrări</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Aviz, furnizor, material sau proiect" className="hii-input pl-10" /></label>
+        <p className="px-1 text-xs text-slate-500">{t('avize.list.count', locale).replace('{shown}', String(filteredDeliveries.length)).replace('{total}', String(deliveries.length))}</p>
+        <label className="relative flex w-full items-center sm:max-w-md"><Search className="absolute left-3 size-4 shrink-0 text-slate-400" /><span className="sr-only">{t('avize.list.search_sr', locale)}</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t('avize.list.search_placeholder', locale)} className="hii-input pl-10" /></label>
       </Card>
       {loading ? (
         <div className="flex flex-col gap-4">
           {[1, 2].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
         </div>
       ) : error ? (
-        <ErrorState title="Eroare la încărcarea avizelor" error={error} onRetry={load} />
+        <ErrorState title={t('avize.list.load_error', locale)} error={error} onRetry={load} />
       ) : filteredDeliveries.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white shadow-card">
           {deliveries.length === 0 ? (
             <EmptyState
               icon={<Truck />}
-              title="No delivery notes yet"
-              description="Avize appear here when deliveries are recorded."
+              title={t('avize.list.empty_title', locale)}
+              description={t('avize.list.empty_desc', locale)}
             />
           ) : (
             <EmptyState
               icon={<Search />}
-              title="No matching results"
-              description="No delivery notes match the current search."
-              action={{ label: 'Clear search', onClick: () => setSearch('') }}
+              title={t('avize.list.empty_search_title', locale)}
+              description={t('avize.list.empty_search_desc', locale)}
+              action={{ label: t('avize.list.clear_search', locale), onClick: () => setSearch('') }}
             />
           )}
         </div>
@@ -176,22 +176,22 @@ function AvizePageInner() {
                     <Truck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="font-bold text-lg text-slate-900">Aviz Nr: {dn.invoice_or_aviz_number}</h2>
-                    <p className="text-xs text-slate-500">Furnizor: <span className="font-semibold text-slate-700">{dn.supplier}</span></p>
+                    <h2 className="font-bold text-lg text-slate-900">{t('avize.list.aviz_nr', locale)} {dn.invoice_or_aviz_number}</h2>
+                    <p className="text-xs text-slate-500">{t('avize.list.supplier_label', locale)} <span className="font-semibold text-slate-700">{dn.supplier}</span></p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-4 text-xs text-slate-500">
                   <span className="flex items-center">
                     <Calendar className="w-3.5 h-3.5 mr-1" />
-                    Data livrării: <strong className="ml-1 text-slate-700">{dn.delivery_date}</strong>
+                    {t('avize.list.delivery_date_label', locale)} <strong className="ml-1 text-slate-700">{dn.delivery_date}</strong>
                   </span>
                   <span className="flex items-center">
                     <MapPin className="w-3.5 h-3.5 mr-1" />
-                    Destinație: <strong className="ml-1 text-slate-700">{siteNames[dn.project_id] || 'Necunoscut'}</strong>
+                    {t('avize.list.destination_label', locale)} <strong className="ml-1 text-slate-700">{siteNames[dn.project_id] || t('avize.list.unknown', locale)}</strong>
                   </span>
                   <Badge variant={AVIZ_STATUS_VARIANT[(dn.status || '').toUpperCase()] || 'neutral'} size="md">
-                    {dn.status || 'Aviz înregistrat'}
+                    {dn.status || t('avize.list.status_recorded', locale)}
                   </Badge>
                 </div>
               </div>
@@ -200,16 +200,16 @@ function AvizePageInner() {
                 <div className="lg:col-span-2 space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <Boxes className="w-4 h-4 mr-1.5 text-info" />
-                    Materiale Recepționate pe Aviz
+                    {t('avize.list.received_materials_heading', locale)}
                   </h3>
 
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
-                          <th className="py-2.5 px-3">Cod Material</th>
-                          <th className="py-2.5 px-3">Denumire Material</th>
-                          <th className="py-2.5 px-3 text-right">Cantitate</th>
+                          <th className="py-2.5 px-3">{t('avize.list.col_code', locale)}</th>
+                          <th className="py-2.5 px-3">{t('avize.list.col_name', locale)}</th>
+                          <th className="py-2.5 px-3 text-right">{t('avize.field_quantity', locale)}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -228,10 +228,10 @@ function AvizePageInner() {
                 </div>
 
                 <aside className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"><FileText className="size-4 text-info" />Detalii transport</h3>
-                  <div className="text-sm"><p className="text-xs text-slate-500">Șofer</p><p className="mt-1 font-medium text-slate-800">{dn.driver_name || '—'}</p></div>
-                  <div className="text-sm"><p className="text-xs text-slate-500">Număr vehicul</p><p className="mt-1 font-mono font-medium text-slate-800">{dn.vehicle_plate || '—'}</p></div>
-                  <p className="border-t border-slate-200 pt-3 text-xs leading-5 text-slate-500">Previzualizarea documentului nu este inclusă în datele returnate de endpoint-ul curent.</p>
+                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-600"><FileText className="size-4 text-info" />{t('avize.list.transport_details', locale)}</h3>
+                  <div className="text-sm"><p className="text-xs text-slate-500">{t('avize.list.driver_label', locale)}</p><p className="mt-1 font-medium text-slate-800">{dn.driver_name || '—'}</p></div>
+                  <div className="text-sm"><p className="text-xs text-slate-500">{t('avize.list.vehicle_label', locale)}</p><p className="mt-1 font-mono font-medium text-slate-800">{dn.vehicle_plate || '—'}</p></div>
+                  <p className="border-t border-slate-200 pt-3 text-xs leading-5 text-slate-500">{t('avize.list.preview_note', locale)}</p>
                 </aside>
               </div>
             </Card>
