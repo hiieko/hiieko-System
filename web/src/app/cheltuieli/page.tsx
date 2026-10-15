@@ -5,14 +5,15 @@ import { ROUTE_ROLES } from '../../config/route-roles';
 import { FieldHelp } from '../../components/FieldHelp';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Receipt, Plus, Search, X, Upload, RefreshCw, SlidersHorizontal, Check } from 'lucide-react';
+import { Receipt, Plus, Search, Upload, RefreshCw, SlidersHorizontal, Check } from 'lucide-react';
 import { t, Expense, OcrResult, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { Button, Card, Badge, Modal, ErrorState, Skeleton, EmptyState, PageHeader, useToast } from '../../components/ui';
+import { Button, Card, Badge, Modal, ErrorState, Skeleton, EmptyState, PageHeader, useToast, Drawer, Pagination } from '../../components/ui';
 import { formatDecimal, EXPENSE_CATEGORY_LABELS, PAYMENT_METHOD_LABELS, EXPENSE_STATUS_LABELS, enumLabel } from '../../lib/formatters';
 import { todayCompanyIso } from '../../lib/company-time';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const EXPENSE_STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   DRAFT: 'neutral',
@@ -239,25 +240,30 @@ function CheltuieliPageInner() {
       setLoading(false);
     }
   }, [selectedProjectId]);
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 10 : 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [filter, search, selectedProjectId, pageSize]);
   const filtered = expenses.filter(e => (filter === 'all' || e.status === filter) && (!search || e.description?.toLowerCase().includes(search.toLowerCase())));
+  const totalFiltered = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedExpenses = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const activeFilterCount = (filter !== 'all' ? 1 : 0) + (search ? 1 : 0);
+  const byStatus = (status: string) => expenses.filter(e => e.status?.toUpperCase() === status).length;
+  const summaryCards = [
+    { label: t('expenses.kpi_total', locale), value: expenses.length },
+    { label: t('expenses.kpi_pending', locale), value: expenses.filter(e => isPendingExpense(e.status)).length },
+    { label: t('expenses.kpi_approved', locale), value: byStatus('APPROVED') },
+    { label: t('expenses.kpi_reimbursed', locale), value: byStatus('REIMBURSED') },
+  ];
+  const filterOptions = ['all', 'submitted', 'approved', 'rejected', 'reimbursed'];
+  const filterLabel = (s: string) => (s === 'all' ? t('expenses.all', locale) : t('status.' + s, locale));
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="expenses" />
-      <PageHeader
-        title={t('expenses.title', locale)}
-        subtitle={`${t('expenses.all', locale)} - ${expenses.length} inregistrari`}
-        actions={
-          <div className="flex items-center gap-4">
-            <FieldHelp labelKey="help.document" muted />
-            <Button onClick={loadData} disabled={loading} variant="secondary" size="icon" aria-label={t('general.refresh', locale)}>
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button onClick={() => { setScanError(''); setShowNew(true); }} variant="primary" icon={<Plus className="w-4 h-4" />}>
-              {t('expenses.new', locale)}
-            </Button>
-          </div>
-        }
-      />
       <Modal
         open={showNew}
         onClose={() => setShowNew(false)}
@@ -366,44 +372,64 @@ function CheltuieliPageInner() {
           {submitError && <p className="text-sm text-critical-foreground">{submitError}</p>}
         </div>
       </Modal>
-      <div className="flex flex-wrap gap-2">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={t('general.search', locale)}
-            className="hii-input pl-10" />
-        </div>
-        <Button onClick={() => setFilterOpen(true)} aria-haspopup="dialog" variant="secondary" className="sm:hidden" icon={<SlidersHorizontal className="w-4 h-4" />}>
-          {t('expenses.filters', locale)}
-        </Button>
-        <div className="hidden sm:flex flex-wrap gap-2">
-          {['all','submitted','approved','rejected','reimbursed'].map(s => (
-            <Button key={s} onClick={() => setFilter(s)} size="sm" variant={filter === s ? 'primary' : 'secondary'}>
-              {s === 'all' ? t('expenses.all', locale) : t('status.' + s, locale)}
-            </Button>
-          ))}
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
+        <PageHeader
+          className="py-3 !mb-0"
+          title={t('expenses.title', locale)}
+          subtitle={`${t('expenses.all', locale)} - ${expenses.length} inregistrari`}
+          actions={
+            <div className="flex items-center gap-4">
+              <FieldHelp labelKey="help.document" muted />
+              <Button onClick={loadData} disabled={loading} variant="secondary" size="icon" aria-label={t('general.refresh', locale)}>
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button onClick={() => { setScanError(''); setShowNew(true); }} variant="primary" icon={<Plus className="w-4 h-4" />}>
+                {t('expenses.new', locale)}
+              </Button>
+            </div>
+          }
+        />
+        <div className="flex flex-wrap gap-2 pb-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={t('general.search', locale)}
+              className="hii-input pl-10" />
+          </div>
+          <Button onClick={() => setFilterOpen(true)} aria-haspopup="dialog" variant="secondary" className="sm:hidden" icon={<SlidersHorizontal className="w-4 h-4" />}>
+            {t('expenses.filters', locale)}{activeFilterCount ? ` (${activeFilterCount})` : ''}
+          </Button>
+          <div className="hidden sm:flex flex-wrap gap-2">
+            {filterOptions.map(s => (
+              <Button key={s} onClick={() => setFilter(s)} size="sm" variant={filter === s ? 'primary' : 'secondary'}>
+                {filterLabel(s)}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {filterOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 sm:hidden">
-          <div role="dialog" aria-modal="true" aria-label={t('expenses.filters', locale)} className="w-full max-h-[70vh] rounded-t-2xl bg-white shadow-xl overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-200 p-4">
-              <span className="text-lg font-bold text-slate-900">{t('expenses.filters', locale)}</span>
-              <Button type="button" onClick={() => setFilterOpen(false)} aria-label="Închide" variant="ghost" size="icon"><X className="w-5 h-5" /></Button>
-            </div>
-            <div className="space-y-2 p-4">
-              {['all','submitted','approved','rejected','reimbursed'].map(s => (
-                <Button key={s} onClick={() => { setFilter(s); setFilterOpen(false); }} fullWidth
-                  variant={filter === s ? 'primary' : 'secondary'} className="justify-between font-semibold"
-                  icon={filter === s ? <Check className="w-4 h-4 text-success" aria-hidden="true" /> : undefined} iconPosition="right">
-                  <span>{s === 'all' ? t('expenses.all', locale) : t('status.' + s, locale)}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
+      <Drawer open={filterOpen} onClose={() => setFilterOpen(false)} side="bottom" size="lg" swipeToClose title={t('expenses.filters', locale)}>
+        <div className="space-y-2">
+          {filterOptions.map(s => (
+            <Button key={s} onClick={() => { setFilter(s); setFilterOpen(false); }} fullWidth
+              variant={filter === s ? 'primary' : 'secondary'} className="justify-between font-semibold"
+              icon={filter === s ? <Check className="w-4 h-4 text-success" aria-hidden="true" /> : undefined} iconPosition="right">
+              <span>{filterLabel(s)}</span>
+            </Button>
+          ))}
         </div>
-      )}
-      {loading ? (
+      </Drawer>
+
+      <div className="pt-6 space-y-6">
+        <section aria-label={t('expenses.title', locale)} className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {summaryCards.map(({ label, value }) => (
+            <Card key={label} padding={false} className="p-4">
+              <p className="text-xs font-medium text-content-muted">{label}</p>
+              <p className="mt-2 text-2xl font-semibold tabular-nums text-content">{value}</p>
+            </Card>
+          ))}
+        </section>
+        {loading ? (
         <div className="space-y-3">
           <Skeleton className="h-12" count={5} />
         </div>
@@ -425,7 +451,7 @@ function CheltuieliPageInner() {
                 {canApprove && <th className="text-center">{t('expenses.actions', locale)}</th>}
               </tr></thead>
               <tbody>
-                {filtered.map(exp => (
+                {pagedExpenses.map(exp => (
                   <tr key={exp.id}>
                     <td className="text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'ro-RO')}</td>
                     <td className="text-xs font-medium text-slate-700">{enumLabel(exp.category, EXPENSE_CATEGORY_LABELS, locale)}</td>
@@ -451,7 +477,7 @@ function CheltuieliPageInner() {
           </div>
         </Card>
         <div className="md:hidden space-y-3">
-          {filtered.map(exp => (
+          {pagedExpenses.map(exp => (
             <Card key={exp.id} padding={false} className="p-4 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-slate-600">{new Date(exp.created_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'ro-RO')}</span>
@@ -471,8 +497,10 @@ function CheltuieliPageInner() {
             </Card>
           ))}
         </div>
+        <Pagination page={safePage} pageSize={pageSize} total={totalFiltered} onPageChange={setPage} />
         </>
       )}
+      </div>
     </div>
   );
 }
