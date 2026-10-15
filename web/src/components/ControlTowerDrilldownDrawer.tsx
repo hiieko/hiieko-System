@@ -99,7 +99,7 @@ export function ControlTowerDrilldownDrawer({
               <div className="text-center py-16">
                 <AlertTriangle className="w-12 h-12 text-warning mx-auto mb-3" aria-hidden="true" />
                 <h3 className="text-base font-semibold text-slate-900">
-                  {locale === 'ro' ? 'Eroare la încărcare' : 'Failed to load'}
+                  {t('control_tower.drawer.load_error', locale)}
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">{data.error}</p>
                 {onRetry && (
@@ -107,7 +107,7 @@ export function ControlTowerDrilldownDrawer({
                     onClick={onRetry}
                     className="mt-4 px-4 py-2 text-xs font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
                   >
-                    {locale === 'ro' ? 'Reîncearcă' : 'Retry'}
+                    {t('control_tower.drawer.retry', locale)}
                   </button>
                 )}
               </div>
@@ -133,7 +133,7 @@ export function ControlTowerDrilldownDrawer({
             <span>
               {t('control_tower.drawer.source', locale)}
               {data.hasMore &&
-                ` · ${locale === 'ro' ? 'Sunt disponibile mai multe rezultate' : 'More results available'}`}
+                ` · ${t('control_tower.drawer.more_results', locale)}`}
             </span>
             <button
               onClick={onClose}
@@ -184,7 +184,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
         <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
           <div>
             <span className="font-medium text-slate-700">{t('control_tower.drawer.responsible', locale)}</span>{' '}
-            {item.responsiblePerson || 'Nealocat'}
+            {item.responsiblePerson || t('control_tower.drawer.unassigned', locale)}
           </div>
           {item.assignedWorkers && item.assignedWorkers.length > 0 && (
             <div>
@@ -221,10 +221,10 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600">
           <div>
             <span className="font-semibold text-slate-700">{t('control_tower.drawer.original_deadline', locale)}</span>{' '}
-            {item.targetEndDate ? item.targetEndDate.split('T')[0] : 'Nespecificat'}
+            {item.targetEndDate ? item.targetEndDate.split('T')[0] : t('control_tower.drawer.unspecified', locale)}
           </div>
           <div>
-            <span className="font-semibold text-slate-700">Manager Proiect:</span>{' '}
+            <span className="font-semibold text-slate-700">{t('control_tower.drawer.project_manager', locale)}</span>{' '}
             {item.responsiblePerson}
           </div>
         </div>
@@ -254,7 +254,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             {item.targetDate ? item.targetDate.split('T')[0] : ''}
           </div>
           <div>
-            <span className="font-semibold text-slate-700">Responsabil:</span>{' '}
+            <span className="font-semibold text-slate-700">{t('control_tower.drawer.responsible', locale)}</span>{' '}
             {item.responsiblePerson}
           </div>
         </div>
@@ -329,7 +329,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.materialName}</h4>
           </div>
           <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft0 text-slate-950 rounded-full">
-            Deficit: -{item.deficit} {item.unit}
+            {t('control_tower.drawer.deficit', locale)} -{item.deficit} {item.unit}
           </span>
         </div>
 
@@ -391,7 +391,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
           <div>
             <h4 className="text-sm font-semibold text-slate-900">{item.projectName}</h4>
             <p className="text-xs text-slate-500 mt-0.5">
-              Inspector: <span className="font-medium text-slate-700">{item.inspectorName}</span>
+              {t('control_tower.drawer.inspector', locale)} <span className="font-medium text-slate-700">{item.inspectorName}</span>
             </p>
           </div>
           <span className="px-2 py-0.5 text-xs font-bold bg-rose-600 text-white rounded uppercase">

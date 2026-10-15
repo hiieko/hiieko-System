@@ -2017,6 +2017,16 @@ Object.assign(d, {
   'control_tower.red_flags.inspect': T('Detalii', 'Details'),
 });
 
+// i18n(control-tower) — localise ControlTowerDrilldownDrawer hardcoded strings
+Object.assign(d, {
+  'control_tower.drawer.load_error': T('Eroare la încărcare', 'Failed to load'),
+  'control_tower.drawer.retry': T('Reîncearcă', 'Retry'),
+  'control_tower.drawer.more_results': T('Sunt disponibile mai multe rezultate', 'More results available'),
+  'control_tower.drawer.unassigned': T('Nealocat', 'Unassigned'),
+  'control_tower.drawer.unspecified': T('Nespecificat', 'Unspecified'),
+  'control_tower.drawer.project_manager': T('Manager Proiect:', 'Project Manager:'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
