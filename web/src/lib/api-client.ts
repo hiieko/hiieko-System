@@ -1369,10 +1369,6 @@ export class NestApiClient {
   // TASK DEPENDENCIES
   // ============================================================================
 
-  async getTaskDependencies(taskId: string): Promise<ApiResponse<any[]>> {
-    return this.request<ApiResponse<any[]>>(`/api/task-dependencies/${taskId}`);
-  }
-
   async createTaskDependency(data: {
     predecessorTaskId: string;
     successorTaskId: string;
@@ -1382,12 +1378,6 @@ export class NestApiClient {
     return this.request<ApiResponse<any>>('/api/task-dependencies', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
-  }
-
-  async deleteTaskDependency(id: string): Promise<ApiResponse<any>> {
-    return this.request<ApiResponse<any>>(`/api/task-dependencies/${id}`, {
-      method: 'DELETE',
     });
   }
 
@@ -1786,14 +1776,12 @@ export interface IApiClient {
   }): Promise<ApiResponse<any>>;
 
   // Task Dependencies
-  getTaskDependencies(taskId: string): Promise<ApiResponse<any[]>>;
   createTaskDependency(data: {
     predecessorTaskId: string;
     successorTaskId: string;
     dependencyType?: string;
     lagDays?: number;
   }): Promise<ApiResponse<any>>;
-  deleteTaskDependency(id: string): Promise<ApiResponse<any>>;
   checkPrerequisites(taskId: string): Promise<ApiResponse<{ canStart: boolean; pendingTasks: any[] }>>;
 
   // Issues & Blockers
