@@ -10,6 +10,7 @@ import { apiClient } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import {
   Clock, Calendar, Download, AlertCircle, MapPin,
   RefreshCw, Users, Timer, Info, CheckCircle2,
@@ -23,6 +24,7 @@ import {
   PageHeader,
   ErrorState,
   Skeleton,
+  Pagination,
 } from '../../components/ui';
 import * as attendanceApi from '../../features/attendance/api';
 import type { AttendanceRecord, TodaySummary, CorrectAttendanceDto } from '../../features/attendance/types';
@@ -49,7 +51,10 @@ function PontajPageInner() {
   const canCorrectAttendance = ['admin', 'owner', 'manager', 'pm'].includes(role);
   const { selectedProjectId } = useProject();
 
-  const [activeTab, setActiveTab] = useState<'daily' | 'monthly'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'matrix'>('daily');
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 15 : 25;
+  const [page, setPage] = useState(1);
   const now = new Date();
   const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
@@ -105,6 +110,11 @@ function PontajPageInner() {
     loadToday();
   }, [loadData, loadToday]);
 
+  // Reset to the first page when the tab, month or page size changes.
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, selectedMonth, pageSize]);
+
   const daysInMonth = useMemo(() => {
     const [y, m] = selectedMonth.split('-').map(Number);
     return Array.from({ length: new Date(y, m, 0).getDate() }, (_, i) => i + 1);
@@ -121,6 +131,11 @@ function PontajPageInner() {
     [todaySummary]
   );
   const missingWorkers = workers.filter((w) => !todayCheckedInIds.has(w.id));
+
+  const totalAttendance = attendanceRecords.length;
+  const totalPages = Math.max(1, Math.ceil(totalAttendance / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedAttendance = attendanceRecords.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const displayName = (u?: AppUser) =>
     u?.full_name || u?.profile?.full_name || u?.email || 'Necunoscut';
@@ -184,42 +199,45 @@ function PontajPageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="attendance" />
-      {/* Top Header */}
-      <PageHeader
-        className="!mb-0"
-        title={t('attendance.title', locale)}
-        subtitle={t('pontaj.subtitle', locale)}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="md"
-              icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
-              onClick={() => { loadData(); loadToday(); }}
-              disabled={loading}
-            >
-              {t('general.refresh', locale)}
-            </Button>
-            <Button
-              variant="secondary"
-              size="md"
-              icon={<Download className="w-4 h-4" />}
-              onClick={exportAttendance}
-            >
-              Export CSV
-            </Button>
-          </div>
-        }
-      />
+      {/* Sticky header + tabs */}
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
+        <PageHeader
+          className="py-3 !mb-0"
+          title={t('attendance.title', locale)}
+          subtitle={t('pontaj.subtitle', locale)}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="md"
+                icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+                onClick={() => { loadData(); loadToday(); }}
+                disabled={loading}
+              >
+                {t('general.refresh', locale)}
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                icon={<Download className="w-4 h-4" />}
+                onClick={exportAttendance}
+              >
+                Export CSV
+              </Button>
+            </div>
+          }
+        />
 
-      <Tabs
-        tabs={[
-          { key: 'daily', label: t('pontaj.tab_daily', locale), icon: Calendar },
-          { key: 'monthly', label: t('pontaj.tab_monthly', locale) },
-        ]}
-        activeTab={activeTab}
-        onTabChange={(key) => setActiveTab(key as 'daily' | 'monthly')}
-      />
+        <Tabs
+          className="!border-b-0"
+          tabs={[
+            { key: 'daily', label: t('pontaj.tab_daily', locale), icon: Calendar },
+            { key: 'matrix', label: t('pontaj.tab_matrix', locale) },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(key) => setActiveTab(key as 'daily' | 'matrix')}
+        />
+      </div>
 
       {/* Personal shift card */}
       <WorkerAttendanceView />
@@ -365,7 +383,7 @@ function PontajPageInner() {
       )}
 
 
-      {/* Tabs: daily / monthly */}
+      {/* Tabs: daily / matrix */}
       {activeTab === 'daily' ? (
         <Card padding={false} className="overflow-hidden">
           <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -433,7 +451,7 @@ function PontajPageInner() {
                     </td>
                   </tr>
                 ) : (
-                  attendanceRecords.map((log) => {
+                  pagedAttendance.map((log) => {
                     const userName = log.user?.profile?.full_name || log.user?.email || 'Necunoscut';
                     const userRole = log.user?.profile?.role || log.user?.role || '';
                     const checkInTime = log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -498,6 +516,14 @@ function PontajPageInner() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            page={safePage}
+            pageSize={pageSize}
+            total={totalAttendance}
+            onPageChange={setPage}
+            className="px-4 pb-4"
+          />
         </Card>
       ) : (
         /* Monthly Matrix (PONTAJ LUNAR) */

@@ -1860,6 +1860,7 @@ Object.assign(d, {
   'pontaj.subtitle': T('Evidența orelor de lucru, verificarea sosirii și calculul automat al orelor suplimentare.', 'Team attendance, missing check-ins, active workers and overtime.'),
   'pontaj.tab_daily': T('Prezență Zilnică', 'Daily Attendance'),
   'pontaj.tab_monthly': T('Pontaj Lunar', 'Monthly Matrix'),
+  'pontaj.tab_matrix': T('Matrice', 'Matrix'),
   'pontaj.stat_active_now': T('Pe șantier acum', 'Active now'),
   'pontaj.stat_active_now_hint': T('de muncitori pe șantier', 'workers currently on site'),
   'pontaj.stat_completed_today': T('Finalizati azi', 'Completed today'),
