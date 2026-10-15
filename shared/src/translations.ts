@@ -2027,6 +2027,18 @@ Object.assign(d, {
   'control_tower.drawer.project_manager': T('Manager Proiect:', 'Project Manager:'),
 });
 
+// i18n(global-search) — localise GlobalQuickSearch strings
+Object.assign(d, {
+  'global_search.search_pages': T('Caută pagini', 'Search pages'),
+  'global_search.quick_search': T('Căutare rapidă', 'Quick search'),
+  'global_search.modal_title': T('Caută în aplicație', 'Search the workspace'),
+  'global_search.search_placeholder': T('Caută proiecte, planificare, rapoarte…', 'Search projects, planning, reports…'),
+  'global_search.pages': T('Pagini', 'Pages'),
+  'global_search.current': T('Curent', 'Current'),
+  'global_search.no_results': T('Nu există pagini potrivite.', 'No matching pages.'),
+  'global_search.nav_hint': T('Navigare în pagini — accesul respectă rolul tău.', 'Navigation only — access follows your role.'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

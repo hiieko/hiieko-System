@@ -51,11 +51,11 @@ export function GlobalQuickSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={locale === 'en' ? 'Search pages' : 'Caută pagini'}
+        aria-label={t('global_search.search_pages', locale)}
         className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-800 focus-visible:outline-offset-2"
       >
         <Search className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden xl:inline">{locale === 'en' ? 'Quick search' : 'Căutare rapidă'}</span>
+        <span className="hidden xl:inline">{t('global_search.quick_search', locale)}</span>
         <span className="hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:inline-flex">
           <Command className="mr-0.5 h-3 w-3" aria-hidden="true" /> K
         </span>
@@ -64,25 +64,25 @@ export function GlobalQuickSearch() {
       <Modal
         open={open}
         onClose={close}
-        title={locale === 'en' ? 'Search the workspace' : 'Caută în aplicație'}
+        title={t('global_search.modal_title', locale)}
         size="lg"
         className="overflow-hidden"
       >
         <div className="-mx-6 -my-4">
           <label className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
             <Search className="h-5 w-5 shrink-0 text-slate-400" aria-hidden="true" />
-            <span className="sr-only">{locale === 'en' ? 'Search pages' : 'Caută pagini'}</span>
+            <span className="sr-only">{t('global_search.search_pages', locale)}</span>
             <input
               autoFocus
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={locale === 'en' ? 'Search projects, planning, reports…' : 'Caută proiecte, planificare, rapoarte…'}
+              placeholder={t('global_search.search_placeholder', locale)}
               className="w-full border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
             />
             <span className="shrink-0 text-[11px] text-slate-400">ESC</span>
           </label>
-          <div className="max-h-[min(55vh,420px)] overflow-y-auto p-2" role="listbox" aria-label={locale === 'en' ? 'Pages' : 'Pagini'}>
+          <div className="max-h-[min(55vh,420px)] overflow-y-auto p-2" role="listbox" aria-label={t('global_search.pages', locale)}>
             {results.length ? results.map((item) => {
               const Icon = item.icon;
               const active = item.href === '/' ? pathname === '/' : pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -99,17 +99,17 @@ export function GlobalQuickSearch() {
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1 font-medium">{item.title}</span>
-                  {active ? <span className="text-xs text-hii-700">{locale === 'en' ? 'Current' : 'Curent'}</span> : <ArrowRight className="h-4 w-4 text-slate-300" aria-hidden="true" />}
+                  {active ? <span className="text-xs text-hii-700">{t('global_search.current', locale)}</span> : <ArrowRight className="h-4 w-4 text-slate-300" aria-hidden="true" />}
                 </Link>
               );
             }) : (
               <p className="px-3 py-8 text-center text-sm text-slate-500" role="status">
-                {locale === 'en' ? 'No matching pages.' : 'Nu există pagini potrivite.'}
+                {t('global_search.no_results', locale)}
               </p>
             )}
           </div>
           <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400">
-            <span>{locale === 'en' ? 'Navigation only — access follows your role.' : 'Navigare în pagini — accesul respectă rolul tău.'}</span>
+            <span>{t('global_search.nav_hint', locale)}</span>
             <span>{results.length} / {destinations.length}</span>
           </div>
         </div>
