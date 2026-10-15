@@ -2070,6 +2070,43 @@ Object.assign(d, {
   'worker.refresh_attendance': T('Reîmprospătează pontajul', 'Refresh attendance'),
 });
 
+// i18n(teams) — localise teams/page.tsx hardcoded strings
+Object.assign(d, {
+  'teams.subtitle': T('Gestionarea echipelor de lucru', 'Manage work teams'),
+  'teams.select_project_first': T('Selectează mai întâi un proiect', 'Select a project first'),
+  'teams.refresh': T('Reîmprospătează', 'Refresh'),
+  'teams.create_action': T('Creează echipă', 'Create team'),
+  'teams.leader_optional': T('Lider (opțional)', 'Leader (optional)'),
+  'teams.no_leader': T('Fără lider', 'No leader'),
+  'teams.clear_search': T('Șterge căutarea', 'Clear search'),
+  'teams.empty_search_title': T('Niciun rezultat', 'No matching results'),
+  'teams.empty_search_desc': T('Nicio echipă nu corespunde căutării curente.', 'No teams match the current search.'),
+  'teams.empty_title': T('Nicio echipă încă', 'No teams yet'),
+  'teams.empty_desc': T('Creează echipe pentru a atribui lucrări unor grupuri de muncitori.', 'Create teams to assign work to groups of workers.'),
+  'teams.inactive': T('Inactiv', 'Inactive'),
+  'teams.edit_team_title': T('Editează echipa', 'Edit team'),
+  'teams.archive_team_title': T('Arhivează echipa', 'Archive team'),
+  'teams.info_heading': T('Informații Echipă', 'Team Information'),
+  'teams.created_at': T('Data creării', 'Created at'),
+  'teams.add': T('Adaugă', 'Add'),
+  'teams.leader_badge': T('LIDER', 'LEADER'),
+  'teams.remove_member_title': T('Elimină membru', 'Remove member'),
+  'teams.remove_member_message': T('Elimini pe {name} din echipă?', 'Remove {name} from the team?'),
+  'teams.back': T('Înapoi', 'Back'),
+  'teams.name_code_required': T('Numele și codul sunt obligatorii', 'Name and code are required'),
+  'teams.create_error': T('Eroare la crearea echipei', 'Error creating team'),
+  'teams.updated': T('Echipă actualizată', 'Team updated'),
+  'teams.update_error': T('Eroare la actualizare', 'Error updating'),
+  'teams.archived': T('Echipă arhivată', 'Team archived'),
+  'teams.archive_error': T('Eroare la arhivare', 'Error archiving'),
+  'teams.member_removed': T('Membru eliminat', 'Member removed'),
+  'teams.remove_error': T('Eroare la eliminare', 'Error removing'),
+  'teams.archive_confirm_title': T('Arhivează echipa?', 'Archive team?'),
+  'teams.archive_confirm_message': T('Această acțiune va marca echipa ca inactivă. Membrii nu vor fi afectați.', 'This will mark the team as inactive. Members will not be affected.'),
+  'teams.archiving': T('Se arhivează...', 'Archiving...'),
+  'teams.archive': T('Arhivează', 'Archive'),
+});
+
 // i18n(workforce) — localise workforce/page.tsx hardcoded strings
 Object.assign(d, {
   'workforce.subtitle': T('Angajați și personal activ', 'Employees and active staff'),
