@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, RefreshCw, Upload, Download, X, CheckCircle2 } from 'lucide-react';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { t, useLocale } from '@solar/shared';
-import { PageHeader, Button, Card, ErrorState, Skeleton, EmptyState } from '../../components/ui';
+import { PageHeader, Button, Card, ErrorState, Skeleton, EmptyState, Pagination } from '../../components/ui';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 type Project = { id: string; name: string; code?: string };
 type DocumentRow = {
@@ -57,6 +58,9 @@ function DocumentsPage() {
   const [documentType, setDocumentType] = useState('OTHER');
   const [title, setTitle] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [page, setPage] = useState(1);
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 10 : 20;
 
   const projectName = useMemo(
     () => projects.find((p) => p.id === projectId)?.name || '',
@@ -97,6 +101,12 @@ function DocumentsPage() {
       setLoadError(errMessage(err, 'Eroare la încărcarea documentelor.'));
     });
   }, [projectId]);
+
+  useEffect(() => { setPage(1); }, [documents, projectId, pageSize]);
+  const totalFiltered = documents.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedDocuments = documents.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const retryLoad = () => {
     setLoadError(null);
@@ -153,7 +163,9 @@ function DocumentsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
       <PageHeader
+        className="py-3 !mb-0"
         title="Documente"
         subtitle="Documente reale, stocate pe server și asociate proiectului selectat."
         actions={
@@ -168,6 +180,24 @@ function DocumentsPage() {
           </Button>
         }
       />
+      <div className="flex items-center gap-2 pb-3">
+        <label htmlFor="documente-project" className="text-xs font-semibold text-slate-600 shrink-0">Proiect</label>
+        <select
+          id="documente-project"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+          disabled={loading || uploading}
+          className="hii-select w-full sm:w-80"
+        >
+          <option value="">Selectează proiectul</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.code ? project.code + ' — ' : ''}{project.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      </div>
 
       {error && (
         <div className="flex items-start justify-between gap-3 rounded-lg border border-critical-soft bg-critical-soft p-3 text-sm text-critical-foreground">
@@ -192,24 +222,6 @@ function DocumentsPage() {
       ) : (
         <>
           <Card className="space-y-4">
-            <div>
-              <label htmlFor="documente-project" className="block text-xs font-semibold text-slate-600 mb-1">Proiect</label>
-              <select
-                id="documente-project"
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                disabled={loading || uploading}
-                className="hii-select"
-              >
-                <option value="">Selectează proiectul</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.code ? project.code + ' — ' : ''}{project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <label htmlFor="documente-type" className="block text-xs font-semibold text-slate-600 mb-1">Tip document</label>
@@ -276,7 +288,7 @@ function DocumentsPage() {
               </Card>
             ) : (
               <div className="space-y-3">
-                {documents.map((doc) => {
+                {pagedDocuments.map((doc) => {
                   const latest = doc.versions?.[0];
                   return (
                     <Card key={doc.id} className="flex flex-col gap-3">
@@ -331,6 +343,9 @@ function DocumentsPage() {
                   );
                 })}
               </div>
+            )}
+            {!loading && documents.length > 0 && (
+              <Pagination page={safePage} pageSize={pageSize} total={totalFiltered} onPageChange={setPage} />
             )}
           </div>
         </>
