@@ -44,7 +44,7 @@ export function MoreSheet({ open, onClose }: MoreSheetProps) {
       side="bottom"
       size="lg"
       swipeToClose
-      title={locale === 'en' ? 'More' : 'Mai multe'}
+      title={t('nav.more', locale)}
     >
       <div className="space-y-5 pb-2">
         {groups.map((group) => (
