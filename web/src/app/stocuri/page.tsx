@@ -8,7 +8,8 @@ import { useProject } from '../../contexts/ProjectContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
-import { Button, EmptyState, Card, Badge, PageHeader, ErrorState, Skeleton, Modal } from '../../components/ui';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { Button, EmptyState, Card, Badge, PageHeader, ErrorState, Skeleton, Modal, Pagination } from '../../components/ui';
 import {
   Boxes, AlertTriangle, ArrowUpRight, ArrowDownRight, History, Plus,
   Search, RefreshCw, ArrowLeftRight
@@ -58,6 +59,10 @@ function StocuriPageInner() {
   const [quantity, setQuantity] = useState('');
   const [notes, setNotes] = useState('');
   const [targetProjectId, setTargetProjectId] = useState('');
+  const [balancePage, setBalancePage] = useState(1);
+  const [movementPage, setMovementPage] = useState(1);
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 10 : 20;
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -112,6 +117,17 @@ function StocuriPageInner() {
     });
   }, [movements, search, movementFilter, locale]);
 
+  useEffect(() => { setBalancePage(1); }, [search, pageSize]);
+  useEffect(() => { setMovementPage(1); }, [search, movementFilter, pageSize]);
+
+  const balanceTotalPages = Math.max(1, Math.ceil(balanceRows.length / pageSize));
+  const safeBalancePage = Math.min(balancePage, balanceTotalPages);
+  const pagedBalanceRows = balanceRows.slice((safeBalancePage - 1) * pageSize, safeBalancePage * pageSize);
+
+  const movementTotalPages = Math.max(1, Math.ceil(movementRows.length / pageSize));
+  const safeMovementPage = Math.min(movementPage, movementTotalPages);
+  const pagedMovementRows = movementRows.slice((safeMovementPage - 1) * pageSize, safeMovementPage * pageSize);
+
   const criticalCount = balances.filter(b => {
     const m = b.material || materials.find(x => x.id === b.material_id);
     return typeof m?.min_stock_threshold === 'number' && Number(b.current_quantity) <= Number(m.min_stock_threshold);
@@ -157,8 +173,9 @@ function StocuriPageInner() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="stock" />
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
       <PageHeader
-        className="!mb-0"
+        className="py-3 !mb-0"
         eyebrow={t('stocuri.eyebrow', locale)}
         title={t('stocuri.page_title', locale)}
         subtitle={t('stocuri.subtitle', locale)}
@@ -173,6 +190,19 @@ function StocuriPageInner() {
           </div>
         }
       />
+      <div className="pb-3">
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={t('stocuri.search_placeholder', locale)}
+            aria-label={t('stocuri.search_placeholder', locale)}
+            className="hii-input pl-10"
+          />
+        </div>
+      </div>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Summary label={t('stocuri.summary_materials_in_stock', locale)} value={balances.length} />
@@ -196,14 +226,8 @@ function StocuriPageInner() {
       ) : (
         <>
           <Card padding={false} className="overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><Boxes className="w-4 h-4 text-warning" />{t('stocuri.current_stock', locale)}</div>
-              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('stocuri.search_placeholder', locale)} className="hii-input pl-10" />
-                </div>
-              </div>
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2 text-sm font-bold text-slate-800">
+              <Boxes className="w-4 h-4 text-warning" />{t('stocuri.current_stock', locale)}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -234,7 +258,7 @@ function StocuriPageInner() {
                       />
                     )}
                   </td></tr> :
-                    balanceRows.map(({ balance, material }) => {
+                    pagedBalanceRows.map(({ balance, material }) => {
                       const qty = Number(balance.current_quantity || 0);
                       const threshold = material?.min_stock_threshold;
                       const critical = typeof threshold === 'number' && qty <= threshold;
@@ -245,12 +269,19 @@ function StocuriPageInner() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              className="!mt-0 px-4 pb-4"
+              page={safeBalancePage}
+              pageSize={pageSize}
+              total={balanceRows.length}
+              onPageChange={setBalancePage}
+            />
           </Card>
 
           <Card padding={false} className="overflow-hidden">
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><History className="w-4 h-4 text-warning" />{t('stocuri.audit_title', locale)}</div>
-              <select value={movementFilter} onChange={e => setMovementFilter(e.target.value)} className="hii-select !w-auto text-xs">
+              <select value={movementFilter} onChange={e => setMovementFilter(e.target.value)} className="hii-select !w-auto text-xs" aria-label={t('stocuri.all_movement_types', locale)}>
                 <option value="ALL">{t('stocuri.all_movement_types', locale)}</option>
                 {Array.from(new Set(movements.map(m => m.movement_type))).map(type => <option key={type} value={type}>{type}</option>)}
               </select>
@@ -277,7 +308,7 @@ function StocuriPageInner() {
                       />
                     )}
                   </td></tr> :
-                    movementRows.map(mv => {
+                    pagedMovementRows.map(mv => {
                       const type = mv.movement_type.toUpperCase();
                       const positive = type === 'RECEIPT' || type === 'TRANSFER_IN' || type === 'RETURN' || (type === 'ADJUSTMENT' && Number(mv.quantity) >= 0);
                       const label = type === 'RECEIPT' ? t('stocuri.movement_RECEIPT', locale) : type === 'CONSUMPTION' ? t('stocuri.movement_CONSUMPTION', locale) : type === 'TRANSFER_OUT' ? t('stocuri.movement_TRANSFER_OUT', locale) : type === 'TRANSFER_IN' ? t('stocuri.movement_TRANSFER_IN', locale) : type;
@@ -287,6 +318,13 @@ function StocuriPageInner() {
                 </tbody>
               </table>
             </div>
+            <Pagination
+              className="!mt-0 px-4 pb-4"
+              page={safeMovementPage}
+              pageSize={pageSize}
+              total={movementRows.length}
+              onPageChange={setMovementPage}
+            />
           </Card>
         </>
       )}
