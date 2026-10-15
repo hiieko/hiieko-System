@@ -11,14 +11,14 @@ import {
   ArrowLeft, RefreshCw, Users, UserPlus, X, Trash2,
   Activity, Building2, Calendar, DollarSign, Sliders,
   Check, AlertTriangle, ClipboardCheck, Clock, Boxes, Truck,
-  FileText, ShieldCheck, SunMedium, CircleAlert,
+  FileText, ShieldCheck, SunMedium, CircleAlert, Layers,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
 import { canCreateProjects } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
-import { PhotoUpload } from '../../../components/ui';
+import { PhotoUpload, Modal, Pagination } from '../../../components/ui';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
 import { ProjectStagesPanel } from './ProjectStagesPanel';
 
@@ -68,7 +68,9 @@ const MEMBER_ROLE_LABELS: Record<string, string> = {
   MAINTENANCE_DIRECTOR:'Director Intretinere', TECHNICAL_DIRECTOR:'Director Tehnic',
 };
 
-type TabKey = 'overview' | 'members' | 'settings' | 'stages' | 'photos';
+type TabKey = 'overview' | 'members' | 'photos';
+
+const MEMBERS_PAGE_SIZE = 20;
 
 function ProjectDetailPageInner() {
   const params = useParams();
@@ -90,6 +92,9 @@ function ProjectDetailPageInner() {
   const [memberError, setMemberError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [removingMember, setRemovingMember] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showStages, setShowStages] = useState(false);
+  const [memberPage, setMemberPage] = useState(1);
   const canManage = user ? canCreateProjects(user.role as any) : false;
   const editEnabled = user && (user.role === "admin" || user.role === "owner");
 
@@ -111,6 +116,7 @@ function ProjectDetailPageInner() {
   }, []);
 
   useEffect(() => { loadProject(); loadMembers(); loadUsers(); }, [loadProject, loadMembers, loadUsers]);
+  useEffect(() => { setMemberPage(1); }, [members]);
 
   const handleAddMember = async () => {
     if (!selectedUserId) return;
@@ -199,6 +205,9 @@ function ProjectDetailPageInner() {
   const availableUsers = users.filter(
     (u) => u.is_active !== false && !members.some((m) => m.user_id === u.id)
   );
+  const memberTotalPages = Math.max(1, Math.ceil(members.length / MEMBERS_PAGE_SIZE));
+  const safeMemberPage = Math.min(memberPage, memberTotalPages);
+  const pagedMembers = members.slice((safeMemberPage - 1) * MEMBERS_PAGE_SIZE, safeMemberPage * MEMBERS_PAGE_SIZE);
 
 
   return (
@@ -226,19 +235,27 @@ function ProjectDetailPageInner() {
             {address && <p className="text-sm text-slate-500 mt-0.5">{address}</p>}
           </div>
         </div>
-        <button onClick={() => { loadProject(); loadMembers(); }} className="p-2 hover:bg-slate-100 rounded-lg" title="Reimprospateaza">
-          <RefreshCw className="w-4 h-4 text-slate-500" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowSettings(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+            <Sliders className="w-3.5 h-3.5" />Setări
+          </button>
+          <button onClick={() => setShowStages(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors">
+            <Layers className="w-3.5 h-3.5" />Etape
+          </button>
+          <button onClick={() => { loadProject(); loadMembers(); }} className="p-2 hover:bg-slate-100 rounded-lg" title="Reimprospateaza">
+            <RefreshCw className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-card w-fit">
-        {(['overview', 'members', 'settings', 'stages', 'photos'] as TabKey[]).map((t) => (
+        {(['overview', 'members', 'photos'] as TabKey[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-card' : 'text-slate-600 hover:bg-slate-100'}`}>
             {t === 'overview' && 'Prezentare Generala'}
             {t === 'members' && 'Membri'}
-            {t === 'settings' && 'Setari'}
-            {t === 'stages' && 'Etape'}
             {t === 'photos' && 'Fotografii șantier'}
           </button>
         ))}
@@ -334,7 +351,7 @@ function ProjectDetailPageInner() {
             <div className="text-center py-8 text-slate-400 text-sm">Niciun membru in acest proiect</div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {members.map((m) => {
+              {pagedMembers.map((m) => {
                 const memberName = displayName(m.user);
                 return (
                   <div key={m.id} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -380,17 +397,17 @@ function ProjectDetailPageInner() {
               })}
             </div>
           )}
+          {members.length > 0 && (
+            <Pagination
+              page={safeMemberPage}
+              pageSize={MEMBERS_PAGE_SIZE}
+              total={members.length}
+              onPageChange={setMemberPage}
+            />
+          )}
         </div>
       )}
 
-
-      {tab === 'settings' && project && (
-        <ProjectSettingsPanel project={project} onUpdate={(updates) => handleUpdate(updates)} />
-      )}
-
-      {tab === 'stages' && project && (
-        <ProjectStagesPanel projectId={project.id} />
-      )}
 
       {tab === 'photos' && project && (
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-card sm:p-6">
@@ -401,6 +418,16 @@ function ProjectDetailPageInner() {
           </div>
         </section>
       )}
+
+      <Modal open={showSettings} onClose={() => setShowSettings(false)} size="lg">
+        <div className="[&>div]:!border-0 [&>div]:!shadow-none [&>div]:!bg-transparent [&>div]:!rounded-none [&>div]:!p-0">
+          <ProjectSettingsPanel project={project} onUpdate={(updates) => handleUpdate(updates)} />
+        </div>
+      </Modal>
+
+      <Modal open={showStages} onClose={() => setShowStages(false)} size="lg">
+        <ProjectStagesPanel projectId={project.id} />
+      </Modal>
     </div>
   );
 }
