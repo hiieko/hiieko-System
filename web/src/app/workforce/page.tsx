@@ -8,7 +8,8 @@ import { apiClient, ApiError } from '../../lib/api-client';
 import { getRoleLabel, t, useLocale } from '@solar/shared';
 import { Users, RefreshCw, Search, X, Edit3, Trash2, Check, Plus, Save } from 'lucide-react';
 import { displayName } from '../../lib/formatters';
-import { PageHeader, Button, Card, Badge, Modal, ConfirmDialog, ErrorState, Skeleton, EmptyState } from '../../components/ui';
+import { PageHeader, Button, Card, Badge, Modal, ConfirmDialog, ErrorState, Skeleton, EmptyState, Pagination } from '../../components/ui';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface Employee {
   id: string; first_name: string; last_name: string;
@@ -24,6 +25,9 @@ function WorkforcePageInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 10 : 20;
 
   // Edit state
   const [showEdit, setShowEdit] = useState(false);
@@ -66,6 +70,7 @@ function WorkforcePageInner() {
   };
 
   useEffect(() => { load(); loadUsers(); }, []);
+  useEffect(() => { setPage(1); }, [search, pageSize]);
 
   const openEdit = (e: Employee) => {
     setEditEmployee(e);
@@ -139,6 +144,18 @@ function WorkforcePageInner() {
       || (e.position || '').toLowerCase().includes(q);
   });
 
+  const totalFiltered = filtered.length;
+  const activeCount = filtered.filter(e => e.is_active !== false).length;
+  const inactiveCount = totalFiltered - activeCount;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedEmployees = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const summaryCards = [
+    { label: 'Total', value: totalFiltered, tone: 'text-content' },
+    { label: t('workforce.active', locale), value: activeCount, tone: 'text-success-foreground' },
+    { label: t('workforce.inactive', locale), value: inactiveCount, tone: 'text-content-muted' },
+  ];
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="workforce" />
@@ -147,7 +164,9 @@ function WorkforcePageInner() {
           <Check className="w-4 h-4" />{successMsg}
         </div>
       )}
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
       <PageHeader
+        className="py-3 !mb-0"
         title={t('workforce.title', locale)}
         subtitle={t('workforce.subtitle', locale)}
         actions={
@@ -161,12 +180,26 @@ function WorkforcePageInner() {
           </div>
         }
       />
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" aria-label={t('workforce.search_aria', locale)} placeholder={t('workforce.search', locale)} value={search} onChange={(e) => setSearch(e.target.value)}
-          className="hii-input pl-10 pr-10" />
-        {search && <Button type="button" variant="ghost" size="icon" aria-label={t('workforce.clear_search', locale)} onClick={() => setSearch('')} className="absolute right-1 top-1/2 -translate-y-1/2"><X className="w-4 h-4" aria-hidden="true" /></Button>}
+      <div className="pb-3">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input type="text" aria-label={t('workforce.search_aria', locale)} placeholder={t('workforce.search', locale)} value={search} onChange={(e) => setSearch(e.target.value)}
+            className="hii-input pl-10 pr-10" />
+          {search && <Button type="button" variant="ghost" size="icon" aria-label={t('workforce.clear_search', locale)} onClick={() => setSearch('')} className="absolute right-1 top-1/2 -translate-y-1/2"><X className="w-4 h-4" aria-hidden="true" /></Button>}
+        </div>
       </div>
+      </div>
+
+      {!loading && !error && (
+        <section aria-label={t('workforce.title', locale)} className="grid grid-cols-3 gap-3">
+          {summaryCards.map(({ label, value, tone }) => (
+            <div key={label} className="rounded-xl border border-chrome-line bg-surface p-4">
+              <p className="text-xs font-medium text-content-muted">{label}</p>
+              <p className={`mt-2 text-2xl font-semibold tabular-nums ${tone}`}>{value}</p>
+            </div>
+          ))}
+        </section>
+      )}
       {loading ? (
         <Skeleton className="h-12" count={6} />
       ) : error ? (
@@ -205,7 +238,7 @@ function WorkforcePageInner() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(e => (
+              {pagedEmployees.map(e => (
                 <tr key={e.id}>
                   <td className="font-medium">{e.first_name} {e.last_name}</td>
                   <td className="text-xs text-slate-600">{e.user?.email || '—'}</td>
@@ -233,7 +266,7 @@ function WorkforcePageInner() {
           </table>
         </Card>
         <div className="grid gap-3 xl:hidden">
-          {filtered.map((employee) => (
+          {pagedEmployees.map((employee) => (
             <Card key={employee.id} padding={false} className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -254,6 +287,7 @@ function WorkforcePageInner() {
             </Card>
           ))}
         </div>
+        <Pagination page={safePage} pageSize={pageSize} total={totalFiltered} onPageChange={setPage} />
         </>
       )}
 
