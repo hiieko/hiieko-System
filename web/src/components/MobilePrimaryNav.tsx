@@ -44,11 +44,11 @@ export function MobilePrimaryNav() {
 
   return (
     <>
-      <nav className="mobile-primary-nav fixed inset-x-0 bottom-0 z-sidebar border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-6px_20px_rgba(15,23,42,0.05)] backdrop-blur lg:hidden" aria-label={locale === 'en' ? 'Primary navigation' : 'Navigare principală'}>
+      <nav className="mobile-primary-nav fixed inset-x-0 bottom-0 z-sidebar border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-6px_20px_rgba(15,23,42,0.05)] backdrop-blur lg:hidden" aria-label={t('a11y.primary_navigation', locale)}>
         <ul className="mx-auto flex max-w-xl items-stretch justify-around gap-1">
           {tabs.map((tab) => {
             if (tab.kind === 'more') {
-              const label = locale === 'en' ? 'More' : 'Mai multe';
+              const label = t('nav.more', locale);
               return (
                 <li key={MOBILE_MORE_TAB} className="min-w-0 flex-1">
                   <button

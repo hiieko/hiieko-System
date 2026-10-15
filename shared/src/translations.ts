@@ -2039,6 +2039,11 @@ Object.assign(d, {
   'global_search.nav_hint': T('Navigare în pagini — accesul respectă rolul tău.', 'Navigation only — access follows your role.'),
 });
 
+// i18n(mobile-nav) — localise mobile bottom nav + more sheet
+Object.assign(d, {
+  'nav.more': T('Mai multe', 'More'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
