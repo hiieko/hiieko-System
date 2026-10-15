@@ -2070,6 +2070,24 @@ Object.assign(d, {
   'worker.refresh_attendance': T('Reîmprospătează pontajul', 'Refresh attendance'),
 });
 
+// i18n(photo-upload) — localise PhotoUpload I18N map
+Object.assign(d, {
+  'photo_upload.title': T('Fotografii', 'Photos'),
+  'photo_upload.add': T('Adaugă fotografie', 'Add photo'),
+  'photo_upload.uploading': T('Se încarcă…', 'Uploading…'),
+  'photo_upload.empty': T('Nicio fotografie încă.', 'No photos yet.'),
+  'photo_upload.load_error': T('Fotografiile nu au putut fi încărcate.', 'Photos could not be loaded.'),
+  'photo_upload.upload_error': T('Fotografia nu a putut fi încărcată.', 'The photo could not be uploaded.'),
+  'photo_upload.remove_error': T('Fotografia nu a putut fi ștearsă.', 'The photo could not be removed.'),
+  'photo_upload.remove': T('Șterge fotografia', 'Remove photo'),
+  'photo_upload.remove_title': T('Șterge fotografia?', 'Remove photo?'),
+  'photo_upload.remove_message': T('Fotografia va fi eliminată. Acțiunea nu poate fi anulată.', 'The photo will be removed. This cannot be undone.'),
+  'photo_upload.remove_confirm': T('Șterge', 'Remove'),
+  'photo_upload.remove_cancel': T('Anulează', 'Cancel'),
+  'photo_upload.view': T('Vezi fotografia', 'View photo'),
+  'photo_upload.close': T('Închide', 'Close'),
+});
+
 
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];

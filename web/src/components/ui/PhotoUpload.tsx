@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, Trash2, X, ImageOff } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
 import { apiClient } from '../../lib/api-client';
 import type { PhotoAttachment } from '../../lib/api-client';
 import { Button } from './Button';
@@ -30,41 +30,6 @@ export interface PhotoUploadProps {
   className?: string;
 }
 
-const I18N = {
-  ro: {
-    title: 'Fotografii',
-    add: 'Adaugă fotografie',
-    uploading: 'Se încarcă…',
-    empty: 'Nicio fotografie încă.',
-    loadError: 'Fotografiile nu au putut fi încărcate.',
-    uploadError: 'Fotografia nu a putut fi încărcată.',
-    removeError: 'Fotografia nu a putut fi ștearsă.',
-    remove: 'Șterge fotografia',
-    removeTitle: 'Șterge fotografia?',
-    removeMessage: 'Fotografia va fi eliminată. Acțiunea nu poate fi anulată.',
-    removeConfirm: 'Șterge',
-    removeCancel: 'Anulează',
-    view: 'Vezi fotografia',
-    close: 'Închide',
-  },
-  en: {
-    title: 'Photos',
-    add: 'Add photo',
-    uploading: 'Uploading…',
-    empty: 'No photos yet.',
-    loadError: 'Photos could not be loaded.',
-    uploadError: 'The photo could not be uploaded.',
-    removeError: 'The photo could not be removed.',
-    remove: 'Remove photo',
-    removeTitle: 'Remove photo?',
-    removeMessage: 'The photo will be removed. This cannot be undone.',
-    removeConfirm: 'Remove',
-    removeCancel: 'Cancel',
-    view: 'View photo',
-    close: 'Close',
-  },
-} as const;
-
 /** The blob route is `/api/upload/:documentId`; recover the document id. */
 function documentIdFromUrl(url: string): string {
   return url.split('/').filter(Boolean).pop() || '';
@@ -79,7 +44,6 @@ export function PhotoUpload({
   className,
 }: PhotoUploadProps) {
   const { locale } = useLocale();
-  const l = I18N[locale === 'ro' ? 'ro' : 'en'];
   const toast = useToast();
 
   const [attachments, setAttachments] = useState<PhotoAttachment[]>([]);
@@ -153,12 +117,12 @@ export function PhotoUpload({
       }
     } catch (err) {
       if (!cancelledRef.current) {
-        setError(err instanceof Error ? err.message : l.loadError);
+        setError(err instanceof Error ? err.message : t('photo_upload.load_error', locale));
       }
     } finally {
       if (!cancelledRef.current) setLoading(false);
     }
-  }, [targetType, targetId, projectId, onChange, l.loadError]);
+  }, [targetType, targetId, projectId, onChange, locale]);
 
   useEffect(() => {
     void load();
@@ -173,7 +137,7 @@ export function PhotoUpload({
       try {
         const uploaded = await apiClient.uploadPhoto(file, projectId);
         const documentId = uploaded.data?.documentId;
-        if (!documentId) throw new Error(l.uploadError);
+        if (!documentId) throw new Error(t('photo_upload.upload_error', locale));
         await apiClient.createAttachment({
           targetType,
           targetId,
@@ -181,17 +145,17 @@ export function PhotoUpload({
           projectId,
         });
         await load();
-        toast.success(l.title, l.add);
+        toast.success(t('photo_upload.title', locale), t('photo_upload.add', locale));
       } catch (err) {
-        const message = err instanceof Error ? err.message : l.uploadError;
+        const message = err instanceof Error ? err.message : t('photo_upload.upload_error', locale);
         setError(message);
-        toast.error(l.uploadError, message);
+        toast.error(t('photo_upload.upload_error', locale), message);
       } finally {
         setUploading(false);
         if (inputRef.current) inputRef.current.value = '';
       }
     },
-    [projectId, targetType, targetId, load, toast, l.title, l.add, l.uploadError],
+    [projectId, targetType, targetId, load, toast, locale],
   );
 
   const confirmDelete = useCallback(async () => {
@@ -202,11 +166,11 @@ export function PhotoUpload({
       setPendingDelete(null);
       await load();
     } catch (err) {
-      toast.error(l.removeError, err instanceof Error ? err.message : undefined);
+      toast.error(t('photo_upload.remove_error', locale), err instanceof Error ? err.message : undefined);
     } finally {
       setDeleting(false);
     }
-  }, [pendingDelete, projectId, load, toast, l.removeError]);
+  }, [pendingDelete, projectId, load, toast, locale]);
 
   const showEmpty = !loading && !error && attachments.length === 0;
 
@@ -214,7 +178,7 @@ export function PhotoUpload({
     <div className={clsx('space-y-3', className)}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium text-content">
-          {l.title}
+          {t('photo_upload.title', locale)}
           {attachments.length > 0 && (
             <span className="ml-1.5 text-content-muted">({attachments.length})</span>
           )}
@@ -228,7 +192,7 @@ export function PhotoUpload({
               capture="environment"
               className="hidden"
               onChange={(e) => void handleFiles(e.target.files)}
-              aria-label={l.add}
+              aria-label={t('photo_upload.add', locale)}
             />
             <Button
               type="button"
@@ -239,7 +203,7 @@ export function PhotoUpload({
               onClick={() => inputRef.current?.click()}
               icon={!uploading ? <ImagePlus className="w-4 h-4" /> : undefined}
             >
-              {uploading ? l.uploading : l.add}
+              {uploading ? t('photo_upload.uploading', locale) : t('photo_upload.add', locale)}
             </Button>
           </>
         )}
@@ -248,7 +212,7 @@ export function PhotoUpload({
       {loading && (
         <div className="flex items-center gap-2 py-4 text-sm text-content-muted">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span>{l.uploading}</span>
+          <span>{t('photo_upload.uploading', locale)}</span>
         </div>
       )}
 
@@ -256,7 +220,7 @@ export function PhotoUpload({
         <p className="text-sm text-danger-foreground">{error}</p>
       )}
 
-      {showEmpty && <p className="text-sm text-content-muted">{l.empty}</p>}
+      {showEmpty && <p className="text-sm text-content-muted">{t('photo_upload.empty', locale)}</p>}
 
       {!loading && attachments.length > 0 && (
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -267,7 +231,7 @@ export function PhotoUpload({
                 <button
                   type="button"
                   onClick={() => setActivePhoto(a)}
-                  aria-label={l.view}
+                  aria-label={t('photo_upload.view', locale)}
                   className="block aspect-square w-full overflow-hidden rounded-lg border border-chrome-line bg-surface-muted"
                 >
                   {src ? (
@@ -290,7 +254,7 @@ export function PhotoUpload({
                       e.stopPropagation();
                       setPendingDelete(a);
                     }}
-                    aria-label={l.remove}
+                    aria-label={t('photo_upload.remove', locale)}
                     className="absolute right-1 top-1 grid h-7 w-7 place-items-center rounded-md bg-black/60 text-white opacity-90 transition-opacity hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -314,7 +278,7 @@ export function PhotoUpload({
           <button
             type="button"
             onClick={() => setActivePhoto(null)}
-            aria-label={l.close}
+            aria-label={t('photo_upload.close', locale)}
             className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
           >
             <X className="w-5 h-5" />
@@ -328,7 +292,7 @@ export function PhotoUpload({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <span className="text-white/70">{l.loadError}</span>
+            <span className="text-white/70">{t('photo_upload.load_error', locale)}</span>
           )}
         </div>
       )}
@@ -337,10 +301,10 @@ export function PhotoUpload({
         open={!!pendingDelete}
         onConfirm={() => void confirmDelete()}
         onCancel={() => !deleting && setPendingDelete(null)}
-        title={l.removeTitle}
-        message={l.removeMessage}
-        confirmLabel={l.removeConfirm}
-        cancelLabel={l.removeCancel}
+        title={t('photo_upload.remove_title', locale)}
+        message={t('photo_upload.remove_message', locale)}
+        confirmLabel={t('photo_upload.remove_confirm', locale)}
+        cancelLabel={t('photo_upload.remove_cancel', locale)}
         variant="danger"
         loading={deleting}
       />
