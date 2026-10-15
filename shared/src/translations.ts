@@ -2202,12 +2202,13 @@ Object.assign(d, {
   'task.filters': T('Filtre', 'Filters'),
 });
 
-// Phase B UX — /cheltuieli KPI strip
+// Phase B UX — /rapoarte KPI strip
 Object.assign(d, {
-  'expenses.kpi_total': T('Total', 'Total'),
-  'expenses.kpi_pending': T('În așteptare', 'Pending'),
-  'expenses.kpi_approved': T('Aprobate', 'Approved'),
-  'expenses.kpi_reimbursed': T('Rambursate', 'Reimbursed'),
+  'reports.kpi_total': T('Total rapoarte', 'Total reports'),
+  'reports.kpi_draft': T('Ciorne', 'Drafts'),
+  'reports.kpi_submitted': T('Trimise', 'Submitted'),
+  'reports.kpi_approved': T('Aprobate', 'Approved'),
+  'reports.kpi_rejected': T('Respinse', 'Rejected'),
 });
 
 export function t(key: string, locale: Locale = 'ro'): string {

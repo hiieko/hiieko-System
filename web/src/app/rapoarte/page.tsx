@@ -21,9 +21,11 @@ import {
   PageHeader,
   ErrorState,
   Skeleton,
+  Pagination,
 } from '../../components/ui';
 import { submitDailyReport, reviewDailyReport } from '../../features/daily-reports';
 import { useRouter } from 'next/navigation';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { 
   FileText, 
   CheckCircle2, 
@@ -159,11 +161,31 @@ function RapoartePageInner() {
     }
   }, [reviewTarget, reviewingId, reviewAction, reviewComment, toastError, toastSuccess, loadData]);
 
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 10 : 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, statusFilter, selectedProjectId, pageSize]);
+  const totalFiltered = filteredReports.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedReports = filteredReports.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const statusCount = (s: string) => reports.filter(r => r.status === s).length;
+  const summaryCards = [
+    { label: t('reports.kpi_total', locale), value: reports.length },
+    { label: t('reports.kpi_draft', locale), value: statusCount('DRAFT') },
+    { label: t('reports.kpi_submitted', locale), value: statusCount('SUBMITTED') },
+    { label: t('reports.kpi_approved', locale), value: statusCount('APPROVED') },
+    { label: t('reports.kpi_rejected', locale), value: statusCount('REJECTED') },
+  ];
+
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <PageTutorial sectionId="reports" />
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
       <PageHeader
-        className="!mb-0"
+        className="py-3 !mb-0"
         title="Rapoarte Zilnice per Echipa"
         subtitle="Activități finalizate de șefii de echipa, muncitori prezenți, materiale consumate și fotografii de execuție."
         actions={
@@ -192,7 +214,7 @@ function RapoartePageInner() {
       />
 
       {!loading && !error && reports.length > 0 && (
-        <Card padding={false} className="p-4 flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 pb-3">
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
@@ -201,7 +223,7 @@ function RapoartePageInner() {
             aria-label={t('reports.search_aria', locale)}
           />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            className="hii-select">
+            className="hii-select sm:w-52">
             {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? t('reports.all_statuses', locale) : status}</option>)}
           </select>
           {(searchQuery || statusFilter !== 'ALL') && (
@@ -209,8 +231,18 @@ function RapoartePageInner() {
               {t('projects.clear_filters', locale)}
             </Button>
           )}
-        </Card>
+        </div>
       )}
+
+      <div className="pt-6 space-y-6">
+        <section aria-label="Rapoarte Zilnice" className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+          {summaryCards.map(({ label, value }) => (
+            <Card key={label} padding={false} className="p-4">
+              <p className="text-xs font-medium text-content-muted">{label}</p>
+              <p className="mt-2 text-2xl font-semibold tabular-nums text-content">{value}</p>
+            </Card>
+          ))}
+        </section>
 
       {loading ? (
         <div className="space-y-4">
@@ -248,7 +280,7 @@ function RapoartePageInner() {
                 action={{ label: 'Clear filters', onClick: () => { setSearchQuery(''); setStatusFilter('ALL'); } }}
               />
             </div>
-          ) : filteredReports.map((report) => {
+          ) : pagedReports.map((report) => {
             const siteName = report.project?.name || 'Șantier';
             const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
@@ -458,6 +490,7 @@ function RapoartePageInner() {
             </Card>
           );
         })}
+        <Pagination page={safePage} pageSize={pageSize} total={totalFiltered} onPageChange={setPage} />
       </div>
       )}
 
@@ -520,6 +553,8 @@ function RapoartePageInner() {
           />
         </Modal>
       )}
+      </div>
+      </div>
     </div>
   );
 }
