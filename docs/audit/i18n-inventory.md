@@ -2947,10 +2947,51 @@ in scope. Reused existing keys where exact; otherwise added new `*.` keys (RO + 
   — pre-existing gaps, outside the agreed ternary scope.
 - Non-scope components with remaining ternaries (`GlobalQuickSearch`, `MobilePrimaryNav`,
   `MoreSheet`, `ControlTowerSurface`, `ControlTowerDrilldownDrawer`, `WorkerAttendanceView`,
-  `WorkerDashboard`, `PhotoUpload`) — outside the authorised file set.
+  `WorkerDashboard`, `PhotoUpload`) — outside the authorised file set. **Addressed in
+  Phase A.2 below.**
 
 ### Dead keys
 
 All **417** dead keys were left in place. Removal is deferred to a dedicated session
 with full-page test coverage.
+
+## Phase A.2 — non-scope components and pages
+
+Scope extension: the 9 components and 6 `page.tsx` files previously listed as
+"Intentionally left (non-scope)". Same rules as Phase A.1 (RO + EN keys, DB enums via
+shared helpers or left as data), **plus** hardcoded non-ternary strings (page titles,
+headers, buttons, empty states, confirm dialogs) were also localised — see Phase A.3.
+One file per commit; `npm run build --workspace=web` passed before each commit.
+
+### Files fixed
+
+| File | Commit | Notes |
+|------|--------|-------|
+| `web/src/components/ControlTowerSurface.tsx` | `e0207f3` | ternaries → `t()`; category/status/severity data left as-is |
+| `web/src/components/ControlTowerRedFlagsCard.tsx` | `5df4761` | localised |
+| `web/src/components/ControlTowerDrilldownDrawer.tsx` | `9890a19` | load-error/retry/more-results → `t()` |
+| `web/src/components/GlobalQuickSearch.tsx` | `df25db1` | new `global_search.*` keys |
+| `web/src/components/MobilePrimaryNav.tsx` | `9f40d28` | new `nav.more`; reused `a11y.primary_navigation` |
+| `web/src/components/MoreSheet.tsx` | `66063ac` | reuses `nav.*`; bilingual `group.title[locale]` left as data |
+| `web/src/components/WorkerAttendanceView.tsx` | `c3ffa44` | new `worker.active_shift`/`state_label`/`assigned_unavailable` |
+| `web/src/components/WorkerDashboard.tsx` | `23943ae` | `FIELD_HOME_COPY` → `worker.home.*` keys; locale-code ternaries left as-is |
+| `web/src/components/ui/PhotoUpload.tsx` | `abc6743` | removed local `I18N` map → `photo_upload.*` keys |
+| `web/src/app/avize/page.tsx` | `02ead73` | new `avize.list.*` keys |
+| `web/src/app/workforce/page.tsx` | `e82f5a1` | removed local `ROLE_LABELS` → shared `getRoleLabel`; new `workforce.*` keys |
+| `web/src/app/teams/page.tsx` | `31d14f1` | new `teams.*` keys; renamed shadow `t` → `team` in detail/list blocks |
+
+### No-op (verified already fully localised)
+
+- `web/src/app/tasks/page.tsx`
+- `web/src/app/planning/page.tsx`
+- `web/src/app/qa/page.tsx`
+
+## Phase A.3 — hardcoded non-ternary strings
+
+Phase A.1 deliberately excluded non-ternary hardcoded strings (table headers, empty
+states, confirm-dialog copy, `Cancel`/`Save` buttons) inside the touched pages. Phase
+A.2 included them for its file set, and they are now localised there via the
+`teams.*`, `workforce.*`, `avize.list.*` and related key blocks. Remaining non-ternary
+gaps outside the Phase A.1/A.2 file sets (e.g. raw status enum `<option>` values in
+`rapoarte`) are unchanged and still tracked as pre-existing gaps.
 
