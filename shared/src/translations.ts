@@ -2197,6 +2197,11 @@ Object.assign(d, {
   'pagination.next': T('Următor', 'Next'),
 });
 
+// Phase B UX — /tasks page
+Object.assign(d, {
+  'task.filters': T('Filtre', 'Filters'),
+});
+
 export function t(key: string, locale: Locale = 'ro'): string {
   const e = d[key];
   if (!e) return key;

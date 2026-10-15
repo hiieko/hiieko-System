@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { t, useLocale, UserRole } from '@solar/shared';
-import { Plus, RefreshCw, Loader2, ClipboardList, ListTodo, Clock3, CircleAlert, CheckCircle2 } from 'lucide-react';
+import { Plus, ClipboardList, ListTodo, Clock3, CircleAlert, CheckCircle2, ListFilter } from 'lucide-react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
@@ -10,6 +10,7 @@ import { useToast } from '../../components/ui/Toast';
 import { RoleGuard } from '../../lib/auth-guard';
 import { ROUTE_ROLES } from '../../config/route-roles';
 import { ApiError } from '../../lib/api-client';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 import {
   Task,
@@ -31,6 +32,8 @@ import {
   EmptyState,
   ErrorState,
   Skeleton,
+  Drawer,
+  Pagination,
 } from '../../components/ui';
 
 // ── Role-based permissions ────────────────────────────────────────────────
@@ -106,6 +109,12 @@ function TasksPageInner() {
   const [updatingQuantityIds, setUpdatingQuantityIds] = useState<Set<string>>(new Set());
   const [blockingIds, setBlockingIds] = useState<Set<string>>(new Set());
 
+  // Layout / disclosure
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const pageSize = isMobile ? 10 : 20;
+  const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   // ── Load tasks ──────────────────────────────────────────────────────────
 
   const loadTasks = useCallback(async () => {
@@ -137,6 +146,11 @@ function TasksPageInner() {
     setTasks([]);
     loadTasks();
   }, [loadTasks]);
+
+  // Reset to the first page whenever a filter input changes (or pageSize flips).
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, activeStatus, onlyMine, selectedProject?.id, pageSize]);
 
   // ── Status counts ───────────────────────────────────────────────────────
 
@@ -339,6 +353,19 @@ function TasksPageInner() {
     { label: t('task.summary_complete', locale), value: completedTasks, Icon: CheckCircle2, tone: 'text-success-foreground' },
   ];
 
+  // ── Pagination ──────────────────────────────────────────────────────────
+  const totalFiltered = filteredTasks.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedTasks = useMemo(
+    () => filteredTasks.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filteredTasks, safePage, pageSize],
+  );
+  const activeFilterCount =
+    (searchQuery ? 1 : 0) +
+    (activeStatus !== 'all' ? 1 : 0) +
+    (onlyMine && showOnlyMineFilter ? 1 : 0);
+
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
@@ -364,43 +391,84 @@ function TasksPageInner() {
         />
       )}
 
-      {/* Page Header */}
-      <PageHeader
-        title={t('task.page_title')}
-        subtitle={
-          selectedProject
-            ? `${selectedProject.code} — ${selectedProject.name}`
-            : t('task.all_projects')
-        }
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="md"
-              icon={<RefreshCw className="w-4 h-4" />}
-              onClick={loadTasks}
-              loading={loading}
-            >
-              {t('general.refresh')}
-            </Button>
-            {userCanCreate && (
+      {/* Sticky page header + filter bar */}
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
+        <PageHeader
+          className="py-3 !mb-0"
+          title={t('task.page_title', locale)}
+          subtitle={
+            selectedProject
+              ? `${selectedProject.code} — ${selectedProject.name}`
+              : t('task.all_projects', locale)
+          }
+          onRefresh={loadTasks}
+          refreshing={loading}
+          actions={
+            <div className="flex items-center gap-2">
+              {userCanCreate && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  icon={<Plus className="w-4 h-4" />}
+                  onClick={() => setShowCreateModal(true)}
+                  disabled={!selectedProject}
+                >
+                  {t('task.new', locale)}
+                </Button>
+              )}
               <Button
-                variant="primary"
+                variant="secondary"
                 size="md"
-                icon={<Plus className="w-4 h-4" />}
-                onClick={() => setShowCreateModal(true)}
-                disabled={!selectedProject}
+                icon={<ListFilter className="w-4 h-4" />}
+                className="sm:hidden"
+                onClick={() => setFiltersOpen(true)}
               >
-                {t('task.new')}
+                {t('task.filters', locale)}
+                {activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
               </Button>
-            )}
-          </div>
-        }
-      />
+            </div>
+          }
+        />
+
+        {/* Desktop filters (sticky, below the header) */}
+        <div className="hidden sm:block pb-3">
+          <TaskFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeStatus={activeStatus}
+            onStatusChange={setActiveStatus}
+            onlyMine={onlyMine}
+            onOnlyMineChange={setOnlyMine}
+            statusCounts={statusCounts}
+            showOnlyMineFilter={showOnlyMineFilter}
+          />
+        </div>
+      </div>
+
+      {/* Mobile filters (bottom sheet) */}
+      <Drawer
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        side="bottom"
+        size="lg"
+        swipeToClose
+        title={t('task.filters', locale)}
+      >
+        <TaskFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeStatus={activeStatus}
+          onStatusChange={setActiveStatus}
+          onlyMine={onlyMine}
+          onOnlyMineChange={setOnlyMine}
+          statusCounts={statusCounts}
+          showOnlyMineFilter={showOnlyMineFilter}
+        />
+      </Drawer>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <section aria-label={t('task.list_heading', locale)} className="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="max-w-7xl mx-auto pt-6 space-y-6">
+        <section aria-label={t('task.list_heading', locale)} className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {summaryCards.map(({ label, value, Icon, tone }) => (
             <Card key={label} padding={false} className="p-4">
               <div className="flex items-center justify-between gap-2">
@@ -415,26 +483,11 @@ function TasksPageInner() {
         {/* Error State */}
         {error && !loading && (
           <ErrorState
-            title={t('task.generic_error')}
+            title={t('task.generic_error', locale)}
             error={error}
             onRetry={loadTasks}
-            className="mb-6"
           />
         )}
-
-        {/* Filters */}
-        <div className="mb-6">
-          <TaskFilters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            activeStatus={activeStatus}
-            onStatusChange={setActiveStatus}
-            onlyMine={onlyMine}
-            onOnlyMineChange={setOnlyMine}
-            statusCounts={statusCounts}
-            showOnlyMineFilter={showOnlyMineFilter}
-          />
-        </div>
 
         {/* Loading Skeletons */}
         {loading && !initialLoadDone && (
@@ -491,9 +544,9 @@ function TasksPageInner() {
         {(!loading || initialLoadDone) && filteredTasks.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-sm font-semibold text-content-secondary">
-              {t('task.list_heading', locale)} <span className="font-normal text-content-muted">({filteredTasks.length})</span>
+              {t('task.list_heading', locale)} <span className="font-normal text-content-muted">({totalFiltered})</span>
             </h2>
-            {filteredTasks.map((task) => (
+            {pagedTasks.map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}
@@ -517,6 +570,16 @@ function TasksPageInner() {
               />
             ))}
           </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && initialLoadDone && !error && totalFiltered > 0 && (
+          <Pagination
+            page={safePage}
+            pageSize={pageSize}
+            total={totalFiltered}
+            onPageChange={setPage}
+          />
         )}
       </div>
     </div>
