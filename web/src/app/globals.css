@@ -52,7 +52,7 @@
   --hii-sidebar-bg: #0f172a;
   --hii-sidebar-hover: #1e293b;
   --hii-sidebar-text: #cbd5e1;
-  --hii-sidebar-text-muted: #64748b;
+  --hii-sidebar-text-muted: #94a3b8;
   --hii-sidebar-active-bg: #188C51;
   --hii-sidebar-active-text: #ffffff;
   --hii-sidebar-width: 16rem;
@@ -62,7 +62,7 @@
   --hii-chrome-hover: #1f2937;
   --hii-chrome-border: #1f2937;
   --hii-chrome-text: #f9fafb;
-  --hii-chrome-text-muted: #9ca3af;
+  --hii-chrome-text-muted: #d1d5db;
   --hii-shell-content-bg: #f3f4f6;
 }
 
@@ -182,7 +182,7 @@
   /* Form elements (D0: 40px height, rounded-lg, neutral-300 border,
      brand focus ring, danger error border) */
   .hii-input {
-    @apply w-full h-10 px-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-hii-500/30 focus:border-hii-500 transition-colors;
+    @apply w-full h-10 px-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-hii-500/30 focus:border-hii-500 transition-colors;
   }
 
   .hii-input[aria-invalid='true'] {
@@ -224,7 +224,7 @@
   }
 
   .hii-kpi-label {
-    @apply text-xs font-semibold uppercase text-slate-400;
+    @apply text-xs font-semibold uppercase text-slate-500;
   }
 
   /* Tab */
@@ -250,7 +250,7 @@
   }
 
   .hii-section-title {
-    @apply text-xs font-bold uppercase tracking-wider text-slate-400;
+    @apply text-xs font-bold uppercase tracking-wider text-slate-500;
   }
 
   /* Empty state */
