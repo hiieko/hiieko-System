@@ -159,6 +159,9 @@ describe('JwtAuthGuard', () => {
     user_id: 'user-1',
     revoked_at: null,
     expires_at: new Date(Date.now() + 60 * 60 * 1000),
+    // Phase 6 (B3): the guard reads `last_used_at` for the idle-timeout check, so a
+    // live-session fixture must carry it (the real row is non-null).
+    last_used_at: new Date(),
   };
 
   it('accepts a token whose sid points at a live session', async () => {

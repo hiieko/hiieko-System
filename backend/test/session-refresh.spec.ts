@@ -9,6 +9,7 @@ import { ERROR_CODES } from '@solar/shared';
 
 import { AuthService } from '../src/modules/auth/auth.service';
 import { SessionService, hashRefreshToken } from '../src/modules/auth/session.service';
+import { EmailService } from '../src/modules/auth/email.service';
 import { AuthController } from '../src/modules/auth/auth.controller';
 import { UsersService } from '../src/modules/users/users.service';
 import { PrismaService } from '../src/common/prisma/prisma.service';
@@ -218,6 +219,9 @@ function buildAuthService(db: FakeDb, jwt: JwtService, audit: { record: jest.Moc
       { provide: JwtService, useValue: jwt },
       { provide: PrismaService, useValue: db.prisma },
       { provide: AuditService, useValue: audit },
+      // AuthService also injects EmailService (password reset); these session tests
+      // never send mail, so a no-op mock satisfies the constructor.
+      { provide: EmailService, useValue: { sendPasswordReset: jest.fn().mockResolvedValue(undefined) } },
     ],
   }).compile();
 }

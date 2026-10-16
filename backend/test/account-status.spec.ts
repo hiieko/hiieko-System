@@ -10,6 +10,7 @@ import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
 
 import { AuthService } from '../src/modules/auth/auth.service';
 import { SessionService } from '../src/modules/auth/session.service';
+import { EmailService } from '../src/modules/auth/email.service';
 import { UsersService } from '../src/modules/users/users.service';
 import { UsersController } from '../src/modules/users/users.controller';
 import { PrismaService } from '../src/common/prisma/prisma.service';
@@ -67,6 +68,9 @@ describe('AuthService — account lifecycle (login)', () => {
         { provide: JwtService, useValue: jwtService },
         { provide: PrismaService, useValue: prisma },
         { provide: AuditService, useValue: audit },
+        // AuthService also injects EmailService (password reset); login tests never
+        // send mail, so a no-op mock satisfies the constructor.
+        { provide: EmailService, useValue: { sendPasswordReset: jest.fn().mockResolvedValue(undefined) } },
       ],
     }).compile();
 
