@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InventoryService, ReceiveStockDto, ConsumeStockDto, TransferStockDto } from './inventory.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
@@ -28,6 +28,9 @@ export class InventoryController {
     @Query('projectId') projectId?: string,
     @Query('warehouseId') warehouseId?: string,
   ) {
+    if (!materialId) {
+      throw new BadRequestException('materialId is required');
+    }
     const where = buildScopedProjectWhere(scope, projectId);
     return this.inventoryService.getStockBalance(materialId, projectId, warehouseId, where);
   }

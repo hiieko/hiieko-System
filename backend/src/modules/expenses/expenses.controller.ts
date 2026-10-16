@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ExpensesService, CreateExpenseDto, ApproveExpenseDto } from './expenses.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
@@ -34,6 +34,11 @@ export class ExpensesController {
     @Query('status') status?: ExpenseStatusEnum,
   ) {
     const where = buildScopedProjectWhere(scope, projectId);
+    if (status && !Object.values(ExpenseStatusEnum).includes(status)) {
+      throw new BadRequestException(
+        `status must be one of: ${Object.values(ExpenseStatusEnum).join(', ')}`,
+      );
+    }
     const filterUserId =
       user.role === UserRoleEnum.ADMIN || user.role === UserRoleEnum.MANAGER || user.role === UserRoleEnum.FINANCE
         ? userId

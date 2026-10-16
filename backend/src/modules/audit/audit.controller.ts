@@ -1,4 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuditService } from '../../common/audit/audit.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
@@ -29,8 +35,33 @@ export class AuditController {
       entityId,
       actorId,
       action,
-      limit: parseInt(limit, 10),
-      offset: parseInt(offset, 10),
+      limit: this.parseLimit(limit),
+      offset: this.parseOffset(offset),
     });
+  }
+
+  /**
+   * `limit` must be a positive integer. Rejecting malformed or negative values
+   * here prevents NaN/negative values from reaching Prisma's `take` (which
+   * either errors or silently returns the wrong page).
+   */
+  private parseLimit(raw: string): number {
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value < 1) {
+      throw new BadRequestException('limit must be a positive integer');
+    }
+    return value;
+  }
+
+  /**
+   * `offset` must be a non-negative integer. A negative value reaches Prisma's
+   * `skip` and crashes with an unknown request error (HTTP 500).
+   */
+  private parseOffset(raw: string): number {
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value < 0) {
+      throw new BadRequestException('offset must be a non-negative integer');
+    }
+    return value;
   }
 }

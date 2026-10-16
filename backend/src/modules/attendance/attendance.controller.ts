@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, UseGuards, Patch, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, UseGuards, Patch, Param, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import {
   AttendanceService,
@@ -40,6 +40,12 @@ export class AttendanceController {
     @Query('endDate') endDate?: string,
   ) {
     const where = buildScopedProjectWhere(scope, projectId);
+    if (startDate) {
+      this.assertValidDateParam(startDate, 'startDate');
+    }
+    if (endDate) {
+      this.assertValidDateParam(endDate, 'endDate');
+    }
     return this.attendanceService.findAll({ projectId, userId, startDate, endDate, projectScopeWhere: where });
   }
 
@@ -74,6 +80,7 @@ export class AttendanceController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('date') date = companyDateIso(),
   ) {
+    this.assertValidDateParam(date, 'date');
     return this.attendanceService.findByUserAndDate(user.id, date);
   }
 
@@ -99,5 +106,19 @@ export class AttendanceController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.attendanceService.correctAttendance(id, dto, user.id);
+  }
+
+  /**
+   * Reject malformed date query values before they reach `companyDay`, which
+   * would otherwise produce an Invalid Date and crash Prisma (HTTP 500).
+   *
+   * Mirrors `companyDay`'s calendar-date semantics: the first 10 characters
+   * (YYYY-MM-DD) must form a real date; full ISO timestamps are accepted too.
+   */
+  private assertValidDateParam(value: string, name: string): void {
+    const parsed = new Date(`${String(value).slice(0, 10)}T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException(`${name} must be a valid date (YYYY-MM-DD)`);
+    }
   }
 }
