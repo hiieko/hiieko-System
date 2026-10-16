@@ -87,6 +87,7 @@ export function DailyReportForm({ reportId }: Props) {
               reportId={form.reportId}
               projectId={form.projectId}
               readOnly={readOnly}
+              onSaveDraft={handleSave}
             />
           )}
           {section === 'review' && (

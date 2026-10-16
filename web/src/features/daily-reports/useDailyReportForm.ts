@@ -95,7 +95,8 @@ export function useDailyReportForm(reportId?: string) {
       setForm(prev => prev ? { ...prev, lastSavedAt: now, isDirty: false } : prev);
       dirtyRef.current = false;
       toastSuccess(t('daily_report.draft_saved', locale));
-    } catch (err: any) { toastError(err.message || t('daily_report.save_failed', locale)); }
+      return (result?.id as string) ?? form.reportId;
+    } catch (err: any) { toastError(err.message || t('daily_report.save_failed', locale)); return undefined; }
     finally { setSaving(false); }
   }, [form, locale, toastSuccess, toastError, router]);
 
