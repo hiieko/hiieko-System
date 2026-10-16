@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 
 import { Task, TaskStatus, TASK_STATUS_I18N, TASK_STATUS_BADGE } from '../types';
-import { Badge, Button, Card, ConfirmDialog, Modal, PhotoUpload } from '@/components/ui';
+import { Badge, Button, Card, ConfirmDialog, Modal } from '@/components/ui';
+import { usePhotoUploadModal } from '@/contexts/PhotoUploadModalContext';
 import { TaskProgressBar } from './TaskProgressBar';
 import { TaskDependencyChips } from './TaskDependencyChips';
 import { TaskStatusWorkflow } from './TaskStatusWorkflow';
@@ -66,6 +67,7 @@ export function TaskCard({
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [blockReason, setBlockReason] = useState('');
   const { locale } = useLocale();
+  const { openPhotoUpload } = usePhotoUploadModal();
 
   // Check if user is assigned to this task
   const isUserAssigned = currentUserId
@@ -371,7 +373,19 @@ export function TaskCard({
                   type="button"
                   role="tab"
                   aria-selected={detailTab === tab}
-                  onClick={() => setDetailTab(tab)}
+                  onClick={() => {
+                    // The Photos tab opens the global photo modal for this task
+                    // instead of rendering an inline uploader.
+                    if (tab === 'photos') {
+                      openPhotoUpload({
+                        targetType: 'task',
+                        targetId: task.id,
+                        projectId: task.project_id,
+                      });
+                      return;
+                    }
+                    setDetailTab(tab);
+                  }}
                   className={clsx(
                     'px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors',
                     detailTab === tab
@@ -389,14 +403,6 @@ export function TaskCard({
                 </button>
               ))}
             </div>
-
-            {detailTab === 'photos' && (
-              <PhotoUpload
-                targetType="task"
-                targetId={task.id}
-                projectId={task.project_id}
-              />
-            )}
 
             {detailTab === 'details' && (
               <>

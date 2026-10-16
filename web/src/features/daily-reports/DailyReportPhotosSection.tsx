@@ -1,9 +1,10 @@
 'use client';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { t, useLocale } from '@solar/shared';
 import { Camera, ImagePlus } from 'lucide-react';
-import { Button, PhotoUpload } from '../../components/ui';
+import { Button } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+import { usePhotoUploadModal } from '../../contexts/PhotoUploadModalContext';
 
 interface Props {
   /** Undefined until the report has been saved as a draft at least once. */
@@ -23,33 +24,27 @@ interface Props {
  * draft id exists.
  *
  * When the report has no id yet, clicking "Add photo" auto-saves the draft first,
- * then opens the photo picker on the freshly-created report. A submitted report
- * (readOnly) keeps the plain hint — its photos can no longer be changed.
+ * then opens the global photo modal on the freshly-created report. A submitted
+ * report (readOnly) keeps the plain hint — its photos can no longer be changed.
  */
 export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSaveDraft }: Props) {
   const { locale } = useLocale();
   const toast = useToast();
+  const { openPhotoUpload } = usePhotoUploadModal();
 
   const [savingDraft, setSavingDraft] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   const [localReportId, setLocalReportId] = useState<string | undefined>(reportId);
-  const [pendingOpen, setPendingOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setLocalReportId(reportId); }, [reportId]);
 
   const effectiveReportId = localReportId || reportId;
 
-  // Once the auto-save created the draft, PhotoUpload mounts with a target id.
-  // Open its picker right away so the original click still ends in a file selection.
-  useEffect(() => {
-    if (!pendingOpen || !effectiveReportId) return;
-    const input = containerRef.current?.querySelector<HTMLInputElement>('input[type="file"]');
-    if (input) input.click();
-    setPendingOpen(false);
-  }, [pendingOpen, effectiveReportId]);
-
   const handleAddClick = useCallback(async () => {
+    if (effectiveReportId) {
+      openPhotoUpload({ targetType: 'daily_report', targetId: effectiveReportId, projectId });
+      return;
+    }
     if (!onSaveDraft) return;
     setSavingDraft(true);
     setSaveFailed(false);
@@ -61,8 +56,8 @@ export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSave
       return;
     }
     setLocalReportId(id);
-    setPendingOpen(true);
-  }, [onSaveDraft, toast]);
+    openPhotoUpload({ targetType: 'daily_report', targetId: id, projectId });
+  }, [effectiveReportId, onSaveDraft, openPhotoUpload, projectId, toast]);
 
   return (
     <div className="space-y-4">
@@ -71,32 +66,23 @@ export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSave
         {t('daily_report.section_photos', locale)}
       </h3>
 
-      <div ref={containerRef}>
-        {effectiveReportId ? (
-          <PhotoUpload
-            targetType="daily_report"
-            targetId={effectiveReportId}
-            projectId={projectId}
-            readOnly={readOnly}
-          />
-        ) : readOnly ? (
-          <p className="text-sm text-slate-500">{t('daily_report.photos_save_first', locale)}</p>
-        ) : savingDraft ? (
-          <p className="text-sm text-slate-500">Saving draft...</p>
-        ) : saveFailed ? (
-          <p className="text-sm text-slate-500">{t('daily_report.photos_save_first', locale)}</p>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => void handleAddClick()}
-            icon={<ImagePlus className="w-4 h-4" />}
-          >
-            {t('photo_upload.add', locale)}
-          </Button>
-        )}
-      </div>
+      {readOnly ? (
+        <p className="text-sm text-slate-500">{t('daily_report.photos_save_first', locale)}</p>
+      ) : savingDraft ? (
+        <p className="text-sm text-slate-500">Saving draft...</p>
+      ) : saveFailed ? (
+        <p className="text-sm text-slate-500">{t('daily_report.photos_save_first', locale)}</p>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => void handleAddClick()}
+          icon={<ImagePlus className="w-4 h-4" />}
+        >
+          {t('photo_upload.add', locale)}
+        </Button>
+      )}
     </div>
   );
 }

@@ -11,14 +11,15 @@ import {
   ArrowLeft, RefreshCw, Users, UserPlus, X, Trash2,
   Activity, Building2, Calendar, DollarSign, Sliders,
   Check, AlertTriangle, ClipboardCheck, Clock, Boxes, Truck,
-  FileText, ShieldCheck, SunMedium, CircleAlert, Layers,
+  FileText, ShieldCheck, SunMedium, CircleAlert, Layers, Camera,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
-import { canCreateProjects } from '@solar/shared';
+import { canCreateProjects, useLocale } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
-import { PhotoUpload, Modal, Pagination } from '../../../components/ui';
+import { Modal, Pagination } from '../../../components/ui';
+import { usePhotoUploadModal } from '../../../contexts/PhotoUploadModalContext';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
 import { ProjectStagesPanel } from './ProjectStagesPanel';
 
@@ -76,6 +77,8 @@ function ProjectDetailPageInner() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { openPhotoUpload } = usePhotoUploadModal();
+  const { locale } = useLocale();
   const id = params.id as string;
 
   const [project, setProject] = useState<any>(null);
@@ -414,7 +417,14 @@ function ProjectDetailPageInner() {
           <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Fotografii șantier</h3>
           <p className="mt-1 text-sm text-slate-500">Fotografii generale ale proiectului.</p>
           <div className="mt-4">
-            <PhotoUpload targetType="project" targetId={project.id} projectId={project.id} />
+            <button
+              type="button"
+              onClick={() => openPhotoUpload({ targetType: 'project', targetId: project.id, projectId: project.id })}
+              className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-hii-600 hover:bg-hii-50 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-offset-1"
+            >
+              <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+              {locale === 'en' ? 'Photos' : 'Fotografii'}
+            </button>
           </div>
         </section>
       )}

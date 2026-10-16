@@ -33,9 +33,9 @@ import {
   ErrorState,
   Skeleton,
   Modal,
-  PhotoUpload,
   Pagination,
 } from '../../components/ui';
+import { usePhotoUploadModal } from '../../contexts/PhotoUploadModalContext';
 import type { IssueSeverity } from '../../features/issues/types';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 
@@ -108,10 +108,10 @@ function IssuesPageInner() {
   const [formError, setFormError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { selectedProjectId } = useProject();
   const { locale } = useLocale();
   const { user } = useAuth();
+  const { openPhotoUpload } = usePhotoUploadModal();
   const userRole = user?.role?.toLowerCase();
 
   const canReport = selectedProjectId && ['admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'technician', 'worker'].includes(userRole || '');
@@ -308,22 +308,18 @@ function IssuesPageInner() {
                   <div className="mt-3 pt-3 border-t border-chrome-line">
                     <button
                       type="button"
-                      onClick={() => setExpandedId(expandedId === issue.id ? null : issue.id)}
-                      aria-expanded={expandedId === issue.id}
+                      onClick={() =>
+                        openPhotoUpload({
+                          targetType: 'issue',
+                          targetId: issue.id,
+                          projectId: issue.project_id,
+                        })
+                      }
                       className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-hii-600 hover:bg-hii-50 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500 focus:ring-offset-1"
                     >
                       <Camera className="w-3.5 h-3.5" />
                       {t('reports.photos', locale)}
                     </button>
-                    {expandedId === issue.id && (
-                      <div className="mt-3">
-                        <PhotoUpload
-                          targetType="issue"
-                          targetId={issue.id}
-                          projectId={issue.project_id}
-                        />
-                      </div>
-                    )}
                   </div>
                 </Card>
               ))}

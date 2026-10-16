@@ -1,17 +1,25 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { Bell, LogOut, MapPin, Menu, User, ChevronDown } from 'lucide-react';
+import { Bell, LogOut, MapPin, Menu, User, ChevronDown, Camera } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Button } from './ui/Button';
+import { Badge, Modal, Tabs } from './ui';
 import { DropdownMenu, type DropdownMenuItem } from './ui/DropdownMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { useProject } from '../contexts/ProjectContext';
+import { usePhotoUploadModal } from '../contexts/PhotoUploadModalContext';
+import { apiClient } from '../lib/api-client';
 import { getRoleLabel, t, useLocale } from '@solar/shared';
 import { NAV_GROUPS } from '../config/navigation';
 import { GlobalQuickSearch } from './GlobalQuickSearch';
 import { usePathname } from 'next/navigation';
+
+/** Roles that may attach photos from the global camera button. */
+const PHOTO_UPLOAD_ROLES = [
+  'admin', 'owner', 'manager', 'pm', 'site_manager', 'foreman', 'team_leader', 'worker',
+];
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -33,6 +41,45 @@ export function Header({ onMenuClick }: HeaderProps) {
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((a, b) => b.href.length - a.href.length)[0];
   const activeTitle = activeNavItem ? t(activeNavItem.i18nKey, locale) || activeNavItem.label : '';
+
+  const { openPhotoUpload } = usePhotoUploadModal();
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const [photoTab, setPhotoTab] = useState<'tasks' | 'issues' | 'project'>('tasks');
+  const [photoTargets, setPhotoTargets] = useState<{ tasks: any[]; issues: any[] }>({ tasks: [], issues: [] });
+  const [photoLoading, setPhotoLoading] = useState(false);
+
+  const userRole = user?.role?.toLowerCase();
+  const canUploadPhotos = !!userRole && PHOTO_UPLOAD_ROLES.includes(userRole);
+
+  const openPhotoPicker = useCallback(async () => {
+    setShowPhotoPicker(true);
+    if (!selectedProjectId) {
+      setPhotoTab('project');
+      setPhotoTargets({ tasks: [], issues: [] });
+      return;
+    }
+    setPhotoTab('tasks');
+    setPhotoLoading(true);
+    try {
+      const [tasksRes, issuesRes] = await Promise.all([
+        apiClient.getTasks(selectedProjectId),
+        apiClient.getIssues({ projectId: selectedProjectId }),
+      ]);
+      setPhotoTargets({ tasks: tasksRes.data || [], issues: issuesRes.data || [] });
+    } catch {
+      setPhotoTargets({ tasks: [], issues: [] });
+    } finally {
+      setPhotoLoading(false);
+    }
+  }, [selectedProjectId]);
+
+  const pickPhotoTarget = useCallback(
+    (targetType: 'task' | 'issue' | 'project', targetId: string, projectId: string) => {
+      setShowPhotoPicker(false);
+      openPhotoUpload({ targetType, targetId, projectId });
+    },
+    [openPhotoUpload],
+  );
 
   const currentUser = loading
     ? t('general.loading', locale)
@@ -115,6 +162,17 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
         <LanguageSwitcher />
 
+        {canUploadPhotos && (
+          <button
+            type="button"
+            onClick={() => void openPhotoPicker()}
+            aria-label={t('photo_upload.add', locale)}
+            className="flex h-10 w-10 items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full shrink-0"
+          >
+            <Camera className="w-5 h-5" />
+          </button>
+        )}
+
         <Link
           href="/notificari"
           aria-label={t('nav.notificari', locale)}
@@ -147,6 +205,82 @@ export function Header({ onMenuClick }: HeaderProps) {
           aria-label={t('header.user_menu', locale)}
         />
       </div>
+
+      {/* Global camera target picker: choose which entity to attach a photo to. */}
+      {canUploadPhotos && (
+        <Modal
+          open={showPhotoPicker}
+          onClose={() => setShowPhotoPicker(false)}
+          title={t('photo_upload.add', locale)}
+          size="md"
+        >
+          {!selectedProjectId ? (
+            <p className="text-sm text-slate-500">{t('header.select_project', locale)}</p>
+          ) : (
+            <div className="space-y-3">
+              <Tabs
+                tabs={[
+                  { key: 'tasks', label: locale === 'ro' ? 'Task-uri' : 'Tasks' },
+                  { key: 'issues', label: locale === 'ro' ? 'Probleme' : 'Issues' },
+                  { key: 'project', label: locale === 'ro' ? 'Proiect' : 'Project' },
+                ]}
+                activeTab={photoTab}
+                onTabChange={(key) => setPhotoTab(key as 'tasks' | 'issues' | 'project')}
+              />
+              {photoTab === 'project' ? (
+                <button
+                  type="button"
+                  onClick={() => pickPhotoTarget('project', selectedProjectId, selectedProjectId)}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-slate-800 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-hii-500"
+                >
+                  <span className="truncate">{locale === 'ro' ? 'Fotografii șantier' : 'Site photos'}</span>
+                  <Badge variant="neutral" size="sm">{selectedProject?.code || ''}</Badge>
+                </button>
+              ) : photoLoading ? (
+                <p className="text-sm text-slate-500">{t('general.loading', locale)}</p>
+              ) : photoTab === 'tasks' ? (
+                photoTargets.tasks.length === 0 ? (
+                  <p className="text-sm text-slate-500">{locale === 'ro' ? 'Niciun task' : 'No tasks'}</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {photoTargets.tasks.slice(0, 10).map((task: any) => (
+                      <li key={task.id}>
+                        <button
+                          type="button"
+                          onClick={() => pickPhotoTarget('task', task.id, task.project_id || selectedProjectId)}
+                          className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-hii-500"
+                        >
+                          <span className="truncate text-sm text-slate-800">{task.title}</span>
+                          <Badge variant="neutral" size="sm">{task.status}</Badge>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              ) : (
+                photoTargets.issues.length === 0 ? (
+                  <p className="text-sm text-slate-500">{locale === 'ro' ? 'Nicio problemă' : 'No issues'}</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {photoTargets.issues.slice(0, 10).map((issue: any) => (
+                      <li key={issue.id}>
+                        <button
+                          type="button"
+                          onClick={() => pickPhotoTarget('issue', issue.id, issue.project_id || selectedProjectId)}
+                          className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-hii-500"
+                        >
+                          <span className="truncate text-sm text-slate-800">{issue.title}</span>
+                          <Badge variant="neutral" size="sm">{issue.status}</Badge>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              )}
+            </div>
+          )}
+        </Modal>
+      )}
     </header>
   );
 }

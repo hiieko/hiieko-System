@@ -10,6 +10,7 @@ import { ProjectProvider } from '../contexts/ProjectContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { ProtectedRoute } from './ProtectedRoute';
 import { ToastProvider } from './ui/Toast';
+import { PhotoUploadModalProvider } from '../contexts/PhotoUploadModalContext';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -29,6 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ProtectedRoute>
       <ProjectProvider>
         <ToastProvider>
+          <PhotoUploadModalProvider>
           <div className="flex h-screen overflow-hidden bg-slate-50">
             <a
               href="#main-content"
@@ -48,6 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             <MobilePrimaryNav />
           </div>
+          </PhotoUploadModalProvider>
         </ToastProvider>
       </ProjectProvider>
       </ProtectedRoute>
