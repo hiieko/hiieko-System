@@ -154,3 +154,263 @@ primitives. **375 / 768 / 1280**: `OK` (static signal that the layout adapts) or
   `flex gap-2` + `w-40`) is a static estimate; confirm with a real viewport.
 - **`/projects/[id]` PageHeader** — token grep did not detect a `PageHeader`; confirm whether the
   detail header is hand-rolled.
+
+---
+
+## Section 3 — Performance & Bundle
+
+### 3.1 Runtime / query-plan profiling
+
+**Status: PENDING (requires running backend)**
+
+Profiling p50/p95 latency, slow-query logs and connection-pool behaviour requires a live backend
+and database. By session directive no backend process was started (`Test-NetConnection 127.0.0.1 -Port 4000`
+→ `False`). Deferred to a later session.
+
+### 3.2 N+1 query patterns (static)
+
+Method: walked every `*.service.ts` under `backend/src/modules/**` for loops (`for`/`while`/`.map`)
+whose body issues a Prisma/`$queryRaw` call. A pattern is **High** only when the loop iterates a list
+endpoint's result set; otherwise **Medium**. Four genuine N+1 sites were found — all **Medium**
+(transactional write paths, bounded by the size of a single request payload, no High-severity list
+endpoint N+1):
+
+| # | Location | Loop | Per-iteration query | Severity |
+| --- | --- | --- | --- | --- |
+| 1 | `backend/src/modules/daily-reports/daily-reports.service.ts:932` | `for (const line of lines)` | `inventoryService.consumeStockWithin(tx, …)` → `findFirst` + `UPDATE … FOR UPDATE` + update/create | Medium |
+| 2 | `backend/src/modules/inventory/inventory.service.ts:407` | `for (const line of lines)` (`assertConsumableStock`) | `tx.stockBalance.findFirst` + `tx.$queryRawUnsafe(… FOR UPDATE)` | Medium |
+| 3 | `backend/src/modules/procurement/procurement.service.ts:169` | `for (const item of dto.items)` (`createAviz`) | `tx.stockBalance.findFirst` + update/create + `tx.stockMovement.create` | Medium |
+| 4 | `backend/src/modules/task-dependencies/task-dependencies.service.ts:65` | `while (queue.length > 0)` (`detectCycle`) | `this.prisma.taskDependency.findMany` per visited node | Medium |
+
+Confirmed **not** N+1 (single query then in-memory loop): `daily-reports.service.ts:240`/`:440`;
+all of `control-tower.service.ts` (`:255`, `:379`, `:413`, `:492`, `:629`, `:739`, `:820`, `:861`, `:937` —
+in-memory over `include`d relations); `solar.service.ts:296` (in-memory + batched `createMany`);
+`demo.service.ts:90` (in-memory); `attendance.service.ts:356` (whitelist loop). Good pattern:
+`activity.service.ts:210` uses `Promise.all` of six batched `findMany` calls.
+
+### 3.3 Production bundle
+
+`npm run build --workspace=web` compiled successfully — **36/36 static pages generated**. No route
+exceeds 200 KB First Load JS. Largest product route is `/` at **198 kB**.
+
+| Route | First Load JS |
+| --- | --- |
+| `/` | 198 kB |
+| `/design-review/architecture` | 182 kB *(excluded scratch route)* |
+| `/planning` | 178 kB |
+| `/rapoarte` | 174 kB |
+| `/pontaj` | 168 kB |
+| `/projects/[id]` | 168 kB |
+| `/rapoarte/form` | 168 kB |
+| `/tasks` | 167 kB |
+| `/activity` | 165 kB |
+| `/cheltuieli` | 165 kB |
+| `/avize`, `/stocuri`, `/teams` | 163 kB |
+| `/solar-configurator` | 149 kB |
+
+**Top 10 performance concerns (bundle):**
+1. `/` — 198 kB First Load JS (heaviest product route; role-branched dashboard).
+2. `/planning` — 178 kB.
+3. `/rapoarte` — 174 kB.
+4. `/pontaj` — 168 kB.
+5. `/projects/[id]` — 168 kB.
+6. `/rapoarte/form` — 168 kB.
+7. `/tasks` — 167 kB.
+8. `/activity` — 165 kB.
+9. `/cheltuieli` — 165 kB.
+10. `/avize` / `/stocuri` / `/teams` — 163 kB each.
+
+No route crossed the 200 KB budget line, so the concern is consolidation (shared chunks), not a
+hard breach.
+
+### 3.4 Heavy imports
+
+Only one heavy third-party dependency tree was found: `three` (+ `@react-three/fiber`,
+`@react-three/drei`) in `web/src/features/solar-configurator/viewer3d/SolarScene.tsx:4-6`. It is
+**lazy-loaded** via `next/dynamic({ ssr: false })` at `web/src/app/solar-configurator/page.tsx:57-61`,
+which is confirmed by the route's 149 kB First Load JS (the 3D engine is excluded from the initial
+bundle). All other declared deps (`date-fns`, `lucide-react`, `clsx`, `tailwind-merge`) are light
+and tree-shakeable; no charting, PDF, canvas, date-picker or rich-text library exists in the app.
+
+| Dependency | Where | Heavy? | Mitigation |
+| --- | --- | --- | --- |
+| `three`, `@react-three/fiber`, `@react-three/drei` | `features/solar-configurator/viewer3d/SolarScene.tsx:4-6` | Yes | `next/dynamic({ ssr: false })` (`app/solar-configurator/page.tsx:57-61`) |
+| `date-fns` | `lib/formatters.ts` et al. | No | Named imports, tree-shakeable |
+| `lucide-react` | components/routes | No | Per-icon ESM imports |
+| `clsx`, `tailwind-merge` | `lib/utils` | No | Tiny helpers |
+
+### 3.5 Database performance (indexes, pool, slow queries)
+
+**Status: PENDING (requires DB access)**
+
+Index coverage, connection-pool saturation and `EXPLAIN` plans require a live PostgreSQL instance
+and `DATABASE_URL` access, which is out of scope for this session by directive. Deferred.
+
+---
+
+## Section 4 — Accessibility
+
+### 4.1 Color contrast (computed)
+
+Computed WCAG 2.1 relative-luminance ratios from the token values in `web/src/app/globals.css`
+(`:root`) and `web/tailwind.config.js`. Threshold: **4.5:1** normal text, **3:1** large text / UI
+components.
+
+| Foreground / background | Ratio | Normal text | Verdict |
+| --- | --- | --- | --- |
+| success badge pair | 6.78 | Pass | PASS |
+| warning badge pair | 8.15 | Pass | PASS |
+| danger badge pair | 6.80 | Pass | PASS |
+| info badge pair | 7.15 | Pass | PASS |
+| slate-900 on white | 17.85 | Pass | PASS |
+| slate-800 on white | 14.63 | Pass | PASS |
+| slate-700 on white | 10.35 | Pass | PASS |
+| slate-600 on white | 7.58 | Pass | PASS |
+| slate-500 on white | 4.76 | Pass | PASS |
+| slate-500 on slate-50 | 4.55 | Pass | PASS |
+| `hii-text` on surface-muted | 17.06 | Pass | PASS |
+| chrome-text on chrome | 16.98 | Pass | PASS |
+| sidebar-text on sidebar-bg | 12.02 | Pass | PASS |
+| white on `hii-600` | 6.15 | Pass | PASS |
+| white on red-600 | 4.83 | Pass | PASS |
+| white on `hii-info` | 5.17 | Pass | PASS |
+| slate-950 on warning-soft | 18.12 | Pass | PASS |
+| slate-500 on slate-100 | 4.34 | **Fail** | FAIL |
+| chrome-text-muted on chrome-elevated | 4.06 | **Fail** | FAIL |
+| sidebar-text-muted on sidebar-bg | 3.75 | **Fail** | FAIL |
+| white on `hii-500` (active tab) | 4.28 | **Fail** | FAIL |
+| `text-hii-500` on white | 4.28 | **Fail** | FAIL |
+| `text-success` on white | 3.30 | **Fail** | FAIL |
+| `text-warning` on white | 3.19 | **Fail** | FAIL |
+| slate-400 on white (placeholder/kpi-label/section-title) | 2.56 | **Fail** | FAIL (also <3 UI) |
+| slate-400 on slate-50 | 2.45 | **Fail** | FAIL |
+| slate-400 on slate-100 | 2.34 | **Fail** | FAIL |
+| slate-300 on white (decorative) | 1.48 | **Fail** | FAIL (<3 UI) |
+| border `#e2e8f0` on white | 1.23 | Fail | FAIL (<3 UI) |
+| slate-300 border on white | 1.48 | Fail | FAIL (<3 UI) |
+| white on accent `#f59e0b` | 2.15 | **Fail** | FAIL (<3 UI) |
+
+Primary systemic issue: the **slate-400** family is used for placeholder text, KPI labels and section
+titles (2.34–2.56) and the muted shell tokens (chrome-text-muted 4.06, sidebar-text-muted 3.75) fall
+just short of 4.5. Semantic `text-success`/`text-warning` used as text on white also fail.
+
+### 4.2 Keyboard navigation & focus management
+
+| Surface | Focus trap | Escape closes | Initial focus | Verdict |
+| --- | --- | --- | --- | --- |
+| `ui/Modal.tsx` (`useFocusTrap` `:42`, capture-phase keydown `:44-65`) | Yes | Yes | First focusable | PASS |
+| `ui/Drawer.tsx` | Yes | Yes | First focusable | PASS |
+| `ui/ConfirmDialog.tsx` | Yes | Yes | Confirms button | PASS |
+| `features/.../ControlTowerDrilldownDrawer.tsx` (wraps Drawer) | Yes | Yes | First focusable | PASS |
+| `components/MoreSheet.tsx` | Yes | Yes | First focusable | PASS |
+| `components/Sidebar.tsx` mobile nav | Yes | Yes | First focusable | PASS |
+| `ui/DropdownMenu.tsx` | n/a (non-modal) | Yes (Escape `:42-46`) | Trigger stays | PASS (items are real `<button role="menuitem">`) |
+| `ui/PhotoUpload.tsx` full-size lightbox `:270-298` (`role="dialog" aria-modal="true"` `:273-275`) | **No** | **No** | **No ref-focus** | **FAIL** |
+
+**Violation:** the `PhotoUpload` lightbox declares `aria-modal="true"` but installs no focus trap, no
+ref-focus and no Escape handler — keyboard users can Tab out of the "modal" and cannot dismiss it
+with Escape.
+
+### 4.3 Screen reader / ARIA
+
+**a) Control labeling.** Many inputs/selects rely on a *sibling* `.hii-label` element with no
+`htmlFor` and no wrapping `<label>`, so they have **no accessible name**:
+
+| Route / element | Root cause |
+| --- | --- |
+| `cheltuieli/page.tsx:348-388` (7 controls) | sibling `.hii-label`, no `htmlFor` |
+| `teams/page.tsx:312-323`, `:405-411` | sibling `.hii-label`, no `htmlFor` |
+| `issues/page.tsx:360,366,372` | sibling `.hii-label` (labels at `:359,365,371`), no `htmlFor` |
+| `stocuri/page.tsx:353,360,365,373` | sibling `.hii-label` (labels at `:352,359,364,372`), no `htmlFor` |
+| `projects/page.tsx` wizard (14 controls) | sibling `labelCls` labels, no `htmlFor` |
+| `projects/page.tsx:420` search input | no label / `aria-label` (placeholder only) |
+| `projects/page.tsx:432` status filter `<select>` | no label / `aria-label` |
+| `depozite/page.tsx:101` search input | no label / `aria-label` (placeholder only) |
+| `furnizori/page.tsx:102` search input | no label / `aria-label` (placeholder only) |
+| `pontaj/page.tsx:395` (and `:537`) month inputs | no label / `aria-label` |
+| `rapoarte/page.tsx:227` status filter `<select>` | no label / `aria-label` (search input `:225` is fine) |
+| `utilizatori/page.tsx:173-188` | wrapping `<label>` contains only an icon → empty name; selects `:179,183,222,234` unlabeled |
+
+**Good** (have `htmlFor`): activity, aprobare, documente, profil, signup. **Good** (`aria-label`
+present): `avize/page.tsx:142`; `aprobare/page.tsx:142,213`; `projects/[id]/page.tsx:333,338,372`;
+`teams/page.tsx:329,331`; `GlobalQuickSearch.tsx:54,85`; `ThemeContext.tsx:78`;
+`workforce/page.tsx:186,311-378`; `stocuri/page.tsx:200,284`; `rapoarte/page.tsx:225`;
+`tasks/page.tsx:471`.
+
+**b) Icon-only buttons without an accessible name:**
+
+| Location | Element |
+| --- | --- |
+| `components/ui/Toast.tsx:102-107` | close button (`p-0.5`), no `aria-label` |
+| `projects/page.tsx:341` | X remove member, no `aria-label` |
+| `projects/page.tsx:427` | X clear search, no `aria-label` |
+| `projects/page.tsx:521` | X wizard close, no `aria-label` |
+
+`Modal.tsx:99-105` close (`aria-label="Inchide"`) and the `workforce`/`teams`/`aprobar`/`documente`
+icon buttons carry labels and are **not** violations.
+
+**c) Images.** Two `<img>` in `PhotoUpload.tsx` (`:239`, `:288`) and one in `activity/page.tsx:369`
+all carry `alt` — **PASS**.
+
+**d) Live regions.** The `Toast` container (`Toast.tsx:85-110`) has **no** `role="status"` /
+`aria-live`, so toast text is not announced. Elsewhere live regions exist (`WorkerDashboard.tsx:156`,
+`qa/page.tsx:102,122`, `tasks/page.tsx:478`, `QualityWorkspace.tsx:118`,
+`AttendanceSessionDrawer.tsx:146`) and form errors use `role="alert"` consistently
+(`Input.tsx:47`, `IssueCreateModal.tsx:86`, `AvizCreateModal.tsx:146`, etc.).
+
+### 4.4 Semantic structure / headings
+
+| Component | Element | Verdict |
+| --- | --- | --- |
+| `ui/PageHeader.tsx:64` | `<h1>` | PASS |
+| `PageTutorial.tsx:50` | `<h2>` | PASS |
+| `ui/EmptyState.tsx:68` | `<h3>` | PASS |
+| `ui/ErrorState.tsx:43` | `<h3>` | PASS |
+
+Heading primitives are semantically correct and ordered.
+
+### 4.5 Touch targets
+
+WCAG 2.5.5 target is **44×44 px** (`h-11`/`w-11` = 44 px, `h-10` = 40 px). Elements that visually
+render below 44 px based on their classes:
+
+| Element | Rendered size | Verdict |
+| --- | --- | --- |
+| `Toast.tsx:102` close (`p-0.5` + 16 px icon) | ≈17 px | FAIL |
+| `projects/page.tsx:341` X remove member (`p-1` + 14 px) | ≈22 px | FAIL |
+| `projects/page.tsx:427` X clear search (16 px icon, no padding) | ≈16 px | FAIL |
+| `projects/page.tsx:521` X wizard close (`p-1` + 20 px) | ≈28 px | FAIL |
+| `PhotoUpload.tsx:258` delete (`h-7 w-7`) | 28 px | FAIL |
+| `Button` size `sm` (`px-3 py-1.5 text-xs`) | ≈30 px tall | FAIL |
+| `Button` size `icon` (`w-9 h-9`) | 36 px | FAIL |
+| `Modal.tsx:99` close (`p-1.5` + 20 px) | 32 px | FAIL |
+| `DropdownMenu` items (`px-3 py-2 text-sm`) | ≈36 px tall | FAIL |
+| `Pagination.tsx:57-82` Prev/Next (`size="sm"`) | ≈30 px tall | FAIL |
+| `Header.tsx:166-182` camera / bell / avatar (`h-10 w-10`) | 40 px | Borderline FAIL |
+| `projects/[id]/page.tsx:381` remove (`min-h-10 min-w-10`) | 40 px | Borderline FAIL |
+
+Primitives that **meet** 44 px: `quality`/`QualityWorkspace` action buttons (`min-h-11`),
+`projects/[id]` add-member controls (`min-h-10` = 40 px, still short). See §4.3 for the missing
+accessible names on the same icon buttons.
+
+### Accessibility blockers (top 10)
+
+1. `PhotoUpload` lightbox is `aria-modal="true"` with **no focus trap, no ref-focus, no Escape** (`PhotoUpload.tsx:270-298`).
+2. Dozens of inputs/selects have **no accessible name** — sibling `.hii-label` without `htmlFor` (cheltuieli, teams, issues, stocuri, projects wizard).
+3. Search inputs on `projects:420`, `depozite:101`, `furnizori:102` and month inputs on `pontaj:395,537` are unlabeled.
+4. `utilizatori:173-188` wrapping label contains only an icon → empty accessible name; several selects unlabeled.
+5. `Toast` container has **no `aria-live`/`role="status"`** (`Toast.tsx:85-110`) — toasts are silent to screen readers.
+6. `Toast` close button has **no `aria-label`** and is ≈17 px (`Toast.tsx:102-107`).
+7. Icon-only close/clear/remove buttons lack `aria-label` (`projects:341,427,521`).
+8. Low-contrast muted tokens: slate-400 placeholder/label text (2.34–2.56), chrome-text-muted (4.06), sidebar-text-muted (3.75).
+9. Interactive targets below 44 px across `Button` `sm`/`icon`, `Modal` close, `DropdownMenu` items, `Pagination`, `PhotoUpload` delete.
+10. `text-success` (3.30) and `text-warning` (3.19) used as body/status text on white fail 4.5:1.
+
+### Section 4 inconclusive notes
+
+- Contrast ratios are **computed from token hex values**, not sampled from a rendered page; gradient
+  or opacity-composited surfaces (`accent`, overlay chips) may differ.
+- Touch-target sizes are derived from Tailwind classes (`h-*`/`w-*`/`p-*`); real rendered heights
+  depend on line-height and font metrics and should be confirmed in a browser.
+- This section covers the shared primitives and the routes cited in Section 2; a full per-route
+  axe-core run was not possible (no headless browser installed).
