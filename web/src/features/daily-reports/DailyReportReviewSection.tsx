@@ -30,7 +30,7 @@ export function DailyReportReviewSection({
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-        <CheckCircle2 className="w-5 h-5 text-success-soft0" />
+        <CheckCircle2 className="w-5 h-5 text-success-soft" />
         {t('daily_report.review_title', locale)}
       </h3>
 

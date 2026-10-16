@@ -256,7 +256,7 @@ export function TaskCard({
                 )}
                 {task.actual_start && (
                   <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-success-soft0" />
+                    <Clock className="w-3 h-3 text-success-soft" />
                     {formatDate(task.actual_start)}
                     {task.actual_end && (
                       <>

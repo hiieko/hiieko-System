@@ -518,7 +518,7 @@ export function ControlTowerSurface() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-warning-soft0 text-slate-950 uppercase tracking-wide">
+            <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-warning-soft text-slate-950 uppercase tracking-wide">
               {t('control_tower.badge', locale)}
             </span>
             <span className="text-xs text-slate-400 font-medium">
@@ -791,7 +791,7 @@ export function ControlTowerSurface() {
               <div className="mt-3">
                 <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-warning-soft0 h-2 rounded-full transition-all duration-500"
+                    className="bg-warning-soft h-2 rounded-full transition-all duration-500"
                     style={{ width: `${overview.production.completionPercentage}%` }}
                   />
                 </div>

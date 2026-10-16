@@ -83,7 +83,7 @@ export function ControlTowerRedFlagsCard({
             onClick={() => setSelectedSeverity('ALL')}
             className={`px-3 py-1 rounded-md font-medium transition-colors ${
               selectedSeverity === 'ALL'
-                ? 'bg-warning-soft0 text-slate-950 font-bold'
+                ? 'bg-warning-soft text-slate-950 font-bold'
                 : 'text-slate-300 hover:text-white'
             }`}
           >
@@ -106,7 +106,7 @@ export function ControlTowerRedFlagsCard({
               onClick={() => setSelectedSeverity('HIGH')}
               className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 selectedSeverity === 'HIGH'
-                  ? 'bg-warning-soft0 text-slate-950 font-bold'
+                  ? 'bg-warning-soft text-slate-950 font-bold'
                   : 'text-amber-400 hover:bg-amber-950/40'
               }`}
             >
@@ -161,7 +161,7 @@ export function ControlTowerRedFlagsCard({
                         isCritical
                           ? 'bg-rose-600 text-white'
                           : isHigh
-                          ? 'bg-warning-soft0 text-slate-950'
+                          ? 'bg-warning-soft text-slate-950'
                           : 'bg-slate-200 text-slate-700'
                       }`}
                     >

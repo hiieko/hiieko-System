@@ -27,7 +27,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | null>(null);
 
 const icons: Record<ToastType, React.ReactNode> = {
-  success: <CheckCircle className="w-5 h-5 text-success-soft0" />,
+  success: <CheckCircle className="w-5 h-5 text-success-soft" />,
   error: <AlertCircle className="w-5 h-5 text-danger" />,
   warning: <AlertTriangle className="w-5 h-5 text-amber-500" />,
   info: <Info className="w-5 h-5 text-blue-500" />,

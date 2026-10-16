@@ -31,9 +31,9 @@ const COUNTER_TONE: Record<DayCounterId, string> = {
 const COUNTER_DOT: Record<DayCounterId, string> = {
   PLANNED: 'bg-slate-400',
   ASSIGNED: 'bg-slate-400',
-  IN_PROGRESS: 'bg-warning-soft0',
-  COMPLETED: 'bg-success-soft0',
-  BLOCKED: 'bg-danger-soft0',
+  IN_PROGRESS: 'bg-warning-soft',
+  COMPLETED: 'bg-success-soft',
+  BLOCKED: 'bg-danger-soft',
 };
 
 /**

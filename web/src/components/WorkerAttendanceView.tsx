@@ -172,7 +172,7 @@ export function WorkerAttendanceView() {
               <div className="flex items-center justify-center mb-5">
                 <div className="text-center">
                   <Badge variant="success" size="md" className="mb-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success-soft0 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-success-soft animate-pulse" />
                     {t('worker.active_shift', locale)}
                   </Badge>
                   <div className="font-mono text-4xl font-bold text-slate-900 tabular-nums">{formatDuration(elapsedSeconds)}</div>

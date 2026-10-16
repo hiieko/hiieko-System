@@ -96,7 +96,7 @@ export function InspectionCard({ inspection, locale, projectId }: InspectionCard
                   </span>
                   <span
                     aria-label={m.passed ? 'passed' : 'failed'}
-                    className={`h-2 w-2 rounded-full ${m.passed ? 'bg-success-soft0' : 'bg-danger-soft0'}`}
+                    className={`h-2 w-2 rounded-full ${m.passed ? 'bg-success-soft' : 'bg-danger-soft'}`}
                   />
                 </span>
               </li>

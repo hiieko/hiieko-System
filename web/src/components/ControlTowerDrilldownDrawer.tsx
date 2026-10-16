@@ -61,7 +61,7 @@ export function ControlTowerDrilldownDrawer({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-warning-soft0 text-slate-950 uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded text-xs font-semibold bg-warning-soft text-slate-950 uppercase tracking-wider">
               {data.category}
             </span>
             <span className="text-xs text-slate-400 font-mono">
@@ -113,7 +113,7 @@ export function ControlTowerDrilldownDrawer({
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="text-center py-16">
-                <CheckCircle2 className="w-12 h-12 text-success-soft0 mx-auto mb-3" />
+                <CheckCircle2 className="w-12 h-12 text-success-soft mx-auto mb-3" />
                 <h3 className="text-base font-semibold text-slate-900">
                   {t('control_tower.drawer.none_title', locale)}
                 </h3>
@@ -243,7 +243,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             </span>
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.projectName}</h4>
           </div>
-          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft0 text-slate-950 rounded-full">
+          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft text-slate-950 rounded-full">
             {t('control_tower.drawer.deadline_remaining', locale).replace('{days}', String(item.daysUntilDeadline))}
           </span>
         </div>
@@ -328,7 +328,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             </div>
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.materialName}</h4>
           </div>
-          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft0 text-slate-950 rounded-full">
+          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft text-slate-950 rounded-full">
             {t('control_tower.drawer.deficit', locale)} -{item.deficit} {item.unit}
           </span>
         </div>
@@ -450,7 +450,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
             <h4 className="text-sm font-semibold text-slate-900 mt-1">{item.title}</h4>
             <p className="text-xs text-slate-500">{item.projectName}</p>
           </div>
-          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft0 text-slate-950 rounded-full">
+          <span className="px-2.5 py-1 text-xs font-bold bg-warning-soft text-slate-950 rounded-full">
             {t('control_tower.drawer.version', locale).replace('{current}', String(item.currentVersion)).replace('{latest}', String(item.latestVersion))}
           </span>
         </div>
@@ -478,7 +478,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
               className={`px-2 py-0.5 text-xs font-bold rounded ${
                 isCritical
                   ? 'bg-rose-600 text-white'
-                  : 'bg-warning-soft0 text-slate-950'
+                  : 'bg-warning-soft text-slate-950'
               }`}
             >
               {item.severity}
@@ -531,7 +531,7 @@ function DrilldownItemCard({ item, category, locale }: { item: any; category: st
           </div>
           <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-warning-soft0 h-1.5 rounded-full"
+              className="bg-warning-soft h-1.5 rounded-full"
               style={{ width: `${item.progressPercent}%` }}
             />
           </div>
