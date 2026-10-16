@@ -245,6 +245,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -288,7 +289,7 @@ function LoginForm() {
 
     setLoading(true);
     try {
-      await apiClient.login({ email: email.trim(), password });
+      await apiClient.login({ email: email.trim(), password }, rememberMe);
       await refreshUser();
       const from =
         typeof window !== 'undefined'
@@ -361,7 +362,17 @@ function LoginForm() {
                 </button>
               }
             />
-            <div className="mt-1.5 flex justify-end">
+            <div className="mt-1.5 flex items-center justify-between gap-3">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={loading}
+                  className="w-4 h-4 rounded text-hii-600 accent-hii-600"
+                />
+                <span className="text-sm text-slate-600">Remember me</span>
+              </label>
               <Link
                 href="/forgot-password"
                 className="text-sm font-medium text-hii-600 transition-colors hover:text-hii-700"

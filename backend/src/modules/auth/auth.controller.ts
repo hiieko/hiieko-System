@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RateLimit } from '../../common/auth/decorators/rate-limit.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
-import { parseCookieHeader, serializeCookie } from '../../common/auth/cookies';
+import { parseCookieHeader, serializeCookie, CookieOptions } from '../../common/auth/cookies';
 import {
   REFRESH_COOKIE_NAME,
   REFRESH_COOKIE_PATH,
@@ -61,7 +61,13 @@ export class AuthController {
 
     // Only the web branch issues a refresh token; the legacy path sets NO cookie (L16/L17).
     if (result.refreshToken && result.refreshTokenExpiresAt) {
-      this.writeRefreshCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
+      // Remember me → persistent cookie; otherwise a session cookie.
+      this.writeRefreshCookie(
+        res,
+        result.refreshToken,
+        result.refreshTokenExpiresAt,
+        dto.rememberMe === true,
+      );
     }
 
     // Legacy callers keep the exact Slice 1 body (`{ user, accessToken }`); the web client
@@ -82,7 +88,11 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'New access token issued and refresh token rotated' })
   @ApiResponse({ status: 401, description: 'Session expired or invalid' })
   @ApiResponse({ status: 429, description: 'Too many refresh attempts (rate limited)' })
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body?: { rememberMe?: boolean },
+  ) {
     const rawToken = this.readRefreshCookie(req);
 
     try {
@@ -91,7 +101,14 @@ export class AuthController {
         userAgent: this.userAgent(req),
       });
 
-      this.writeRefreshCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
+      // Preserve the caller's Remember me choice across rotation so a session
+      // cookie never silently becomes persistent (and vice-versa).
+      this.writeRefreshCookie(
+        res,
+        result.refreshToken,
+        result.refreshTokenExpiresAt,
+        body?.rememberMe === true,
+      );
 
       return {
         user: result.user,
@@ -201,19 +218,32 @@ export class AuthController {
     return cookies[REFRESH_COOKIE_NAME];
   }
 
-  private writeRefreshCookie(res: Response, token: string, expiresAt: Date): void {
-    const maxAge = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
-    res.setHeader(
-      'Set-Cookie',
-      serializeCookie(REFRESH_COOKIE_NAME, token, {
-        maxAge,
-        path: REFRESH_COOKIE_PATH,
-        httpOnly: true,
-        secure: this.isProduction,
-        // L4 — same-site deployment uses Lax; SameSite=None is never introduced here.
-        sameSite: 'Lax',
-      }),
-    );
+  /**
+   * Writes the httpOnly refresh cookie.
+   *
+   * `persistent` (Remember me) adds a `Max-Age` so the cookie survives a browser
+   * restart; otherwise `Max-Age` is omitted and the browser treats it as a session
+   * cookie, dropping it when the browser closes. The server-side session/refresh
+   * expiry caps the usable lifetime either way — this only controls the cookie's
+   * client-side persistence.
+   */
+  private writeRefreshCookie(
+    res: Response,
+    token: string,
+    expiresAt: Date,
+    persistent: boolean,
+  ): void {
+    const options: CookieOptions = {
+      path: REFRESH_COOKIE_PATH,
+      httpOnly: true,
+      secure: this.isProduction,
+      // L4 — same-site deployment uses Lax; SameSite=None is never introduced here.
+      sameSite: 'Lax',
+    };
+    if (persistent) {
+      options.maxAge = Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
+    }
+    res.setHeader('Set-Cookie', serializeCookie(REFRESH_COOKIE_NAME, token, options));
   }
 
   private clearRefreshCookie(res: Response): void {

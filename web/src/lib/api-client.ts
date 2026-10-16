@@ -78,6 +78,13 @@ export function resolveApiBaseUrl(
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
+/**
+ * Non-sensitive UI preference ("Remember me"), persisted only so a page reload
+ * can tell `POST /api/auth/refresh` whether to renew a session or a persistent
+ * cookie. It is a boolean, never a credential — no token or password is stored.
+ */
+const REMEMBER_ME_STORAGE_KEY = 'hiieko_remember';
+
 // ====================
 // ENVELOPE TYPES (R1.5 CONTRACT)
 // ====================
@@ -272,24 +279,18 @@ export class NestApiClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    // Try to load token from localStorage on initialization (client-side only)
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('api_token');
-    }
   }
 
   /**
-   * Set the authentication token for subsequent requests
+   * Set the authentication token for subsequent requests.
+   *
+   * The access token is kept IN MEMORY ONLY — it is never written to
+   * `localStorage` (or any JS-readable storage). Cross-restart persistence is
+   * carried exclusively by the backend's httpOnly refresh cookie: on a full page
+   * load the token is re-minted via `restoreSession()`.
    */
   setToken(token: string | null) {
     this.token = token;
-    if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem('api_token', token);
-      } else {
-        localStorage.removeItem('api_token');
-      }
-    }
   }
 
   /**
@@ -419,6 +420,18 @@ export class NestApiClient {
   }
 
   /**
+   * Application startup — rehydrate the session from the httpOnly refresh cookie.
+   *
+   * Nothing is read from JS storage: the access token starts empty in memory and
+   * is minted here by exchanging the refresh cookie (`credentials: 'include'`).
+   * Returns `true` when an access token was obtained (session restored), `false`
+   * when there is no valid cookie (the caller falls back to the login screen).
+   */
+  async restoreSession(): Promise<boolean> {
+    return this.refreshSession();
+  }
+
+  /**
    * Slice 2 — exchanges the httpOnly `hiieko_rt` cookie for a new access token.
    *
    * Deliberately does NOT go through `request()`: the refresh endpoint must never be
@@ -431,6 +444,8 @@ export class NestApiClient {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
+        // Preserve the Remember me choice so rotation renews the same cookie kind.
+        body: JSON.stringify({ rememberMe: this.rememberMePreference() }),
       });
 
       if (!response.ok) {
@@ -515,24 +530,52 @@ export class NestApiClient {
   // AUTHENTICATION
   // ============================================================================
 
-  async login(credentials: LoginCredentials): Promise<ApiResponse<{ user: AuthUser } & AuthTokens>> {
+  /**
+   * Whether the user asked to be remembered across browser restarts. Persisted as
+   * a plain boolean; it only tells `/refresh` which cookie persistence to renew.
+   */
+  private rememberMePreference(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+      return window.localStorage.getItem(REMEMBER_ME_STORAGE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private setRememberMePreference(rememberMe: boolean): void {
+    if (typeof window === 'undefined') return;
+    try {
+      if (rememberMe) window.localStorage.setItem(REMEMBER_ME_STORAGE_KEY, '1');
+      else window.localStorage.removeItem(REMEMBER_ME_STORAGE_KEY);
+    } catch {
+      // Private mode / quota — the preference is best-effort only.
+    }
+  }
+
+  async login(
+    credentials: LoginCredentials,
+    rememberMe = false,
+  ): Promise<ApiResponse<{ user: AuthUser } & AuthTokens>> {
     const response = await this.request<ApiResponse<{ user: AuthUser; accessToken: string }>>(
       '/api/auth/login',
       {
         method: 'POST',
         // Slice 2 (L2): `client: 'web'` opts into the 15-minute access token + httpOnly
         // refresh cookie. `credentials: 'include'` is required for that cookie to be
-        // accepted (and stored) by the browser.
-        body: JSON.stringify({ ...credentials, client: 'web' }),
+        // accepted (and stored) by the browser. `rememberMe` controls whether that
+        // cookie is persistent (survives browser restart) or a session cookie.
+        body: JSON.stringify({ ...credentials, client: 'web', rememberMe }),
         credentials: 'include',
       }
     );
-    
-    // Store token automatically on successful login
+
+    // Store the access token in memory and remember the user's persistence choice.
     if (response.data.accessToken) {
       this.setToken(response.data.accessToken);
     }
-    
+    this.setRememberMePreference(rememberMe);
+
     return response;
   }
 
@@ -1573,7 +1616,8 @@ export interface IApiClient {
   setToken(token: string | null): void;
   getToken(): string | null;
   isAuthenticated(): boolean;
-  login(credentials: LoginCredentials): Promise<ApiResponse<{ user: AuthUser } & AuthTokens>>;
+  login(credentials: LoginCredentials, rememberMe?: boolean): Promise<ApiResponse<{ user: AuthUser } & AuthTokens>>;
+  restoreSession(): Promise<boolean>;
   logout(): void;
   getMe(): Promise<ApiResponse<AuthUser>>;
   register(data: RegisterData): Promise<ApiResponse<{ user: AuthUser }>>;

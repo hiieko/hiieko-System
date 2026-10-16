@@ -46,6 +46,15 @@ export interface LoginDto {
    * the frozen Mobile client uses verbatim: one 7-day access token, no cookie.
    */
   client?: string;
+  /**
+   * Web clients only — "Remember me".
+   *
+   * `true` asks the controller to persist the httpOnly refresh cookie beyond the
+   * browser session (Max-Age). Omitted/false yields a session cookie the browser
+   * drops on close. This carries NO new lifetime: the server-side session /
+   * refresh expiry still caps the usable lifetime in both cases.
+   */
+  rememberMe?: boolean;
 }
 
 /** Request metadata the controller supplies for session auditing. */

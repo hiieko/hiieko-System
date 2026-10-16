@@ -33,25 +33,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * Boot sequence — runs once when AuthProvider mounts and answers
    * "is this user logged in?".
    *
-   *  1. Read the access token (`api_token` in localStorage).
-   *  2. No token            → user = null, loading = false.
-   *  3. Token present       → GET /api/auth/me.
-   *       - 200              → user = result, loading = false.
-   *       - 401              → api-client transparently refreshes the session
-   *                            with the httpOnly cookie and retries /me once;
-   *                            if the retry still fails the token is cleared.
-   *       - any other error  → clear token, user = null, loading = false.
+   * The access token lives in memory only, so after any full page load there is
+   * none. Authentication is rehydrated from the httpOnly refresh cookie:
+   *
+   *  1. No in-memory token → `restoreSession()` exchanges the refresh cookie for a
+   *     new access token (`credentials: 'include'`).
+   *       - restored         → GET /api/auth/me → user = result.
+   *       - not restored     → user = null (no/expired cookie → login screen).
+   *  2. Token present       → GET /api/auth/me.
+   *       - 200              → user = result.
+   *       - 401              → api-client refreshes once and retries /me; if that
+   *                            still fails the token is cleared.
+   *       - any other error  → clear token, user = null.
    *
    * Refresh failure falls back to the login screen via AuthGuard/ProtectedRoute.
    */
   const refreshUser = useCallback(async () => {
-    if (!apiClient.getToken()) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
     try {
+      if (!apiClient.getToken()) {
+        const restored = await apiClient.restoreSession();
+        if (!restored) {
+          setUser(null);
+          return;
+        }
+      }
+
       const response = await apiClient.getMe();
       setUser(response.data);
     } catch {
