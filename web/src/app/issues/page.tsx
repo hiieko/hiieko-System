@@ -356,20 +356,20 @@ function IssuesPageInner() {
         {formError && (<div className="p-3 bg-critical-soft border border-critical-soft rounded-lg text-sm text-critical-foreground">{formError}</div>)}
         <div className="space-y-3">
           <div>
-            <label className="hii-label">Titlu *</label>
-            <input value={formTitle} onChange={e => setFormTitle(e.target.value)}
+            <label htmlFor="issue-title" className="hii-label">Titlu *</label>
+            <input id="issue-title" value={formTitle} onChange={e => setFormTitle(e.target.value)}
               className="hii-input"
               placeholder="Ex: Echipament defect, Material lipsa..." />
           </div>
           <div>
-            <label className="hii-label">Descriere *</label>
-            <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={3}
+            <label htmlFor="issue-description" className="hii-label">Descriere *</label>
+            <textarea id="issue-description" value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={3}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none"
               placeholder="Descrie problema in detaliu..." />
           </div>
           <div>
-            <label className="hii-label">Severitate</label>
-            <select value={formSeverity} onChange={e => setFormSeverity(e.target.value as IssueSeverity)}
+            <label htmlFor="issue-severity" className="hii-label">Severitate</label>
+            <select id="issue-severity" value={formSeverity} onChange={e => setFormSeverity(e.target.value as IssueSeverity)}
               className="hii-select">
               <option value="LOW">Scazuta</option>
               <option value="MEDIUM">Medie</option>

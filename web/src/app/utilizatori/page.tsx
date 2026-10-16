@@ -174,13 +174,14 @@ function UtilizatoriPageInner() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input value={search} onChange={(event) => setSearch(event.target.value)}
                     placeholder={t('users.search_placeholder', locale)}
+                    aria-label={t('users.search_placeholder', locale)}
                     className="hii-input pl-9" />
                 </label>
-                <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)} className="hii-select">
+                <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)} aria-label={t('users.filter_role', locale)} className="hii-select">
                   <option value="ALL">{t('users.all_roles', locale)}</option>
                   {roles.map((role) => <option key={role.code} value={role.code}>{getRoleLabel(role.code.toLowerCase(), locale) || role.code}</option>)}
                 </select>
-                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="hii-select">
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label={t('users.filter_status', locale)} className="hii-select">
                   <option value="ALL">{t('users.all_statuses', locale)}</option>
                   <option value="ACTIVE">{statusLabel('ACTIVE', locale)}</option>
                   <option value="PENDING">{statusLabel('PENDING', locale)}</option>
@@ -220,6 +221,7 @@ function UtilizatoriPageInner() {
                               <td>
                                 {canManage && !isSelf && roles.length > 0 ? (
                                   <select value={item.role} disabled={acting === item.id} onChange={(event) => void updateRole(item.id, event.target.value)}
+                                    aria-label={t('users.change_role', locale)}
                                     className="hii-select h-auto w-auto py-1 text-xs">
                                     {roles.map((role) => <option key={role.code} value={role.code}>{getRoleLabel(role.code.toLowerCase(), locale) || role.code}</option>)}
                                   </select>
@@ -233,6 +235,7 @@ function UtilizatoriPageInner() {
                                 {canManage && !isSelf ? (
                                   <select value={currentStatus} disabled={acting === item.id}
                                     onChange={(event) => void updateStatus(item.id, event.target.value as 'ACTIVE' | 'SUSPENDED' | 'PENDING')}
+                                    aria-label={t('users.change_status', locale)}
                                     className="hii-select h-auto w-auto py-1 text-xs">
                                     <option value="ACTIVE">{statusLabel('ACTIVE', locale)}</option>
                                     <option value="PENDING">{statusLabel('PENDING', locale)}</option>

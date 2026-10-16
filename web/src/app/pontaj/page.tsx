@@ -396,6 +396,7 @@ function PontajPageInner() {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
+                aria-label={t('general.select_month', locale)}
                 className="hii-input !w-auto text-xs"
               />
               <div className="text-xs text-slate-500">
@@ -538,6 +539,7 @@ function PontajPageInner() {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
+                aria-label={t('general.select_month', locale)}
                 className="hii-input !w-auto text-xs"
               />
               <div className="text-xs text-slate-500">

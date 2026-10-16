@@ -345,16 +345,16 @@ function CheltuieliPageInner() {
           {/* --- Expense Form Fields --- */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="hii-label">{t('expenses.category', locale)}</label>
-              <select value={formCategory} onChange={e => setFormCategory(e.target.value)} className="hii-select">
+              <label htmlFor="expense-category" className="hii-label">{t('expenses.category', locale)}</label>
+              <select id="expense-category" value={formCategory} onChange={e => setFormCategory(e.target.value)} className="hii-select">
                 {['FUEL','ACCOMMODATION','FOOD','TRANSPORT','PARKING','TOLLS','MATERIALS','TOOLS','EQUIPMENT','OTHER'].map(c => (
                   <option key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="hii-label">{t('expenses.field_payment_method', locale)}</label>
-              <select value={formPaymentMethod} onChange={e => setFormPaymentMethod(e.target.value)} className="hii-select">
+              <label htmlFor="expense-payment-method" className="hii-label">{t('expenses.field_payment_method', locale)}</label>
+              <select id="expense-payment-method" value={formPaymentMethod} onChange={e => setFormPaymentMethod(e.target.value)} className="hii-select">
                 <option value="COMPANY_CARD">{t('expenses.payment_company_card', locale)}</option>
                 <option value="PERSONAL">{t('expenses.payment_personal', locale)}</option>
                 <option value="COMPANY_CASH">{t('expenses.payment_company_cash', locale)}</option>
@@ -362,31 +362,31 @@ function CheltuieliPageInner() {
               </select>
             </div>
             <div>
-              <label className="hii-label">{t('expenses.amount', locale)}</label>
-              <input type="number" step="0.01" min="0" value={formAmount} onChange={e => setFormAmount(e.target.value)}
+              <label htmlFor="expense-amount" className="hii-label">{t('expenses.amount', locale)}</label>
+              <input id="expense-amount" type="number" step="0.01" min="0" value={formAmount} onChange={e => setFormAmount(e.target.value)}
                 className="hii-input" placeholder="0.00" />
             </div>
             <div>
-              <label className="hii-label">{t('expenses.field_currency', locale)}</label>
-              <select value={formCurrency} onChange={e => setFormCurrency(e.target.value)} className="hii-select">
+              <label htmlFor="expense-currency" className="hii-label">{t('expenses.field_currency', locale)}</label>
+              <select id="expense-currency" value={formCurrency} onChange={e => setFormCurrency(e.target.value)} className="hii-select">
                 <option value="RON">RON</option>
                 <option value="EUR">EUR</option>
                 <option value="USD">USD</option>
               </select>
             </div>
             <div>
-              <label className="hii-label">{t('expenses.field_date', locale)}</label>
-              <input type="date" value={formExpenseDate} onChange={e => setFormExpenseDate(e.target.value)} className="hii-input" />
+              <label htmlFor="expense-date" className="hii-label">{t('expenses.field_date', locale)}</label>
+              <input id="expense-date" type="date" value={formExpenseDate} onChange={e => setFormExpenseDate(e.target.value)} className="hii-input" />
             </div>
             <div>
-              <label className="hii-label">{t('expenses.field_merchant', locale)}</label>
-              <input type="text" value={formMerchantName} onChange={e => setFormMerchantName(e.target.value)}
+              <label htmlFor="expense-merchant" className="hii-label">{t('expenses.field_merchant', locale)}</label>
+              <input id="expense-merchant" type="text" value={formMerchantName} onChange={e => setFormMerchantName(e.target.value)}
                 className="hii-input" placeholder={t('expenses.field_merchant_placeholder', locale)} />
             </div>
           </div>
           <div>
-            <label className="hii-label">{t('expenses.field_description', locale)}</label>
-            <textarea value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={2}
+            <label htmlFor="expense-description" className="hii-label">{t('expenses.field_description', locale)}</label>
+            <textarea id="expense-description" value={formDescription} onChange={e => setFormDescription(e.target.value)} rows={2}
               className="hii-input h-auto py-2 resize-none"
               placeholder={t('expenses.field_description_placeholder', locale)} />
           </div>

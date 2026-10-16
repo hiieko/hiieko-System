@@ -349,28 +349,28 @@ function StocuriPageInner() {
         </p>
         <div className="space-y-4">
           <div>
-            <label className="hii-label">{t('stocuri.field_material', locale)}</label>
-            <select value={materialId} onChange={e => setMaterialId(e.target.value)} className="hii-select">
+            <label htmlFor="stock-material" className="hii-label">{t('stocuri.field_material', locale)}</label>
+            <select id="stock-material" value={materialId} onChange={e => setMaterialId(e.target.value)} className="hii-select">
               <option value="">{t('stocuri.select_material', locale)}</option>
               {materials.map(m => <option key={m.id} value={m.id}>{m.code} — {m.name} ({m.unit})</option>)}
             </select>
           </div>
           <div>
-            <label className="hii-label">{t('stocuri.field_quantity', locale)}</label>
-            <input type="number" min="0.0001" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} className="hii-input" />
+            <label htmlFor="stock-quantity" className="hii-label">{t('stocuri.field_quantity', locale)}</label>
+            <input id="stock-quantity" type="number" min="0.0001" step="any" value={quantity} onChange={e => setQuantity(e.target.value)} className="hii-input" />
           </div>
           {action === 'transfer' && (
             <div>
-              <label className="hii-label">{t('stocuri.field_target_project', locale)}</label>
-              <select value={targetProjectId} onChange={e => setTargetProjectId(e.target.value)} className="hii-select">
+              <label htmlFor="stock-target-project" className="hii-label">{t('stocuri.field_target_project', locale)}</label>
+              <select id="stock-target-project" value={targetProjectId} onChange={e => setTargetProjectId(e.target.value)} className="hii-select">
                 <option value="">{t('stocuri.select_target_project', locale)}</option>
                 {projects.filter(p => p.id !== selectedProjectId).map(p => <option key={p.id} value={p.id}>{p.code ? `${p.code} — ` : ''}{p.name}</option>)}
               </select>
             </div>
           )}
           <div>
-            <label className="hii-label">{t('stocuri.field_notes', locale)}</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none" />
+            <label htmlFor="stock-notes" className="hii-label">{t('stocuri.field_notes', locale)}</label>
+            <textarea id="stock-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none" />
           </div>
           {formError && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{formError}</div>}
         </div>

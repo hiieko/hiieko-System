@@ -103,6 +103,7 @@ function DepozitePageInner() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('depozite.search_placeholder', locale)}
+              aria-label={t('depozite.search_aria', locale)}
               className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none"
             />
           </div>

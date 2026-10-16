@@ -225,6 +225,7 @@ function RapoartePageInner() {
             aria-label={t('reports.search_aria', locale)}
           />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            aria-label={t('projects.filter_status', locale)}
             className="hii-select sm:w-52">
             {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? t('reports.all_statuses', locale) : status}</option>)}
           </select>

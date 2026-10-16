@@ -217,16 +217,16 @@ function ProjectsPageInner() {
         return (
           <div className="space-y-4">
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'Project Name *' : 'Nume Proiect *'}</label>
-              <input className={inputCls} placeholder={locale === 'en' ? 'e.g. Solar Park Bihor' : 'ex. Parc Fotovoltaic Bihor'} value={form.name} onChange={e => updateForm('name', e.target.value)} />
+              <label htmlFor="project-name" className={labelCls}>{locale === 'en' ? 'Project Name *' : 'Nume Proiect *'}</label>
+              <input id="project-name" className={inputCls} placeholder={locale === 'en' ? 'e.g. Solar Park Bihor' : 'ex. Parc Fotovoltaic Bihor'} value={form.name} onChange={e => updateForm('name', e.target.value)} />
             </div>
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'Project Code *' : 'Cod Proiect *'}</label>
-              <input className={inputCls} placeholder="SP-BIHOR-001" value={form.code} onChange={e => updateForm('code', e.target.value.toUpperCase())} />
+              <label htmlFor="project-code" className={labelCls}>{locale === 'en' ? 'Project Code *' : 'Cod Proiect *'}</label>
+              <input id="project-code" className={inputCls} placeholder="SP-BIHOR-001" value={form.code} onChange={e => updateForm('code', e.target.value.toUpperCase())} />
             </div>
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'Client ID' : 'ID Client'}</label>
-              <input className={inputCls} placeholder={locale === 'en' ? 'Client catalog not available' : 'Catalog clienti indisponibil'} value={form.clientId} onChange={e => updateForm('clientId', e.target.value)} />
+              <label htmlFor="project-client-id" className={labelCls}>{locale === 'en' ? 'Client ID' : 'ID Client'}</label>
+              <input id="project-client-id" className={inputCls} placeholder={locale === 'en' ? 'Client catalog not available' : 'Catalog clienti indisponibil'} value={form.clientId} onChange={e => updateForm('clientId', e.target.value)} />
               <p className="text-xs text-slate-400 mt-1">{locale === 'en' ? '(Backend gap: no client catalog endpoint)' : '(Gap backend: endpoint catalog clienti indisponibil)'}</p>
             </div>
           </div>
@@ -236,22 +236,22 @@ function ProjectsPageInner() {
         return (
           <div className="space-y-4">
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'Address' : 'Adresa'}</label>
-              <input className={inputCls} placeholder={locale === 'en' ? 'Project address' : 'Adresa proiectului'} value={form.address} onChange={e => updateForm('address', e.target.value)} />
+              <label htmlFor="project-address" className={labelCls}>{locale === 'en' ? 'Address' : 'Adresa'}</label>
+              <input id="project-address" className={inputCls} placeholder={locale === 'en' ? 'Project address' : 'Adresa proiectului'} value={form.address} onChange={e => updateForm('address', e.target.value)} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Latitude' : 'Latitudine'}</label>
-                <input className={inputCls} type="number" step="any" placeholder="46.123" value={form.latitude} onChange={e => updateForm('latitude', e.target.value)} />
+                <label htmlFor="project-latitude" className={labelCls}>{locale === 'en' ? 'Latitude' : 'Latitudine'}</label>
+                <input id="project-latitude" className={inputCls} type="number" step="any" placeholder="46.123" value={form.latitude} onChange={e => updateForm('latitude', e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Longitude' : 'Longitudine'}</label>
-                <input className={inputCls} type="number" step="any" placeholder="23.456" value={form.longitude} onChange={e => updateForm('longitude', e.target.value)} />
+                <label htmlFor="project-longitude" className={labelCls}>{locale === 'en' ? 'Longitude' : 'Longitudine'}</label>
+                <input id="project-longitude" className={inputCls} type="number" step="any" placeholder="23.456" value={form.longitude} onChange={e => updateForm('longitude', e.target.value)} />
               </div>
             </div>
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'Geofence Radius (m)' : 'Raza Geofence (m)'}</label>
-              <input className={inputCls} type="number" placeholder="300" value={form.geofenceRadiusMeters} onChange={e => updateForm('geofenceRadiusMeters', e.target.value)} />
+              <label htmlFor="project-geofence" className={labelCls}>{locale === 'en' ? 'Geofence Radius (m)' : 'Raza Geofence (m)'}</label>
+              <input id="project-geofence" className={inputCls} type="number" placeholder="300" value={form.geofenceRadiusMeters} onChange={e => updateForm('geofenceRadiusMeters', e.target.value)} />
             </div>
           </div>
         );
@@ -260,8 +260,8 @@ function ProjectsPageInner() {
         return (
           <div className="space-y-4">
             <div>
-              <label className={labelCls}>{locale === 'en' ? 'Installed Capacity (MWp)' : 'Capacitate Instalata (MWp)'}</label>
-              <input className={inputCls} type="number" step="any" placeholder="5.0" value={form.installedCapacityMwp} onChange={e => updateForm('installedCapacityMwp', e.target.value)} />
+              <label htmlFor="project-capacity" className={labelCls}>{locale === 'en' ? 'Installed Capacity (MWp)' : 'Capacitate Instalata (MWp)'}</label>
+              <input id="project-capacity" className={inputCls} type="number" step="any" placeholder="5.0" value={form.installedCapacityMwp} onChange={e => updateForm('installedCapacityMwp', e.target.value)} />
             </div>
           </div>
         );
@@ -271,12 +271,12 @@ function ProjectsPageInner() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data început'}</label>
-                <input className={inputCls} type="date" value={form.startDate} onChange={e => updateForm('startDate', e.target.value)} />
+                <label htmlFor="project-start-date" className={labelCls}>{locale === 'en' ? 'Start Date' : 'Data început'}</label>
+                <input id="project-start-date" className={inputCls} type="date" value={form.startDate} onChange={e => updateForm('startDate', e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Target End Date' : 'Data finalizare țintă'}</label>
-                <input className={inputCls} type="date" value={form.targetEndDate} onChange={e => updateForm('targetEndDate', e.target.value)} />
+                <label htmlFor="project-target-end-date" className={labelCls}>{locale === 'en' ? 'Target End Date' : 'Data finalizare țintă'}</label>
+                <input id="project-target-end-date" className={inputCls} type="date" value={form.targetEndDate} onChange={e => updateForm('targetEndDate', e.target.value)} />
               </div>
             </div>
           </div>
@@ -287,12 +287,12 @@ function ProjectsPageInner() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Total Budget' : 'Buget Total'}</label>
-                <input className={inputCls} type="number" step="0.01" placeholder="1000000" value={form.budgetTotal} onChange={e => updateForm('budgetTotal', e.target.value)} />
+                <label htmlFor="project-budget" className={labelCls}>{locale === 'en' ? 'Total Budget' : 'Buget Total'}</label>
+                <input id="project-budget" className={inputCls} type="number" step="0.01" placeholder="1000000" value={form.budgetTotal} onChange={e => updateForm('budgetTotal', e.target.value)} />
               </div>
               <div>
-                <label className={labelCls}>{locale === 'en' ? 'Currency' : 'Moneda'}</label>
-                <select className={inputCls} value={form.currency} onChange={e => updateForm('currency', e.target.value)}>
+                <label htmlFor="project-currency" className={labelCls}>{locale === 'en' ? 'Currency' : 'Moneda'}</label>
+                <select id="project-currency" className={inputCls} value={form.currency} onChange={e => updateForm('currency', e.target.value)}>
                   <option value="RON">RON</option>
                   <option value="EUR">EUR</option>
                   <option value="USD">USD</option>
@@ -312,12 +312,12 @@ function ProjectsPageInner() {
             </p>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
-                <label className={labelCls}>{locale === 'en' ? 'User ID' : 'ID Utilizator'}</label>
-                <input className={inputCls} placeholder="user-uuid" value={memberUserId} onChange={e => setMemberUserId(e.target.value)} />
+                <label htmlFor="project-member-user-id" className={labelCls}>{locale === 'en' ? 'User ID' : 'ID Utilizator'}</label>
+                <input id="project-member-user-id" className={inputCls} placeholder="user-uuid" value={memberUserId} onChange={e => setMemberUserId(e.target.value)} />
               </div>
               <div className="w-40">
-                <label className={labelCls}>{locale === 'en' ? 'Role' : 'Rol'}</label>
-                <select className={inputCls} value={memberRole} onChange={e => setMemberRole(e.target.value as UserRole)}>
+                <label htmlFor="project-member-role" className={labelCls}>{locale === 'en' ? 'Role' : 'Rol'}</label>
+                <select id="project-member-role" className={inputCls} value={memberRole} onChange={e => setMemberRole(e.target.value as UserRole)}>
                   <option value="WORKER">Worker</option>
                   <option value="TEAM_LEADER">Team Leader</option>
                   <option value="FOREMAN">Foreman</option>
@@ -338,7 +338,7 @@ function ProjectsPageInner() {
                     <span className="text-sm text-slate-700">{m.userId}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="neutral">{m.role}</Badge>
-                      <button onClick={() => removeMemberFromSelection(m.userId)} className="p-1 rounded hover:bg-critical-soft text-slate-400 hover:text-critical">
+                      <button onClick={() => removeMemberFromSelection(m.userId)} aria-label={locale === 'en' ? 'Remove member' : 'Elimină membrul'} className="p-1 rounded hover:bg-critical-soft text-slate-400 hover:text-critical">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -420,17 +420,19 @@ function ProjectsPageInner() {
           <input
             className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white"
             placeholder={locale === 'en' ? 'Search projects...' : 'Caută proiecte...'}
+            aria-label={locale === 'en' ? 'Search projects' : 'Caută proiecte'}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            <button onClick={() => setSearch('')} aria-label={locale === 'en' ? 'Clear search' : 'Șterge căutarea'} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
               <X className="w-4 h-4" />
             </button>
           )}
         </div>
         <select
           className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none bg-white"
+          aria-label={locale === 'en' ? 'Filter by status' : 'Filtrează după stare'}
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
@@ -518,7 +520,7 @@ function ProjectsPageInner() {
                 <h2 className="text-lg font-bold text-slate-900">
                   {locale === 'en' ? 'Create New Project' : 'Creaza Proiect Nou'}
                 </h2>
-                <button onClick={() => !wizardSaving && setWizardOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                <button onClick={() => !wizardSaving && setWizardOpen(false)} aria-label={locale === 'en' ? 'Close' : 'Închide'} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
                   <X className="w-5 h-5" />
                 </button>
               </div>

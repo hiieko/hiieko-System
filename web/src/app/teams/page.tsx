@@ -308,15 +308,15 @@ function TeamsPageInner() {
       >
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div><label className="hii-label">{t('teams.form_name', locale)} *</label>
-              <input value={formName} onChange={(e) => setFormName(e.target.value)} className="hii-input" />
+            <div><label htmlFor="team-create-name" className="hii-label">{t('teams.form_name', locale)} *</label>
+              <input id="team-create-name" value={formName} onChange={(e) => setFormName(e.target.value)} className="hii-input" />
             </div>
-            <div><label className="hii-label">{t('teams.form_code', locale)} *</label>
-              <input value={formCode} onChange={(e) => setFormCode(e.target.value)} className="hii-input" />
+            <div><label htmlFor="team-create-code" className="hii-label">{t('teams.form_code', locale)} *</label>
+              <input id="team-create-code" value={formCode} onChange={(e) => setFormCode(e.target.value)} className="hii-input" />
             </div>
           </div>
-          <div><label className="hii-label">{t('teams.leader_optional', locale)}</label>
-            <select value={formLeaderId} onChange={(e) => setFormLeaderId(e.target.value)} className="hii-select">
+          <div><label htmlFor="team-create-leader" className="hii-label">{t('teams.leader_optional', locale)}</label>
+            <select id="team-create-leader" value={formLeaderId} onChange={(e) => setFormLeaderId(e.target.value)} className="hii-select">
               <option value="">{t('teams.no_leader', locale)}</option>
               {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
             </select>
@@ -401,14 +401,14 @@ function TeamsPageInner() {
         }
       >
         <div className="space-y-3">
-          <div><label className="hii-label">{t('teams.form_name', locale)} *</label>
-            <input value={editName} onChange={(e) => setEditName(e.target.value)} className="hii-input" />
+          <div><label htmlFor="team-edit-name" className="hii-label">{t('teams.form_name', locale)} *</label>
+            <input id="team-edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} className="hii-input" />
           </div>
-          <div><label className="hii-label">{t('teams.form_code', locale)} *</label>
-            <input value={editCode} onChange={(e) => setEditCode(e.target.value)} className="hii-input" />
+          <div><label htmlFor="team-edit-code" className="hii-label">{t('teams.form_code', locale)} *</label>
+            <input id="team-edit-code" value={editCode} onChange={(e) => setEditCode(e.target.value)} className="hii-input" />
           </div>
-          <div><label className="hii-label">{t('teams.leader_optional', locale)}</label>
-            <select value={editLeaderId} onChange={(e) => setEditLeaderId(e.target.value)} className="hii-select">
+          <div><label htmlFor="team-edit-leader" className="hii-label">{t('teams.leader_optional', locale)}</label>
+            <select id="team-edit-leader" value={editLeaderId} onChange={(e) => setEditLeaderId(e.target.value)} className="hii-select">
               <option value="">{t('teams.no_leader', locale)}</option>
               {users.filter(u => u.is_active !== false).map((u) => (<option key={u.id} value={u.id}>{displayName(u)}</option>))}
             </select>

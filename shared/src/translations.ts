@@ -78,6 +78,7 @@ const d: Record<string, { ro: string; en: string }> = {
   'suppliers.empty_title': { ro: 'Niciun furnizor înregistrat', en: 'No suppliers registered' },
   'suppliers.empty_hint': { ro: 'Adaugă primul furnizor pentru a-l folosi la avize și comenzi.', en: 'Add your first supplier to use it on delivery notes and purchase orders.' },
   'suppliers.search_placeholder': { ro: 'Caută furnizor...', en: 'Search suppliers...' },
+  'suppliers.search_aria': { ro: 'Caută furnizori', en: 'Search suppliers' },
   'suppliers.col_name': { ro: 'Nume', en: 'Name' },
   'suppliers.col_cui': { ro: 'CUI', en: 'CUI' },
   'suppliers.col_contact': { ro: 'Contact', en: 'Contact' },
@@ -108,6 +109,7 @@ const d: Record<string, { ro: string; en: string }> = {
   'depozite.empty_title': { ro: 'Niciun depozit înregistrat', en: 'No warehouses registered' },
   'depozite.empty_hint': { ro: 'Adaugă primul depozit pentru a gestiona stocurile.', en: 'Add your first warehouse to manage stock.' },
   'depozite.search_placeholder': { ro: 'Caută depozit...', en: 'Search warehouses...' },
+  'depozite.search_aria': { ro: 'Caută depozite', en: 'Search warehouses' },
   'depozite.col_name': { ro: 'Nume', en: 'Name' },
   'depozite.col_code': { ro: 'Cod', en: 'Code' },
   'depozite.col_address': { ro: 'Adresă', en: 'Address' },
@@ -746,6 +748,7 @@ Object.assign(d, {
   'general.no': T('Nu', 'No'),
   'general.close': T('Închide', 'Close'),
   'general.all': T('Toate', 'All'),
+  'general.select_month': T('Selectează luna', 'Select month'),
 
   // --- Tutorial: Projects ---
   'tutorial.projects.title': T('Proiecte', 'Projects'),
@@ -1928,6 +1931,10 @@ Object.assign(d, {
   'users.col_status': T('Status', 'Status'),
   'users.you': T('tu', 'you'),
   'users.no_roles': T('API-ul nu a returnat roluri', 'No roles returned by the API'),
+  'users.filter_role': T('Filtrare după rol', 'Filter by role'),
+  'users.filter_status': T('Filtrare după status', 'Filter by status'),
+  'users.change_role': T('Schimbă rolul', 'Change role'),
+  'users.change_status': T('Schimbă statusul', 'Change status'),
   'profile.load_error_title': T('Profilul nu a putut fi încărcat', 'Could not load profile'),
   'profile.load_error_message': T('Verifică conexiunea și încearcă din nou.', 'Check your connection and try again.'),
 });
