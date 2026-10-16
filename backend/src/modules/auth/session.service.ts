@@ -235,11 +235,22 @@ export class SessionService {
 
   /**
    * K-13 / Slice 2 suspension rule: revoke every active session of a user.
-   * Returns the number of sessions that were actually revoked (0 is a no-op).
+   *
+   * `exceptSessionId` (Phase 6, B2) keeps the caller's own session alive — used by the
+   * authenticated password change, which must log out every *other* device but not the
+   * one that made the change. Returns the number actually revoked (0 is a no-op).
    */
-  async revokeAllSessionsForUser(userId: string, reason: string): Promise<number> {
+  async revokeAllSessionsForUser(
+    userId: string,
+    reason: string,
+    exceptSessionId?: string,
+  ): Promise<number> {
     const active = await this.prisma.session.findMany({
-      where: { user_id: userId, revoked_at: null },
+      where: {
+        user_id: userId,
+        revoked_at: null,
+        ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
+      },
       select: { id: true },
     });
     if (active.length === 0) return 0;

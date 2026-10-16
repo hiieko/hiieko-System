@@ -15,6 +15,7 @@ import * as bcrypt from 'bcryptjs';
 import { SessionService } from './session.service';
 import { EmailService } from './email.service';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import {
   PASSWORD_RESET_TOKEN_BYTES,
   PASSWORD_RESET_TOKEN_TTL_MS,
@@ -236,6 +237,63 @@ export class AuthService {
       action: 'USER_PASSWORD_RESET',
       entity: 'User',
       entityId: row.user_id,
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Phase 6 (B2) — authenticated password change.
+   *
+   * Re-verifies the current password, persists the new hash, then revokes every OTHER
+   * active session of the user: the caller's own session (identified by the access
+   * token's `sid`) is preserved, so the change does not log the user out of the device
+   * they are using while killing every other device. Audited as USER_PASSWORD_CHANGED
+   * with the number of sessions revoked.
+   */
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+    accessToken?: string | null,
+  ): Promise<{ success: true }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, organization_id: true, password_hash: true },
+    });
+
+    if (
+      !user ||
+      !user.password_hash ||
+      !(await bcrypt.compare(dto.currentPassword, user.password_hash))
+    ) {
+      // Generic message: never distinguish an unknown account from a wrong password.
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password_hash: passwordHash },
+    });
+
+    const currentSessionId = accessToken
+      ? this.readSessionIdFromAccessToken(accessToken)
+      : null;
+
+    const revokedSessions = await this.sessionService.revokeAllSessionsForUser(
+      userId,
+      SESSION_REVOKE_REASON.PASSWORD_CHANGED,
+      currentSessionId ?? undefined,
+    );
+
+    await this.auditService.record({
+      organizationId: user.organization_id || undefined,
+      actorId: userId,
+      action: 'USER_PASSWORD_CHANGED',
+      entity: 'User',
+      entityId: userId,
+      metadata: { revokedSessions },
     });
 
     return { success: true };

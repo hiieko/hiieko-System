@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Request, Response } from 'express';
 import { AuthService, RegisterDto, LoginDto } from './auth.service';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RateLimit } from '../../common/auth/decorators/rate-limit.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
@@ -130,6 +131,24 @@ export class AuthController {
   @ApiResponse({ status: 429, description: 'Too many reset attempts (rate limited)' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @RateLimit({ scope: 'user', limit: 5, windowMs: 3_600_000 })
+  @ApiOperation({ summary: 'Change own password and revoke all other sessions' })
+  @ApiResponse({ status: 200, description: 'Password updated; all other sessions revoked' })
+  @ApiResponse({ status: 401, description: 'Not authenticated' })
+  @ApiResponse({ status: 422, description: 'Malformed body (ValidationPipe)' })
+  @ApiResponse({ status: 429, description: 'Too many password-change attempts (rate limited)' })
+  async changePassword(
+    @Body() dto: ChangePasswordDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    return this.authService.changePassword(user.id, dto, this.readBearerToken(req));
   }
 
   @Get('me')
