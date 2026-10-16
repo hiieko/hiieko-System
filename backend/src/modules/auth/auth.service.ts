@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  UnprocessableEntityException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -16,6 +17,7 @@ import { SessionService } from './session.service';
 import { EmailService } from './email.service';
 import { ForgotPasswordDto, ResetPasswordDto } from './dto/password-reset.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { validatePasswordPolicy } from './password-policy';
 import {
   PASSWORD_RESET_TOKEN_BYTES,
   PASSWORD_RESET_TOKEN_TTL_MS,
@@ -83,6 +85,17 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const email = dto.email.toLowerCase();
+
+    // Phase 6 (C1) — password policy. Registration may omit a password entirely
+    // (account then has no credential until one is set); when one is supplied it
+    // must satisfy the shared policy.
+    if (dto.password) {
+      const policyError = validatePasswordPolicy(dto.password, email);
+      if (policyError) {
+        throw new UnprocessableEntityException(policyError);
+      }
+    }
+
     const existing = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -206,11 +219,18 @@ export class AuthService {
   async resetPassword(dto: ResetPasswordDto): Promise<{ success: true }> {
     const row = await this.prisma.passwordResetToken.findUnique({
       where: { token_hash: this.hashPasswordResetToken(dto.token) },
-      include: { user: { select: { id: true, organization_id: true } } },
+      include: { user: { select: { id: true, organization_id: true, email: true } } },
     });
 
     if (!row || row.used_at || row.expires_at.getTime() <= Date.now()) {
       throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    // Phase 6 (C1) — same password policy as register/change, in particular the
+    // email comparison, which is only knowable after the token resolves the user.
+    const resetPolicyError = validatePasswordPolicy(dto.newPassword, row.user.email);
+    if (resetPolicyError) {
+      throw new UnprocessableEntityException(resetPolicyError);
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
@@ -258,7 +278,7 @@ export class AuthService {
   ): Promise<{ success: true }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, organization_id: true, password_hash: true },
+      select: { id: true, organization_id: true, password_hash: true, email: true },
     });
 
     if (
@@ -268,6 +288,12 @@ export class AuthService {
     ) {
       // Generic message: never distinguish an unknown account from a wrong password.
       throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Phase 6 (C1) — the new password must satisfy the shared policy.
+    const changePolicyError = validatePasswordPolicy(dto.newPassword, user.email);
+    if (changePolicyError) {
+      throw new UnprocessableEntityException(changePolicyError);
     }
 
     const passwordHash = await bcrypt.hash(dto.newPassword, 10);
