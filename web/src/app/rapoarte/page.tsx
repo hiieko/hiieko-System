@@ -132,7 +132,8 @@ function RapoartePageInner() {
       toastSuccess(t('daily_report.submit_success', locale));
       await loadData();
     } catch (err: any) {
-      toastError(err?.message || t('daily_report.submit_failed', locale));
+      const message = err?.response?.data?.message || err?.message;
+      toastError(message || t('daily_report.submit_failed', locale));
     } finally {
       setSubmittingId(null);
       setSubmitTarget(null);
@@ -153,7 +154,8 @@ function RapoartePageInner() {
       toastSuccess(reviewAction === 'APPROVED' ? 'Raport aprobat.' : 'Raport respins.');
       await loadData();
     } catch (err: any) {
-      toastError(err?.message || 'Nu s-a putut procesa aprobarea.');
+      const message = err?.response?.data?.message || err?.message;
+      toastError(message || 'Nu s-a putut procesa aprobarea.');
     } finally {
       setReviewingId(null);
       setReviewTarget(null);

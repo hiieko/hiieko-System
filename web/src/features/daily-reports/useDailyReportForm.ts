@@ -168,7 +168,9 @@ export function useDailyReportForm(reportId?: string) {
     } catch (err: any) {
       // The key is deliberately NOT cleared: retrying reuses it, so a request that actually
       // reached the server cannot create a second report or a second stock movement.
-      toastError(err.message || t('daily_report.submit_failed', locale));
+      // Surface the backend's own reason (e.g. "insufficient stock …") instead of a generic toast.
+      const message = err?.response?.data?.message || err?.message;
+      toastError(message || t('daily_report.submit_failed', locale));
     } finally {
       setSubmitting(false);
       setConfirmOpen(false);
