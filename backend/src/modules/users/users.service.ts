@@ -103,14 +103,20 @@ export class UsersService {
       },
     });
 
+    const revokedSessions = await this.sessionService.revokeAllSessionsForUser(
+      id,
+      SESSION_REVOKE_REASON.ROLE_CHANGED,
+    );
+
     await this.auditService.record({
       organizationId: before.organization_id,
       actorId: actor.id,
-      action: 'USER_ROLE_UPDATED',
+      action: 'USER_ROLE_CHANGED',
       entity: 'User',
       entityId: id,
       before: { role: before.role },
       after: { role: newRole },
+      metadata: { revokedSessions },
     });
 
     return updated;

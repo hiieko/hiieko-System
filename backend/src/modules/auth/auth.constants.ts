@@ -36,6 +36,7 @@ export const SESSION_REVOKE_REASON = {
   REUSE_DETECTED: 'REFRESH_TOKEN_REUSE',
   SUSPENDED: 'SUSPENDED',
   PASSWORD_RESET: 'PASSWORD_RESET',
+  ROLE_CHANGED: 'ROLE_CHANGED',
 } as const;
 
 /** L9 — every refresh failure answers with one generic 401 and this exact message. */
