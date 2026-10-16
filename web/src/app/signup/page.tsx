@@ -85,8 +85,8 @@ function SignupForm() {
     }
     if (!form.password) {
       next.password = 'Password is required.';
-    } else if (form.password.length < 6) {
-      next.password = 'Password must be at least 6 characters.';
+    } else if (form.password.length < 8) {
+      next.password = 'Password must be at least 8 characters.';
     }
     if (!form.confirmPassword) {
       next.confirmPassword = 'Confirm your password.';
