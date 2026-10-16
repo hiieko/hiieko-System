@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { PrismaService } from './common/prisma/prisma.service';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { assertJwtSecretStrength } from './common/config/env-security';
 
@@ -165,8 +166,11 @@ async function bootstrap() {
     })
   );
 
-  // Global exception filter and response envelope interceptor
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // Global exception filter and response envelope interceptor.
+  // NestJS executes global filters in REVERSE registration order, so the specific
+  // PrismaExceptionFilter is registered LAST here and therefore runs FIRST — the
+  // catch-all AllExceptionsFilter only sees what the Prisma filter does not handle.
+  app.useGlobalFilters(new AllExceptionsFilter(), new PrismaExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
 
   // OpenAPI / Swagger Documentation
