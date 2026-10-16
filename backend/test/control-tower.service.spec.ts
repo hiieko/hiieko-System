@@ -333,7 +333,106 @@ describe('ControlTowerService', () => {
     });
   });
 
+  describe('getOverview - Project scope enforcement (GAP 4)', () => {
+    it('applies the projectScopeWhere filter to the project query', async () => {
+      prisma.project.findMany.mockResolvedValue([]);
+
+      await service.getOverview(mockOrgId, undefined, {
+        id: { in: ['proj-a', 'proj-b'] },
+      });
+
+      const where = prisma.project.findMany.mock.calls[0][0].where;
+      expect(where.organization_id).toBe(mockOrgId);
+      expect(where.id).toEqual({ in: ['proj-a', 'proj-b'] });
+      expect(where.is_active).toBe(true);
+    });
+
+    it('zero-membership scope matches nothing — no projects and zeroed metrics', async () => {
+      prisma.project.findMany.mockResolvedValue([]);
+
+      const result = await service.getOverview(mockOrgId, undefined, {
+        id: { in: [] },
+      });
+
+      expect(prisma.project.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: { in: [] } }),
+        }),
+      );
+      expect(result.projects.activeProjects).toBe(0);
+      expect(result.redFlags).toEqual([]);
+    });
+
+    it('authorized explicit project filter is applied to the project query', async () => {
+      prisma.project.findMany.mockResolvedValue([]);
+
+      await service.getOverview(mockOrgId, mockProjectId, {
+        id: mockProjectId,
+      });
+
+      const where = prisma.project.findMany.mock.calls[0][0].where;
+      expect(where.id).toBe(mockProjectId);
+    });
+
+    it('global scope without explicit project passes an empty scope filter (org-wide)', async () => {
+      prisma.project.findMany.mockResolvedValue([]);
+
+      await service.getOverview(mockOrgId, undefined, {});
+
+      const where = prisma.project.findMany.mock.calls[0][0].where;
+      expect(where.organization_id).toBe(mockOrgId);
+      expect(where.id).toBeUndefined();
+    });
+  });
+
   describe('getDrillDown', () => {
+    it('forwards the project scope filter to getOverview', async () => {
+      const scopeWhere = { id: { in: ['proj-a'] } };
+      const overviewSpy = jest.spyOn(service, 'getOverview').mockResolvedValue({
+        projects: {
+          overdueProjectsList: [],
+          upcomingDeadlinesList: [],
+          activeProjectsList: [],
+        },
+        workforce: {
+          missingList: [],
+          overtimeList: [],
+          scheduledTodayList: [],
+        },
+        production: {
+          blockedTasksList: [],
+          plannedTasksList: [],
+          actualTasksList: [],
+        },
+        materials: {
+          lowStockList: [],
+          missingRequiredList: [],
+          overconsumptionList: [],
+          pendingDeliveriesList: [],
+        },
+        finance: { budgetByProject: [] },
+        quality: {
+          openNCRsList: [],
+          failedInspectionsList: [],
+          pendingCorrectionsList: [],
+        },
+        documentation: {
+          missingDocumentsList: [],
+          awaitingApprovalList: [],
+          supersededDocumentsList: [],
+        },
+        redFlags: [],
+      } as any);
+
+      await service.getDrillDown(
+        mockOrgId,
+        { category: 'PROJECTS', limit: 10, offset: 0 },
+        scopeWhere,
+      );
+
+      expect(overviewSpy).toHaveBeenCalledWith(mockOrgId, undefined, scopeWhere);
+    });
+
     it('should paginate and filter drill-down results for specified domain', async () => {
       prisma.project.findMany.mockResolvedValue([]);
 
@@ -351,6 +450,17 @@ describe('ControlTowerService', () => {
   });
 
   describe('getRedFlags', () => {
+    it('forwards the project scope filter to getOverview', async () => {
+      const scopeWhere = { id: { in: ['proj-a'] } };
+      const overviewSpy = jest
+        .spyOn(service, 'getOverview')
+        .mockResolvedValue({ redFlags: [] } as any);
+
+      await service.getRedFlags(mockOrgId, undefined, undefined, scopeWhere);
+
+      expect(overviewSpy).toHaveBeenCalledWith(mockOrgId, undefined, scopeWhere);
+    });
+
     it('should filter red flags by severity level when requested', async () => {
       prisma.project.findMany.mockResolvedValue([]);
 

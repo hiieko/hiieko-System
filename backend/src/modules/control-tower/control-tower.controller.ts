@@ -63,10 +63,11 @@ export class ControlTowerController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('projectId') projectId?: string,
   ) {
-    const where = buildScopedProjectWhere(scope, projectId);
+    const where = buildScopedProjectWhere(scope, projectId, 'id');
     return this.controlTowerService.getOverview(
       user.organizationId,
       projectId,
+      where,
     );
   }
 
@@ -122,7 +123,7 @@ export class ControlTowerController {
       offset?: string;
     },
   ) {
-    const where = buildScopedProjectWhere(scope, query.projectId);
+    const where = buildScopedProjectWhere(scope, query.projectId, 'id');
     const params: DrillDownParams = {
       category: query.category,
       projectId: query.projectId,
@@ -132,6 +133,7 @@ export class ControlTowerController {
     return this.controlTowerService.getDrillDown(
       user.organizationId,
       params,
+      where,
     );
   }
 
@@ -172,11 +174,12 @@ export class ControlTowerController {
     @Query('projectId') projectId?: string,
     @Query('severity') severity?: string,
   ) {
-    const where = buildScopedProjectWhere(scope, projectId);
+    const where = buildScopedProjectWhere(scope, projectId, 'id');
     return this.controlTowerService.getRedFlags(
       user.organizationId,
       projectId,
       severity,
+      where,
     );
   }
 }

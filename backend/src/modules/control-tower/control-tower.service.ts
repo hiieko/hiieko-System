@@ -53,16 +53,19 @@ export class ControlTowerService {
   async getOverview(
     organizationId: string,
     projectId?: string,
+    projectScopeWhere?: Record<string, any>,
   ): Promise<ControlTowerOverviewDto> {
     const now = new Date();
     // Company calendar day (Europe/Bucharest by default) — never the server UTC day.
     const todayStr = companyDateIso(now);
 
-    // Fetch projects for the organization (or single project)
+    // Fetch projects for the organization (or single project), scoped by
+    // the caller's project-access scope (GAP 4).
     const projects = await this.prisma.project.findMany({
       where: {
         ...(organizationId ? { organization_id: organizationId } : {}),
         ...(projectId ? { id: projectId } : {}),
+        ...(projectScopeWhere || {}),
         is_active: true,
       },
       include: {
@@ -143,6 +146,7 @@ export class ControlTowerService {
   async getDrillDown(
     organizationId: string,
     params: DrillDownParams,
+    projectScopeWhere?: Record<string, any>,
   ): Promise<DrillDownResult<any>> {
     const limit = params.limit && params.limit > 0 ? params.limit : 20;
     const offset = params.offset && params.offset >= 0 ? params.offset : 0;
@@ -151,7 +155,11 @@ export class ControlTowerService {
       throw new BadRequestException('category query parameter is required');
     }
 
-    const overview = await this.getOverview(organizationId, params.projectId);
+    const overview = await this.getOverview(
+      organizationId,
+      params.projectId,
+      projectScopeWhere,
+    );
 
     let allItems: any[] = [];
 
@@ -227,8 +235,13 @@ export class ControlTowerService {
     organizationId: string,
     projectId?: string,
     severity?: string,
+    projectScopeWhere?: Record<string, any>,
   ): Promise<RedFlag[]> {
-    const overview = await this.getOverview(organizationId, projectId);
+    const overview = await this.getOverview(
+      organizationId,
+      projectId,
+      projectScopeWhere,
+    );
     let flags = overview.redFlags;
 
     if (severity) {
