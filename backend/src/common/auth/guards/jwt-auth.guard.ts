@@ -4,6 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthenticatedUser, JwtPayload } from '../auth.types';
 import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
+import {
+  IDLE_SESSION_TIMEOUT_MS,
+  IDLE_SESSION_TOUCH_INTERVAL_MS,
+  SESSION_REVOKE_REASON,
+} from '../../../modules/auth/auth.constants';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -59,17 +64,54 @@ export class JwtAuthGuard implements CanActivate {
       if (payload.sid) {
         const session = await this.prisma.session.findUnique({
           where: { id: payload.sid },
-          select: { id: true, user_id: true, revoked_at: true, expires_at: true },
+          select: {
+            id: true,
+            user_id: true,
+            revoked_at: true,
+            expires_at: true,
+            last_used_at: true,
+          },
         });
 
-        const sessionActive =
-          session &&
-          !session.revoked_at &&
-          session.expires_at.getTime() > Date.now() &&
-          session.user_id === dbUser.id;
+        const now = Date.now();
 
-        if (!sessionActive) {
+        if (
+          !session ||
+          session.revoked_at ||
+          session.expires_at.getTime() <= now ||
+          session.user_id !== dbUser.id
+        ) {
           throw new UnauthorizedException('Session revoked or expired');
+        }
+
+        // Phase 6 (B3) — idle timeout. A session left untouched for longer than
+        // IDLE_SESSION_TIMEOUT_MS is revoked (family-wide) and the request rejected;
+        // the absolute `expires_at` ceiling still applies on top of this.
+        if (now - session.last_used_at.getTime() > IDLE_SESSION_TIMEOUT_MS) {
+          const revokedAt = new Date(now);
+          await this.prisma.$transaction(async (tx) => {
+            await tx.session.update({
+              where: { id: session.id },
+              data: {
+                revoked_at: revokedAt,
+                revoked_reason: SESSION_REVOKE_REASON.IDLE_TIMEOUT,
+              },
+            });
+            await tx.refreshToken.updateMany({
+              where: { session_id: session.id, revoked_at: null },
+              data: { revoked_at: revokedAt },
+            });
+          });
+          throw new UnauthorizedException('Session expired due to inactivity');
+        }
+
+        // Touch `last_used_at` at most once per IDLE_SESSION_TOUCH_INTERVAL_MS so an
+        // active session is not rewritten on every single request.
+        if (now - session.last_used_at.getTime() > IDLE_SESSION_TOUCH_INTERVAL_MS) {
+          await this.prisma.session.update({
+            where: { id: session.id },
+            data: { last_used_at: new Date(now) },
+          });
         }
       }
 

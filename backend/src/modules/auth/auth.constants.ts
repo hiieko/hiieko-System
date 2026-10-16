@@ -11,6 +11,19 @@ export const WEB_ACCESS_TOKEN_TTL_SECONDS = 900;
 /** Absolute session lifetime: 7 days. Slice 2 deliberately has NO idle timeout (L6). */
 export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Phase 6 (B3) — idle timeout. A session whose `last_used_at` is older than this is
+ * revoked on its next use. Sits on top of the absolute `SESSION_TTL_MS` ceiling.
+ */
+export const IDLE_SESSION_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Phase 6 (B3) — minimum gap between two `last_used_at` writes on the hot auth path.
+ * The guard only touches the session when more than this has elapsed, so an active
+ * session is not rewritten on every single request.
+ */
+export const IDLE_SESSION_TOUCH_INTERVAL_MS = 60 * 1000;
+
 /** Refresh-token TTL; a successor is capped by `min(session.expires_at, now + this)`. */
 export const REFRESH_TOKEN_TTL_MS = SESSION_TTL_MS;
 
@@ -38,6 +51,7 @@ export const SESSION_REVOKE_REASON = {
   PASSWORD_RESET: 'PASSWORD_RESET',
   ROLE_CHANGED: 'ROLE_CHANGED',
   PASSWORD_CHANGED: 'PASSWORD_CHANGED',
+  IDLE_TIMEOUT: 'IDLE_TIMEOUT',
 } as const;
 
 /** L9 — every refresh failure answers with one generic 401 and this exact message. */
