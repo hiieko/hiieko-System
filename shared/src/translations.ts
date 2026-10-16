@@ -959,6 +959,13 @@ Object.assign(d, {
   'profile.edit_disabled': T('Editarea profilului nu este disponibilă în această versiune.', 'Profile editing is not available in this version.'),
   'profile.default_user': T('Utilizator', 'User'),
   'profile.default_profile': T('Profil utilizator', 'User Profile'),
+  'profile.change_password_title': T('Schimbă parola', 'Change password'),
+  'profile.current_password': T('Parola actuală', 'Current password'),
+  'profile.new_password': T('Parola nouă', 'New password'),
+  'profile.confirm_new_password': T('Confirmă parola nouă', 'Confirm new password'),
+  'profile.change_password_submit': T('Schimbă parola', 'Change password'),
+  'profile.change_password_success': T('Parola a fost schimbată. Celelalte sesiuni au fost deconectate.', 'Password changed. Other sessions have been signed out.'),
+  'profile.current_password_incorrect': T('Parola actuală este incorectă.', 'Current password is incorrect.'),
 
   // --- Error / Empty States ---
   'empty.no_data': T('Nu exista date', 'No data available'),

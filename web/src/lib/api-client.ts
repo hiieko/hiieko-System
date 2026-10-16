@@ -906,6 +906,19 @@ export class NestApiClient {
     });
   }
 
+  /**
+   * POST /api/auth/change-password — change the authenticated user's own password.
+   * The backend revokes every OTHER session; the caller's session stays valid.
+   * Throws ApiError(400, 'Current password is incorrect') when the current password
+   * does not match.
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
   // ============================================================================
   // ATTENDANCE (Pontaj)
   // ============================================================================

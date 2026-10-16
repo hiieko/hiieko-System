@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { t, useLocale } from '@solar/shared';
 import { apiClient } from '../../lib/api-client';
 import { Save, CheckCircle2, AlertCircle } from 'lucide-react';
-import { PageHeader, Button, Card, Input, Skeleton, ErrorState } from '../../components/ui';
+import { PageHeader, Button, Card, Input, Skeleton, ErrorState, useToast } from '../../components/ui';
 
 export default function ProfilPage() {
   const { user } = useAuth();
@@ -19,6 +19,12 @@ export default function ProfilPage() {
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [currentPasswordError, setCurrentPasswordError] = useState<string | null>(null);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const { success: toastSuccess, error: toastError } = useToast();
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -80,6 +86,33 @@ export default function ProfilPage() {
     setSelectedLocale(newLocale);
     if (setLocale) {
       setLocale(newLocale);
+    }
+  };
+
+  const canSubmitPassword =
+    currentPassword.length > 0 &&
+    newPassword.length >= 8 &&
+    newPassword === confirmNewPassword;
+
+  const handleChangePassword = async () => {
+    if (!canSubmitPassword) return;
+    setChangingPassword(true);
+    setCurrentPasswordError(null);
+    try {
+      await apiClient.changePassword(currentPassword, newPassword);
+      toastSuccess(t('profile.change_password_success', locale));
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (err: any) {
+      // 400 from this endpoint means the current password did not match.
+      if (err?.statusCode === 400) {
+        setCurrentPasswordError(t('profile.current_password_incorrect', locale));
+      } else {
+        toastError(err?.message || 'Eroare la schimbarea parolei.');
+      }
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -179,6 +212,51 @@ export default function ProfilPage() {
             className="w-full sm:w-auto"
           >
             {saving ? 'Se salvează...' : 'Salvează profil'}
+          </Button>
+        </div>
+      </Card>
+      <Card padding={false} className="p-4 sm:p-6 space-y-4">
+        <h2 className="text-lg font-bold text-slate-900">
+          {t('profile.change_password_title', locale)}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <Input
+              label={t('profile.current_password', locale)}
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              error={currentPasswordError || undefined}
+              onChange={e => {
+                setCurrentPassword(e.target.value);
+                if (currentPasswordError) setCurrentPasswordError(null);
+              }}
+            />
+          </div>
+          <Input
+            label={t('profile.new_password', locale)}
+            type="password"
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+          />
+          <Input
+            label={t('profile.confirm_new_password', locale)}
+            type="password"
+            autoComplete="new-password"
+            value={confirmNewPassword}
+            onChange={e => setConfirmNewPassword(e.target.value)}
+          />
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button
+            variant="primary"
+            onClick={() => void handleChangePassword()}
+            disabled={changingPassword || !canSubmitPassword}
+            loading={changingPassword}
+            className="w-full sm:w-auto"
+          >
+            {t('profile.change_password_submit', locale)}
           </Button>
         </div>
       </Card>
