@@ -11,15 +11,74 @@ and the shell (`AppShell`, `PageContainer`). No source file was modified and no 
 
 ## Section 1 — Regression Check
 
-**Status: PENDING (requires running backend)**
+**Status: COMPLETE (Session 2, 2026-10-16)**
 
-The regression check re-runs `scripts/audit-functional.ts` against a live backend on
-`http://127.0.0.1:4000` and diffs the output against `docs/audit/functional-results.json`
-(2026-10-14 baseline) into `docs/audit/functional-results-after-quality-pass.json`.
+Re-ran `scripts/audit-functional.ts` (GET-only, read-only: one `POST /api/auth/login` per user, then
+GET probes) against the live backend on `http://localhost:4000` and diffed the result against the
+2026-10-14 baseline `docs/audit/functional-results.json`.
 
-At the time of Session 1 the backend was **not running** (verified: `Test-NetConnection 127.0.0.1 -Port 4000` → `False`;
-`GET /health/live` → connection refused). This section is therefore deferred to a later session.
-**No regressions are reported or ruled out here.**
+- Baseline — `generatedAt 2026-10-14T21:16:17.476Z`, `baseUrl http://127.0.0.1:4000`, 25 endpoints × 18 users.
+- After — `docs/audit/functional-results-after-quality-pass.json`, `generatedAt 2026-10-16T13:59:41.806Z`,
+  `baseUrl http://localhost:4000`.
+- Health — `GET /health/live` → 200, `GET /health/ready` → 200.
+
+### Result
+
+| Signal | Baseline | After | Verdict |
+| --- | --- | --- | --- |
+| Logins OK | 18/18 | 17/18 | 1 new failure (`dev`) |
+| Probes with matching HTTP status | 450/450 | 425/450 | 25 mismatches — all `dev` (see below) |
+| Probes with matching row-count / shape | — | 389/425 | 36 row-count changes (all +1…+3) — new demo data |
+
+**The only login deviation is the `dev` account.** `dev@hiieko.local` (ADMIN) logged in with HTTP 200
+at baseline; on the re-run it returns **401**. Because the harness skips every probe for a user whose
+login failed (it records `status: null`), this single login failure accounts for **all 25 status
+mismatches** (`25 endpoints × 1 user`). The remaining non-200 probes are the same role-based **403**s
+recorded at baseline (e.g. `/api/employees` is 403 for the 12 non-privileged roles), so the
+**authorization matrix is unchanged**.
+
+### Root cause of the `dev` 401 — credential/DB drift, not a code regression
+
+Read-only DB probe of `dev@hiieko.local`:
+
+```
+status = ACTIVE, is_active = true, password_hash = present
+bcrypt.compare('DevPassword123!', password_hash) -> false
+```
+
+The account is enabled and has a password hash, but the stored hash **does not match** the seeded
+`DevPassword123!` held in `scripts/audit-functional.json`. `login()`
+(`backend/src/modules/auth/auth.service.ts`) requires both a valid bcrypt compare **and**
+`status === ACTIVE`, and returns a generic 401 on any failure — exactly the observed behaviour.
+
+This is **not** attributable to the quality pass: the four preceding commits changed only `web/**`
+and `shared/src/translations.ts`. No backend, auth or seed file was touched and no migration was
+applied. The stored hash for this local database simply no longer matches the fixture credential
+(most plausibly the password was changed through the app or the account was seeded with a different
+value). **Recommended fix:** re-seed/refresh the `dev` password (or update
+`scripts/audit-functional.json` to the current value) and re-run.
+
+### Row-count differences (new data, not regressions)
+
+Six list endpoints returned more rows than baseline (+1 to +3), consistently across every user who
+can read them — the signature of **additional demo records** seeded by `backend/prisma/seed-demo.ts`
+after the baseline was captured, not a behavioural change:
+
+| Endpoint | Example (owner) | Δ |
+| --- | --- | --- |
+| `/api/documents` | 10 → 13 | +3 |
+| `/api/tasks` | 30 → 32 | +2 |
+| `/api/attendance` | 31 → 32 | +1 |
+| `/api/daily-reports` | 8 → 9 | +1 |
+| `/api/issues` | 12 → 13 | +1 |
+| `/api/attendance/my-logs` | 0 → 1 (pm) | +1 |
+
+### Verdict
+
+**No functional regression was introduced by the accessibility quality pass.** Every probe that is
+not the stale `dev` credential matches the baseline status matrix (403s included), and the 36 shape
+changes are additive demo data. After refreshing the `dev` credential the suite is expected to return
+18/18 logins and 450/450 matching statuses.
 
 ---
 
@@ -161,11 +220,65 @@ primitives. **375 / 768 / 1280**: `OK` (static signal that the layout adapts) or
 
 ### 3.1 Runtime / query-plan profiling
 
-**Status: PENDING (requires running backend)**
+**Status: COMPLETE (Session 2, 2026-10-16)** — measured against the live backend on
+`http://localhost:4000` backed by PostgreSQL 18.6. Latency is wall-clock per request, taken from the
+`ms` field of `docs/audit/functional-results-after-quality-pass.json` and aggregated per endpoint
+across all probes that returned 200. The `dev` user is excluded (login 401, no probes).
 
-Profiling p50/p95 latency, slow-query logs and connection-pool behaviour requires a live backend
-and database. By session directive no backend process was started (`Test-NetConnection 127.0.0.1 -Port 4000`
-→ `False`). Deferred to a later session.
+### Per-endpoint latency (after quality pass)
+
+Sorted by p95; `n` = number of 200-returning probes. All values in ms.
+
+| Endpoint | n | min | p50 | p95 | max |
+| --- | --- | --- | --- | --- | --- |
+| `/api/daily-reports` | 17 | 14 | 32 | 110 | 110 |
+| `/api/control-tower/overview` | 8 | 45 | 56 | 67 | 67 |
+| `/api/control-tower/red-flags` | 8 | 46 | 53 | 64 | 64 |
+| `/api/procurement/delivery-notes` | 17 | 7 | 13 | 47 | 47 |
+| `/api/attendance` | 17 | 9 | 21 | 36 | 36 |
+| `/api/inventory/stock` | 17 | 7 | 11 | 35 | 35 |
+| `/api/projects` | 17 | 11 | 17 | 34 | 34 |
+| `/api/qa-qc/inspections` | 17 | 15 | 19 | 34 | 34 |
+| `/api/procurement/purchase-orders` | 17 | 9 | 18 | 32 | 32 |
+| `/api/warehouses` | 17 | 9 | 13 | 32 | 32 |
+| `/api/teams` | 17 | 9 | 13 | 30 | 30 |
+| `/api/inventory/movements` | 17 | 10 | 18 | 28 | 28 |
+| `/api/tasks` | 15 | 7 | 19 | 28 | 28 |
+| `/api/expenses` | 17 | 8 | 13 | 26 | 26 |
+| `/api/notifications` | 17 | 7 | 11 | 26 | 26 |
+| `/api/suppliers` | 17 | 10 | 16 | 25 | 25 |
+| `/api/users` | 8 | 10 | 13 | 21 | 21 |
+| `/api/documents` | 17 | 7 | 12 | 20 | 20 |
+| `/api/materials` | 17 | 9 | 14 | 18 | 18 |
+| `/api/issues` | 17 | 8 | 12 | 18 | 18 |
+| `/api/employees` | 4 | 11 | 12 | 17 | 17 |
+| `/api/daily-plans` | 17 | 9 | 11 | 17 | 17 |
+| `/api/auth/me` | 17 | 6 | 9 | 16 | 16 |
+| `/api/attendance/my-logs` | 17 | 7 | 9 | 16 | 16 |
+| `/api/users/profile` | 17 | 7 | 10 | 14 | 14 |
+
+Reduced `n` reflects role-based 403s, not latency: `/api/employees` is readable by only 4 roles;
+`/api/users` and the two `/api/control-tower/*` endpoints by 8.
+
+**Login latency.** All 17 successful logins are p50 ≈ 126 ms (range 100–145 ms). The baseline `dev`
+login was 543 ms (cold first request); excluding it, baseline logins ranged 80–93 ms vs 100–145 ms
+now — within normal bcrypt/cold-start variance.
+
+**Health.** `GET /health/live` and `GET /health/ready` both 200.
+
+### Observations
+
+1. **Absolute latency is low.** Every endpoint p50 ≤ 56 ms and the slowest p95 is 110 ms.
+2. **`/api/daily-reports` is the outlier** (p50 32 / p95 110). Its `findAll` uses a 10-relation
+   `include` under Prisma's default **`query`** relation strategy, which fans out to **17 SQL
+   statements per request** (see §3.5). The cost is round-trip count, not scan time.
+3. **`/api/control-tower/*`** are next (p50 ≈ 53–56 ms): `getOverview` issues ~10 aggregate
+   `findMany` calls; `red-flags` re-runs the full overview and filters in memory.
+4. Stable read-one / scoped endpoints (`/api/auth/me`, `/api/attendance/my-logs`,
+   `/api/users/profile`) sit at p95 ≤ 16 ms.
+
+**Verdict:** runtime latency is healthy on the current dataset; the ranking tracks per-request
+**query count** (broad `include`s and the control-tower fan-out), not expensive query plans.
 
 ### 3.2 N+1 query patterns (static)
 
@@ -241,10 +354,83 @@ and tree-shakeable; no charting, PDF, canvas, date-picker or rich-text library e
 
 ### 3.5 Database performance (indexes, pool, slow queries)
 
-**Status: PENDING (requires DB access)**
+**Status: COMPLETE (Session 2, 2026-10-16)** — read-only introspection of the live PostgreSQL 18.6
+instance backing the audit (`DATABASE_URL` read from `backend/.env`; never modified). The
+`pg_stat_statements` extension is **not installed** (only `plpgsql` is present), so "slow queries"
+are characterised by `EXPLAIN (ANALYZE, BUFFERS)` of the representative statements emitted by the
+five slowest endpoints from §3.1, captured via Prisma query-event logging.
 
-Index coverage, connection-pool saturation and `EXPLAIN` plans require a live PostgreSQL instance
-and `DATABASE_URL` access, which is out of scope for this session by directive. Deferred.
+### Instance & connection pool
+
+| Metric | Value |
+| --- | --- |
+| Server version | PostgreSQL 18.6 |
+| Database | `hiieko` (14 MB total) |
+| `max_connections` (server) | 100 |
+| Prisma pool size | **33** (default `num_physical_cpus × 2 + 1`; `DATABASE_URL` sets no `connection_limit`; no PgBouncer) |
+| Sessions (this DB) | 8 total — 1 active, 7 idle, 0 idle-in-transaction |
+| Sessions (all DBs) | 16 |
+
+**Pool is not a bottleneck.** A 33-connection Prisma pool sits well under the server's
+`max_connections = 100`, and only 8 sessions are in use.
+
+### Index coverage
+
+Every **foreign-key / relation column on the read paths is indexed** — confirmed by the
+`Bitmap Index Scan` / `Index Scan` nodes on all relation lookups in the plans below
+(`projects_pkey`, `users_pkey`, `user_profiles_user_id_key`, `materials_pkey`,
+`aviz_items_aviz_id_idx`, `daily_report_approvals_daily_report_id_idx`,
+`project_stages_project_id_stage_order_key`). List-endpoint filter/sort coverage:
+
+| Endpoint / query | Filter / sort columns | Supporting index | Status |
+| --- | --- | --- | --- |
+| `/api/daily-reports` | `project_id`, `ORDER BY report_date DESC` | `daily_reports_project_id_report_date_idx` | OK |
+| `/api/attendance` | `project_id` / `user_id` + `date` range | `attendance_records_project_id_date_idx`, `attendance_records_user_id_date_idx` | OK |
+| `/api/procurement/delivery-notes` (avize) | `project_id` | `avize_project_id_aviz_number_key` (prefix) | OK (filter) |
+| control-tower tasks | `project_id` | `tasks_project_id_code_key`, `tasks_project_id_is_archived_idx` | OK |
+| control-tower project_members | `project_id` | `project_members_project_id_user_id_key` (prefix) | OK |
+| control-tower stock_balances | `project_id` | `stock_balances_project_id_idx` | OK |
+| control-tower attendance | `project_id` | `attendance_records_project_id_date_idx` | OK |
+
+**Unindexed `project_id` filters (scale risk only).** The control-tower overview also filters these
+child tables by `project_id`, but their models declare **no index** on that column:
+
+| Model / table | Predicate | Index | Current plan |
+| --- | --- | --- | --- |
+| `CostEntry` / `cost_entries` | `project_id IN (…)` | none (pkey only) | seq scan |
+| `Expense` / `expenses` | `project_id IN (…)`, `status = 'APPROVED'` | `expenses_submitted_by_id_status_idx` (wrong leading column) | seq scan |
+| `Inspection` / `inspections` | `project_id IN (…)` | none | seq scan |
+| `Document` / `documents` | `project_id IN (…)` | none | seq scan |
+| `NCR` / `ncrs` | via nested `inspection.project_id IN (…)` | none on either side | join + seq scan |
+
+Two **sort** columns likewise lack a supporting index: `avize.delivery_date` and
+`attendance_records.check_in_time` (the `take: 200` ordering). Neither matters at current volume.
+
+### EXPLAIN plans (5 slowest endpoints)
+
+Prisma emits one statement per relation under the default `query` strategy. Representative plans —
+the data is tiny, so the planner correctly prefers sequential scans:
+
+| Endpoint | Primary statement | Rows | Plan | Execution |
+| --- | --- | --- | --- | --- |
+| `/api/daily-reports` | `Seq Scan on daily_reports` (11 includes → **17 statements total**) | 9 | Seq Scan | 0.07 ms |
+| `/api/control-tower/overview` | `Seq Scan on projects` (+ attendance / cost / expense / … sub-queries) | 2 | Seq Scan | 0.04 ms |
+| `/api/control-tower/red-flags` | same overview fan-out, then in-memory filter | — | — | — |
+| `/api/procurement/delivery-notes` | `Seq Scan on avize` | 5 | Seq Scan | 0.12 ms |
+| `/api/attendance` | `Seq Scan on attendance_records` | 32 | Seq Scan | 0.16 ms |
+
+All relation lookups within those plans use indexes; **every statement executes in < 0.2 ms**. No
+statement qualifies as a "slow query" — the tables hold between 2 and 461 rows (largest:
+`rate_limit_buckets` 461, `audit_logs` 144; `daily_reports` 9).
+
+**Verdict.** No slow queries exist at current volume (sub-millisecond plans over < 500-row tables),
+and the connection pool is not a bottleneck (33 of 100 connections; 8 in use). Index coverage is
+complete for the hot list filters and all FK/relation joins. The residual risk is **scale**: if
+`cost_entries`, `expenses`, `inspections`, `documents` or `ncrs` grow large, the control-tower
+overview's `project_id` filters — and the `avize.delivery_date` / `attendance.check_in_time` sorts —
+would degrade to full scans. Adding `@@index([project_id])` to those four models and a composite
+`[project_id, delivery_date]` to `avize` is the recommended future hardening, but is **not** required
+by current data volumes.
 
 ---
 
