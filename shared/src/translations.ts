@@ -1780,6 +1780,7 @@ Object.assign(d, {
   'expenses.upload_cta': T('Încarcă bonul fiscal sau factura', 'Upload receipt or invoice'),
   'expenses.document_selected': T('Document selectat. Apasă „Procesează documentul” pentru OCR.', 'Document selected. Press "Process document" for OCR.'),
   'expenses.process_document': T('Procesează documentul', 'Process document'),
+  'expenses.ocr_not_configured': T('Scanarea documentelor nu este configurată în acest mediu.', 'Document scanning is not configured on this environment.'),
   'expenses.processing': T('Se procesează...', 'Processing...'),
   'expenses.extracted_title': T('Date extrase — verifică înainte de trimitere', 'Extracted data — verify before submitting'),
   'expenses.field_merchant': T('Furnizor', 'Merchant'),

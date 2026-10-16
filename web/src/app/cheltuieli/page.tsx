@@ -48,6 +48,7 @@ function CheltuieliPageInner() {
   const [receipt, setReceipt] = useState<File | null>(null);
   const [scanError, setScanError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [ocrAvailable, setOcrAvailable] = useState<boolean | null>(null);
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -111,8 +112,27 @@ function CheltuieliPageInner() {
       setFormMerchantName(ocrResult.merchant_name);
     }
   }, [ocrResult]);
+  // Gate the OCR upload on the provider health (GET /api/ocr/health).
+  // The endpoint returns { status, provider, model? }; status === 'ok' means the
+  // provider is configured and reachable. Any failure (network, 5xx, throw)
+  // leaves the gate closed — OCR is treated as unavailable.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await apiClient.get<{ status?: string; provider?: string | null; model?: string }>('/api/ocr/health');
+        if (cancelled) return;
+        const health = response?.data;
+        setOcrAvailable(!!health && health.status === 'ok');
+      } catch {
+        if (!cancelled) setOcrAvailable(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const processReceipt = async () => {
     if (!receipt) return;
+    if (ocrAvailable !== true) return;
     if (!user) {
       setScanError('Trebuie sa te autentifici înainte de procesarea OCR.');
       return;
@@ -294,12 +314,13 @@ function CheltuieliPageInner() {
               <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" className="sr-only"
                 onChange={e => setReceipt(e.target.files?.[0] || null)} />
             </label>
-            {receipt && !ocrResult && <p className="text-xs text-success-foreground mt-2">{t('expenses.document_selected', locale)}</p>}
+            {receipt && ocrAvailable === true && !ocrResult && <p className="text-xs text-success-foreground mt-2">{t('expenses.document_selected', locale)}</p>}
             {receipt && (
-              <Button type="button" disabled={processing} onClick={() => void processReceipt()} variant="primary" fullWidth className="mt-2">
+              <Button type="button" disabled={processing || ocrAvailable !== true} onClick={() => void processReceipt()} variant="primary" fullWidth className="mt-2">
                 {processing ? t('expenses.processing', locale) : t('expenses.process_document', locale)}
               </Button>
             )}
+            {ocrAvailable === false && <p className="text-xs text-slate-500 mt-2">{t('expenses.ocr_not_configured', locale)}</p>}
             {scanError && <p className="text-sm text-critical-foreground mt-2">{scanError}</p>}
             {ocrResult && (
               <Card className="p-3 bg-success-soft border-success-soft mt-2" padding={false}>
