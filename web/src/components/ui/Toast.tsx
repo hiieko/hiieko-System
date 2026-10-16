@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import { clsx } from 'clsx';
+import { t, useLocale } from '@solar/shared';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -42,6 +43,7 @@ const borderColors: Record<ToastType, string> = {
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const { locale } = useLocale();
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -82,7 +84,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toasts, addToast, removeToast, success, error, warning, info }}>
       {children}
       {/* Toast container */}
-      <div className="fixed top-4 right-4 z-toast flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+      <div
+        className="fixed top-4 right-4 z-toast flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+        role="status"
+        aria-live="polite"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
@@ -101,7 +107,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="flex-shrink-0 p-0.5 rounded hover:bg-slate-100 text-slate-400"
+              aria-label={t('general.close', locale)}
+              className="flex-shrink-0 grid min-h-11 min-w-11 place-items-center rounded hover:bg-slate-100 text-slate-400"
             >
               <X className="w-4 h-4" />
             </button>
