@@ -34,7 +34,6 @@ export const NAV_GROUPS: NavGroup[] = [
     title: 'Operațiuni',
     items: [
       { href: '/', i18nKey: 'nav.dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/control-tower', i18nKey: 'nav.control_tower', label: 'Turn de Control', icon: Gauge },
       { href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar', icon: SunMedium },
       { href: '/tasks', i18nKey: 'nav.tasks', label: 'Task-uri', icon: ClipboardCheck },
       { href: '/planning', i18nKey: 'nav.planning', label: 'Plan Zilnic', icon: FileText },
@@ -119,19 +118,19 @@ export const MOBILE_NAV_BY_ROLE: Record<string, string[]> = {
   team_leader: ['/', '/planning', '/tasks', '/pontaj', '/issues'],
   foreman: ['/', '/planning', '/tasks', '/pontaj', '/issues'],
   technician: ['/', '/planning', '/tasks', '/pontaj', '/issues'],
-  site_manager: ['/', '/control-tower', '/rapoarte', '/aprobare', MOBILE_MORE_TAB],
-  pm: ['/', '/control-tower', '/projects', '/rapoarte', MOBILE_MORE_TAB],
-  manager: ['/', '/control-tower', '/projects', '/rapoarte', MOBILE_MORE_TAB],
-  owner: ['/', '/control-tower', '/projects', '/rapoarte', MOBILE_MORE_TAB],
+  site_manager: ['/', '/rapoarte', '/aprobare', MOBILE_MORE_TAB],
+  pm: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
+  manager: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
+  owner: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
   qa_qc: ['/', '/qa', '/tasks', '/issues', MOBILE_MORE_TAB],
   finance: ['/', '/aprobare', '/cheltuieli', '/rapoarte', MOBILE_MORE_TAB],
-  admin: ['/', '/utilizatori', '/projects', '/control-tower', MOBILE_MORE_TAB],
+  admin: ['/', '/utilizatori', '/projects', MOBILE_MORE_TAB],
   viewer: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
   // Roles not enumerated in the D6 spec fall back to their closest home set.
   procurement: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
   site_logistics: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
-  maintenance_director: ['/', '/control-tower', '/projects', '/rapoarte', MOBILE_MORE_TAB],
-  technical_director: ['/', '/control-tower', '/projects', '/rapoarte', MOBILE_MORE_TAB],
+  maintenance_director: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
+  technical_director: ['/', '/projects', '/rapoarte', MOBILE_MORE_TAB],
 };
 
 /** Fallback set for any authenticated role not present in `MOBILE_NAV_BY_ROLE`. */
