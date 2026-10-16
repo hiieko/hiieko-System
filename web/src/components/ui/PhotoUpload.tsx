@@ -9,6 +9,7 @@ import type { PhotoAttachment } from '../../lib/api-client';
 import { Button } from './Button';
 import { ConfirmDialog } from './ConfirmDialog';
 import { useToast } from './Toast';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export type PhotoTargetType =
   | 'task'
@@ -58,6 +59,7 @@ export function PhotoUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const urlMapRef = useRef<Map<string, string>>(new Map());
   const cancelledRef = useRef(false);
+  const lightboxRef = useRef<HTMLDivElement>(null);
 
   /** Revoke every object URL we created (once, on unmount). */
   useEffect(() => {
@@ -68,6 +70,32 @@ export function PhotoUpload({
       map.clear();
     };
   }, []);
+
+  // Trap focus inside the lightbox; focuses the close button on open and
+  // restores focus to the thumbnail that opened it on close.
+  useFocusTrap(lightboxRef, !!activePhoto);
+
+  const closeLightbox = useCallback(() => setActivePhoto(null), []);
+
+  // Close on Escape (capture-phase, same as Modal.tsx)
+  const handleLightboxKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeLightbox();
+      }
+    },
+    [closeLightbox],
+  );
+
+  useEffect(() => {
+    if (!activePhoto) return;
+    document.addEventListener('keydown', handleLightboxKeyDown, { capture: true });
+    return () => {
+      document.removeEventListener('keydown', handleLightboxKeyDown, { capture: true });
+    };
+  }, [activePhoto, handleLightboxKeyDown]);
 
   const load = useCallback(async () => {
     if (!targetId || !projectId) {
@@ -230,7 +258,12 @@ export function PhotoUpload({
               <li key={a.id} className="group relative">
                 <button
                   type="button"
-                  onClick={() => setActivePhoto(a)}
+                  onClick={(e) => {
+                    // Ensure the thumbnail holds focus so the focus trap can
+                    // restore focus to it when the lightbox closes.
+                    e.currentTarget.focus();
+                    setActivePhoto(a);
+                  }}
                   aria-label={t('photo_upload.view', locale)}
                   className="block aspect-square w-full overflow-hidden rounded-lg border border-chrome-line bg-surface-muted"
                 >
@@ -269,15 +302,17 @@ export function PhotoUpload({
       {/* Full-size lightbox */}
       {activePhoto && (
         <div
+          ref={lightboxRef}
           className="fixed inset-0 z-modal flex items-center justify-center bg-black/90 p-4"
           role="dialog"
           aria-modal="true"
           aria-label={activePhoto.file_name}
-          onClick={() => setActivePhoto(null)}
+          tabIndex={-1}
+          onClick={closeLightbox}
         >
           <button
             type="button"
-            onClick={() => setActivePhoto(null)}
+            onClick={closeLightbox}
             aria-label={t('photo_upload.close', locale)}
             className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
           >
