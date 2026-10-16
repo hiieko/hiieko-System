@@ -577,13 +577,12 @@ export async function seedDemo(prisma: PrismaClient): Promise<void> {
     const isTm = spec.key === 'workerAlex';
     const project = isTm ? timisoara : arad;
     const inTotal = 7 * 60 + 45 + (spec.idx * 2) % 31;
-    const missOut = spec.idx === spec.idx && attendanceSpecs.indexOf(spec) === 7;
     const overtime = attendanceSpecs.indexOf(spec) === 3 || attendanceSpecs.indexOf(spec) === 11;
     const outTotal = overtime
       ? 17 * 60 + 30
       : 16 * 60 + (spec.idx * 7) % 90;
     const inTime = at(spec.day, Math.floor(inTotal / 60), inTotal % 60);
-    const outTime = missOut ? null : at(spec.day, Math.floor(outTotal / 60), outTotal % 60);
+    const outTime = at(spec.day, Math.floor(outTotal / 60), outTotal % 60);
     const key = did('attendance', spec.key, spec.day);
     const record = await prisma.attendanceRecord.upsert({
       where: { idempotency_key: key },
@@ -591,7 +590,7 @@ export async function seedDemo(prisma: PrismaClient): Promise<void> {
         check_in_time: inTime,
         check_out_time: outTime,
         status: AttendanceStatusEnum.PRESENT,
-        regular_hours: missOut ? 0 : 8,
+        regular_hours: 8,
         overtime_minutes: overtime ? (spec.idx === 3 ? 90 : 120) : 0,
       },
       create: {
@@ -607,7 +606,7 @@ export async function seedDemo(prisma: PrismaClient): Promise<void> {
         is_within_geofence: true,
         check_out_latitude: project.latitude,
         check_out_longitude: project.longitude,
-        regular_hours: missOut ? 0 : 8,
+        regular_hours: 8,
         overtime_minutes: overtime ? (spec.idx === 3 ? 90 : 120) : 0,
         idempotency_key: key,
         notes: overtime ? 'Ore suplimentare — montaj structură' : undefined,
