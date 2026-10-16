@@ -7,6 +7,7 @@ import { Copy, Eye, EyeOff } from 'lucide-react';
 import { Button, Input, Skeleton, ToastProvider, useToast } from '../../components/ui';
 import { apiClient, ApiError } from '../../lib/api-client';
 import { useAuth, SIGNED_OUT_FLASH_KEY } from '../../contexts/AuthContext';
+import { t, useLocale } from '@solar/shared';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
@@ -240,6 +241,7 @@ function LoginForm() {
   const toast = useToast();
   const router = useRouter();
   const { refreshUser } = useAuth();
+  const { locale } = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -371,7 +373,7 @@ function LoginForm() {
                   disabled={loading}
                   className="w-4 h-4 rounded text-hii-600 accent-hii-600"
                 />
-                <span className="text-sm text-slate-600">Remember me</span>
+                <span className="text-sm text-slate-600">{t('auth.remember_me', locale)}</span>
               </label>
               <Link
                 href="/forgot-password"

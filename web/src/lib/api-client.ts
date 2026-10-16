@@ -640,6 +640,9 @@ export class NestApiClient {
       // Best-effort: the local session is cleared regardless.
     } finally {
       this.setToken(null);
+      // Forget the persistence preference too (runs even if the request failed),
+      // so a later refresh never renews a cookie kind the user just signed out of.
+      this.setRememberMePreference(false);
     }
   }
 

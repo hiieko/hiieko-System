@@ -1726,6 +1726,7 @@ Object.assign(d, {
   // --- R1B final inline-copy cleanup ---
   'auth.access_denied': T('Acces Interzis', 'Access Denied'),
   'auth.go_back': T('Înapoi', 'Go Back'),
+  'auth.remember_me': T('Ține-mă minte', 'Remember me'),
   'workforce.search_placeholder': T('Caută angajați...', 'Search employees...'),
   'workforce.no_account': T('Fără cont', 'No account'),
   'general.saving': T('Se salvează...', 'Saving...'),
