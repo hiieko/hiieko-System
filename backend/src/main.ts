@@ -4,11 +4,13 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Reflector } from '@nestjs/core';
 import { randomUUID } from 'crypto';
 import helmet from 'helmet';
+import * as compression from 'compression';
 import { PrismaService } from './common/prisma/prisma.service';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { ResponseSizeInterceptor } from './common/interceptors/response-size.interceptor';
 import { assertJwtSecretStrength } from './common/config/env-security';
 
 /** Same-site local development origins, used only when CORS_ORIGIN is unset. */
@@ -170,8 +172,9 @@ async function bootstrap() {
   // NestJS executes global filters in REVERSE registration order, so the specific
   // PrismaExceptionFilter is registered LAST here and therefore runs FIRST — the
   // catch-all AllExceptionsFilter only sees what the Prisma filter does not handle.
+  app.use(compression());
   app.useGlobalFilters(new AllExceptionsFilter(), new PrismaExceptionFilter());
-  app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
+  app.useGlobalInterceptors(new TransformInterceptor(new Reflector()), new ResponseSizeInterceptor());
 
   // OpenAPI / Swagger Documentation
   const config = new DocumentBuilder()
