@@ -15,7 +15,6 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
-  User,
   Calendar,
   Search,
   Info,
@@ -49,7 +48,6 @@ interface IssueItem {
   reported_by?: string;
   created_at: string;
   updated_at: string;
-  reporter?: { id: string; email: string; profile?: { full_name?: string } };
   project?: { name: string; code: string };
 }
 
@@ -300,7 +298,6 @@ function IssuesPageInner() {
                       <p className="text-xs text-slate-600 mt-1.5 whitespace-pre-wrap">{issue.description}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
                         <span><Calendar className="w-3 h-3 inline mr-1" />{new Date(issue.created_at).toLocaleDateString(locale === 'en' ? 'en-GB' : 'ro-RO')}</span>
-                        {issue.reporter && <span><User className="w-3 h-3 inline mr-1" />{issue.reporter.profile?.full_name || issue.reporter.email}</span>}
                       </div>
                     </div>
                   </div>

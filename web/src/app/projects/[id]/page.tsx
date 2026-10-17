@@ -22,6 +22,10 @@ import { Modal, Pagination } from '../../../components/ui';
 import { usePhotoUploadModal } from '../../../contexts/PhotoUploadModalContext';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
 import { ProjectStagesPanel } from './ProjectStagesPanel';
+import { getIssues } from '../../../features/issues/api';
+import { IssueCard } from '../../../features/issues/components/IssueCard';
+import { IssueDetailModal } from '../../../features/issues/components/IssueDetailModal';
+import type { Issue } from '../../../features/issues/types';
 
 interface ProjectMember {
   id: string; project_id: string; user_id: string; role: string;
@@ -69,7 +73,7 @@ const MEMBER_ROLE_LABELS: Record<string, string> = {
   MAINTENANCE_DIRECTOR:'Director Intretinere', TECHNICAL_DIRECTOR:'Director Tehnic',
 };
 
-type TabKey = 'overview' | 'members' | 'photos';
+type TabKey = 'overview' | 'members' | 'photos' | 'issues';
 
 const MEMBERS_PAGE_SIZE = 20;
 
@@ -98,6 +102,10 @@ function ProjectDetailPageInner() {
   const [showSettings, setShowSettings] = useState(false);
   const [showStages, setShowStages] = useState(false);
   const [memberPage, setMemberPage] = useState(1);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [issuesLoading, setIssuesLoading] = useState(false);
+  const [issuesError, setIssuesError] = useState<string | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const canManage = user ? canCreateProjects(user.role as any) : false;
   const editEnabled = user && (user.role === "admin" || user.role === "owner");
 
@@ -118,7 +126,15 @@ function ProjectDetailPageInner() {
     try { const r = await apiClient.getUsers(); setUsers((r.data || []) as AppUser[]); } catch {}
   }, []);
 
+  const loadIssues = useCallback(async () => {
+    setIssuesLoading(true); setIssuesError(null);
+    try { const r = await getIssues(id); setIssues((r.data || []) as Issue[]); }
+    catch (err) { if (err instanceof ApiError) setIssuesError(err.message); else setIssuesError('Eroare la incarcarea problemelor'); }
+    finally { setIssuesLoading(false); }
+  }, [id]);
+
   useEffect(() => { loadProject(); loadMembers(); loadUsers(); }, [loadProject, loadMembers, loadUsers]);
+  useEffect(() => { if (tab === 'issues') loadIssues(); }, [tab, loadIssues]);
   useEffect(() => { setMemberPage(1); }, [members]);
 
   const handleAddMember = async () => {
@@ -254,12 +270,13 @@ function ProjectDetailPageInner() {
       </div>
 
       <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1 shadow-card w-fit">
-        {(['overview', 'members', 'photos'] as TabKey[]).map((t) => (
+        {(['overview', 'members', 'photos', 'issues'] as TabKey[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-colors ${tab === t ? 'bg-hii-500 text-white shadow-card' : 'text-slate-600 hover:bg-slate-100'}`}>
             {t === 'overview' && 'Prezentare Generala'}
             {t === 'members' && 'Membri'}
             {t === 'photos' && 'Fotografii șantier'}
+            {t === 'issues' && 'Probleme'}
           </button>
         ))}
       </div>
@@ -428,6 +445,42 @@ function ProjectDetailPageInner() {
           </div>
         </section>
       )}
+
+      {tab === 'issues' && (
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-card sm:p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Probleme / Blocaje</h3>
+            <button type="button" onClick={loadIssues} disabled={issuesLoading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-hii-600 hover:bg-hii-50 transition-colors disabled:opacity-50">
+              <RefreshCw className={`w-3.5 h-3.5 ${issuesLoading ? 'animate-spin' : ''}`} />
+              Reîmprospătează
+            </button>
+          </div>
+          {issuesLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (<Skeleton key={i} className="h-24 rounded-xl" />))}
+            </div>
+          ) : issuesError ? (
+            <div className="rounded-lg border border-critical-soft bg-critical-soft p-4 text-center">
+              <p className="text-sm text-critical-foreground">{issuesError}</p>
+              <button type="button" onClick={loadIssues}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-hii-500 text-white text-xs font-semibold hover:bg-hii-600">
+                <RefreshCw className="w-3.5 h-3.5" />Reîncearcă
+              </button>
+            </div>
+          ) : issues.length === 0 ? (
+            <div className="text-center py-8 text-slate-400 text-sm">Nicio problemă raportată pentru acest proiect</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {issues.map((issue) => (
+                <IssueCard key={issue.id} issue={issue} locale={locale} onOpenDetails={setSelectedIssue} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      <IssueDetailModal open={!!selectedIssue} onClose={() => setSelectedIssue(null)} issue={selectedIssue} locale={locale} />
 
       <Modal open={showSettings} onClose={() => setShowSettings(false)} size="lg">
         <div className="[&>div]:!border-0 [&>div]:!shadow-none [&>div]:!bg-transparent [&>div]:!rounded-none [&>div]:!p-0">

@@ -22,6 +22,7 @@ import {
   ErrorState,
   Skeleton,
   Pagination,
+  PhotoUpload,
 } from '../../components/ui';
 import { submitDailyReport, reviewDailyReport } from '../../features/daily-reports';
 import { useRouter } from 'next/navigation';
@@ -39,8 +40,42 @@ Check,
   RefreshCw,
   Plus,
   Edit3,
-  Send
+  Send,
+  ChevronDown
 } from 'lucide-react';
+
+/**
+ * Fix 05 — read-only gallery of a daily report's site photos.
+ * Attachments are loaded only when the reviewer expands the panel, so the
+ * report list never issues one attachment request per displayed card.
+ */
+function ReportPhotosPanel({ report }: { report: DailyReport }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        aria-expanded={expanded}
+        className="w-full flex items-center justify-between text-left"
+      >
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
+          <ImageIcon className="w-4 h-4 mr-1.5 text-warning" />
+          Fotografii Execuție Șantier
+        </span>
+        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </button>
+      {expanded && (
+        <PhotoUpload
+          readOnly
+          targetType="daily_report"
+          targetId={report.id}
+          projectId={report.project_id}
+        />
+      )}
+    </div>
+  );
+}
 
 function RapoartePageInner() {
   const [loading, setLoading] = useState(true);
@@ -478,17 +513,7 @@ function RapoartePageInner() {
                 </div>
 
                 {/* Column 3: Site Photos */}
-                <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
-                    <ImageIcon className="w-4 h-4 mr-1.5 text-warning" />
-                    Fotografii Execuție Șantier
-                  </h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    <p className="text-xs text-slate-400 italic py-3">
-                      Fotografiile nu sunt disponibile în această versiune.
-                    </p>
-                  </div>
-                </div>
+                <ReportPhotosPanel report={report} />
               </div>
             </Card>
           );
