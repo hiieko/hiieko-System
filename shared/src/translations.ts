@@ -1728,7 +1728,6 @@ Object.assign(d, {
   'auth.go_back': T('Înapoi', 'Go Back'),
   'auth.remember_me': T('Ține-mă minte', 'Remember me'),
   'workforce.search_placeholder': T('Caută angajați...', 'Search employees...'),
-  'workforce.no_account': T('Fără cont', 'No account'),
   'general.saving': T('Se salvează...', 'Saving...'),
   'general.create': T('Creează', 'Create'),
   'worker.elapsed_since_checkin': T('scurs de la pontarea de intrare', 'elapsed since check-in'),
@@ -1815,6 +1814,10 @@ Object.assign(d, {
   'expenses.approve_expense': T('Aprobă cheltuiala', 'Approve expense'),
   'expenses.toast_approved': T('Cheltuială aprobată', 'Expense approved'),
   'expenses.toast_approve_failed': T('Aprobare eșuată', 'Approval failed'),
+  'expenses.kpi_total': T('Total cheltuieli', 'Total expenses'),
+  'expenses.kpi_pending': T('În așteptare', 'Pending'),
+  'expenses.kpi_approved': T('Aprobate', 'Approved'),
+  'expenses.kpi_reimbursed': T('Rambursate', 'Reimbursed'),
 });
 
 // i18n(issues) and i18n(rapoarte) — replace inline locale ternaries
