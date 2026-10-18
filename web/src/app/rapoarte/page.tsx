@@ -51,6 +51,7 @@ Check,
  */
 function ReportPhotosPanel({ report }: { report: DailyReport }) {
   const [expanded, setExpanded] = useState(false);
+  const { locale } = useLocale();
   return (
     <div className="space-y-3">
       <button
@@ -61,7 +62,7 @@ function ReportPhotosPanel({ report }: { report: DailyReport }) {
       >
         <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
           <ImageIcon className="w-4 h-4 mr-1.5 text-warning" />
-          Fotografii Execuție Șantier
+          {t('daily_report.site_execution_photos', locale)}
         </span>
         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
@@ -271,6 +272,7 @@ function RapoartePageInner() {
           )}
         </div>
       )}
+      </div>
 
       <div className="pt-6 space-y-6">
         <section aria-label="Rapoarte Zilnice" className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -581,7 +583,6 @@ function RapoartePageInner() {
           />
         </Modal>
       )}
-      </div>
       </div>
     </div>
   );

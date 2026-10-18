@@ -2192,6 +2192,7 @@ Object.assign(d, {
   'photo_upload.title': T('Fotografii', 'Photos'),
   'photo_upload.add': T('Adaugă fotografie', 'Add photo'),
   'photo_upload.uploading': T('Se încarcă…', 'Uploading…'),
+  'photo_upload.loading': T('Se încarcă fotografia…', 'Loading photo…'),
   'photo_upload.empty': T('Nicio fotografie încă.', 'No photos yet.'),
   'photo_upload.load_error': T('Fotografiile nu au putut fi încărcate.', 'Photos could not be loaded.'),
   'photo_upload.upload_error': T('Fotografia nu a putut fi încărcată.', 'The photo could not be uploaded.'),

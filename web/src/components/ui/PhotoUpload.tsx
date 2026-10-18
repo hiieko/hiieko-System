@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ImagePlus, Loader2, Trash2, X, ImageOff } from 'lucide-react';
 import { clsx } from 'clsx';
 import { t, useLocale } from '@solar/shared';
@@ -53,9 +54,12 @@ export function PhotoUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePhoto, setActivePhoto] = useState<PhotoAttachment | null>(null);
+  const [viewSrc, setViewSrc] = useState<string | null>(null);
+  const [viewState, setViewState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [pendingDelete, setPendingDelete] = useState<PhotoAttachment | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const urlMapRef = useRef<Map<string, string>>(new Map());
   const cancelledRef = useRef(false);
@@ -97,7 +101,95 @@ export function PhotoUpload({
     };
   }, [activePhoto, handleLightboxKeyDown]);
 
+  // Lock scrolling in every scrollable ancestor (and the body) while the
+  // full-screen viewer is open, restoring the previous values on close.
+  useEffect(() => {
+    if (!activePhoto) return;
+    const locked: HTMLElement[] = [];
+    const previous: (string | null)[] = [];
+    let node: HTMLElement | null = rootRef.current;
+    while (node) {
+      const overflowY = getComputedStyle(node).overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        locked.push(node);
+        previous.push(node.style.overflowY);
+        node.style.overflowY = 'hidden';
+      }
+      node = node.parentElement;
+    }
+    locked.push(document.body);
+    previous.push(document.body.style.overflowY);
+    document.body.style.overflowY = 'hidden';
+    return () => {
+      locked.forEach((el, i) => {
+        el.style.overflowY = previous[i] ?? '';
+      });
+    };
+  }, [activePhoto]);
+
+  // Resolve the full-size source for the selected photo: reuse the cached
+  // object URL when available, otherwise fetch the blob through the existing
+  // authenticated document route. Resets loading/error state on open, reopen
+  // or photo switch so nothing stale survives between views.
+  useEffect(() => {
+    if (!activePhoto) {
+      setViewSrc(null);
+      setViewState('loading');
+      return;
+    }
+    let disposed = false;
+    setViewState('loading');
+    (async () => {
+      try {
+        let src = urlMapRef.current.get(activePhoto.id);
+        if (!src) {
+          const documentId = documentIdFromUrl(activePhoto.url);
+          if (!documentId) throw new Error('missing document id');
+          const blob = await apiClient.downloadDocument(documentId);
+          if (disposed) return;
+          src = URL.createObjectURL(blob);
+          urlMapRef.current.set(activePhoto.id, src);
+          setObjectUrls(Object.fromEntries(urlMapRef.current.entries()));
+        }
+        if (!disposed) setViewSrc(src);
+      } catch {
+        if (!disposed) {
+          setViewSrc(null);
+          setViewState('error');
+        }
+      }
+    })();
+    return () => {
+      disposed = true;
+    };
+  }, [activePhoto]);
+
+  // Retry after a failed view load: drop the cached (possibly unreadable)
+  // object URL and fetch a fresh blob through the same authenticated route.
+  const retryPhotoView = useCallback(async () => {
+    if (!activePhoto) return;
+    setViewState('loading');
+    try {
+      const stale = urlMapRef.current.get(activePhoto.id);
+      if (stale) {
+        URL.revokeObjectURL(stale);
+        urlMapRef.current.delete(activePhoto.id);
+      }
+      const documentId = documentIdFromUrl(activePhoto.url);
+      if (!documentId) throw new Error('missing document id');
+      const blob = await apiClient.downloadDocument(documentId);
+      const src = URL.createObjectURL(blob);
+      urlMapRef.current.set(activePhoto.id, src);
+      setObjectUrls(Object.fromEntries(urlMapRef.current.entries()));
+      setViewSrc(src);
+    } catch {
+      setViewSrc(null);
+      setViewState('error');
+    }
+  }, [activePhoto]);
+
   const load = useCallback(async () => {
+    cancelledRef.current = false;
     if (!targetId || !projectId) {
       setAttachments([]);
       setLoading(false);
@@ -203,7 +295,7 @@ export function PhotoUpload({
   const showEmpty = !loading && !error && attachments.length === 0;
 
   return (
-    <div className={clsx('space-y-3', className)}>
+    <div ref={rootRef} className={clsx('space-y-3', className)}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-medium text-content">
           {t('photo_upload.title', locale)}
@@ -245,13 +337,18 @@ export function PhotoUpload({
       )}
 
       {!loading && error && (
-        <p className="text-sm text-danger-foreground">{error}</p>
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-sm text-danger-foreground">{error}</p>
+          <Button type="button" variant="outline" size="sm" onClick={() => void load()}>
+            {t('general.retry', locale)}
+          </Button>
+        </div>
       )}
 
       {showEmpty && <p className="text-sm text-content-muted">{t('photo_upload.empty', locale)}</p>}
 
       {!loading && attachments.length > 0 && (
-        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-2">
           {attachments.map((a) => {
             const src = objectUrls[a.id];
             return (
@@ -299,38 +396,77 @@ export function PhotoUpload({
         </ul>
       )}
 
-      {/* Full-size lightbox */}
-      {activePhoto && (
-        <div
-          ref={lightboxRef}
-          className="fixed inset-0 z-modal flex items-center justify-center bg-black/90 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={activePhoto.file_name}
-          tabIndex={-1}
-          onClick={closeLightbox}
-        >
-          <button
-            type="button"
+      {/* Full-size lightbox. Portalled to document.body so it is always
+          viewport-fixed — an ancestor with backdrop-filter/transform (e.g. a
+          sticky blurred page header) would otherwise become its containing
+          block and stretch the viewer over the whole page instead of the
+          viewport, hiding the photo behind the dark backdrop. */}
+      {activePhoto &&
+        createPortal(
+          <div
+            ref={lightboxRef}
+            className="fixed inset-0 z-modal flex items-center justify-center bg-black/90 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label={activePhoto.file_name}
+            tabIndex={-1}
             onClick={closeLightbox}
-            aria-label={t('photo_upload.close', locale)}
-            className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white"
           >
-            <X className="w-5 h-5" />
-          </button>
-          {objectUrls[activePhoto.id] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={objectUrls[activePhoto.id]}
-              alt={activePhoto.file_name}
-              className="max-h-full max-w-full object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="text-white/70">{t('photo_upload.load_error', locale)}</span>
-          )}
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={closeLightbox}
+              aria-label={t('photo_upload.close', locale)}
+              className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white sm:right-4 sm:top-4"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {viewSrc && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={viewSrc}
+                alt={activePhoto.file_name}
+                className={clsx(
+                  'max-h-full max-w-full object-contain transition-opacity duration-150',
+                  viewState === 'ready' ? 'opacity-100' : 'opacity-0',
+                )}
+                onLoad={() => setViewState('ready')}
+                onError={() => {
+                  setViewSrc(null);
+                  setViewState('error');
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
+            {viewState === 'loading' && (
+              <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                <div className="flex flex-col items-center gap-3 text-white/80">
+                  <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
+                  <span className="text-sm">{t('photo_upload.loading', locale)}</span>
+                </div>
+              </div>
+            )}
+            {viewState === 'error' && (
+              <div
+                className="absolute inset-0 grid place-items-center px-6"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+                  <ImageOff className="h-8 w-8 text-white/60" aria-hidden="true" />
+                  <p className="text-sm text-white/80">{t('photo_upload.load_error', locale)}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void retryPhotoView()}
+                  >
+                    {t('general.retry', locale)}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
 
       <ConfirmDialog
         open={!!pendingDelete}

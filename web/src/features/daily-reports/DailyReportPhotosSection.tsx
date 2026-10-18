@@ -2,9 +2,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { t, useLocale } from '@solar/shared';
 import { Camera, ImagePlus } from 'lucide-react';
-import { Button } from '../../components/ui';
+import { Button, PhotoUpload } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
-import { usePhotoUploadModal } from '../../contexts/PhotoUploadModalContext';
 
 interface Props {
   /** Undefined until the report has been saved as a draft at least once. */
@@ -19,18 +18,18 @@ interface Props {
 }
 
 /**
- * P5 — Photos section of the daily report form. Photos attach to the persisted
- * report (`daily_report` target), so the section only becomes interactive once a
- * draft id exists.
+ * P5 — Photos section of the daily report form.
  *
- * When the report has no id yet, clicking "Add photo" auto-saves the draft first,
- * then opens the global photo modal on the freshly-created report. A submitted
- * report (readOnly) keeps the plain hint — its photos can no longer be changed.
+ * The section renders the reusable PhotoUpload gallery inline, so photos already
+ * attached to the report stay visible after they are uploaded (the earlier
+ * global-modal-only flow hid them again as soon as the modal closed). Photos
+ * attach to the persisted report (`daily_report` target), so when the report has
+ * no id yet the section first auto-saves a draft and renders the gallery on the
+ * freshly-created report.
  */
 export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSaveDraft }: Props) {
   const { locale } = useLocale();
   const toast = useToast();
-  const { openPhotoUpload } = usePhotoUploadModal();
 
   const [savingDraft, setSavingDraft] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
@@ -41,10 +40,6 @@ export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSave
   const effectiveReportId = localReportId || reportId;
 
   const handleAddClick = useCallback(async () => {
-    if (effectiveReportId) {
-      openPhotoUpload({ targetType: 'daily_report', targetId: effectiveReportId, projectId });
-      return;
-    }
     if (!onSaveDraft) return;
     setSavingDraft(true);
     setSaveFailed(false);
@@ -56,8 +51,7 @@ export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSave
       return;
     }
     setLocalReportId(id);
-    openPhotoUpload({ targetType: 'daily_report', targetId: id, projectId });
-  }, [effectiveReportId, onSaveDraft, openPhotoUpload, projectId, toast]);
+  }, [onSaveDraft, toast]);
 
   return (
     <div className="space-y-4">
@@ -66,8 +60,13 @@ export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSave
         {t('daily_report.section_photos', locale)}
       </h3>
 
-      {readOnly ? (
-        <p className="text-sm text-slate-500">{t('daily_report.photos_save_first', locale)}</p>
+      {effectiveReportId ? (
+        <PhotoUpload
+          targetType="daily_report"
+          targetId={effectiveReportId}
+          projectId={projectId}
+          readOnly={readOnly}
+        />
       ) : savingDraft ? (
         <p className="text-sm text-slate-500">Saving draft...</p>
       ) : saveFailed ? (
