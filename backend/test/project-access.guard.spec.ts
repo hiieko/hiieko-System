@@ -524,6 +524,59 @@ describe('ProjectAccessGuard (Access Control)', () => {
     await expect(guard.canActivate(ctx)).rejects.toThrow(NotFoundException);
   });
 
+  it('resolves OCR job project scope through linked expense when no document is linked', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ model: 'ocrJob', param: 'jobId' });
+
+    const mockOcrJobDelegate = { findUnique: jest.fn() };
+    (prisma as any).oCRJob = mockOcrJobDelegate;
+    mockOcrJobDelegate.findUnique.mockResolvedValue({
+      document: null,
+      expense: { project_id: 'proj-expense-1' },
+    });
+    prisma.projectMember.findUnique.mockResolvedValue({
+      id: 'pm-1', project_id: 'proj-expense-1', user_id: 'worker-1', role: UserRoleEnum.WORKER,
+    });
+
+    const ctx = createMockContext(
+      { id: 'worker-1', role: UserRoleEnum.WORKER, projectRoles: {} },
+      { jobId: 'ocr-job-expense-1' },
+    );
+
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(mockOcrJobDelegate.findUnique).toHaveBeenCalledWith({
+      where: { id: 'ocr-job-expense-1' },
+      select: {
+        document: { select: { project_id: true } },
+        expense: { select: { project_id: true } },
+      },
+    });
+  });
+
+  it('denies OCR job access through linked expense when user is not a project member', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ model: 'ocrJob', param: 'jobId' });
+
+    const mockOcrJobDelegate = { findUnique: jest.fn() };
+    (prisma as any).oCRJob = mockOcrJobDelegate;
+    mockOcrJobDelegate.findUnique.mockResolvedValue({
+      document: null,
+      expense: { project_id: 'proj-expense-foreign' },
+    });
+    prisma.projectMember.findUnique.mockResolvedValue(null);
+
+    const ctx = createMockContext(
+      { id: 'worker-1', role: UserRoleEnum.WORKER, projectRoles: {} },
+      { jobId: 'ocr-job-expense-foreign' },
+    );
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+  });
+
   it('throws 404 when ocrJob document has no project_id (unscoped entity)', async () => {
     jest.spyOn(reflector, 'getAllAndOverride')
       .mockReturnValueOnce(null)
