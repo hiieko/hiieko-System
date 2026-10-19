@@ -137,6 +137,47 @@ function UtilizatoriPageInner() {
     }
   };
 
+  const renderRoleControl = (item: UserRow) => {
+    const isSelf = item.id === currentUser?.id;
+    if (canManage && !isSelf && roles.length > 0) {
+      return (
+        <select value={item.role} disabled={acting === item.id} onChange={(event) => void updateRole(item.id, event.target.value)}
+          aria-label={t('users.change_role', locale)}
+          className="hii-select h-auto w-auto py-1 text-xs">
+          {roles.map((role) => <option key={role.code} value={role.code}>{getRoleLabel(role.code.toLowerCase(), locale) || role.code}</option>)}
+        </select>
+      );
+    }
+    return (
+      <Badge variant={roleBadgeVariant(item.role)} size="md">
+        <Shield className="w-3 h-3" />{getRoleLabel(item.role.toLowerCase(), locale) || item.role}
+      </Badge>
+    );
+  };
+
+  const renderStatusControl = (item: UserRow) => {
+    const isSelf = item.id === currentUser?.id;
+    const currentStatus = item.status || (item.is_active ? 'ACTIVE' : 'SUSPENDED');
+    if (canManage && !isSelf) {
+      return (
+        <select value={currentStatus} disabled={acting === item.id}
+          onChange={(event) => void updateStatus(item.id, event.target.value as 'ACTIVE' | 'SUSPENDED' | 'PENDING')}
+          aria-label={t('users.change_status', locale)}
+          className="hii-select h-auto w-auto py-1 text-xs">
+          <option value="ACTIVE">{statusLabel('ACTIVE', locale)}</option>
+          <option value="PENDING">{statusLabel('PENDING', locale)}</option>
+          <option value="SUSPENDED">{statusLabel('SUSPENDED', locale)}</option>
+        </select>
+      );
+    }
+    return (
+      <Badge variant={currentStatus === 'ACTIVE' ? 'success' : 'neutral'} size="md">
+        {currentStatus === 'ACTIVE' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+        {statusLabel(currentStatus, locale)}
+      </Badge>
+    );
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="users" />
@@ -200,7 +241,7 @@ function UtilizatoriPageInner() {
                 </Card>
               ) : (
                 <Card padding={false} className="overflow-hidden">
-                  <div className="overflow-x-auto">
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="hii-table">
                       <thead><tr>
                         <th>{t('users.col_user', locale)}</th>
@@ -211,43 +252,14 @@ function UtilizatoriPageInner() {
                       <tbody>
                         {filteredUsers.map((item) => {
                           const isSelf = item.id === currentUser?.id;
-                          const currentStatus = item.status || (item.is_active ? 'ACTIVE' : 'SUSPENDED');
                           return (
                             <tr key={item.id}>
                               <td>
                                 <div className="font-medium text-slate-900">{item.profile?.full_name || '—'}</div>
                                 <div className="text-xs text-slate-500">{item.email}</div>
                               </td>
-                              <td>
-                                {canManage && !isSelf && roles.length > 0 ? (
-                                  <select value={item.role} disabled={acting === item.id} onChange={(event) => void updateRole(item.id, event.target.value)}
-                                    aria-label={t('users.change_role', locale)}
-                                    className="hii-select h-auto w-auto py-1 text-xs">
-                                    {roles.map((role) => <option key={role.code} value={role.code}>{getRoleLabel(role.code.toLowerCase(), locale) || role.code}</option>)}
-                                  </select>
-                                ) : (
-                                  <Badge variant={roleBadgeVariant(item.role)} size="md">
-                                    <Shield className="w-3 h-3" />{getRoleLabel(item.role.toLowerCase(), locale) || item.role}
-                                  </Badge>
-                                )}
-                              </td>
-                              <td>
-                                {canManage && !isSelf ? (
-                                  <select value={currentStatus} disabled={acting === item.id}
-                                    onChange={(event) => void updateStatus(item.id, event.target.value as 'ACTIVE' | 'SUSPENDED' | 'PENDING')}
-                                    aria-label={t('users.change_status', locale)}
-                                    className="hii-select h-auto w-auto py-1 text-xs">
-                                    <option value="ACTIVE">{statusLabel('ACTIVE', locale)}</option>
-                                    <option value="PENDING">{statusLabel('PENDING', locale)}</option>
-                                    <option value="SUSPENDED">{statusLabel('SUSPENDED', locale)}</option>
-                                  </select>
-                                ) : (
-                                  <Badge variant={currentStatus === 'ACTIVE' ? 'success' : 'neutral'} size="md">
-                                    {currentStatus === 'ACTIVE' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                                    {statusLabel(currentStatus, locale)}
-                                  </Badge>
-                                )}
-                              </td>
+                              <td>{renderRoleControl(item)}</td>
+                              <td>{renderStatusControl(item)}</td>
                               <td className="text-xs text-slate-600">
                                 {item.project_members?.length || 0}{isSelf && <span className="ml-2 text-slate-400">({t('users.you', locale)})</span>}
                               </td>
@@ -256,6 +268,28 @@ function UtilizatoriPageInner() {
                         })}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="md:hidden divide-y divide-slate-100">
+                    {filteredUsers.map((item) => {
+                      const isSelf = item.id === currentUser?.id;
+                      return (
+                        <div key={item.id} className="p-4 space-y-3">
+                          <div>
+                            <div className="font-medium text-slate-900">{item.profile?.full_name || '—'}</div>
+                            <div className="text-xs text-slate-500">{item.email}</div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {renderRoleControl(item)}
+                            {renderStatusControl(item)}
+                          </div>
+                          <div className="text-xs text-slate-600">
+                            {t('users.projects', locale)}: {item.project_members?.length || 0}
+                            {isSelf && <span className="ml-2 text-slate-400">({t('users.you', locale)})</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </Card>
               )}

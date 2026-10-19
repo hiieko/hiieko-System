@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "note": "Synthetic, sanitized fixtures only. No real customer documents. Bounding boxes are placeholders; the HIIEKO arm only needs line text and order. image_input is intentionally null until a sanitized raster sample is supplied by the operator.",
+  "documents": [
+    {
+      "id": "synthetic_invoice_ro_001",
+      "document_type": "FACTURA",
+      "language": "ro",
+      "source": "synthetic",
+      "notes": "Romanian VAT invoice, header metadata plus three fully evidenced line-item rows.",
+      "ground_truth": {
+        "document_type": "FACTURA",
+        "merchant_name": "SC EXEMPLU SRL",
+        "merchant_cui": "18543210",
+        "document_number": "1234",
+        "document_date": "18.09.2026",
+        "currency": "RON",
+        "subtotal": 46.5,
+        "vat": 8.84,
+        "total": 55.34,
+        "items": [
+          {"description": "Paine integrala", "quantity": 2, "unit_price": 4.5, "total": 9.0},
+          {"description": "Lapte 1L", "quantity": 6, "unit_price": 3.25, "total": 19.5},
+          {"description": "Ulei floarea soarelui", "quantity": 1, "unit_price": 18.0, "total": 18.0}
+        ]
+      },
+      "hiieko_input": {
+        "pages": [
+          {
+            "page": 0,
+            "lines": [
+              {"text": "FACTURĂ", "confidence": 0.96, "bbox": [[0, 0], [300, 0], [300, 18], [0, 18]]},
+              {"text": "SC EXEMPLU SRL", "confidence": 0.88, "bbox": [[0, 22], [300, 22], [300, 40], [0, 40]]},
+              {"text": "CIF 18543210", "confidence": 0.9, "bbox": [[0, 44], [300, 44], [300, 62], [0, 62]]},
+              {"text": "SERIA AB NR. 1234", "confidence": 0.85, "bbox": [[0, 66], [300, 66], [300, 84], [0, 84]]},
+              {"text": "DATA 18.09.2026", "confidence": 0.92, "bbox": [[0, 88], [300, 88], [300, 106], [0, 106]]},
+              {"text": "DENUMIRE CANTITATE PRET UNITAR VALOARE", "confidence": 0.9, "bbox": [[0, 110], [300, 110], [300, 128], [0, 128]]},
+              {"text": "Paine integrala 2 4,50 9,00", "confidence": 0.91, "bbox": [[0, 132], [300, 132], [300, 150], [0, 150]]},
+              {"text": "Lapte 1L 6 3,25 19,50", "confidence": 0.89, "bbox": [[0, 154], [300, 154], [300, 172], [0, 172]]},
+              {"text": "Ulei floarea soarelui 1 18,00 18,00", "confidence": 0.9, "bbox": [[0, 176], [300, 176], [300, 194], [0, 194]]},
+              {"text": "SUBTOTAL 46,50", "confidence": 0.91, "bbox": [[0, 198], [300, 198], [300, 216], [0, 216]]},
+              {"text": "TVA 19% 8,84", "confidence": 0.9, "bbox": [[0, 220], [300, 220], [300, 238], [0, 238]]},
+              {"text": "TOTAL 55,34 RON", "confidence": 0.93, "bbox": [[0, 242], [300, 242], [300, 260], [0, 260]]}
+            ]
+          }
+        ]
+      },
+      "xml_input": null,
+      "image_input": null,
+      "pp_lang": "latin"
+    },
+    {
+      "id": "synthetic_bon_fiscal_ro_001",
+      "document_type": "BON_FISCAL",
+      "language": "ro",
+      "source": "synthetic",
+      "notes": "Thermal-receipt layout: no document number/date, cash payment, two line items.",
+      "ground_truth": {
+        "document_type": "BON_FISCAL",
+        "merchant_name": "MAGAZIN EXEMPLU",
+        "merchant_cui": "1234567",
+        "currency": "LEI",
+        "subtotal": 28.5,
+        "vat": 5.42,
+        "total": 33.92,
+        "payment_method": "cash",
+        "items": [
+          {"description": "Paine", "quantity": 2, "unit_price": 4.5, "total": 9.0},
+          {"description": "Lapte", "quantity": 6, "unit_price": 3.25, "total": 19.5}
+        ]
+      },
+      "hiieko_input": {
+        "pages": [
+          {
+            "page": 0,
+            "lines": [
+              {"text": "BON FISCAL", "confidence": 0.95, "bbox": [[0, 0], [300, 0], [300, 18], [0, 18]]},
+              {"text": "MAGAZIN EXEMPLU", "confidence": 0.9, "bbox": [[0, 22], [300, 22], [300, 40], [0, 40]]},
+              {"text": "CUI RO1234567", "confidence": 0.86, "bbox": [[0, 44], [300, 44], [300, 62], [0, 62]]},
+              {"text": "Paine 2 4,50 9,00", "confidence": 0.91, "bbox": [[0, 66], [300, 66], [300, 84], [0, 84]]},
+              {"text": "Lapte 6 3,25 19,50", "confidence": 0.89, "bbox": [[0, 88], [300, 88], [300, 106], [0, 106]]},
+              {"text": "SUBTOTAL 28,50", "confidence": 0.9, "bbox": [[0, 110], [300, 110], [300, 128], [0, 128]]},
+              {"text": "TVA 19% 5,42", "confidence": 0.9, "bbox": [[0, 132], [300, 132], [300, 150], [0, 150]]},
+              {"text": "TOTAL DE PLATA 33,92 LEI", "confidence": 0.93, "bbox": [[0, 154], [300, 154], [300, 172], [0, 172]]},
+              {"text": "NUMERAR", "confidence": 0.85, "bbox": [[0, 176], [300, 176], [300, 194], [0, 194]]}
+            ]
+          }
+        ]
+      },
+      "xml_input": null,
+      "image_input": null,
+      "pp_lang": "latin"
+    },
+    {
+      "id": "synthetic_efactura_ubl_001",
+      "document_type": "FACTURA",
+      "language": "ro",
+      "source": "synthetic",
+      "notes": "Structured UBL e-Factura. Exercises the direct XML arm; no OCR required.",
+      "ground_truth": {
+        "document_type": "FACTURA",
+        "merchant_name": "SC EXEMPLU SRL",
+        "merchant_cui": "18543210",
+        "document_number": "F-1234",
+        "document_date": "2026-09-18",
+        "currency": "RON",
+        "subtotal": 46.5,
+        "vat": 8.84,
+        "total": 55.34,
+        "items": [
+          {"description": "Paine integrala", "quantity": 2, "unit_price": 4.5, "total": 9.0},
+          {"description": "Lapte 1L", "quantity": 6, "unit_price": 3.25, "total": 19.5},
+          {"description": "Ulei floarea soarelui", "quantity": 1, "unit_price": 18.0, "total": 18.0}
+        ]
+      },
+      "hiieko_input": null,
+      "xml_input": "synthetic_efactura.xml",
+      "image_input": null,
+      "pp_lang": "latin"
+    }
+  ]
+}

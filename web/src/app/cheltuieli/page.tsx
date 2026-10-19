@@ -49,6 +49,7 @@ function CheltuieliPageInner() {
   const [scanError, setScanError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [ocrAvailable, setOcrAvailable] = useState<boolean | null>(null);
+  const [ocrStatus, setOcrStatus] = useState<'ok' | 'not_configured' | 'unavailable' | null>(null);
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -123,9 +124,16 @@ function CheltuieliPageInner() {
         const response = await apiClient.get<{ status?: string; provider?: string | null; model?: string }>('/api/ocr/health');
         if (cancelled) return;
         const health = response?.data;
-        setOcrAvailable(!!health && health.status === 'ok');
+        const status = health?.status;
+        setOcrAvailable(status === 'ok');
+        setOcrStatus(
+          status === 'ok' ? 'ok' : status === 'not_configured' ? 'not_configured' : 'unavailable'
+        );
       } catch {
-        if (!cancelled) setOcrAvailable(false);
+        if (!cancelled) {
+          setOcrAvailable(false);
+          setOcrStatus('unavailable');
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -175,6 +183,10 @@ function CheltuieliPageInner() {
     }
   };
   const handleCreateExpense = async () => {
+    if (!selectedProjectId) {
+      setSubmitError(t('expenses.select_project_first', locale));
+      return;
+    }
     if (!formAmount || Number(formAmount) <= 0) {
       setSubmitError('Introdu o suma valida.');
       return;
@@ -183,6 +195,7 @@ function CheltuieliPageInner() {
     setSubmitError(null);
     try {
       const payload: Record<string, unknown> = {
+        projectId: selectedProjectId,
         category: formCategory,
         paymentMethod: formPaymentMethod,
         amount: Number(formAmount),
@@ -320,7 +333,8 @@ function CheltuieliPageInner() {
                 {processing ? t('expenses.processing', locale) : t('expenses.process_document', locale)}
               </Button>
             )}
-            {ocrAvailable === false && <p className="text-xs text-slate-500 mt-2">{t('expenses.ocr_not_configured', locale)}</p>}
+            {ocrStatus === 'not_configured' && <p className="text-xs text-warning-foreground mt-2">{t('expenses.ocr_not_configured', locale)}</p>}
+            {ocrStatus === 'unavailable' && <p className="text-xs text-warning-foreground mt-2">{t('expenses.ocr_unavailable', locale)}</p>}
             {scanError && <p className="text-sm text-critical-foreground mt-2">{scanError}</p>}
             {ocrResult && (
               <Card className="p-3 bg-success-soft border-success-soft mt-2" padding={false}>

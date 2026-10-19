@@ -203,7 +203,7 @@ function AvizePageInner() {
                     {t('avize.list.received_materials_heading', locale)}
                   </h3>
 
-                  <div className="overflow-x-auto">
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
@@ -222,6 +222,18 @@ function AvizePageInner() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  <div className="md:hidden divide-y divide-slate-100 rounded-lg border border-slate-100">
+                    {dn.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-2 px-3 py-2.5">
+                        <div className="min-w-0">
+                          <div className="font-mono font-semibold text-slate-800">{item.material_code}</div>
+                          <div className="text-slate-600 truncate">{item.material_name}</div>
+                        </div>
+                        <div className="whitespace-nowrap font-bold text-slate-900">{item.quantity} {item.unit}</div>
+                      </div>
+                    ))}
                   </div>
 
                   {dn.notes && <p className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs leading-5 text-slate-600">{dn.notes}</p>}

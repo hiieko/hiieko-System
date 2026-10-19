@@ -47,11 +47,11 @@ export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSave
     setSavingDraft(false);
     if (!id) {
       setSaveFailed(true);
-      toast.error('Could not save draft before attaching photo. Try saving manually.');
+      toast.error(t('daily_report.save_before_photo', locale));
       return;
     }
     setLocalReportId(id);
-  }, [onSaveDraft, toast]);
+  }, [onSaveDraft, toast, locale]);
 
   return (
     <div className="space-y-4">
@@ -68,7 +68,7 @@ export function DailyReportPhotosSection({ reportId, projectId, readOnly, onSave
           readOnly={readOnly}
         />
       ) : savingDraft ? (
-        <p className="text-sm text-slate-500">Saving draft...</p>
+        <p className="text-sm text-slate-500">{t('daily_report.draft_saving', locale)}</p>
       ) : saveFailed ? (
         <p className="text-sm text-slate-500">{t('daily_report.photos_save_first', locale)}</p>
       ) : (

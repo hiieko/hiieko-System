@@ -405,7 +405,7 @@ function PontajPageInner() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold uppercase text-slate-500">
@@ -516,6 +516,83 @@ function PontajPageInner() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="md:hidden">
+            {loading ? (
+              <div className="space-y-3 p-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 rounded-lg" />
+                ))}
+              </div>
+            ) : error ? (
+              <div className="p-4">
+                <ErrorState
+                  title={t('pontaj.error_load', locale)}
+                  error={error}
+                  onRetry={loadData}
+                />
+              </div>
+            ) : attendanceRecords.length === 0 ? (
+              <div className="py-6">
+                <EmptyState
+                  variant="compact"
+                  icon={<Clock className="w-4 h-4" />}
+                  title="No attendance this month"
+                  description="Attendance records appear here once workers check in."
+                />
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {pagedAttendance.map((log) => {
+                  const userName = log.user?.profile?.full_name || log.user?.email || 'Necunoscut';
+                  const userRole = log.user?.profile?.role || log.user?.role || '';
+                  const checkInTime = log.check_in_time ? new Date(log.check_in_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
+                  const checkOutTime = log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) : '—';
+                  const otHours = ((log.overtime_minutes || 0) / 60).toFixed(1);
+                  return (
+                    <div key={log.id} className="p-4 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                          {userName.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-900 truncate">{userName}</div>
+                          <div className="text-xs text-slate-400 capitalize">{String(userRole).replace('_', ' ')}</div>
+                        </div>
+                        <div className="ml-auto">
+                          {log.check_out_time ? (
+                            <Badge variant="neutral" size="sm">
+                              {t('pontaj.status_completed', locale)}
+                            </Badge>
+                          ) : (
+                            <Badge variant="success" size="sm">
+                              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                              {t('pontaj.status_on_site', locale)}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                        <div><dt className="text-slate-400">{t('pontaj.col_site', locale)}</dt><dd className="text-slate-700">{log.project?.name || '—'}</dd></div>
+                        <div><dt className="text-slate-400">{t('pontaj.col_checkin', locale)}</dt><dd className="font-mono font-semibold text-slate-800">{checkInTime}</dd></div>
+                        <div><dt className="text-slate-400">{t('pontaj.col_checkout', locale)}</dt><dd className="font-mono font-semibold text-slate-800">{checkOutTime}</dd></div>
+                        <div><dt className="text-slate-400">{t('pontaj.col_regular', locale)}</dt><dd className="font-semibold text-slate-800">{log.regular_hours || 0} ore</dd></div>
+                        <div><dt className="text-slate-400">{t('pontaj.col_gps', locale)}</dt><dd><Badge variant="success" size="sm"><MapPin className="w-3 h-3" />{log.check_in_distance_m || 0}m</Badge></dd></div>
+                        <div><dt className="text-slate-400">{t('pontaj.col_overtime', locale)}</dt><dd>{(log.overtime_minutes || 0) > 0 ? <Badge variant="warning" size="sm">+{otHours} ore</Badge> : <span className="text-slate-400">0h</span>}</dd></div>
+                      </dl>
+                      {canCorrectAttendance && (
+                        <div className="flex justify-end">
+                          <Button variant="secondary" size="sm" onClick={() => setCorrectionTarget(log)}>
+                            {t('pontaj.correct', locale)}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <Pagination

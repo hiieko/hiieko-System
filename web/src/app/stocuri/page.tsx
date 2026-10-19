@@ -229,7 +229,7 @@ function StocuriPageInner() {
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2 text-sm font-bold text-slate-800">
               <Boxes className="w-4 h-4 text-warning" />{t('stocuri.current_stock', locale)}
             </div>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead><tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold uppercase text-slate-500">
                   <th className="py-3 px-4">Cod</th><th className="py-3 px-4">Material</th><th className="py-3 px-4">Categorie</th><th className="py-3 px-4">Cod bare</th><th className="py-3 px-4 text-right">Minim</th><th className="py-3 px-4 text-right">Disponibil</th><th className="py-3 px-4 text-center">Stare</th>
@@ -269,6 +269,55 @@ function StocuriPageInner() {
                 </tbody>
               </table>
             </div>
+
+            <div className="md:hidden divide-y divide-slate-100">
+              {balanceRows.length === 0 ? (
+                search ? (
+                  <EmptyState
+                    variant="compact"
+                    icon={<Search className="w-4 h-4" />}
+                    title="No matching results"
+                    description="No stock rows match the search."
+                    action={{ label: 'Clear search', onClick: () => setSearch('') }}
+                  />
+                ) : (
+                  <EmptyState
+                    variant="compact"
+                    icon={<Boxes className="w-4 h-4" />}
+                    title="No stock recorded"
+                    description="Materials appear here once stock is received."
+                    action={
+                      MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId
+                        ? { label: 'Receive stock', onClick: () => openAction('receive') }
+                        : undefined
+                    }
+                  />
+                )
+              ) : (
+                pagedBalanceRows.map(({ balance, material }) => {
+                  const qty = Number(balance.current_quantity || 0);
+                  const threshold = material?.min_stock_threshold;
+                  const critical = typeof threshold === 'number' && qty <= threshold;
+                  return (
+                    <div key={balance.id} className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-mono text-xs text-slate-500">{material?.code || '—'}</div>
+                          <div className="font-medium text-slate-900 truncate">{material?.name || '—'}</div>
+                        </div>
+                        {critical ? <Badge variant="danger" size="sm"><AlertTriangle className="w-3 h-3" />{t('stocuri.low_badge', locale)}</Badge> : <span className="text-xs text-slate-500">{threshold == null ? t('stocuri.no_threshold', locale) : t('stocuri.ok', locale)}</span>}
+                      </div>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                        <div><dt className="text-slate-400">Categorie</dt><dd className="text-slate-700">{material?.category || '—'}</dd></div>
+                        <div><dt className="text-slate-400">Cod bare</dt><dd className="font-mono text-slate-700">{material?.barcode || '—'}</dd></div>
+                        <div><dt className="text-slate-400">Minim</dt><dd className="text-slate-700">{threshold == null ? '—' : `${threshold} ${material?.unit || ''}`}</dd></div>
+                        <div><dt className="text-slate-400">Disponibil</dt><dd className="font-extrabold text-slate-900">{qty} <span className="font-normal text-slate-500">{material?.unit || ''}</span></dd></div>
+                      </dl>
+                    </div>
+                  );
+                })
+              )}
+            </div>
             <Pagination
               className="!mt-0 px-4 pb-4"
               page={safeBalancePage}
@@ -286,7 +335,7 @@ function StocuriPageInner() {
                 {Array.from(new Set(movements.map(m => m.movement_type))).map(type => <option key={type} value={type}>{type}</option>)}
               </select>
             </div>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead><tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-semibold"><th className="py-3 px-4">Data & Ora</th><th className="py-3 px-4">Operațiune</th><th className="py-3 px-4">Material</th><th className="py-3 px-4 text-right">Cantitate</th><th className="py-3 px-4">Proiect</th><th className="py-3 px-4">Referință</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
@@ -317,6 +366,50 @@ function StocuriPageInner() {
                     })}
                 </tbody>
               </table>
+            </div>
+
+            <div className="md:hidden divide-y divide-slate-100">
+              {movementRows.length === 0 ? (
+                movementFilter !== 'ALL' ? (
+                  <EmptyState
+                    variant="compact"
+                    icon={<Search className="w-4 h-4" />}
+                    title="No matching results"
+                    description="No movements match the current filter."
+                    action={{ label: 'Clear filter', onClick: () => setMovementFilter('ALL') }}
+                  />
+                ) : (
+                  <EmptyState
+                    variant="compact"
+                    icon={<History className="w-4 h-4" />}
+                    title="No stock recorded"
+                    description="Materials appear here once stock is received."
+                  />
+                )
+              ) : (
+                pagedMovementRows.map(mv => {
+                  const type = mv.movement_type.toUpperCase();
+                  const positive = type === 'RECEIPT' || type === 'TRANSFER_IN' || type === 'RETURN' || (type === 'ADJUSTMENT' && Number(mv.quantity) >= 0);
+                  const label = type === 'RECEIPT' ? t('stocuri.movement_RECEIPT', locale) : type === 'CONSUMPTION' ? t('stocuri.movement_CONSUMPTION', locale) : type === 'TRANSFER_OUT' ? t('stocuri.movement_TRANSFER_OUT', locale) : type === 'TRANSFER_IN' ? t('stocuri.movement_TRANSFER_IN', locale) : type;
+                  const badgeVariant = type === 'CONSUMPTION' ? 'info' : (type === 'TRANSFER_OUT' || type === 'TRANSFER_IN') ? 'neutral' : 'success';
+                  const materialName = mv.material?.name || materials.find(m => m.id === mv.material_id)?.name || '—';
+                  const unit = mv.material?.unit || materials.find(m => m.id === mv.material_id)?.unit || '';
+                  return (
+                    <div key={mv.id} className="p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs text-slate-500">{new Date(mv.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}</span>
+                        <Badge variant={badgeVariant} size="sm">{positive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}{label}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-slate-900">{materialName}</span>
+                        <span className="font-bold text-slate-900">{positive ? '+' : '-'}{Number(mv.quantity)} <span className="text-xs font-normal text-slate-500">{unit}</span></span>
+                      </div>
+                      <div className="text-xs text-slate-500">{mv.project?.name || '—'}</div>
+                      {mv.notes && <div className="text-xs text-slate-500">{mv.notes}</div>}
+                    </div>
+                  );
+                })
+              )}
             </div>
             <Pagination
               className="!mt-0 px-4 pb-4"

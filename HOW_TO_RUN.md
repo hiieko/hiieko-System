@@ -45,7 +45,29 @@ This applies all Prisma migrations. Verify with:
 npm run db:verify
 ```
 
-## Start the backend (NestJS)
+## Start the whole dev stack (recommended)
+
+`Start-HIIEKO.ps1` starts the OCR service, the NestJS backend and the Next.js web
+app, waits until all three are ready, then prints the local and LAN URLs and saves
+them to `%LOCALAPPDATA%\HIIEKO\dev-links.txt`:
+
+```powershell
+.\Start-HIIEKO.ps1                 # add -OpenFirewall to allow 3000/4000 on Private networks
+```
+
+Stop everything again with:
+
+```powershell
+.\Stop-HIIEKO.ps1
+```
+
+It starts the self-hosted OCR service (`ocr-service/`) from the prepared Python
+venv on `127.0.0.1:8080` and injects `PADDLEOCR_URL`/`PADDLEOCR_TOKEN` into the
+backend process, so document scanning works without editing `backend/.env`.
+
+The manual steps below are the individual pieces the launcher runs.
+
+## Start the backend (NestJS, manual)
 
 ```powershell
 npm run backend:dev
@@ -67,10 +89,10 @@ Both dev servers already listen on every interface (`Next.js` on `0.0.0.0:3000`,
 NestJS on `0.0.0.0:4000`), and the web client resolves the API host at runtime,
 so no extra configuration is needed:
 
-1. Start the backend (leave it running): `npm run backend:dev`
-2. Start the web app (leave it running): `npm run web:dev`
-3. Find this machine's IPv4 address: `ipconfig` (e.g. `192.168.1.130`)
-4. On the tablet/phone open: `http://<laptop-ip>:3000`
+1. Start the stack (leave it running): `.\Start-HIIEKO.ps1`
+   (or the pieces manually: `npm run backend:dev` and `npm run web:dev`)
+2. Find this machine's IPv4 address: `ipconfig` (e.g. `192.168.1.130`)
+3. On the tablet/phone open: `http://<laptop-ip>:3000`
 
 Why it works: the page is served by the laptop, so on the tablet `localhost` is
 the *tablet*, not the laptop. `web/src/lib/api-client.ts` therefore derives the
@@ -117,9 +139,59 @@ The mobile workspace requires its own Expo/React Native environment.
 
 ## OCR (PaddleOCR)
 
-Receipt OCR is a server-side service. The NestJS backend calls a self-hosted PaddleOCR
-instance configured via `PADDLEOCR_URL` and `PADDLEOCR_TOKEN` in `backend/.env`.
-OCR results are editable and must be checked by a user before saving.
+Receipt OCR is a server-side service. The NestJS backend calls a self-hosted
+PaddleOCR instance (`ocr-service/`) via `PADDLEOCR_URL` and `PADDLEOCR_TOKEN`.
+`Start-HIIEKO.ps1` starts it and wires these variables into the backend process
+automatically. OCR results are editable and must be checked by a user before saving.
+
+### Launcher (recommended)
+
+`.\Start-HIIEKO.ps1` starts the OCR service from
+`C:\Users\NaderGuesmi\venvs\hiieko-ocr313\Scripts\python.exe` in the `ocr-service`
+directory with:
+
+```
+OCR_SERVICE_TOKEN=change-this-local-token
+PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT=False
+uvicorn app.main:app --host 127.0.0.1 --port 8080
+```
+
+and starts the backend with `PADDLEOCR_URL=http://localhost:8080` and the matching
+`PADDLEOCR_TOKEN`. Readiness is reported per service; if OCR is not reachable the
+script prints the tail of `%LOCALAPPDATA%\HIIEKO\ocr.log` and document scanning
+stays disabled in the app. `.\Stop-HIIEKO.ps1` stops the OCR service together with
+the backend and web terminals.
+
+The OCR service requires **Python 3.9–3.13** (`paddlepaddle` has no wheel for newer
+interpreters); the venv above is already prepared. Confirm it is up (no auth on
+`/health`):
+
+```powershell
+curl http://localhost:8080/health
+```
+
+### Use it
+
+Open **Cheltuieli → New**, select a receipt/invoice and press **Process document**.
+The button is enabled only when `GET /api/ocr/health` reports `{ "status": "ok" }`
+(authenticated; the web client sends the bearer token). Otherwise the form shows
+whether the provider is not configured or the service is unreachable.
+
+### Manual alternative
+
+```powershell
+cd ocr-service
+$env:OCR_SERVICE_TOKEN="change-this-local-token"
+$env:PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT="False"
+C:\Users\NaderGuesmi\venvs\hiieko-ocr313\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8080
+```
+
+Then start the backend with the OCR variables in its environment (process env wins
+over `backend/.env`, which must never be edited):
+
+```powershell
+$env:PADDLEOCR_URL="http://localhost:8080"; $env:PADDLEOCR_TOKEN="change-this-local-token"; npm run backend:dev
+```
 
 ## Validation commands
 

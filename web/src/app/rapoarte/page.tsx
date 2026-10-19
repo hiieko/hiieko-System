@@ -104,6 +104,17 @@ function RapoartePageInner() {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const statusOptions = useMemo(() => ['ALL', ...Array.from(new Set(reports.map(r => r.status).filter(Boolean)))], [reports]);
+  // Translates the persisted report statuses into their RO/EN labels instead of
+  // rendering the raw enum value ('DRAFT', 'SUBMITTED', …) in the filter and badges.
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return t('daily_report.draft', locale);
+      case 'SUBMITTED': return t('daily_report.submitted', locale);
+      case 'APPROVED': return t('status.approved', locale);
+      case 'REJECTED': return t('status.rejected', locale);
+      default: return status;
+    }
+  };
   const filteredReports = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase(locale);
     return reports.filter(report => {
@@ -142,11 +153,11 @@ function RapoartePageInner() {
       setUsers(usersData);
     } catch (err: any) {
       console.error('Failed to load reports:', err);
-      setError(err.message || 'Failed to load data');
+      setError(err?.message || t('reports.load_failed', locale));
     } finally {
       setLoading(false);
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId, locale]);
 
   useEffect(() => {
     loadData();
@@ -181,23 +192,23 @@ function RapoartePageInner() {
     if (!target || reviewingId) return;
     const comment = reviewComment.trim();
     if (reviewAction === 'REJECTED' && !comment) {
-      toastError('Motivul respingerii este obligatoriu.');
+      toastError(t('reports.reject_reason_required', locale));
       return;
     }
     setReviewingId(target.id);
     try {
       await reviewDailyReport(target.id, reviewAction, comment || undefined);
-      toastSuccess(reviewAction === 'APPROVED' ? 'Raport aprobat.' : 'Raport respins.');
+      toastSuccess(reviewAction === 'APPROVED' ? t('reports.approve_success', locale) : t('reports.reject_success', locale));
       await loadData();
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message;
-      toastError(message || 'Nu s-a putut procesa aprobarea.');
+      toastError(message || t('reports.review_failed', locale));
     } finally {
       setReviewingId(null);
       setReviewTarget(null);
       setReviewComment('');
     }
-  }, [reviewTarget, reviewingId, reviewAction, reviewComment, toastError, toastSuccess, loadData]);
+  }, [reviewTarget, reviewingId, reviewAction, reviewComment, toastError, toastSuccess, loadData, locale]);
 
   const isMobile = useMediaQuery('(max-width: 639px)');
   const pageSize = isMobile ? 10 : 20;
@@ -220,12 +231,11 @@ function RapoartePageInner() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <PageTutorial sectionId="reports" />
       <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
       <PageHeader
         className="py-3 !mb-0"
-        title="Rapoarte Zilnice per Echipa"
-        subtitle="Activități finalizate de șefii de echipa, muncitori prezenți, materiale consumate și fotografii de execuție."
+        title={t('reports.title_page', locale)}
+        subtitle={t('reports.subtitle', locale)}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -244,7 +254,7 @@ function RapoartePageInner() {
                 icon={<Plus className="w-4 h-4" />}
                 onClick={() => router.push('/rapoarte/form')}
               >
-                Raport Nou
+                {t('reports.new_report', locale)}
               </Button>
             )}
           </div>
@@ -263,7 +273,7 @@ function RapoartePageInner() {
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
             aria-label={t('projects.filter_status', locale)}
             className="hii-select sm:w-52">
-            {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? t('reports.all_statuses', locale) : status}</option>)}
+            {statusOptions.map(status => <option key={status} value={status}>{status === 'ALL' ? t('reports.all_statuses', locale) : statusLabel(status)}</option>)}
           </select>
           {(searchQuery || statusFilter !== 'ALL') && (
             <Button type="button" variant="secondary" size="md" onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); }}>
@@ -275,7 +285,7 @@ function RapoartePageInner() {
       </div>
 
       <div className="pt-6 space-y-6">
-        <section aria-label="Rapoarte Zilnice" className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+        <section aria-label={t('reports.list_aria', locale)} className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
           {summaryCards.map(({ label, value }) => (
             <Card key={label} padding={false} className="p-4">
               <p className="text-xs font-medium text-content-muted">{label}</p>
@@ -283,6 +293,13 @@ function RapoartePageInner() {
             </Card>
           ))}
         </section>
+
+        {/* The reusable "How it works" card lives below the page title + KPI strip:
+            it is contextual help for the list, not a second page banner, so the page
+            heading is the single first visual element (no duplicated title). */}
+        <div className="-mb-6">
+          <PageTutorial sectionId="reports" />
+        </div>
 
       {loading ? (
         <div className="space-y-4">
@@ -292,7 +309,7 @@ function RapoartePageInner() {
         </div>
       ) : error ? (
         <ErrorState
-          title="Eroare la încărcarea rapoartelor"
+          title={t('reports.load_title', locale)}
           error={error}
           onRetry={loadData}
         />
@@ -300,11 +317,11 @@ function RapoartePageInner() {
         <div className="bg-white rounded-xl border border-slate-200">
           <EmptyState
             icon={<FileText />}
-            title="No daily reports yet"
-            description="Reports appear here after team leaders submit them."
+            title={t('reports.empty_title', locale)}
+            description={t('reports.empty_description', locale)}
             action={
               canCreate
-                ? { label: 'New report', onClick: () => router.push('/rapoarte/form') }
+                ? { label: t('reports.new_report', locale), onClick: () => router.push('/rapoarte/form') }
                 : undefined
             }
           />
@@ -315,18 +332,18 @@ function RapoartePageInner() {
             <div className="bg-white rounded-xl border border-slate-200">
               <EmptyState
                 icon={<FileText />}
-                title="No matching results"
-                description="No reports match the current search or status filter."
-                action={{ label: 'Clear filters', onClick: () => { setSearchQuery(''); setStatusFilter('ALL'); } }}
+                title={t('reports.no_results_title', locale)}
+                description={t('reports.no_results_description', locale)}
+                action={{ label: t('projects.clear_filters', locale), onClick: () => { setSearchQuery(''); setStatusFilter('ALL'); } }}
               />
             </div>
           ) : pagedReports.map((report) => {
-            const siteName = report.project?.name || 'Șantier';
+            const siteName = report.project?.name || t('daily_report.site_fallback', locale);
             const siteCode = report.project?.code || '—';
             const leaderName = report.team_leader?.profile?.full_name || 
                              users.find(u => u.id === report.team_leader_id)?.full_name || 
-                             'Necunoscut';
-            const notes = report.general_notes || report.blockages || 'Nu exista observații';
+                             t('reports.unknown_leader', locale);
+            const notes = report.general_notes || report.blockages || t('daily_report.notes_empty', locale);
             
             // Get present workers from workers array
             const presentWorkerIds = (report.workers || []).map(w => w.worker_id);
@@ -336,9 +353,9 @@ function RapoartePageInner() {
             const materialsUsed = (report.materials || []).map(m => ({
               material_id: m.material_id,
               material_code: m.material?.code || '—',
-              material_name: m.material?.name || 'Material',
+              material_name: m.material?.name || t('daily_report.material', locale),
               quantity: m.quantity_used || 0,
-              unit: m.material?.unit || 'buc',
+              unit: m.material?.unit || t('reports.unit_pcs', locale),
             }));
 
           return (
@@ -352,23 +369,23 @@ function RapoartePageInner() {
                       {siteCode}
                     </Badge>
                   </div>
-                  <div className="text-xs text-slate-500 mt-1 flex items-center space-x-4">
+                  <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
                     <span className="flex items-center">
                       <Calendar className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                      Data: <strong className="ml-1 text-slate-700">{report.report_date?.toString().split('T')[0] || '—'}</strong>
+                      {t('reports.date', locale)}: <strong className="ml-1 text-slate-700">{report.report_date?.toString().split('T')[0] || '—'}</strong>
                     </span>
-                    <span>•</span>
+                    <span aria-hidden="true">•</span>
                     <span>
-                      Șef de Echipă: <strong className="text-slate-700">{leaderName}</strong>
+                      {t('reports.team_leader_full', locale)}: <strong className="text-slate-700">{leaderName}</strong>
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                   {report.status === 'DRAFT' ? (
                     <>
                       <Badge variant="neutral" size="md">
-                        Ciorna
+                        {statusLabel(report.status)}
                       </Badge>
                       {canEditOrSubmit && (report.team_leader_id === user?.id || ['admin', 'owner'].includes(userRole || '')) && <Button
                         type="button"
@@ -399,7 +416,7 @@ function RapoartePageInner() {
                         variant={report.status === 'APPROVED' ? 'success' : report.status === 'REJECTED' ? 'danger' : 'info'}
                         size="md"
                       >
-                        {report.status === 'APPROVED' ? 'Aprobat' : report.status === 'REJECTED' ? 'Respins' : 'Transmis spre Aprobare'}
+                        {statusLabel(report.status)}
                       </Badge>
                       {report.status === 'SUBMITTED' && canReview && report.team_leader_id !== user?.id && (
                         <div className="flex items-center gap-2">
@@ -411,7 +428,7 @@ function RapoartePageInner() {
                             onClick={() => { setReviewAction('APPROVED'); setReviewComment(''); setReviewTarget(report); }}
                             icon={<Check className="w-3.5 h-3.5" />}
                           >
-                            Aproba
+                            {t('reports.approve', locale)}
                           </Button>
                           <Button
                             type="button"
@@ -421,7 +438,7 @@ function RapoartePageInner() {
                             onClick={() => { setReviewAction('REJECTED'); setReviewComment(''); setReviewTarget(report); }}
                             icon={<X className="w-3.5 h-3.5" />}
                           >
-                            Respinge
+                            {t('reports.reject', locale)}
                           </Button>
                         </div>
                       )}
@@ -436,10 +453,10 @@ function RapoartePageInner() {
                     <div key={approval.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 text-xs">
                       <div>
                         <span className="font-semibold text-slate-700">
-                          {approval.action === 'APPROVED' ? 'Aprobat' : approval.action === 'REJECTED' ? 'Respins' : approval.action}
+                          {approval.action === 'APPROVED' ? t('status.approved', locale) : approval.action === 'REJECTED' ? t('status.rejected', locale) : approval.action}
                         </span>
                         <span className="text-slate-500 ml-2">
-                          de {approval.reviewer?.profile?.full_name || 'Reviewer'}
+                          {t('reports.approval_by', locale)} {approval.reviewer?.profile?.full_name || t('reports.reviewer_fallback', locale)}
                         </span>
                       </div>
                       {approval.comment && <p className="text-slate-600 sm:max-w-xl">„{approval.comment}”</p>}
@@ -448,29 +465,30 @@ function RapoartePageInner() {
                 </div>
               )}
 
-              {/* Body */}
-              <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Body — two columns until xl so the cards keep readable proportions;
+                  the site-photos panel spans the full width when it wraps to its own row. */}
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {/* Column 1: Tasks & Progress */}
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <Wrench className="w-4 h-4 mr-1.5 text-warning" />
-                    Lucrari Executate
+                    {t('reports.tasks_heading', locale)}
                   </h3>
                   <div className="space-y-2">
-                    {((report.tasks || []) as any[]).length > 0 ? (report.tasks as any[]).map((t: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
-                        <span className="text-sm font-medium text-slate-800">{t.task?.title || t.notes || 'Sarcina'}</span>
-                        <span className="text-xs font-bold text-warning-foreground bg-warning-soft px-2 py-1 rounded">
-                          {t.quantity_done || t.quantity || 0} {t.unit || 'buc'}
+                    {((report.tasks || []) as any[]).length > 0 ? (report.tasks as any[]).map((task: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-slate-800 min-w-0">{task.task?.title || task.notes || t('daily_report.task', locale)}</span>
+                        <span className="text-xs font-bold text-warning-foreground bg-warning-soft px-2 py-1 rounded shrink-0">
+                          {task.quantity_done || task.quantity || 0} {task.unit || t('reports.unit_pcs', locale)}
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu există task-uri înregistrate</p>
+                      <p className="text-xs text-slate-400 italic py-3">{t('reports.tasks_empty', locale)}</p>
                     )}
                   </div>
 
                   <div className="mt-4">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Observații șantier:</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">{t('daily_report.site_observations', locale)}:</h4>
                     <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic">
                       "{notes}"
                     </p>
@@ -481,41 +499,47 @@ function RapoartePageInner() {
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center">
                     <Boxes className="w-4 h-4 mr-1.5 text-warning" />
-                    Materiale Consumate (Scăzute din Stoc)
+                    {t('reports.materials_heading', locale)}
                   </h3>
                   <div className="space-y-2">
                     {materialsUsed.length > 0 ? materialsUsed.map((m, idx) => (
-                      <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between">
-                        <div>
+                      <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-between gap-3">
+                        <div className="min-w-0">
                           <div className="text-xs font-semibold text-slate-800">{m.material_name}</div>
-                          <div className="text-xs text-slate-400">Cod: {m.material_code}</div>
+                          <div className="text-xs text-slate-400">{t('reports.code_label', locale)} {m.material_code}</div>
                         </div>
-                        <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-1 rounded">
+                        <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-1 rounded shrink-0">
                           -{m.quantity} {m.unit}
                         </span>
                       </div>
                     )) : (
-                      <p className="text-xs text-slate-400 italic py-3">Nu există materiale consumate</p>
+                      <p className="text-xs text-slate-400 italic py-3">{t('reports.materials_empty', locale)}</p>
                     )}
                   </div>
 
                   <div className="mt-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center">
                       <Users className="w-3.5 h-3.5 mr-1" />
-                      Echipa Prezentă ({presentWorkers.length}):
+                      {t('reports.present_team_heading', locale)} ({presentWorkers.length}):
                     </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {presentWorkers.map(w => (
-                        <span key={w.id} className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg font-medium">
-                          {w.full_name}
-                        </span>
-                      ))}
-                    </div>
+                    {presentWorkers.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {presentWorkers.map(w => (
+                          <span key={w.id} className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg font-medium">
+                            {w.full_name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">{t('daily_report.no_workers', locale)}</p>
+                    )}
                   </div>
                 </div>
 
                 {/* Column 3: Site Photos */}
-                <ReportPhotosPanel report={report} />
+                <div className="md:col-span-2 xl:col-span-1">
+                  <ReportPhotosPanel report={report} />
+                </div>
               </div>
             </Card>
           );
@@ -541,16 +565,16 @@ function RapoartePageInner() {
         <Modal
           open={true}
           onClose={() => { if (!reviewingId) setReviewTarget(null); }}
-          title={reviewAction === 'APPROVED' ? 'Aprobă raportul' : 'Respinge raportul'}
+          title={reviewAction === 'APPROVED' ? t('reports.approve_report_title', locale) : t('reports.reject_report_title', locale)}
           footer={
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
               <Button
                 type="button"
                 variant="secondary"
                 disabled={!!reviewingId}
                 onClick={() => setReviewTarget(null)}
               >
-                Anulează
+                {t('daily_report.cancel', locale)}
               </Button>
               <Button
                 type="button"
@@ -559,18 +583,18 @@ function RapoartePageInner() {
                 onClick={confirmReview}
                 loading={!!reviewingId}
               >
-                {reviewingId ? 'Se procesează…' : reviewAction === 'APPROVED' ? 'Confirmă aprobarea' : 'Confirmă respingerea'}
+                {reviewingId ? t('reports.processing', locale) : reviewAction === 'APPROVED' ? t('reports.confirm_approve', locale) : t('reports.confirm_reject', locale)}
               </Button>
             </div>
           }
         >
           <p className="text-sm text-slate-500 mb-4">
             {reviewAction === 'APPROVED'
-              ? 'Confirmă că raportul este verificat și poate fi închis.'
-              : 'Explică ce trebuie corectat. Raportul rămâne înregistrat ca respins.'}
+              ? t('reports.approve_report_hint', locale)
+              : t('reports.reject_report_hint', locale)}
           </p>
           <label htmlFor="review-comment" className="block text-sm font-semibold text-slate-700 mb-2">
-            Comentariu {reviewAction === 'REJECTED' ? '(obligatoriu)' : '(opțional)'}
+            {t('reports.comment_label', locale)} {reviewAction === 'REJECTED' ? t('reports.comment_required', locale) : t('reports.comment_optional', locale)}
           </label>
           <textarea
             id="review-comment"
@@ -579,7 +603,7 @@ function RapoartePageInner() {
             rows={4}
             autoFocus
             className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-hii-500"
-            placeholder="Observații pentru audit / echipă..."
+            placeholder={t('reports.comment_placeholder', locale)}
           />
         </Modal>
       )}

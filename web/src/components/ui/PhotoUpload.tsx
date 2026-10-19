@@ -332,7 +332,7 @@ export function PhotoUpload({
       {loading && (
         <div className="flex items-center gap-2 py-4 text-sm text-content-muted">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span>{t('photo_upload.uploading', locale)}</span>
+          <span>{t('general.loading', locale)}</span>
         </div>
       )}
 

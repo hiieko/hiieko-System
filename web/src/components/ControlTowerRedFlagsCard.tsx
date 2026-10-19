@@ -129,7 +129,7 @@ export function ControlTowerRedFlagsCard({
       </div>
 
       {/* Red Flags Table */}
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs text-slate-600">
           <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
             <tr>
@@ -205,6 +205,64 @@ export function ControlTowerRedFlagsCard({
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="md:hidden divide-y divide-slate-100">
+        {filteredFlags.map((flag) => {
+          const isCritical = flag.severity === 'CRITICAL';
+          const isHigh = flag.severity === 'HIGH';
+
+          return (
+            <div key={flag.id} className={`p-4 space-y-3 ${isCritical ? 'bg-rose-50/20' : ''}`}>
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`px-2.5 py-0.5 rounded text-[11px] font-bold ${
+                    isCritical
+                      ? 'bg-rose-600 text-white'
+                      : isHigh
+                      ? 'bg-warning-soft text-slate-950'
+                      : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {t('issues.severity_' + flag.severity, locale)}
+                </span>
+                <span className="font-semibold text-slate-800">{flag.category}</span>
+              </div>
+              <div className="font-medium text-slate-900">{flag.affectedEntity}</div>
+              <div className="text-slate-700 line-clamp-2">{flag.reason}</div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                <div>
+                  <dt className="text-slate-400">{t('control_tower.red_flags.col_responsible', locale)}</dt>
+                  <dd className="flex items-center space-x-1.5 text-slate-700">
+                    <User className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{flag.responsiblePerson}</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-slate-400">{t('control_tower.red_flags.col_timestamp', locale)}</dt>
+                  <dd className="font-mono text-slate-500">{flag.timestamp ? flag.timestamp.split('T')[0] : ''}</dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-slate-400">{t('control_tower.red_flags.col_source', locale)}</dt>
+                  <dd className="mt-0.5">
+                    <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-mono text-[11px] text-slate-500">
+                      {flag.sourceRecord}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => onInspect(flag)}
+                  className="px-2.5 py-1 text-xs font-semibold text-warning hover:text-warning-foreground hover:bg-warning-soft rounded border border-warning/20 transition-colors inline-flex items-center space-x-1"
+                >
+                  <span>{t('control_tower.red_flags.inspect', locale)}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { clsx } from 'clsx';
+import { t, useLocale } from '@solar/shared';
 import { Button } from './Button';
 
 interface ErrorStateProps {
@@ -15,13 +16,16 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  title = 'A apărut o eroare',
-  message = 'Ceva nu a funcționat corect. Încercați din nou.',
+  title,
+  message,
   error,
   onRetry,
   className,
   fullPage = false,
 }: ErrorStateProps) {
+  const { locale } = useLocale();
+  const titleText = title ?? t('general.error_title', locale);
+  const messageText = message ?? t('general.error_message', locale);
   const errorMessage =
     error instanceof Error
       ? error.message
@@ -40,8 +44,8 @@ export function ErrorState({
       <div className="w-14 h-14 rounded-full bg-danger-soft flex items-center justify-center mb-4">
         <AlertTriangle className="w-7 h-7 text-danger" />
       </div>
-      <h3 className="text-base font-semibold text-slate-800 mb-1">{title}</h3>
-      <p className="text-sm text-slate-500 max-w-sm mb-2">{message}</p>
+      <h3 className="text-base font-semibold text-slate-800 mb-1">{titleText}</h3>
+      <p className="text-sm text-slate-500 max-w-sm mb-2">{messageText}</p>
       {errorMessage && (
         <p className="text-xs text-slate-400 max-w-sm mb-4 font-mono bg-slate-50 px-3 py-1.5 rounded">
           {errorMessage}
@@ -49,7 +53,7 @@ export function ErrorState({
       )}
       {onRetry && (
         <Button variant="secondary" size="sm" icon={<RefreshCw className="w-4 h-4" />} onClick={onRetry}>
-          Încearcă din nou
+          {t('general.retry', locale)}
         </Button>
       )}
     </div>

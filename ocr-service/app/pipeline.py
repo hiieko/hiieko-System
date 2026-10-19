@@ -2,34 +2,21 @@
 
 import hashlib
 from .engines import run_ocr
-from .parser_ro import parse_text
 from .schemas import RawOcrResult, NormalizedDocument, Recognition
 from .layout import reorder_result
 from .fields.extractor import extract_fields
 
 
 def parse_efactura(content: bytes) -> NormalizedDocument:
-    import xml.etree.ElementTree as ET
+    """Structured, namespace-aware e-Factura (UBL) extraction.
 
-    root = ET.fromstring(content)
-    tags = {
-        element.tag.rsplit("}", 1)[-1].lower(): (element.text or "").strip()
-        for element in root.iter()
-        if (element.text or "").strip()
-    }
-    structured = [
-        f"FACTURA {tags.get('id', '')}",
-        f"CUI {tags.get('companyid', '')}",
-        f"DATA {tags.get('issuedate', '')}",
-        f"TOTAL {tags.get('payableamount', '')} {tags.get('documentcurrencycode', 'RON')}",
-    ]
-    text = " ".join(
-        structured + [value.strip() for value in root.itertext() if value.strip()]
-    )
-    result = parse_text(text, "efactura_xml")
-    result.raw_text = text[:20000]
-    result.review_required = True
-    return result
+    Delegates to :mod:`app.efactura` instead of flattening the XML into
+    text and applying OCR heuristics. Malformed XML propagates as an
+    ``ElementTree.ParseError`` for the API layer to report.
+    """
+    from .efactura import parse_efactura_xml
+
+    return parse_efactura_xml(content)
 
 
 def run_raw_document(content: bytes, mime_type: str) -> RawOcrResult:
@@ -104,7 +91,9 @@ def run_document(content: bytes, mime_type: str) -> NormalizedDocument:
             currency=extracted["currency"],
             subtotal=extracted["subtotal"],
             vat=extracted["vat"],
+            vat_rates=extracted.get("vat_rates", []),
             total=extracted["total"],
+            items=extracted["items"],
             payment_method=extracted["payment_method"],
             raw_text=_all_text(reordered_pages)[:20000],
             provider=extracted["provider"],

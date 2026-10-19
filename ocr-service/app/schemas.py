@@ -56,7 +56,9 @@ class UnresolvedField(BaseModel):
 
 
 class NormalizedDocument(BaseModel):
-    document_type: Literal["BON_FISCAL", "FACTURA", "OTHER"] = "OTHER"
+    document_type: Literal[
+        "BON_FISCAL", "FACTURA", "FACTURA_PROFORMA", "OTHER"
+    ] = "OTHER"
     merchant_name: str | None = None
     merchant_cui: str | None = None
     invoice_series: str | None = None

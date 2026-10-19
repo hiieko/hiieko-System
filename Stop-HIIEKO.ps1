@@ -9,7 +9,8 @@ if (-not (Test-Path $StateFile)) {
 $state = Get-Content -Raw $StateFile | ConvertFrom-Json
 $targets = @(
     @{Pid=[int]$state.backendPid; Marker="npm run backend:dev"; Label="Backend terminal"},
-    @{Pid=[int]$state.webPid; Marker="npm run web:dev"; Label="Web terminal"}
+    @{Pid=[int]$state.webPid; Marker="npm run web:dev"; Label="Web terminal"},
+    @{Pid=[int]$state.ocrPid; Marker="uvicorn app.main:app"; Label="OCR service"}
 )
 
 foreach ($t in $targets) {

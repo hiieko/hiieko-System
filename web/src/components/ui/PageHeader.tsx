@@ -4,6 +4,7 @@ import React from 'react';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
+import { t, useLocale } from '@solar/shared';
 import { Button } from './Button';
 
 interface PageHeaderProps {
@@ -32,6 +33,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   const router = useRouter();
+  const { locale } = useLocale();
 
   const handleBack = () => {
     if (onBack) {
@@ -44,13 +46,13 @@ export function PageHeader({
   };
 
   return (
-    <div className={clsx('flex items-center justify-between mb-6', className)}>
+    <div className={clsx('flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6', className)}>
       <div className="flex items-center gap-3 min-w-0">
         {(backHref || onBack) && (
           <button
             onClick={handleBack}
             className="p-2 -ml-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
-            aria-label="Înapoi"
+            aria-label={t('general.back', locale)}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -64,7 +66,7 @@ export function PageHeader({
             <h1 className="text-xl font-bold text-slate-900 truncate">{title}</h1>
           </div>
           {subtitle && (
-            <p className="text-sm text-slate-500 mt-0.5 truncate">{subtitle}</p>
+            <p className="text-sm text-slate-500 mt-0.5 break-words">{subtitle}</p>
           )}
         </div>
       </div>
@@ -76,7 +78,7 @@ export function PageHeader({
             icon={<RefreshCw className={clsx('w-4 h-4', refreshing && 'animate-spin')} />}
             onClick={onRefresh}
             disabled={refreshing}
-            aria-label="Reîmprospătează"
+            aria-label={t('general.refresh', locale)}
           />
         )}
         {actions}

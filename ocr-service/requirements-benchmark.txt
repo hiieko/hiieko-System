@@ -1,0 +1,20 @@
+# OPTIONAL — benchmark-only dependencies for the PaddleOCR PP-StructureV3 spike.
+#
+# These are intentionally NOT added to requirements.txt so the production
+# OCR image is unchanged. Install only in a throwaway environment when
+# actually running the pp_structure_v3 arm:
+#
+#   py -3.12 -m venv .venv-bench
+#   .venv-bench\Scripts\pip install -r requirements-benchmark.txt
+#   set HIIEKO_BENCH_ENABLE_PADDLE=1
+#   .venv-bench\Scripts\python -m benchmarks --arm pp_structure_v3
+#
+# IMPORTANT: paddlepaddle publishes wheels only for Python 3.9-3.13.
+# The current dev interpreter is Python 3.15, which has no paddlepaddle
+# wheel, so the pp_structure_v3 arm cannot run locally as-is.
+#
+# Model weights are NOT downloaded by this project. Provision them
+# out-of-band (pre-seed the PaddleOCR cache) before enabling the arm.
+
+paddlepaddle>=3.0,<4
+paddleocr[doc-parser]>=3.0,<4

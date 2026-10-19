@@ -1,0 +1,320 @@
+[1mdiff --git a/docs/design/DOCUMENTS_PAGE_SPEC.md b/docs/design/DOCUMENTS_PAGE_SPEC.md[m
+[1mnew file mode 100644[m
+[1mindex 0000000..2eff82d[m
+[1m--- /dev/null[m
+[1m+++ b/docs/design/DOCUMENTS_PAGE_SPEC.md[m
+[36m@@ -0,0 +1,314 @@[m
+[32m+[m[32m# HIIEKO Documents Page --- UI/UX Specification[m
+[32m+[m
+[32m+[m[32m**Project:** HIIEKO Solar Site Management System\[m
+[32m+[m[32m**Company:** Hiieko Romania SRL\[m
+[32m+[m[32m**Status:** Proposed specification; audit existing implementation before[m
+[32m+[m[32mcoding\[m
+[32m+[m[32m**Scope:** Documents page UI/UX. No unapproved backend, API, database,[m
+[32m+[m[32mpermission, or storage-architecture changes.[m
+[32m+[m
+[32m+[m[32m## 1. Goal[m
+[32m+[m
+[32m+[m[32mCreate one dependable place to find and access authorized company and[m
+[32m+[m[32mproject documents, without forcing users to navigate a large,[m
+[32m+[m[32minconsistent folder tree.[m
+[32m+[m
+[32m+[m[32mProvide two complementary ways to browse: 1. **Library:** organized[m
+[32m+[m[32mentry points by business purpose and project/site, only where supported[m
+[32m+[m[32mby real data. 2. **Original folders:** a familiar hierarchical view that[m
+[32m+[m[32mpreserves source names and paths.[m
+[32m+[m
+[32m+[m[32mThe supplied folder-tree example includes project/site folders[m
+[32m+[m[32m(e.g. Bucecea 0.9 MW, Banca 2.7 MW, Dobrosloveni, Brăila), technical[m
+[32m+[m[32mplans and drawings, permits/grid-connection material, construction[m
+[32m+[m[32mprogress and commissioning, contracts/offers, maintenance documents,[m
+[32m+[m[32mmarketing and administration files, archives, and sensitive[m
+[32m+[m[32mHR/SSM/identity/occupational-medicine/payroll-related records. This is[m
+[32m+[m[32mevidence of existing material, not an approved taxonomy or permission to[m
+[32m+[m[32mreorganize files automatically.[m
+[32m+[m
+[32m+[m[32m## 2. Non-negotiable rules[m
+[32m+[m
+[32m+[m[32m-   First audit existing document routes, components, API clients,[m
+[32m+[m[32m    backend endpoints, storage integrations, and authorization.[m
+[32m+[m[32m-   Do not invent fields, endpoints, statuses, permissions, or[m
+[32m+[m[32m    workflows.[m
+[32m+[m[32m-   Do not use fake/local-only production data.[m
+[32m+[m[32m-   Do not automatically move, rename, delete, duplicate, or migrate[m
+[32m+[m[32m    source files.[m
+[32m+[m[32m-   Preserve original file names, source paths, and file identity[m
+[32m+[m[32m    wherever the existing integration exposes them.[m
+[32m+[m[32m-   Reuse existing backend authorization. Hiding a button is not[m
+[32m+[m[32m    security.[m
+[32m+[m[32m-   Do not show unauthorized file names, paths, previews, OCR text,[m
+[32m+[m[32m    search results, or metadata.[m
+[32m+[m[32m-   Add only actions that map to real supported backend/provider[m
+[32m+[m[32m    operations.[m
+[32m+[m[32m-   OCR/AI classification, if integrated, must be shown as a suggestion[m
+[32m+[m[32m    and reviewed before changing metadata.[m
+[32m+[m[32m-   All visible text must use the existing Romanian/English translation[m
+[32m+[m[32m    system. No mixed-language UI.[m
+[32m+[m[32m-   Preserve unrelated working-tree changes; do not commit or push[m
+[32m+[m[32m    unless explicitly requested.[m
+[32m+[m
+[32m+[m[32m## 3. Proposed information architecture[m
+[32m+[m
+[32m+[m[32mUse the existing application route and navigation conventions. Suggested[m
+[32m+[m[32mlabels: **Documente** (RO) / **Documents** (EN).[m
+[32m+[m
+[32m+[m[32m### Page header[m
+[32m+[m
+[32m+[m[32m-   Compact title and short description.[m
+[32m+[m[32m-   No redundant oversized dark banner above a second title.[m
+[32m+[m[32m-   Search is prominent and the page uses space efficiently.[m
+[32m+[m
+[32m+[m[32m### Main views[m
+[32m+[m
+[32m+[m[32m-   **Library / Bibliotecă**[m
+[32m+[m[32m-   **Projects / Proiecte**[m
+[32m+[m[32m-   **Folders / Foldere**[m
+[32m+[m
+[32m+[m[32mThese are proposed UI views, not assumptions that separate backend[m
+[32m+[m[32mentities already exist.[m
+[32m+[m
+[32m+[m[32m### Library view[m
+[32m+[m
+[32m+[m[32mPotential groupings, only when supported by real folders or metadata: -[m
+[32m+[m[32mProjects and site documents - Technical documentation - Permits and[m
+[32m+[m[32mgrid-connection documents - Contracts and commercial documents - Offers[m
+[32m+[m[32mand procurement - Finance and invoices - Maintenance - SSM and[m
+[32m+[m[32mcompliance - HR and employee documents - Administration - Marketing -[m
+[32m+[m[32mArchive[m
+[32m+[m
+[32m+[m[32mDo not present a category as a working filter unless it is backed by[m
+[32m+[m[32mactual metadata, existing folder structure, or a supported server-side[m
+[32m+[m[32mquery.[m
+[32m+[m
+[32m+[m[32m### Projects view[m
+[32m+[m
+[32m+[m[32mStart from an authorized project/site and browse its associated[m
+[32m+[m[32mdocuments. Possible groupings, where supported by source content,[m
+[32m+[m[32minclude permits/approvals, engineering drawings, construction/site[m
+[32m+[m[32mexecution, progress, commissioning/handover, contracts, finance, and[m
+[32m+[m[32mother files. These are UI groupings only---not invented statuses or[m
+[32m+[m[32mdatabase entities.[m
+[32m+[m
+[32m+[m[32m### Original folders view[m
+[32m+[m
+[32m+[m[32m-   Expand/collapse folders.[m
+[32m+[m[32m-   Show a navigable breadcrumb/current path.[m
+[32m+[m[32m-   Preserve original names and hierarchy.[m
+[32m+[m[32m-   Handle deep nesting, long names, empty folders, inaccessible[m
+[32m+[m[32m    folders, missing files, and loading errors.[m
+[32m+[m[32m-   Do not assume every folder represents a project.[m
+[32m+[m[32m-   Do not show unsupported destructive actions.[m
+[32m+[m
+[32m+[m[32m## 4. Suggested desktop layout[m
+[32m+[m
+[32m+[m[32m``` text[m
+[32m+[m[32m┌───────────────────────────────────────────────────────────────────┐[m
+[32m+[m[32m│ Documents / Documente                                              │[m
+[32m+[m[32m│ Find company and project files                                     │[m
+[32m+[m[32m├───────────────────────────────────────────────────────────────────┤[m
+[32m+[m[32m│ [ Search by file name or supported metadata...                  ]  │[m
+[32m+[m[32m├───────────────────────────────────────────────────────────────────┤[m
+[32m+[m[32m│ [Library] [Projects] [Folders]                                     │[m
+[32m+[m[32m├──────────────────────────────┬────────────────────────────────────┤[m
+[32m+[m[32m│ Categories / Folder tree     │ Documents                           │[m
+[32m+[m[32m│ Projects and sites           │ Name | Project/Folder | Type | Date │[m
+[32m+[m[32m│ Technical documentation      │ ...                                 │[m
+[32m+[m[32m│ Contracts and commercial     │ ...                                 │[m
+[32m+[m[32m│ HR and compliance            │ ...                                 │[m
+[32m+[m[32m│ Administration / Archive     │ ...                                 │[m
+[32m+[m[32m└──────────────────────────────┴────────────────────────────────────┘[m
+[32m+[m[32m```[m
+[32m+[m
+[32m+[m[32mConcept only. Use a collapsible navigation pane or mobile drawer when[m
+[32m+[m[32mrequired by the existing shell and screen width.[m
+[32m+[m
+[32m+[m[32m## 5. Document list and details[m
+[32m+[m
+[32m+[m[32mUse only fields exposed by the real API/provider. Where available, a row[m
+[32m+[m[32mmay include: - File name and type - Project/site association - Parent[m
+[32m+[m[32mfolder or source path - Modified date and size - Owner/uploader -[m
+[32m+[m[32mSource/provider - Supported actions[m
+[32m+[m
+[32m+[m[32mDo not fabricate missing values. A click must open a real supported[m
+[32m+[m[32mdestination---such as an existing preview, detail page, or source file.[m
+[32m+[m[32mDo not simulate a successful open, download, upload, save, move, or[m
+[32m+[m[32mdelete.[m
+[32m+[m
+[32m+[m[32mPossible actions (open, download, upload, rename, move, delete, share,[m
+[32m+[m[32mreplace) must each be audited before display. A detail panel may show[m
+[32m+[m[32mfile identity, source location, project/site, available metadata, and[m
+[32m+[m[32mreal supported actions.[m
+[32m+[m
+[32m+[m[32m## 6. Search and filters[m
+[32m+[m
+[32m+[m[32mFirst confirm which fields are searchable in the current[m
+[32m+[m[32mbackend/provider. Potential fields only where supported: - File/folder[m
+[32m+[m[32mname and path - Project/site - Existing document type/category -[m
+[32m+[m[32mModified date[m
+[32m+[m
+[32m+[m[32mRequirements: - Clear labels and an obvious reset path. - Explain when[m
+[32m+[m[32mno results match the query/filter. - Do not imply full-text/OCR search[m
+[32m+[m[32munless it is actually implemented and connected. - Do not make a[m
+[32m+[m[32mclient-side subset appear to be a complete library search.[m
+[32m+[m
+[32m+[m[32m## 7. Upload and OCR[m
+[32m+[m
+[32m+[m[32mDo not add an Upload control until the audit confirms real upload[m
+[32m+[m[32msupport, destination, server-side authorization, file validation,[m
+[32m+[m[32mlimits, and success/error handling.[m
+[32m+[m
+[32m+[m[32mIf supported, make the destination clear, display actual file limits,[m
+[32m+[m[32mshow progress only when available, and confirm success only after server[m
+[32m+[m[32mconfirmation. Do not silently assign a project/category.[m
+[32m+[m
+[32m+[m[32mIf OCR is connected, present extracted values/classification as[m
+[32m+[m[32msuggestions, identify when review is needed, and never overwrite[m
+[32m+[m[32moriginal files or confirmed metadata without an explicit supported[m
+[32m+[m[32maction.[m
+[32m+[m
+[32m+[m[32m## 8. Responsive behavior[m
+[32m+[m
+[32m+[m[32m### Desktop (\>1280px)[m
+[32m+[m
+[32m+[m[32m-   Two-pane folder/category navigation and document results where[m
+[32m+[m[32m    useful.[m
+[32m+[m[32m-   Prominent search; readable columns; long names wrap or have an[m
+[32m+[m[32m    accessible way to inspect the full value.[m
+[32m+[m[32m-   Avoid excessive card grids and empty space.[m
+[32m+[m
+[32m+[m[32m### Tablet (768--1279px)[m
+[32m+[m
+[32m+[m[32m-   Narrow or collapse navigation.[m
+[32m+[m[32m-   Prevent horizontal overflow and keep supported actions reachable.[m
+[32m+[m
+[32m+[m[32m### Mobile (\<768px)[m
+[32m+[m
+[32m+[m[32m-   Single-column list.[m
+[32m+[m[32m-   Folder navigation in a drawer or separate folder-browser view.[m
+[32m+[m[32m-   File name first; secondary metadata beneath.[m
+[32m+[m[32m-   Filters in a clear panel/sheet if necessary.[m
+[32m+[m[32m-   No hover-only actions; use touch targets of at least 44px where[m
+[32m+[m[32m    practical.[m
+[32m+[m[32m-   Breadcrumbs and long paths must not break the screen.[m
+[32m+[m
+[32m+[m[32m## 9. Required states[m
+[32m+[m
+[32m+[m[32mImplement only states relevant to the real data flow: - Loading -[m
+[32m+[m[32mPopulated - Empty library/folder - No search results - Error/unavailable[m
+[32m+[m[32mwith retry only if supported - Access denied without leaking metadata -[m
+[32m+[m[32mMissing source file (distinguished from empty folder/network failure) -[m
+[32m+[m[32mLong-running operation, only if the backend exposes a meaningful state -[m
+[32m+[m[32mUpload/OCR/review states, only if those workflows exist[m
+[32m+[m
+[32m+[m[32mDo not invent document statuses.[m
+[32m+[m
+[32m+[m[32m## 10. Visual system[m
+[32m+[m
+[32m+[m[32mFollow the existing HIIEKO design system and shared app shell: - HIIEKO[m
+[32m+[m[32mGreen `#188C51` - Solar Amber `#F59E0B` - Navy `#111827` - Context Slate[m
+[32m+[m[32m`#374151` - Canvas `#F3F4F6` - White `#FFFFFF` - Inter typography and[m
+[32m+[m[32mexisting shared tokens[m
+[32m+[m
+[32m+[m[32mKeep route and project context clear. Use semantic color sparingly,[m
+[32m+[m[32mconsistent spacing, accessible contrast and visible focus. Avoid[m
+[32m+[m[32mredundant banners, mixed-language labels, heavy shadows, clipped[m
+[32m+[m[32mheadings, and decorative KPI cards that do not help document work.[m
+[32m+[m
+[32m+[m[32m## 11. Sensitive files and permissions[m
+[32m+[m
+[32m+[m[32mThe folder tree includes sensitive-looking identity scans, employment[m
+[32m+[m[32mcontracts, occupational medicine, payroll/salary amendments, leave[m
+[32m+[m[32mrequests, financial records, and contracts.[m
+[32m+[m
+[32m+[m[32m-   Reuse existing server-side resource and role authorization.[m
+[32m+[m[32m-   Never infer authorization from a folder name or frontend role label[m
+[32m+[m[32m    alone.[m
+[32m+[m[32m-   If current backend permissions are missing or unclear, document the[m
+[32m+[m[32m    gap and stop before adding access-expanding behavior.[m
+[32m+[m[32m-   Do not use real sensitive document contents in demos, screenshots,[m
+[32m+[m[32m    fixtures, or tests without approval and appropriate protection.[m
+[32m+[m
+[32m+[m[32m## 12. Storage/source-of-truth decision --- unresolved[m
+[32m+[m
+[32m+[m[32mThe folder tree does not establish where the authoritative files live or[m
+[32m+[m[32mhow HIIEKO should access them.[m
+[32m+[m
+[32m+[m[32mDuring a **read-only audit**, establish: 1. Whether a Microsoft[m
+[32m+[m[32m365/OneDrive/SharePoint integration already exists. 2. Where current[m
+[32m+[m[32mfiles are stored and how the UI retrieves them. 3. Which real endpoints[m
+[32m+[m[32msupport list, preview, download, upload, or organization. 4. How[m
+[32m+[m[32mprovider IDs and source paths are represented. 5. Which server-side[m
+[32m+[m[32mpermissions protect each source. 6. Whether OCR is connected to the real[m
+[32m+[m[32mapplication flow or is a separate service. 7. Whether files are already[m
+[32m+[m[32mreferenced in multiple contexts.[m
+[32m+[m
+[32m+[m[32mDo not migrate files or choose a new storage architecture in this UI[m
+[32m+[m[32mtask. If OneDrive/SharePoint is the approved source of truth, prefer[m
+[32m+[m[32mpreserving it---but only after confirming the existing architecture and[m
+[32m+[m[32mbusiness decision. If the decision remains unresolved, work only with[m
+[32m+[m[32mcurrently supported APIs and document limitations.[m
+[32m+[m
+[32m+[m[32m## 13. Implementation sequence[m
+[32m+[m
+[32m+[m[32m### Phase A --- read-only audit[m
+[32m+[m
+[32m+[m[32m-   Inventory document routes, pages, shared components, hooks, API[m
+[32m+[m[32m    client methods, backend endpoints, and storage adapters.[m
+[32m+[m[32m-   Trace the real data path from UI to provider.[m
+[32m+[m[32m-   List actual fields and supported operations.[m
+[32m+[m[32m-   Inspect server-side authorization.[m
+[32m+[m[32m-   Confirm localization and design-token conventions.[m
+[32m+[m[32m-   Report gaps before changing code.[m
+[32m+[m
+[32m+[m[32m### Phase B --- implementation[m
+[32m+[m
+[32m+[m[32m-   Improve the existing page using audited capabilities.[m
+[32m+[m[32m-   Reuse shared components and route conventions.[m
+[32m+[m[32m-   Implement library/project/folder views only where backed by real[m
+[32m+[m[32m    data.[m
+[32m+[m[32m-   Connect every action to a real supported operation.[m
+[32m+[m[32m-   No mock data, invented endpoints, or unsupported actions.[m
+[32m+[m[32m-   Preserve unrelated working-tree changes.[m
+[32m+[m
+[32m+[m[32m### Phase C --- verification[m
+[32m+[m
+[32m+[m[32mRun repository scripts that actually exist, including as applicable: -[m
+[32m+[m[32m`npm run i18n:check` - `npm run web:typecheck` - `npm run web:build` -[m
+[32m+[m[32m`npm run guards:check` - Relevant existing tests[m
+[32m+[m
+[32m+[m[32mBrowser-check Romanian and English; desktop/tablet/mobile; populated,[m
+[32m+[m[32mempty, loading, error and denied states; real search; supported file[m
+[32m+[m[32mactions; long names/nested paths; permission boundaries; no[m
+[32m+[m[32mmixed-language labels, clipping, or horizontal overflow. Clearly record[m
+[32m+[m[32mchecks that could not be performed. A passing build alone is not runtime[m
+[32m+[m[32mverification.[m
+[32m+[m
+[32m+[m[32m## 14. Acceptance criteria[m
+[32m+[m
+[32m+[m[32m-   Clear entry point to authorized documents.[m
+[32m+[m[32m-   Navigation is backed by real data, not mock records or invented[m
+[32m+[m[32m    metadata.[m
+[32m+[m[32m-   Original names and source locations remain traceable.[m
+[32m+[m[32m-   Every visible action is supported by real backend/provider behavior.[m
+[32m+[m[32m-   Sensitive files remain protected by server-side authorization.[m
+[32m+[m[32m-   Romanian and English are complete and consistent.[m
+[32m+[m[32m-   Desktop/tablet/mobile are usable.[m
+[32m+[m[32m-   Relevant loading, empty, error, missing-file, and access-denied[m
+[32m+[m[32m    states work.[m
+[32m+[m[32m-   Relevant quality checks pass and limitations are documented.[m
+[32m+[m[32m-   No unapproved backend/API/database/permission/storage changes.[m
+[32m+[m
+[32m+[m[32m## Open decision[m
+[32m+[m
+[32m+[m[32mChoose how HIIEKO accesses actual files only after the audit:[m
+[32m+[m
+[32m+[m[32m-   **Connected OneDrive/SharePoint:** use the company source if[m
+[32m+[m[32m    integration and permissions support it.[m
+[32m+[m[32m-   **HIIEKO-managed storage:** use HIIEKO storage if that is the[m
+[32m+[m[32m    approved architecture.[m
+[32m+[m[32m-   **Undecided:** audit current integrations and APIs first; do not[m
+[32m+[m[32m    implement a migration or invent a connector.[m
