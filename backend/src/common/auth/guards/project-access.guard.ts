@@ -211,7 +211,10 @@ export class ProjectAccessGuard implements CanActivate {
 
     const select: any = resolver.nestedInclude
       ? model === 'ocrJob'
-        ? { document: { select: { project_id: true } } }
+        ? {
+            document: { select: { project_id: true } },
+            expense: { select: { project_id: true } },
+          }
         : model === 'dailyPlanTask'
           ? { daily_plan: { select: { project_id: true } } }
           : { [resolver.projectField]: true }
@@ -228,7 +231,13 @@ export class ProjectAccessGuard implements CanActivate {
 
     if (resolver.nestedInclude) {
       if (model === 'ocrJob') {
-        return record.document?.project_id ?? null;
+        // OCR jobs may be linked to either a project document or an expense.
+        // Keep this resolver read-only and resolve only the project scope needed for auth.
+        const job = record as {
+          document?: { project_id?: string | null } | null;
+          expense?: { project_id?: string | null } | null;
+        };
+        return job.document?.project_id ?? job.expense?.project_id ?? null;
       }
       return record.daily_plan?.project_id ?? null;
     }
