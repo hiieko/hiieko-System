@@ -15,6 +15,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nes
 import { OcrService, CreateOCRJobDto, ProcessDocumentDto } from './ocr.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
+import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
+import { RequireEntityProjectAccess } from '../../common/auth/decorators/auth-metadata.decorator';
 import { RateLimit } from '../../common/auth/decorators/rate-limit.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
 import { AuthenticatedUser } from '../../common/auth/auth.types';
@@ -22,12 +24,13 @@ import { Express } from 'express';
 
 @ApiTags('OCR & Document Recognition')
 @Controller('api/ocr')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ProjectAccessGuard)
 @ApiBearerAuth()
 export class OcrController {
   constructor(private readonly ocrService: OcrService) {}
 
   @Get('jobs/:id')
+  @RequireEntityProjectAccess('ocrJob', 'id')
   @ApiOperation({ summary: 'Get OCR job status and extracted fields' })
   async getJob(@Param('id') id: string) {
     return this.ocrService.findJob(id);
