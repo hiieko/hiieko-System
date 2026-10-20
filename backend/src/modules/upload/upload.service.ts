@@ -55,6 +55,90 @@ const DOCUMENT_TYPE_MAP: Record<string, DocumentTypeEnum> = {
   OTHER: DocumentTypeEnum.OTHER,
 };
 
+/** ASCII whitespace bytes (space, tab, CR, LF) permitted before a PDF header or XML prolog. */
+function isAsciiWhitespace(byte: number | undefined): boolean {
+  return byte === 0x20 || byte === 0x09 || byte === 0x0d || byte === 0x0a;
+}
+
+/** JPEG: SOI marker FF D8 FF at the start of the buffer. */
+function hasJpegSignature(buffer: Buffer): boolean {
+  return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+}
+
+/** PNG: the fixed 8-byte signature 89 50 4E 47 0D 0A 1A 0A. */
+function hasPngSignature(buffer: Buffer): boolean {
+  return (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  );
+}
+
+/** WebP: RIFF container — "RIFF" at offset 0 and "WEBP" at offset 8. */
+function hasWebpSignature(buffer: Buffer): boolean {
+  return (
+    buffer.length >= 12 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  );
+}
+
+/** PDF: the "%PDF-" header, optionally preceded by insignificant whitespace. */
+function hasPdfSignature(buffer: Buffer): boolean {
+  let offset = 0;
+  while (offset < buffer.length && isAsciiWhitespace(buffer[offset])) offset += 1;
+  return buffer.toString('ascii', offset, offset + 5) === '%PDF-';
+}
+
+/**
+ * XML: optional UTF-8 BOM + leading whitespace, then a plausible document
+ * opening — either the canonical lowercase `<?xml` declaration or a root
+ * element whose name starts at that position. A `<` byte elsewhere in the
+ * buffer is not sufficient.
+ */
+function hasXmlSignature(buffer: Buffer): boolean {
+  let offset = 0;
+  if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+    offset = 3;
+  }
+  while (offset < buffer.length && isAsciiWhitespace(buffer[offset])) offset += 1;
+  if (buffer[offset] !== 0x3c) return false; // '<'
+  const next = buffer[offset + 1];
+  if (next === 0x3f) {
+    // '<?' — accept only the canonical `<?xml` declaration opener (lowercase,
+    // followed by whitespace or '?>'); reject e.g. `<?xml-stylesheet`.
+    if (buffer.toString('ascii', offset + 2, offset + 5) !== 'xml') return false;
+    const after = buffer[offset + 5];
+    return after === undefined || isAsciiWhitespace(after) || after === 0x3f;
+  }
+  return (
+    next !== undefined &&
+    ((next >= 0x41 && next <= 0x5a) || // A-Z
+      (next >= 0x61 && next <= 0x7a) || // a-z
+      next === 0x5f || // _
+      next === 0x3a) // :
+  );
+}
+
+/**
+ * Content-signature validators keyed by the allowlisted MIME types. Every
+ * allowlisted type must have an entry; a type missing here fails closed.
+ */
+const CONTENT_SIGNATURE_VALIDATORS: Record<string, (buffer: Buffer) => boolean> = {
+  'image/jpeg': hasJpegSignature,
+  'image/png': hasPngSignature,
+  'image/webp': hasWebpSignature,
+  'application/pdf': hasPdfSignature,
+  'application/xml': hasXmlSignature,
+  'text/xml': hasXmlSignature,
+};
+
 export interface UploadFileData {
   buffer: Buffer;
   mimetype: string;
@@ -142,6 +226,12 @@ export class UploadService {
     if (size > max) {
       throw new BadRequestException(
         `File size (${size} bytes) exceeds the maximum allowed size (${max} bytes)`,
+      );
+    }
+
+    if (!CONTENT_SIGNATURE_VALIDATORS[mimeType]?.(file.buffer)) {
+      throw new BadRequestException(
+        `File content does not match the claimed type: ${mimeType}`,
       );
     }
 

@@ -21,6 +21,27 @@ const admin = {
 };
 
 /**
+ * Minimal realistic signature bytes so fixtures exercise the real content
+ * validation in UploadService (Fix 09) instead of bypassing it.
+ */
+const JPEG_BYTES = Buffer.from([
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x02, 0x03,
+]);
+const PNG_BYTES = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
+]);
+const WEBP_BYTES = Buffer.concat([
+  Buffer.from('RIFF'),
+  Buffer.from([0x24, 0x00, 0x00, 0x00]),
+  Buffer.from('WEBPVP8 '),
+]);
+const PDF_BYTES = Buffer.from('%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj\n<<>>\nendobj\n%%EOF\n');
+const XML_BYTES = Buffer.from(
+  '<?xml version="1.0" encoding="UTF-8"?>\n<Invoice><Id>1</Id></Invoice>',
+);
+const HTML_BYTES = Buffer.from('<!DOCTYPE html><html><body>receipt</body></html>');
+
+/**
  * UploadService contract tests (ISSUE-013 blob persistence / ISSUE-014 /api/upload).
  */
 describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
@@ -33,10 +54,10 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
 
   const file = (overrides: Record<string, unknown> = {}) =>
     ({
-      buffer: Buffer.from('receipt-bytes'),
+      buffer: JPEG_BYTES,
       mimetype: 'image/jpeg',
       originalname: 'fuel-receipt.jpg',
-      size: 14,
+      size: JPEG_BYTES.length,
       ...overrides,
     } as any);
 
@@ -149,7 +170,12 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
     documents.create.mockResolvedValue({ id: 'doc-project-1' });
 
     await service.uploadFile(
-      file({ mimetype: 'application/pdf', originalname: 'site-plan.pdf' }),
+      file({
+        mimetype: 'application/pdf',
+        originalname: 'site-plan.pdf',
+        buffer: PDF_BYTES,
+        size: PDF_BYTES.length,
+      }),
       undefined,
       undefined,
       worker,
@@ -197,6 +223,117 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
     await expect(service.uploadFile(file(), 'expense', 'e-404', worker)).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  describe('content signature validation (Fix 09)', () => {
+    const persistable = (mimetype: string, buffer: Buffer, originalname: string) =>
+      file({ mimetype, buffer, originalname, size: buffer.length });
+
+    const mockPersist = (key: string) => {
+      storage.save.mockResolvedValue({
+        key,
+        originalName: key,
+        mimeType: key,
+        size: 1,
+        checksum: 'checksum',
+      });
+      documents.create.mockResolvedValue({ id: `doc-${key}` });
+    };
+
+    const expectRejectedWithoutPersistence = async (f: any) => {
+      const err = await service.uploadFile(f, undefined, undefined, worker).catch((e) => e);
+      expect(err).toBeInstanceOf(BadRequestException);
+      expect(err.getStatus()).toBe(400);
+      expect(storage.save).not.toHaveBeenCalled();
+      expect(documents.create).not.toHaveBeenCalled();
+      expect(prisma.attachment.create).not.toHaveBeenCalled();
+      expect(audit.record).not.toHaveBeenCalled();
+    };
+
+    it('accepts valid content for every allowlisted MIME type', async () => {
+      const cases: Array<[string, Buffer, string]> = [
+        ['image/jpeg', JPEG_BYTES, 'receipt.jpg'],
+        ['image/png', PNG_BYTES, 'photo.png'],
+        ['image/webp', WEBP_BYTES, 'scan.webp'],
+        ['application/pdf', PDF_BYTES, 'invoice.pdf'],
+        ['application/xml', XML_BYTES, 'efactura-app.xml'],
+        ['text/xml', XML_BYTES, 'efactura-text.xml'],
+      ];
+      for (const [mimetype, buffer, originalname] of cases) {
+        storage.save.mockClear();
+        mockPersist(`receipts/${originalname}`);
+        await expect(
+          service.uploadFile(persistable(mimetype, buffer, originalname), undefined, undefined, worker),
+        ).resolves.toMatchObject({ mimeType: mimetype });
+        expect(storage.save).toHaveBeenCalledTimes(1);
+      }
+    });
+
+    it('rejects mismatched or forged content for every allowlisted MIME type', async () => {
+      const mismatches: Array<[string, Buffer, string]> = [
+        ['image/jpeg', PNG_BYTES, 'png-bytes.jpg'],
+        ['image/jpeg', WEBP_BYTES, 'webp-bytes.jpg'],
+        ['image/jpeg', PDF_BYTES, 'pdf-bytes.jpg'],
+        ['image/jpeg', XML_BYTES, 'xml-bytes.jpg'],
+        ['image/png', JPEG_BYTES, 'jpeg-bytes.png'],
+        ['image/png', PDF_BYTES, 'pdf-bytes.png'],
+        ['image/webp', JPEG_BYTES, 'jpeg-bytes.webp'],
+        ['image/webp', PNG_BYTES, 'png-bytes.webp'],
+        ['application/pdf', JPEG_BYTES, 'jpeg-bytes.pdf'],
+        ['application/pdf', XML_BYTES, 'xml-bytes.pdf'],
+        ['application/xml', JPEG_BYTES, 'jpeg-bytes.xml'],
+        ['text/xml', PDF_BYTES, 'pdf-bytes.xml'],
+      ];
+      for (const [mimetype, buffer, originalname] of mismatches) {
+        storage.save.mockClear();
+        documents.create.mockClear();
+        prisma.attachment.create.mockClear();
+        await expectRejectedWithoutPersistence(persistable(mimetype, buffer, originalname));
+      }
+    });
+
+    it('rejects HTML content claiming image/png with HTTP 400', async () => {
+      await expectRejectedWithoutPersistence(persistable('image/png', HTML_BYTES, 'evil.png'));
+    });
+
+    it('rejects content whose signature appears only after unrelated leading bytes', async () => {
+      const embedded = Buffer.concat([Buffer.from('GARBAGE-PREFIX'), JPEG_BYTES]);
+      await expectRejectedWithoutPersistence(persistable('image/jpeg', embedded, 'tricky.jpg'));
+    });
+
+    it('rejects plain text claimed as text/xml even when a tag exists later in the file', async () => {
+      const text = Buffer.from('this is not xml but mentions <Invoice> further in the file');
+      await expectRejectedWithoutPersistence(persistable('text/xml', text, 'fake.xml'));
+    });
+
+    it('accepts a PDF whose header follows leading whitespace', async () => {
+      const spaced = Buffer.concat([Buffer.from('\n\t  '), PDF_BYTES]);
+      mockPersist('receipts/spaced.pdf');
+      await expect(
+        service.uploadFile(
+          persistable('application/pdf', spaced, 'spaced.pdf'),
+          undefined,
+          undefined,
+          worker,
+        ),
+      ).resolves.toMatchObject({ mimeType: 'application/pdf' });
+    });
+
+    it('accepts XML with a UTF-8 BOM and leading whitespace before the declaration', async () => {
+      const bom = Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('\n  '), XML_BYTES]);
+      mockPersist('receipts/bom.xml');
+      await expect(
+        service.uploadFile(persistable('application/xml', bom, 'bom.xml'), undefined, undefined, worker),
+      ).resolves.toMatchObject({ mimeType: 'application/xml' });
+    });
+
+    it('accepts XML that opens directly with a root element (no declaration)', async () => {
+      const rootFirst = Buffer.from('<Invoice><Id>1</Id></Invoice>');
+      mockPersist('receipts/root.xml');
+      await expect(
+        service.uploadFile(persistable('text/xml', rootFirst, 'root.xml'), undefined, undefined, worker),
+      ).resolves.toMatchObject({ mimeType: 'text/xml' });
+    });
   });
 
   it('returns 404 when retrieving a missing document', async () => {
