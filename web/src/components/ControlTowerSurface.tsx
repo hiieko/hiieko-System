@@ -51,7 +51,7 @@ import type { ActivityEvent } from '../features/activity/types';
 import { t, useLocale, canCreateProjects, type Locale } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilldownDrawer';
 import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
-import { EmptyState, ErrorState, Skeleton, Pagination } from './ui';
+import { EmptyState, ErrorState, Skeleton, Pagination, Button, Card } from './ui';
 import { PageTutorial } from './PageTutorial';
 import { useProject } from '../contexts/ProjectContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -208,18 +208,23 @@ function ControlTowerSectionHeader({
         </h2>
         {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
       </div>
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="sm"
         onClick={onToggle}
         aria-expanded={!collapsed}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+        className="shrink-0"
+        iconPosition="right"
+        icon={
+          <ChevronDown
+            className={`size-4 transition-transform ${collapsed ? '-rotate-90' : ''}`}
+            aria-hidden="true"
+          />
+        }
       >
         {t(collapsed ? 'planning.expand' : 'planning.collapse', locale)}
-        <ChevronDown
-          className={`size-3.5 transition-transform ${collapsed ? '-rotate-90' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -515,7 +520,10 @@ export function ControlTowerSurface() {
       </section>
 
       {/* Control Tower Header & Global Filter Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <Card
+        padding={false}
+        className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
         <div>
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-warning-soft text-slate-950 uppercase tracking-wide">
@@ -554,16 +562,17 @@ export function ControlTowerSurface() {
             </select>
           </div>
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => loadControlTower(true)}
             disabled={refreshing}
-            className="flex items-center space-x-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-60"
+            icon={<RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>{t('control_tower.refresh', locale)}</span>
-          </button>
+            {t('control_tower.refresh', locale)}
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {error && (
         <div className="p-4 rounded-xl bg-warning-soft border border-warning/20 text-warning-foreground text-xs flex items-start justify-between">
@@ -582,7 +591,7 @@ export function ControlTowerSurface() {
 
       {/* No projects yet: Control Tower has nothing to aggregate */}
       {overview && !hasProjects && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <Card padding={false}>
           <EmptyState
             icon={<Briefcase />}
             title={t('control_tower.empty_projects_title', locale)}
@@ -593,7 +602,7 @@ export function ControlTowerSurface() {
                 : undefined
             }
           />
-        </div>
+        </Card>
       )}
 
       {/* 1. CRITICAL ALERTS & RED FLAGS (Rule-based exceptions) */}
@@ -632,7 +641,7 @@ export function ControlTowerSurface() {
           {!domainsCollapsed && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {/* DOMAIN 1: PROIECTE (Projects) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -699,10 +708,10 @@ export function ControlTowerSurface() {
                 </span>
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* DOMAIN 2: PERSONAL & PONTAJ (Workforce) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -770,10 +779,10 @@ export function ControlTowerSurface() {
                 </span>
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* DOMAIN 3: PRODUCȚIE & EXECUȚIE (Production) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -835,10 +844,10 @@ export function ControlTowerSurface() {
                 </span>
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* DOMAIN 4: MATERIALE & STOCURI (Materials) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -901,10 +910,10 @@ export function ControlTowerSurface() {
                 </span>
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* DOMAIN 5: FINANȚE & BUGETE (Finance) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -972,10 +981,10 @@ export function ControlTowerSurface() {
                 <ChevronRight className="w-4 h-4 text-slate-400" />
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* DOMAIN 6: CALITATE & CONFORMITATE (Quality) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -1038,10 +1047,10 @@ export function ControlTowerSurface() {
                 </span>
               </button>
             </div>
-          </div>
+          </Card>
 
           {/* DOMAIN 7: DOCUMENTAȚIE TEHNICĂ (Documentation) */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between hover:border-slate-300 transition-all">
+          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-slate-700">
@@ -1104,7 +1113,7 @@ export function ControlTowerSurface() {
                 </span>
               </button>
             </div>
-          </div>
+          </Card>
         </div>
           )}
         </section>
@@ -1194,18 +1203,20 @@ export function ControlTowerSurface() {
               {t('control_tower.view_all', locale)}
               <ExternalLink className="size-3.5" aria-hidden="true" />
             </Link>
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="icon"
               onClick={toggleActivity}
               aria-expanded={!activityCollapsed}
               aria-label={t(activityCollapsed ? 'planning.expand' : 'planning.collapse', locale)}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 p-2 text-slate-600 transition-colors hover:bg-slate-100"
-            >
-              <ChevronDown
-                className={`size-4 transition-transform ${activityCollapsed ? '-rotate-90' : ''}`}
-                aria-hidden="true"
-              />
-            </button>
+              icon={
+                <ChevronDown
+                  className={`size-4 transition-transform ${activityCollapsed ? '-rotate-90' : ''}`}
+                  aria-hidden="true"
+                />
+              }
+            />
           </div>
         </div>
 
@@ -1216,19 +1227,19 @@ export function ControlTowerSurface() {
             onRetry={() => loadControlTower(true)}
           />
         ) : activityLoading && activityEvents.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+          <Card padding={false} className="p-4 space-y-3">
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-10 rounded-lg" />
             ))}
-          </div>
+          </Card>
         ) : activityEvents.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <Card padding={false}>
             <EmptyState
               icon={<Activity />}
               title={t('control_tower.activity_empty_title', locale)}
               description={t('control_tower.activity_empty_message', locale)}
             />
-          </div>
+          </Card>
         ) : (
           <div className="space-y-4">
             {activityGroups.map((group) => (
@@ -1236,7 +1247,7 @@ export function ControlTowerSurface() {
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 px-1">
                   {t(group.i18nKey, locale)}
                 </h3>
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-chrome-line">
+                <Card padding={false} className="divide-y divide-chrome-line">
                   {group.items.map((event) => {
                     const meta = activityMeta(event, locale);
                     const Icon = meta.icon;
@@ -1272,7 +1283,7 @@ export function ControlTowerSurface() {
                       </Link>
                     );
                   })}
-                </div>
+                </Card>
               </div>
             ))}
           </div>

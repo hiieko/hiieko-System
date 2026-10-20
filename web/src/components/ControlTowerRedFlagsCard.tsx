@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { RedFlag } from '../lib/api-client';
 import { t, useLocale } from '@solar/shared';
+import { Card } from './ui';
 
 interface ControlTowerRedFlagsCardProps {
   redFlags: RedFlag[];
@@ -36,7 +37,7 @@ export function ControlTowerRedFlagsCard({
 
   if (redFlags.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+      <Card>
         <div className="flex items-center space-x-3 text-success">
           <div className="p-2 bg-success-soft rounded-lg">
             <ShieldAlert className="w-5 h-5 text-success" />
@@ -50,12 +51,12 @@ export function ControlTowerRedFlagsCard({
             </p>
           </div>
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <Card padding={false} className="overflow-hidden">
       {/* Header Banner */}
       <div className="p-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
@@ -264,6 +265,6 @@ export function ControlTowerRedFlagsCard({
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }
