@@ -1369,6 +1369,20 @@ Object.assign(d, {
   'issues.detail_ncrs_empty': T('Nicio neconformitate legată de această problemă.', 'No NCRs are linked to this issue.'),
   'issues.detail_readonly_note': T('Statusul este gestionat de management și nu poate fi schimbat din această pagină.', 'Status is managed by management and cannot be changed from this page.'),
 
+  // --- Lifecycle actions (PATCH /api/issues/:id/status) ---
+  'issues.change_status_title': T('Actualizează statusul problemei', 'Update issue status'),
+  'issues.change_status_current': T('Status actual', 'Current status'),
+  'issues.change_status_submit': T('Actualizează', 'Update'),
+  'issues.change_status_submitting': T('Se actualizează...', 'Updating...'),
+  'issues.change_status_success': T('Statusul a fost actualizat.', 'Status updated.'),
+  'issues.change_status_error': T('Actualizarea statusului a eșuat.', 'Could not update the status.'),
+  'issues.change_status_no_transition': T('Nu există o acțiune disponibilă pentru statusul curent.', 'No action is available for the current status.'),
+  'issues.action_to_INVESTIGATING': T('Începe investigarea', 'Start investigating'),
+  'issues.action_to_CORRECTIVE_ACTION_PROPOSED': T('Propune acțiune corectivă', 'Propose corrective action'),
+  'issues.action_to_RESOLVED': T('Marchează rezolvată', 'Mark resolved'),
+  'issues.action_to_CLOSED': T('Închide problema', 'Close issue'),
+  'issues.action_reopen': T('Redeschide', 'Reopen'),
+
   // --- NCR statuses (Prisma NCRStatusEnum — display only) ---
   'issues.ncr_status_OPEN': T('Deschis', 'Open'),
   'issues.ncr_status_DISPOSITION_PROPOSED': T('Soluție propusă', 'Disposition proposed'),

@@ -167,6 +167,8 @@ export interface AuthUser {
   role: string;
   fullName?: string;
   organizationId?: string;
+  /** projectId → membership role, populated by GET /api/auth/me (JwtAuthGuard). */
+  projectRoles?: Record<string, string>;
 }
 
 export interface LoginCredentials {

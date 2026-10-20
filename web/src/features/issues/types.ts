@@ -68,3 +68,8 @@ export interface CreateIssueDto {
   description: string;
   severity?: IssueSeverity;
 }
+
+/** Body of PATCH /api/issues/:id/status (UpdateIssueStatusDto in issues.service.ts). */
+export interface UpdateIssueStatusDto {
+  status: IssueStatus;
+}

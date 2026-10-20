@@ -15,17 +15,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
-import { canCreateProjects, useLocale } from '@solar/shared';
+import { canCreateProjects, t, useLocale } from '@solar/shared';
 import { displayName, formatDate, formatDecimal } from '../../../lib/formatters';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { Modal, Pagination } from '../../../components/ui';
 import { usePhotoUploadModal } from '../../../contexts/PhotoUploadModalContext';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
 import { ProjectStagesPanel } from './ProjectStagesPanel';
-import { getIssues } from '../../../features/issues/api';
+import { getIssues, updateIssueStatus } from '../../../features/issues/api';
 import { IssueCard } from '../../../features/issues/components/IssueCard';
 import { IssueDetailModal } from '../../../features/issues/components/IssueDetailModal';
-import type { Issue } from '../../../features/issues/types';
+import { ISSUE_TRIAGE_ROLES } from '../../../features/issues/constants';
+import type { Issue, IssueStatus } from '../../../features/issues/types';
 
 interface ProjectMember {
   id: string; project_id: string; user_id: string; role: string;
@@ -108,6 +109,8 @@ function ProjectDetailPageInner() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const canManage = user ? canCreateProjects(user.role as any) : false;
   const editEnabled = user && (user.role === "admin" || user.role === "owner");
+  const userRole = user?.role?.toLowerCase();
+  const canTriageIssue = !!userRole && ISSUE_TRIAGE_ROLES.includes(userRole);
 
   const showSuccess = (msg: string) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(null), 3000); };
 
@@ -126,15 +129,28 @@ function ProjectDetailPageInner() {
     try { const r = await apiClient.getUsers(); setUsers((r.data || []) as AppUser[]); } catch {}
   }, []);
 
-  const loadIssues = useCallback(async () => {
+  const loadIssues = useCallback(async (): Promise<Issue[]> => {
     setIssuesLoading(true); setIssuesError(null);
-    try { const r = await getIssues(id); setIssues((r.data || []) as Issue[]); }
-    catch (err) { if (err instanceof ApiError) setIssuesError(err.message); else setIssuesError('Eroare la incarcarea problemelor'); }
+    try { const r = await getIssues(id); const list = (r.data || []) as Issue[]; setIssues(list); return list; }
+    catch (err) { if (err instanceof ApiError) setIssuesError(err.message); else setIssuesError('Eroare la incarcarea problemelor'); return []; }
     finally { setIssuesLoading(false); }
   }, [id]);
 
   useEffect(() => { loadProject(); loadMembers(); loadUsers(); }, [loadProject, loadMembers, loadUsers]);
   useEffect(() => { if (tab === 'issues') loadIssues(); }, [tab, loadIssues]);
+
+  const handleIssueStatusChange = useCallback(
+    async (next: IssueStatus) => {
+      if (!selectedIssue) return;
+      await updateIssueStatus(selectedIssue.id, { status: next });
+      // Re-select from the refreshed list so the modal keeps the complete
+      // issue (ncrs + project) instead of the sparse PATCH response.
+      const list = await loadIssues();
+      setSelectedIssue(list.find((i) => i.id === selectedIssue.id) ?? null);
+      showSuccess(t('issues.change_status_success', locale));
+    },
+    [selectedIssue, loadIssues, locale],
+  );
   useEffect(() => { setMemberPage(1); }, [members]);
 
   const handleAddMember = async () => {
@@ -480,7 +496,15 @@ function ProjectDetailPageInner() {
         </section>
       )}
 
-      <IssueDetailModal open={!!selectedIssue} onClose={() => setSelectedIssue(null)} issue={selectedIssue} locale={locale} />
+      <IssueDetailModal
+        open={!!selectedIssue}
+        onClose={() => setSelectedIssue(null)}
+        issue={selectedIssue}
+        locale={locale}
+        role={userRole}
+        membershipRole={selectedIssue ? user?.projectRoles?.[selectedIssue.project_id] : undefined}
+        onStatusChange={canTriageIssue ? handleIssueStatusChange : undefined}
+      />
 
       <Modal open={showSettings} onClose={() => setShowSettings(false)} size="lg">
         <div className="[&>div]:!border-0 [&>div]:!shadow-none [&>div]:!bg-transparent [&>div]:!rounded-none [&>div]:!p-0">

@@ -1,12 +1,28 @@
-import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IssuesService, CreateIssueDto, CreateNCRDto } from './issues.service';
+import {
+  IssuesService,
+  CreateIssueDto,
+  CreateNCRDto,
+  UpdateIssueStatusDto,
+  ISSUE_TRIAGE_ROLES,
+} from './issues.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
 import {
   Roles,
   RequireProjectAccess,
+  RequireEntityProjectAccess,
 } from '../../common/auth/decorators/auth-metadata.decorator';
 import { ProjectScope } from '../../common/auth/decorators/project-scope.decorator';
 import { CurrentUser } from '../../common/auth/decorators/current-user.decorator';
@@ -46,5 +62,17 @@ export class IssuesController {
   @ApiOperation({ summary: 'Issue Non-Conformance Report (NCR)' })
   async createNCR(@Body() dto: CreateNCRDto, @CurrentUser() user: AuthenticatedUser) {
     return this.issuesService.createNCR(dto, user.id);
+  }
+
+  @Patch(':id/status')
+  @RequireEntityProjectAccess('issue', 'id')
+  @Roles(...ISSUE_TRIAGE_ROLES)
+  @ApiOperation({ summary: 'Advance or reopen an issue lifecycle status' })
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateIssueStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.issuesService.updateStatus(id, dto, user.id, user.role);
   }
 }

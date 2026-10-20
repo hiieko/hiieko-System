@@ -21,9 +21,64 @@ export const ACTIVE_BLOCKER_STATUSES: IssueStatus[] = [
   'CORRECTIVE_ACTION_PROPOSED',
 ];
 
-/** True while the issue still blocks the work (status is read-only in the UI). */
+/** True while the issue still blocks the work. A blocker clears once the issue
+ *  reaches RESOLVED or CLOSED (server-authoritative status). */
 export function isActiveBlocker(issue: Issue): boolean {
   return ACTIVE_BLOCKER_STATUSES.includes(issue.status);
+}
+
+// ── Lifecycle transitions (mirror backend issues.service.ts) ──────────
+
+/**
+ * Allowed forward transitions + the single management reopen path.
+ * Kept identical to ISSUE_STATUS_TRANSITIONS in the backend so the UI can
+ * only ever offer a legal next step; the backend still validates.
+ */
+export const ISSUE_STATUS_TRANSITIONS: Record<IssueStatus, IssueStatus[]> = {
+  OPEN: ['INVESTIGATING'],
+  INVESTIGATING: ['CORRECTIVE_ACTION_PROPOSED'],
+  CORRECTIVE_ACTION_PROPOSED: ['RESOLVED'],
+  RESOLVED: ['CLOSED'],
+  CLOSED: ['INVESTIGATING'],
+};
+
+/** Global roles allowed to triage an issue (mirrors backend ISSUE_TRIAGE_ROLES). */
+export const ISSUE_TRIAGE_ROLES: string[] = [
+  'admin',
+  'owner',
+  'manager',
+  'pm',
+  'site_manager',
+  'qa_qc',
+];
+
+/** Roles allowed to reopen a CLOSED issue (mirrors backend ISSUE_REOPEN_ROLES). */
+export const ISSUE_REOPEN_ROLES: string[] = ['admin', 'owner', 'pm'];
+
+/**
+ * Next lifecycle statuses a given role may move an issue to.
+ *
+ * Mirrors the backend rule exactly: the actor must hold a global triage role
+ * (RolesGuard), and reopen additionally requires global ADMIN/OWNER or a
+ * project-membership role in ISSUE_REOPEN_ROLES (issues.service.ts).
+ * `membershipRole` is the caller's role on the issue's project; when it is
+ * unknown, reopen is hidden (fail-closed) so the UI never offers an action
+ * the server will reject.
+ */
+export function allowedIssueTransitions(
+  status: IssueStatus,
+  role: string | undefined,
+  membershipRole?: string,
+): IssueStatus[] {
+  const normalized = (role || '').toLowerCase();
+  if (!ISSUE_TRIAGE_ROLES.includes(normalized)) return [];
+  return (ISSUE_STATUS_TRANSITIONS[status] ?? []).filter((next) => {
+    if (next === 'INVESTIGATING' && status === 'CLOSED') {
+      if (normalized === 'admin' || normalized === 'owner') return true;
+      return ISSUE_REOPEN_ROLES.includes((membershipRole || '').toLowerCase());
+    }
+    return true;
+  });
 }
 
 // ── Ordering ─────────────────────────────────────────────────────────
@@ -65,7 +120,7 @@ export function sortIssues(issues: Issue[]): Issue[] {
 
 // ── Presentation maps (labels are translation keys — see shared/src/translations.ts) ──
 
-/** Badge colour per issue status. Status is display-only; never actionable. */
+/** Badge colour per issue status. */
 export const ISSUE_STATUS_VARIANTS: Record<
   IssueStatus,
   'danger' | 'info' | 'warning' | 'success' | 'neutral'

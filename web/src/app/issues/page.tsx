@@ -21,6 +21,7 @@ import {
   AlertOctagon,
   Clock,
   Camera,
+  ArrowRight,
 } from 'lucide-react';
 import {
   EmptyState,
@@ -35,7 +36,9 @@ import {
   Pagination,
 } from '../../components/ui';
 import { usePhotoUploadModal } from '../../contexts/PhotoUploadModalContext';
-import type { IssueSeverity } from '../../features/issues/types';
+import type { IssueSeverity, IssueStatus } from '../../features/issues/types';
+import { allowedIssueTransitions } from '../../features/issues/constants';
+import { updateIssueStatus } from '../../features/issues/api';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface IssueItem {
@@ -106,6 +109,9 @@ function IssuesPageInner() {
   const [formError, setFormError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [statusTarget, setStatusTarget] = useState<{ issue: IssueItem; next: IssueStatus } | null>(null);
+  const [statusSubmitting, setStatusSubmitting] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const { selectedProjectId } = useProject();
   const { locale } = useLocale();
   const { user } = useAuth();
@@ -141,6 +147,20 @@ function IssuesPageInner() {
       loadIssues();
     } catch (err: any) { setFormError(err.message || 'Eroare la raportare'); }
     finally { setSubmitting(false); }
+  };
+
+  const handleStatusChange = async () => {
+    if (!statusTarget) return;
+    setStatusSubmitting(true); setStatusError(null);
+    try {
+      await updateIssueStatus(statusTarget.issue.id, { status: statusTarget.next });
+      setStatusTarget(null);
+      setSuccessMsg(t('issues.change_status_success', locale));
+      setTimeout(() => setSuccessMsg(null), 3000);
+      loadIssues();
+    } catch (err: any) {
+      setStatusError(err.message || t('issues.change_status_error', locale));
+    } finally { setStatusSubmitting(false); }
   };
 
   const filtered = issues.filter((issue) => {
@@ -302,7 +322,7 @@ function IssuesPageInner() {
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-chrome-line">
+                  <div className="mt-3 pt-3 border-t border-chrome-line flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() =>
@@ -317,6 +337,18 @@ function IssuesPageInner() {
                       <Camera className="w-3.5 h-3.5" />
                       {t('reports.photos', locale)}
                     </button>
+                    {allowedIssueTransitions(issue.status as IssueStatus, userRole, user?.projectRoles?.[issue.project_id]).map((next) => (
+                      <Button
+                        key={next}
+                        variant="secondary"
+                        size="sm"
+                        className="min-h-[40px]"
+                        icon={<ArrowRight className="w-3.5 h-3.5" />}
+                        onClick={() => { setStatusError(null); setStatusTarget({ issue, next }); }}
+                      >
+                        {t(next === 'INVESTIGATING' && issue.status === 'CLOSED' ? 'issues.action_reopen' : `issues.action_to_${next}`, locale)}
+                      </Button>
+                    ))}
                   </div>
                 </Card>
               ))}
@@ -375,6 +407,45 @@ function IssuesPageInner() {
             </select>
           </div>
         </div>
+      </Modal>
+
+      {/* Status change confirmation */}
+      <Modal
+        open={!!statusTarget}
+        onClose={() => setStatusTarget(null)}
+        title={t('issues.change_status_title', locale)}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="md" onClick={() => setStatusTarget(null)}>
+              {t('general.cancel', locale)}
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleStatusChange}
+              loading={statusSubmitting}
+              disabled={statusSubmitting}
+              icon={<ArrowRight className="w-4 h-4" />}
+            >
+              {statusSubmitting
+                ? t('issues.change_status_submitting', locale)
+                : t('issues.change_status_submit', locale)}
+            </Button>
+          </div>
+        }
+      >
+        {statusError && (<div className="mb-3 p-3 bg-critical-soft border border-critical-soft rounded-lg text-sm text-critical-foreground">{statusError}</div>)}
+        {statusTarget && (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-700">{statusTarget.issue.title}</p>
+            <div className="flex items-center gap-2 text-sm">
+              <StatusBadge status={statusTarget.issue.status} />
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+              <StatusBadge status={statusTarget.next} />
+            </div>
+            <p className="text-xs text-slate-500">{t('issues.change_status_current', locale)}: {STATUS_LABELS[statusTarget.issue.status] || statusTarget.issue.status}</p>
+          </div>
+        )}
       </Modal>
     </div>
   );
