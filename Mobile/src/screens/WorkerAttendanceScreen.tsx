@@ -11,6 +11,8 @@ import {
 import { 
   calculateAttendanceWorkTime, 
   isWithinProjectGeofence,
+  locationFailureTranslationKey,
+  t,
   Project,
   TimeLog 
 } from '@solar/shared';
@@ -35,7 +37,8 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
   const [activeLog, setActiveLogState] = useState<TimeLog | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentGpsDist, setCurrentGpsDist] = useState<number | null>(null);
-  const [gpsError, setGpsError] = useState<string | null>(null);
+  const [gpsErrorTranslationKey, setGpsErrorTranslationKey] = useState<string | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   useEffect(() => {
     async function loadActiveStateAndLocation() {
@@ -44,17 +47,25 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
       await refreshGps();
     }
     loadActiveStateAndLocation();
+    // refreshGps is stable for a given projects/selectedProject; re-run when the
+    // selected site changes so the geofence badge reflects the new site centre.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProject]);
 
+  /**
+   * Acquires a fresh device fix and updates the geofence badge. On failure the
+   * distance is cleared (never fabricated) and a translated error key is set.
+   */
   const refreshGps = async () => {
-    const loc = await getCurrentDeviceLocation();
-    if (loc.error) {
-      setGpsError(loc.error);
-      // Fallback distance for simulation/demo if physical GPS is blocked in simulator
-      const simulatedCheck = isWithinProjectGeofence(44.2981, 23.8122, selectedProject.latitude, selectedProject.longitude, selectedProject.geofence_radius_meters);
-      setCurrentGpsDist(simulatedCheck.distanceMeters);
-    } else if (loc.latitude && loc.longitude) {
-      setGpsError(null);
+    setGpsLoading(true);
+    try {
+      const loc = await getCurrentDeviceLocation();
+      if (!loc.ok) {
+        setCurrentGpsDist(null);
+        setGpsErrorTranslationKey(locationFailureTranslationKey(loc.reason));
+        return;
+      }
+      setGpsErrorTranslationKey(null);
       const check = isWithinProjectGeofence(
         loc.latitude,
         loc.longitude,
@@ -63,6 +74,8 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
         selectedProject.geofence_radius_meters
       );
       setCurrentGpsDist(check.distanceMeters);
+    } finally {
+      setGpsLoading(false);
     }
   };
 
@@ -73,9 +86,26 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
 
     setLoading(true);
     try {
+      // A valid device fix is a hard precondition. If GPS cannot be acquired
+      // we do NOT submit a check-in and we never substitute a site-centre
+      // coordinate - the worker stays un-pontat until they retry with GPS.
       const loc = await getCurrentDeviceLocation();
-      let workerLat = loc.latitude || 44.2981;
-      let workerLng = loc.longitude || 23.8122;
+      if (!loc.ok) {
+        setCurrentGpsDist(null);
+        setGpsErrorTranslationKey(locationFailureTranslationKey(loc.reason));
+        Alert.alert(
+          t('worker.gps_error_title', locale),
+          t(locationFailureTranslationKey(loc.reason), locale),
+          [
+            { text: t('general.cancel', locale), style: 'cancel' },
+            { text: t('worker.gps_retry', locale), onPress: () => { void handleCheckIn(); } },
+          ]
+        );
+        return;
+      }
+
+      const workerLat = loc.latitude;
+      const workerLng = loc.longitude;
 
       const geofence = isWithinProjectGeofence(
         workerLat,
@@ -85,10 +115,15 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
         selectedProject.geofence_radius_meters
       );
 
-      if (!geofence.isWithin && !loc.error) {
+      setCurrentGpsDist(geofence.distanceMeters);
+      setGpsErrorTranslationKey(null);
+
+      if (!geofence.isWithin) {
         Alert.alert(
-          'În Afara Șantierului',
-          `Te afli la ${geofence.distanceMeters}m de șantier. Raza permisă este de ${selectedProject.geofence_radius_meters}m.`
+          t('attendance.outside_title', locale),
+          t('attendance.outside_body', locale)
+            .replace('{distance}', String(geofence.distanceMeters))
+            .replace('{radius}', String(selectedProject.geofence_radius_meters))
         );
         return;
       }
@@ -127,14 +162,14 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
       if (isOffline) {
         // Enqueue for later sync (SQLite-based queue)
         await enqueueOperation('attendance', 'check_in', checkInPayload, idemKey);
-        Alert.alert('Salvat Local (Offline)', 'Sosirea ta (AM VENIT) a fost înregistrată local și se va sincroniza când revine conexiunea.');
+        Alert.alert(t('attendance.offline_saved_title', locale), t('attendance.checkin_offline_body', locale));
       } else {
         // Submit directly to API
         await apiClient.checkIn(checkInPayload);
-        Alert.alert('Succes!', `Ai pontat sosirea (AM VENIT) la ${selectedProject.name}`);
+        Alert.alert(t('worker.checkin_success', locale), t('attendance.checkin_success_body', locale).replace('{site}', selectedProject.name));
       }
     } catch (e: any) {
-      Alert.alert('Eroare', e.message || 'Nu s-a putut înregistra sosirea');
+      Alert.alert(t('worker.error_generic', locale), e.message || t('attendance.checkin_error_body', locale));
     } finally {
       setLoading(false);
     }
@@ -148,10 +183,24 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
       const now = new Date().toISOString();
       const calc = calculateAttendanceWorkTime(activeLog.check_in, now);
 
-      // Get current location for check-out
+      // Same hard precondition as check-in: a real device fix is required.
+      // We never fabricate coordinates for a check-out either.
       const loc = await getCurrentDeviceLocation();
-      const workerLat = loc.latitude || 44.2981;
-      const workerLng = loc.longitude || 23.8122;
+      if (!loc.ok) {
+        setGpsErrorTranslationKey(locationFailureTranslationKey(loc.reason));
+        Alert.alert(
+          t('worker.gps_error_title', locale),
+          t(locationFailureTranslationKey(loc.reason), locale),
+          [
+            { text: t('general.cancel', locale), style: 'cancel' },
+            { text: t('worker.gps_retry', locale), onPress: () => { void handleCheckOut(); } },
+          ]
+        );
+        return;
+      }
+
+      const workerLat = loc.latitude;
+      const workerLng = loc.longitude;
 
       // Prepare payload for API/queue
       // Note: check-out needs an attendanceId from the server.
@@ -171,21 +220,25 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
         // Enqueue for later sync (SQLite-based queue)
         await enqueueOperation('attendance', 'check_out', checkOutPayload, idemKey);
         Alert.alert(
-          'Plecare Înregistrată Local', 
-          `Ai pontat plecarea (AM PLECAT).\nOre lucrate: ${calc.normalHoursWorked}h\nOre suplimentare: ${calc.overtimeHoursDisplay}`
+          t('attendance.offline_saved_title', locale),
+          t('attendance.checkout_offline_body', locale)
+            .replace('{hours}', String(calc.normalHoursWorked))
+            .replace('{overtime}', calc.overtimeHoursDisplay)
         );
       } else {
         // Submit directly to API
         const { attendanceId, ...data } = checkOutPayload;
         await apiClient.checkOut(attendanceId, data);
         Alert.alert(
-          'Zi de Muncă Încheiată!',
-          `Plecare confirmată (AM PLECAT).\nOre normale: ${calc.normalHoursWorked}h\nOre suplimentare: ${calc.overtimeHoursDisplay}`
+          t('worker.checkout_success', locale),
+          t('attendance.checkout_success_body', locale)
+            .replace('{hours}', String(calc.normalHoursWorked))
+            .replace('{overtime}', calc.overtimeHoursDisplay)
         );
       }
     } catch (e: any) {
       console.error('Check-out error:', e);
-      Alert.alert('Eroare', e.message || 'Nu s-a putut înregistra plecarea');
+      Alert.alert(t('worker.error_generic', locale), e.message || t('attendance.checkout_error_body', locale));
     } finally {
       setLoading(false);
     }
@@ -201,31 +254,52 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
         </View>
         <View>
           <Text style={styles.userName}>{user.full_name}</Text>
-          <Text style={styles.userRole}>Lucrător Șantier Solar</Text>
+          <Text style={styles.userRole}>{t('attendance.worker_role_label', locale)}</Text>
         </View>
       </View>
 
       {/* Project Selector Card */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionLabel}>ȘANTIER SELECTAT (CE ȘANTIER):</Text>
+        <Text style={styles.sectionLabel}>{t('attendance.selected_site', locale)}</Text>
         <View style={styles.siteBox}>
           <Text style={styles.siteName}>{selectedProject.name}</Text>
-          <Text style={styles.siteCode}>Cod: {selectedProject.code} • {selectedProject.address}</Text>
+          <Text style={styles.siteCode}>{t('attendance.site_code', locale)}: {selectedProject.code} • {selectedProject.address}</Text>
         </View>
 
         {/* GPS Geofence Badge */}
         <View style={[styles.gpsBadge, isWithinGeofence ? styles.gpsValid : styles.gpsInvalid]}>
           <Text style={styles.gpsText}>
-            {isWithinGeofence 
-              ? `✓ GPS Validat: Ești în perimetrul șantierului (${currentGpsDist}m <= ${selectedProject.geofence_radius_meters}m)`
-              : `⚠ În afara perimetrului (${currentGpsDist ?? '?'}m > ${selectedProject.geofence_radius_meters}m)`}
+            {gpsLoading
+              ? t('attendance.gps_checking', locale)
+              : currentGpsDist === null
+              ? t('attendance.gps_no_fix', locale)
+              : isWithinGeofence
+              ? t('attendance.gps_within', locale)
+                  .replace('{distance}', String(currentGpsDist))
+                  .replace('{radius}', String(selectedProject.geofence_radius_meters))
+              : t('attendance.gps_outside', locale)
+                  .replace('{distance}', String(currentGpsDist))
+                  .replace('{radius}', String(selectedProject.geofence_radius_meters))}
           </Text>
         </View>
 
-        {gpsError && (
-          <Text style={styles.gpsWarningText}>
-            {gpsError}
-          </Text>
+        {gpsErrorTranslationKey && (
+          <View style={styles.gpsErrorBox}>
+            <Text style={styles.gpsWarningText}>
+              {t(gpsErrorTranslationKey, locale)}
+            </Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={refreshGps}
+              disabled={gpsLoading}
+              accessibilityRole="button"
+              accessibilityLabel={t('worker.gps_retry', locale)}
+            >
+              <Text style={styles.retryButtonText}>
+                {gpsLoading ? t('attendance.gps_checking', locale) : t('worker.gps_retry', locale)}
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -240,15 +314,15 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
             activeOpacity={0.8}
             disabled={loading}
           >
-            <Text style={styles.bigButtonText}>AM VENIT</Text>
-            <Text style={styles.buttonSubtext}>Apasă la sosirea pe șantier (09:00)</Text>
+            <Text style={styles.bigButtonText}>{t('worker.clock_in', locale)}</Text>
+            <Text style={styles.buttonSubtext}>{t('attendance.check_in_hint', locale)}</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.activeContainer}>
             <View style={styles.activeBanner}>
-              <Text style={styles.activeTitle}>EȘTI PREZENT PE ȘANTIER</Text>
+              <Text style={styles.activeTitle}>{t('attendance.present_title', locale)}</Text>
               <Text style={styles.activeTime}>
-                Sosire înregistrată: {new Date(activeLog.check_in).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+                {t('attendance.check_in_recorded', locale)}: {new Date(activeLog.check_in).toLocaleTimeString(locale === 'en' ? 'en-GB' : 'ro-RO', { hour: '2-digit', minute: '2-digit' })}
               </Text>
             </View>
 
@@ -258,8 +332,8 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
               activeOpacity={0.8}
               disabled={loading}
             >
-              <Text style={styles.bigButtonText}>AM PLECAT</Text>
-              <Text style={styles.buttonSubtext}>Apasă la terminarea programului de lucru</Text>
+              <Text style={styles.bigButtonText}>{t('worker.clock_out', locale)}</Text>
+              <Text style={styles.buttonSubtext}>{t('attendance.check_out_hint', locale)}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -267,9 +341,9 @@ export function WorkerAttendanceScreen({ user, projects, isOffline, locale = 'ro
 
       {/* Schedule Notes */}
       <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>Program Oficial Șantier:</Text>
-        <Text style={styles.infoText}>• Program de bază: 09:00 – 18:00 (1 oră pauză de masă)</Text>
-        <Text style={styles.infoText}>• Plecarea după ora 18:00 generează automat ore suplimentare (ORE SUPLIM.)</Text>
+        <Text style={styles.infoTitle}>{t('attendance.schedule_title', locale)}</Text>
+        <Text style={styles.infoText}>{t('attendance.schedule_base', locale)}</Text>
+        <Text style={styles.infoText}>{t('attendance.schedule_overtime', locale)}</Text>
       </View>
     </ScrollView>
   );
@@ -358,6 +432,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 6,
     lineHeight: 15,
+  },
+  gpsErrorBox: {
+    marginTop: 8,
+  },
+  retryButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#334155',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    fontWeight: '700',
   },
   actionSection: {
     marginVertical: 10,

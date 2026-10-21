@@ -1,43 +1,53 @@
 import * as Location from 'expo-location';
-
-export interface LocationResult {
-  latitude?: number;
-  longitude?: number;
-  error?: string;
-  isPermissionDenied?: boolean;
-}
+import {
+  classifyLocationError,
+  isValidCoordinate,
+  LocationOutcome,
+} from '@solar/shared';
 
 /**
- * Requests location permission and acquires current high-accuracy device GPS coordinates
+ * Requests location permission and acquires current high-accuracy device GPS
+ * coordinates.
+ *
+ * Never returns fabricated or fallback coordinates: on any failure it returns
+ * `{ ok: false, reason }` and the caller must not submit a check-in/out. The
+ * absence of a real fix is a hard precondition failure, not "assume the worker
+ * is at the site centre".
+ *
+ * The reason classification and coordinate validation live in
+ * `@solar/shared` (`location.ts`) so they are unit-tested under the Node
+ * harness; this module is only the thin expo-location adapter.
  */
-export async function getCurrentDeviceLocation(): Promise<LocationResult> {
+export async function getCurrentDeviceLocation(): Promise<LocationOutcome> {
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
-      return {
-        error: 'Permisiunea de localizare GPS a fost refuzată. Activați permisiunea din setările telefonului pentru a ponta prezența pe șantier.',
-        isPermissionDenied: true,
-      };
+      // Covers both a transient denial and a permanently blocked permission;
+      // the UI's "enable it in settings" guidance is accurate in both cases.
+      return { ok: false, reason: 'permission_denied' };
     }
 
     const isLocationServicesEnabled = await Location.hasServicesEnabledAsync();
     if (!isLocationServicesEnabled) {
-      return {
-        error: 'Serviciul de localizare (GPS) este dezactivat pe telefon. Vă rugăm să activați GPS-ul.',
-      };
+      return { ok: false, reason: 'services_disabled' };
     }
 
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.High,
-    });
+    let location: Location.LocationObject;
+    try {
+      location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+    } catch (positionError: unknown) {
+      return { ok: false, reason: classifyLocationError(positionError) };
+    }
 
-    return {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-    };
-  } catch (err: any) {
-    return {
-      error: err?.message || 'Eroare la citirea coordonatelor GPS ale dispozitivului.',
-    };
+    const { latitude, longitude } = location.coords ?? {};
+    if (!isValidCoordinate(latitude, longitude)) {
+      return { ok: false, reason: 'unavailable' };
+    }
+
+    return { ok: true, latitude, longitude };
+  } catch {
+    return { ok: false, reason: 'unknown' };
   }
 }
