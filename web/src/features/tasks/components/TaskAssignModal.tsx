@@ -83,11 +83,13 @@ export function TaskAssignModal({
       const res = await assignTask(task.id, userId);
       if (res.data && !res.error) {
         // Create updated task with new assignment
+        const assignedMember = members.find((member) => member.user_id === userId);
         const newAssignment: TaskAssignment = {
           id: res.data.id,
           task_id: res.data.task_id,
           user_id: res.data.user_id,
           assigned_at: res.data.assigned_at,
+          ...(assignedMember?.user ? { user: assignedMember.user } : {}),
         };
 
         const updatedTask: Task = {

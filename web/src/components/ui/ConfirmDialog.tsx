@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
@@ -75,12 +76,12 @@ export function ConfirmDialog({
     }
   }, [open]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
   const isDanger = variant === 'danger';
   const Icon = isDanger ? Trash2 : AlertTriangle;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" />
@@ -170,6 +171,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -47,6 +47,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
  * (Phase 1, Step 6). The inline notice is only used when there is no role home
  * to redirect to.
  *
+ * `allowedRoles: null` means "every authenticated role" — the same contract as
+ * `ROUTE_ROLES` in `config/route-roles.ts`, so a page can be wired directly to
+ * the canonical route↔role map without translating `null` into a list.
+ *
  * IMPORTANT: All React hooks must be called BEFORE any conditional returns.
  */
 export function RoleGuard({
@@ -55,7 +59,7 @@ export function RoleGuard({
   fallback,
 }: {
   children: React.ReactNode;
-  allowedRoles: string[];
+  allowedRoles: string[] | null;
   fallback?: React.ReactNode;
 }) {
   const { user } = useAuth();
@@ -66,10 +70,14 @@ export function RoleGuard({
   // All hooks called unconditionally at the top (Rules of Hooks compliance)
   const userRole = user?.role?.toLowerCase();
 
-  // ADMIN and OWNER always pass (superset access)
+  // ADMIN and OWNER always pass (superset access).
+  // `null` = no role restriction: every authenticated role passes.
   const isAllowed =
     !!userRole &&
-    (userRole === 'admin' || userRole === 'owner' || allowedRoles.includes(userRole));
+    (allowedRoles === null ||
+      userRole === 'admin' ||
+      userRole === 'owner' ||
+      allowedRoles.includes(userRole));
 
   // Every authenticated role has a home at `/` (the role router). This is the
   // safe destination for an unauthorized direct URL. A role with no home would

@@ -102,6 +102,9 @@ export class ProjectAccessGuard implements CanActivate {
 
       // mode === 'optional'
       if (projectId) {
+        // The scope is populated in both optional branches so `@ProjectScope()`
+        // always reflects the real authorization scope of the requester.
+        this.attachProjectScope(request, user);
         return this.checkProjectAccess(user, projectId);
       }
 

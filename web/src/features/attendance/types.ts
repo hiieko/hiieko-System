@@ -12,8 +12,9 @@
 export type AttendanceStatus =
   | 'PRESENT'
   | 'ABSENT'
-  | 'LATE'
-  | 'LEFT_EARLY';
+  | 'REST'
+  | 'MEDICAL_LEAVE'
+  | 'UNPAID_LEAVE';
 
 // ── Attendance record ─────────────────────────────────────────────────
 
@@ -130,8 +131,9 @@ export interface AssignedTask {
 export const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
   PRESENT: 'Prezent',
   ABSENT: 'Absent',
-  LATE: 'Întârziere',
-  LEFT_EARLY: 'Plecare devreme',
+  REST: 'Repaus',
+  MEDICAL_LEAVE: 'Concediu medical',
+  UNPAID_LEAVE: 'Concediu fara plata',
 };
 
 export const TASK_STATUS_LABELS: Record<string, string> = {

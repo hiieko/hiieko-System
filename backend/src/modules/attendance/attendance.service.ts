@@ -289,7 +289,7 @@ export class AttendanceService {
     };
   }
 
-  async findAll(params?: {
+  private buildFindAllWhere(params?: {
     projectId?: string;
     userId?: string;
     startDate?: string;
@@ -314,8 +314,18 @@ export class AttendanceService {
       where.date = { ...where.date, lte: end };
     }
 
+    return where;
+  }
+
+  async findAll(params?: {
+    projectId?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    projectScopeWhere?: Record<string, any>;
+  }) {
     return this.prisma.attendanceRecord.findMany({
-      where,
+      where: this.buildFindAllWhere(params),
       include: {
         user: { include: { profile: true } },
         project: true,
@@ -323,6 +333,44 @@ export class AttendanceService {
       orderBy: { check_in_time: 'desc' },
       take: 200,
     });
+  }
+
+  /**
+   * Backward-compatible paginated variant of `findAll`.
+   *
+   * The legacy `findAll` contract is intentionally unchanged: callers that do
+   * not send `paginated=true` keep receiving the existing capped array. New
+   * callers can request page metadata without changing the shape seen by old
+   * clients.
+   */
+  async findAllPaginated(
+    params: {
+      projectId?: string;
+      userId?: string;
+      startDate?: string;
+      endDate?: string;
+      projectScopeWhere?: Record<string, any>;
+    },
+    page: number,
+    pageSize: number,
+  ) {
+    const where = this.buildFindAllWhere(params);
+
+    const [data, total] = await Promise.all([
+      this.prisma.attendanceRecord.findMany({
+        where,
+        include: {
+          user: { include: { profile: true } },
+          project: true,
+        },
+        orderBy: { check_in_time: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.attendanceRecord.count({ where }),
+    ]);
+
+    return { data, total, page, pageSize };
   }
 
   /**

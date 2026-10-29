@@ -74,8 +74,7 @@ export interface CrewMember {
 export const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
   PRESENT: 'Prezent',
   ABSENT: 'Absent',
-  LATE: 'Întârziere',
-  EARLY_LEAVE: 'Plecare devreme',
-  OVERTIME: 'Ore suplimentare',
-  ON_BREAK: 'Pauză',
+  REST: 'Repaus',
+  MEDICAL_LEAVE: 'Concediu medical',
+  UNPAID_LEAVE: 'Concediu fara plata',
 };

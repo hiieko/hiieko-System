@@ -39,15 +39,16 @@ describe('Task DTO validation', () => {
     expect(dto.plannedQuantity).toBe(12);
   });
 
-  it('requires project, title and code when creating a task', async () => {
+  it('requires project and title when creating a task without a client code', async () => {
     const dto = plainToInstance(CreateTaskDto, {
-      title: 'Install inverter',
+      code: 'AR-999',
     });
 
     const errors = await validate(dto);
 
     expect(errors.map((error) => error.property)).toEqual(
-      expect.arrayContaining(['projectId', 'code']),
+      expect.arrayContaining(['projectId', 'title']),
     );
+    expect(errors.map((error) => error.property)).not.toContain('code');
   });
 });

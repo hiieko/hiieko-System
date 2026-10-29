@@ -11,28 +11,14 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
-  Layers,
-  Users,
-  Clock,
   Briefcase,
-  Boxes,
-  Euro,
-  ShieldCheck,
-  FileCheck,
   AlertTriangle,
   RefreshCw,
   Loader2,
-  ChevronRight,
-  TrendingUp,
-  TrendingDown,
   CheckCircle2,
   XCircle,
-  HelpCircle,
   ExternalLink,
-  MapPin,
-  Calendar,
   Activity,
   AlertCircle,
   Camera,
@@ -46,18 +32,43 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { apiClient, ControlTowerOverviewDto, RedFlag } from '../lib/api-client';
+import { formatDate } from '../lib/formatters';
 import { getActivity } from '../features/activity/api';
 import type { ActivityEvent } from '../features/activity/types';
 import { t, useLocale, canCreateProjects, type Locale } from '@solar/shared';
 import { ControlTowerDrilldownDrawer, DrilldownData } from './ControlTowerDrilldownDrawer';
-import { ControlTowerRedFlagsCard } from './ControlTowerRedFlagsCard';
+import { ControlTowerRedFlagsCard, prioritizeRedFlags } from './ControlTowerRedFlagsCard';
+import { ControlTowerProjectMap, type ProjectMapSite } from './ControlTowerProjectMap';
+import { ControlTowerSiteDetail } from './ControlTowerSiteDetail';
 import { EmptyState, ErrorState, Skeleton, Pagination, Button, Card } from './ui';
 import { PageTutorial } from './PageTutorial';
 import { useProject } from '../contexts/ProjectContext';
 import { useAuth } from '../contexts/AuthContext';
-import { CONTROL_TOWER_ROLES } from '../config/route-roles';
+import { ROUTE_ROLES } from '../config/route-roles';
+import { getAllAttendanceRecords } from '../features/attendance/api';
+import type { AttendanceRecord } from '../features/attendance/types';
+import { getDailyPlans } from '../features/planning/api';
+import type { DailyPlan } from '../features/planning/types';
+import { getIssues } from '../features/issues/api';
+import type { Issue } from '../features/issues/types';
+import { todayCompanyIso } from '../lib/company-time';
+import {
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_LABELS_EN,
+  type ProjectStatus,
+} from '../features/projects/types';
+import type { Project } from '../types/project';
 
 type ActivityBucket = 'hour' | 'today' | 'yesterday';
+type RoleHighlight = {
+  label: string;
+  value: number | string;
+  detail?: string;
+  category?: string;
+  ruleExplanation?: string;
+  href?: string;
+  tone: 'danger' | 'warning' | 'neutral';
+};
 
 interface ActivityMeta {
   icon: LucideIcon;
@@ -151,6 +162,11 @@ function activityBucketOf(iso: string): ActivityBucket | null {
   return null;
 }
 
+function projectStageLabel(stage: string, locale: Locale): string {
+  const labels = locale === 'en' ? PROJECT_STATUS_LABELS_EN : PROJECT_STATUS_LABELS;
+  return labels[stage as ProjectStatus] ?? stage.replace(/_/g, ' ');
+}
+
 const ACTIVITY_BUCKET_ORDER: { key: ActivityBucket; i18nKey: string }[] = [
   { key: 'hour', i18nKey: 'control_tower.bucket_hour' },
   { key: 'today', i18nKey: 'control_tower.bucket_today' },
@@ -232,6 +248,7 @@ function ControlTowerSectionHeader({
 export function ControlTowerSurface() {
   const [overview, setOverview] = useState<ControlTowerOverviewDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialOverviewLoaded, setInitialOverviewLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -239,45 +256,93 @@ export function ControlTowerSurface() {
   const [redFlags, setRedFlags] = useState<RedFlag[]>([]);
   const [redFlagsLoading, setRedFlagsLoading] = useState(true);
   const [redFlagsError, setRedFlagsError] = useState<string | null>(null);
-  // Activity since yesterday — GET /api/activity, filtered client-side to the last 24h
+  // Activity is fetched only when its secondary section is opened.
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityError, setActivityError] = useState<string | null>(null);
-  const [redFlagsCollapsed, toggleRedFlags] = usePersistentCollapse('redFlags', false);
-  const [domainsCollapsed, toggleDomains] = usePersistentCollapse('domains', false);
-  const [quickActionsCollapsed, toggleQuickActions] = usePersistentCollapse('quickActions', true);
+  const controlTowerRequestId = useRef(0);
+  const activityRequestId = useRef(0);
+  const attendanceRequestId = useRef(0);
+  const dailyPlansRequestId = useRef(0);
+  const siteIssuesRequestId = useRef(0);
+  const [domainsCollapsed, toggleDomains] = usePersistentCollapse('domains', true);
   const [activityCollapsed, toggleActivity] = usePersistentCollapse('activity', true);
   const [activityPage, setActivityPage] = useState(1);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [mapSelectedSiteId, setMapSelectedSiteId] = useState<string | null>(null);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[] | null>(null);
+  const [attendanceTotal, setAttendanceTotal] = useState(0);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceError, setAttendanceError] = useState<string | null>(null);
+  const [attendanceIncomplete, setAttendanceIncomplete] = useState(false);
+  const [attendanceLastUpdated, setAttendanceLastUpdated] = useState<Date | null>(null);
+  const [dailyPlans, setDailyPlans] = useState<DailyPlan[] | null>(null);
+  const [dailyPlansLoading, setDailyPlansLoading] = useState(false);
+  const [dailyPlansError, setDailyPlansError] = useState<string | null>(null);
+  const [siteIssues, setSiteIssues] = useState<Issue[] | null>(null);
+  const [siteIssuesLoading, setSiteIssuesLoading] = useState(false);
+  const [siteIssuesError, setSiteIssuesError] = useState<string | null>(null);
   const { locale } = useLocale();
   const { user } = useAuth();
-  const router = useRouter();
-  const { selectedProjectId, setSelectedProjectId } = useProject();
+  const { projects, loading: projectsLoading, selectedProjectId, setSelectedProjectId } = useProject();
+  const selectedSiteId = projects.some((project) => project.id === mapSelectedSiteId)
+    ? mapSelectedSiteId
+    : projects.some((project) => project.id === selectedProjectId)
+      ? selectedProjectId
+      : projects[0]?.id ?? null;
   const role = user?.role?.toLowerCase() || 'viewer';
+  const canRoleOpenRoute = useCallback((path: string) => {
+    if (role === 'admin' || role === 'owner') return true;
+    if (!Object.prototype.hasOwnProperty.call(ROUTE_ROLES, path)) return false;
+    const allowedRoles = ROUTE_ROLES[path as keyof typeof ROUTE_ROLES];
+    return allowedRoles === null || (Array.isArray(allowedRoles) && allowedRoles.includes(role));
+  }, [role]);
   const roleProfile = (() => {
     switch (role) {
       case 'admin':
-        return { title: t('nav.utilizatori', locale), focus: t('control_tower.focus_admin', locale), links: [['/utilizatori', 'nav.utilizatori'], ['/projects', 'nav.projects'], ['/teams', 'nav.teams']] };
+      case 'owner':
+        return { focus: t('control_tower.focus_admin', locale) };
       case 'pm':
-        return { title: t('nav.projects', locale), focus: t('control_tower.focus_pm', locale), links: [['/projects', 'nav.projects'], ['/planning', 'nav.planning'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
+        return { focus: t('control_tower.focus_pm', locale) };
       case 'manager':
-        return { title: t('nav.projects', locale), focus: t('control_tower.focus_manager', locale), links: [['/projects', 'nav.projects'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
+      case 'site_manager':
+        return { focus: t('control_tower.focus_manager', locale) };
       case 'procurement':
-        return { title: t('nav.avize', locale), focus: t('control_tower.focus_procurement', locale), links: [['/avize', 'nav.avize'], ['/furnizori', 'nav.furnizori'], ['/depozite', 'nav.depozite'], ['/stocuri', 'nav.stocuri']] };
+        return { focus: t('control_tower.focus_procurement', locale) };
       case 'finance':
-        return { title: t('nav.cheltuieli', locale), focus: t('control_tower.focus_finance', locale), links: [['/cheltuieli', 'nav.cheltuieli'], ['/aprobare', 'nav.aprobare'], ['/projects', 'nav.projects']] };
+        return { focus: t('control_tower.focus_finance', locale) };
       case 'qa_qc':
-        return { title: t('nav.qa_qc', locale), focus: t('control_tower.focus_quality', locale), links: [['/qa', 'nav.qa_qc'], ['/issues', 'nav.issues'], ['/rapoarte', 'nav.rapoarte']] };
+        return { focus: t('control_tower.focus_quality', locale) };
       case 'site_logistics':
-        return { title: t('nav.avize', locale), focus: t('control_tower.focus_logistics', locale), links: [['/avize', 'nav.avize'], ['/stocuri', 'nav.stocuri'], ['/issues', 'nav.issues']] };
+        return { focus: t('control_tower.focus_logistics', locale) };
       case 'maintenance_director':
-        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_maintenance', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/issues', 'nav.issues']] };
+        return { focus: t('control_tower.focus_maintenance', locale) };
       case 'technical_director':
-        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_technical', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/qa', 'nav.qa_qc'], ['/rapoarte', 'nav.rapoarte']] };
+        return { focus: t('control_tower.focus_technical', locale) };
       default:
-        return { title: t('nav.control_tower', locale), focus: t('control_tower.focus_viewer', locale), links: [['/control-tower', 'nav.control_tower'], ['/projects', 'nav.projects'], ['/rapoarte', 'nav.rapoarte']] };
+        return { focus: t('control_tower.focus_viewer', locale) };
     }
   })();
-  const roleHasControlTower = CONTROL_TOWER_ROLES.includes(role);
+  const canOpenProjectRecords = canRoleOpenRoute('/projects');
+  const selectMapSite = useCallback((siteId: string) => {
+    setMapSelectedSiteId(siteId);
+    // Keep the existing dashboard scope aligned when the header is already
+    // scoped to one project. Map selection leaves the portfolio-wide filter intact.
+    if (selectedProjectId) setSelectedProjectId(siteId);
+  }, [selectedProjectId, setSelectedProjectId]);
+  const dashboardModuleLinks = [
+    { href: '/projects', labelKey: 'nav.projects' },
+    { href: '/tasks', labelKey: 'nav.tasks' },
+    { href: '/planning', labelKey: 'nav.planning' },
+    { href: '/issues', labelKey: 'nav.issues' },
+    { href: '/qa', labelKey: 'nav.qa_qc' },
+    { href: '/pontaj', labelKey: 'nav.pontaj' },
+    { href: '/rapoarte', labelKey: 'nav.rapoarte' },
+    { href: '/avize', labelKey: 'nav.avize' },
+    { href: '/stocuri', labelKey: 'nav.stocuri' },
+    { href: '/cheltuieli', labelKey: 'nav.cheltuieli' },
+    { href: '/documente', labelKey: 'nav.documente' },
+  ].filter(({ href }) => canRoleOpenRoute(href));
 
   // Drilldown Drawer State — items come from GET /api/control-tower/drilldown
   const [drilldown, setDrilldown] = useState<DrilldownData>({
@@ -294,17 +359,151 @@ export function ControlTowerSurface() {
     itemId?: string;
   } | null>(null);
 
+  const loadActivity = useCallback(async () => {
+    const requestId = ++activityRequestId.current;
+    const isCurrentRequest = () => requestId === activityRequestId.current;
+    setActivityLoading(true);
+    setActivityError(null);
+    setActivityEvents([]);
+    try {
+      const activityResponse = await getActivity({
+        projectId: selectedProjectId || undefined,
+        limit: 20,
+      });
+      if (!isCurrentRequest()) return;
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      if (activityResponse.error || !Array.isArray(activityResponse.data)) {
+        throw new Error(activityResponse.error || t('control_tower.load_error', locale));
+      }
+      const recent = activityResponse.data
+        .filter((event) => new Date(event.createdAt).getTime() >= cutoff)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setActivityEvents(recent);
+    } catch (err: unknown) {
+      if (!isCurrentRequest()) return;
+      setActivityError(
+        err instanceof Error ? err.message : t('control_tower.load_error', locale),
+      );
+    } finally {
+      if (isCurrentRequest()) setActivityLoading(false);
+    }
+  }, [selectedProjectId, locale]);
+
+  const loadSiteAttendance = useCallback(async () => {
+    const requestId = ++attendanceRequestId.current;
+    const isCurrentRequest = () => requestId === attendanceRequestId.current;
+    if (!selectedSiteId || !selectedDate || !canRoleOpenRoute('/pontaj')) {
+      setAttendanceRecords(null);
+      setAttendanceTotal(0);
+      setAttendanceError(null);
+      setAttendanceIncomplete(false);
+      setAttendanceLoading(false);
+      return;
+    }
+
+    setAttendanceLoading(true);
+    setAttendanceError(null);
+    setAttendanceIncomplete(false);
+    setAttendanceRecords(null);
+    try {
+      const response = await getAllAttendanceRecords({
+        projectId: selectedSiteId,
+        startDate: selectedDate,
+        endDate: selectedDate,
+      });
+      if (!isCurrentRequest()) return;
+      if (response.error || !Array.isArray(response.data)) {
+        throw new Error(response.error || t('control_tower.map.attendance_unavailable', locale));
+      }
+      setAttendanceRecords(response.data);
+      setAttendanceTotal(typeof response.total === 'number' ? response.total : response.data.length);
+      setAttendanceLastUpdated(new Date());
+      setAttendanceIncomplete(response.incomplete || response.truncated);
+      setAttendanceError(null);
+    } catch (err: unknown) {
+      if (!isCurrentRequest()) return;
+      setAttendanceIncomplete(false);
+      setAttendanceError(err instanceof Error ? err.message : t('control_tower.map.attendance_unavailable', locale));
+    } finally {
+      if (isCurrentRequest()) setAttendanceLoading(false);
+    }
+  }, [selectedSiteId, selectedDate, canRoleOpenRoute, locale]);
+
+  const loadSiteDailyPlans = useCallback(async () => {
+    const requestId = ++dailyPlansRequestId.current;
+    const isCurrentRequest = () => requestId === dailyPlansRequestId.current;
+    if (!selectedSiteId || !selectedDate || !canRoleOpenRoute('/planning')) {
+      setDailyPlans(null);
+      setDailyPlansError(null);
+      setDailyPlansLoading(false);
+      return;
+    }
+
+    setDailyPlansLoading(true);
+    setDailyPlansError(null);
+    setDailyPlans(null);
+    try {
+      const response = await getDailyPlans(selectedSiteId, selectedDate);
+      if (!isCurrentRequest()) return;
+      if (response.error || !Array.isArray(response.data)) {
+        throw new Error(response.error || t('control_tower.map.plan_unavailable', locale));
+      }
+      setDailyPlans(response.data);
+    } catch (err: unknown) {
+      if (!isCurrentRequest()) return;
+      setDailyPlansError(err instanceof Error ? err.message : t('control_tower.map.plan_unavailable', locale));
+    } finally {
+      if (isCurrentRequest()) setDailyPlansLoading(false);
+    }
+  }, [selectedSiteId, selectedDate, canRoleOpenRoute, locale]);
+
+  const loadSiteIssues = useCallback(async () => {
+    const requestId = ++siteIssuesRequestId.current;
+    const isCurrentRequest = () => requestId === siteIssuesRequestId.current;
+    if (!selectedSiteId || !canRoleOpenRoute('/issues')) {
+      setSiteIssues(null);
+      setSiteIssuesError(null);
+      setSiteIssuesLoading(false);
+      return;
+    }
+
+    setSiteIssuesLoading(true);
+    setSiteIssuesError(null);
+    setSiteIssues(null);
+    try {
+      const response = await getIssues(selectedSiteId);
+      if (!isCurrentRequest()) return;
+      if (response.error || !Array.isArray(response.data)) {
+        throw new Error(response.error || t('control_tower.map.issues_unavailable', locale));
+      }
+      setSiteIssues(response.data);
+    } catch (err: unknown) {
+      if (!isCurrentRequest()) return;
+      setSiteIssuesError(err instanceof Error ? err.message : t('control_tower.map.issues_unavailable', locale));
+    } finally {
+      if (isCurrentRequest()) setSiteIssuesLoading(false);
+    }
+  }, [selectedSiteId, canRoleOpenRoute, locale]);
+
   const loadControlTower = useCallback(
     async (isManualRefresh = false) => {
-      if (isManualRefresh) setRefreshing(true);
-      else setLoading(true);
+      const requestId = ++controlTowerRequestId.current;
+      const isCurrentRequest = () => requestId === controlTowerRequestId.current;
+
+      setLoading(true);
+      setRefreshing(isManualRefresh);
       setError(null);
+      setOverview(null);
+      setRedFlags([]);
+      setRedFlagsLoading(true);
+      setRedFlagsError(null);
 
       try {
         const response = await apiClient.getControlTowerOverview(
           selectedProjectId || undefined,
         );
 
+        if (!isCurrentRequest()) return;
         if (response.data) {
           setOverview(response.data);
           setLastUpdated(new Date());
@@ -312,6 +511,7 @@ export function ControlTowerSurface() {
           setError(response.error || t('control_tower.load_error', locale));
         }
       } catch (err: unknown) {
+        if (!isCurrentRequest()) return;
         // Fallback: If backend is booting, show informative Romanian state
         setError(
           err instanceof Error
@@ -319,62 +519,91 @@ export function ControlTowerSurface() {
             : t('control_tower.server_error', locale),
         );
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (isCurrentRequest()) {
+          setLoading(false);
+          setRefreshing(false);
+          setInitialOverviewLoaded(true);
+        }
       }
+
+      if (!isCurrentRequest()) return;
 
       // Red flags are a separate endpoint; load them on the same triggers
       // (mount, project change, manual refresh) as the overview.
-      setRedFlagsLoading(true);
-      setRedFlagsError(null);
       try {
         const flagsResponse = await apiClient.getControlTowerRedFlags(
           selectedProjectId || undefined,
         );
-        setRedFlags(flagsResponse.data ?? []);
+        if (!isCurrentRequest()) return;
+        if (flagsResponse.error || !Array.isArray(flagsResponse.data)) {
+          throw new Error(flagsResponse.error || t('control_tower.load_error', locale));
+        }
+        setRedFlags(prioritizeRedFlags(flagsResponse.data));
       } catch (err: unknown) {
-        setRedFlags([]);
+        if (!isCurrentRequest()) return;
         setRedFlagsError(
           err instanceof Error
             ? err.message
             : t('control_tower.load_error', locale),
         );
       } finally {
-        setRedFlagsLoading(false);
+        if (isCurrentRequest()) setRedFlagsLoading(false);
       }
 
-      // Activity feed — same triggers. The endpoint has no 24h range, so fetch a
-      // generous page and keep the last 24 hours client-side (max 20, newest first).
-      setActivityLoading(true);
-      setActivityError(null);
-      try {
-        const activityResponse = await getActivity({
-          projectId: selectedProjectId || undefined,
-          limit: 100,
-        });
-        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-        const recent = (activityResponse.data ?? [])
-          .filter((event) => new Date(event.createdAt).getTime() >= cutoff)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 20);
-        setActivityEvents(recent);
-      } catch (err: unknown) {
-        setActivityEvents([]);
-        setActivityError(
-          err instanceof Error
-            ? err.message
-            : t('control_tower.load_error', locale),
-        );
-      } finally {
-        setActivityLoading(false);
-      }
     },
     [selectedProjectId, locale],
   );
 
   useEffect(() => {
     loadControlTower();
+    return () => {
+      controlTowerRequestId.current += 1;
+    };
   }, [loadControlTower]);
+
+  useEffect(() => {
+    setSelectedDate(todayCompanyIso());
+  }, []);
+
+  useEffect(() => {
+    void loadSiteAttendance();
+    return () => {
+      attendanceRequestId.current += 1;
+    };
+  }, [loadSiteAttendance]);
+
+  useEffect(() => {
+    void loadSiteDailyPlans();
+    return () => {
+      dailyPlansRequestId.current += 1;
+    };
+  }, [loadSiteDailyPlans]);
+
+  useEffect(() => {
+    void loadSiteIssues();
+    return () => {
+      siteIssuesRequestId.current += 1;
+    };
+  }, [loadSiteIssues]);
+
+  useEffect(() => {
+    if (activityCollapsed) {
+      activityRequestId.current += 1;
+      return;
+    }
+    void loadActivity();
+    return () => {
+      activityRequestId.current += 1;
+    };
+  }, [activityCollapsed, loadActivity]);
+
+  const refreshDashboard = () => {
+    void loadControlTower(true);
+    void loadSiteAttendance();
+    void loadSiteDailyPlans();
+    void loadSiteIssues();
+    if (!activityCollapsed) void loadActivity();
+  };
 
   useEffect(() => {
     setActivityPage(1);
@@ -448,17 +677,173 @@ export function ControlTowerSurface() {
 
   const openRedFlagInspect = (flag: RedFlag) => {
     void fetchDrilldown({
-      title: `${t('control_tower.critical_alert', locale)}: ${flag.affectedEntity}`,
+      title: `${t('control_tower.red_flags.inspect', locale)}: ${flag.affectedEntity}`,
       category: 'RED_FLAGS',
       ruleExplanation: flag.reason,
       itemId: flag.id,
     });
   };
 
-  if (loading && !overview) {
+  const renderProjectDestination = ({
+    projectId,
+    itemId,
+    title,
+    ruleExplanation,
+    children,
+  }: {
+    projectId: string;
+    itemId: string;
+    title: string;
+    ruleExplanation: string;
+    children: React.ReactNode;
+  }) => {
+    const className = 'block w-full p-4 text-left transition-colors hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hii-500';
+    if (canOpenProjectRecords) {
+      return <Link href={`/projects/${projectId}`} className={className}>{children}</Link>;
+    }
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-500" aria-hidden="true" />
+      <button
+        type="button"
+        className={className}
+        onClick={() => void fetchDrilldown({ title, category: 'PROJECTS', ruleExplanation, itemId })}
+      >
+        {children}
+      </button>
+    );
+  };
+
+  const formatCurrency = (val: number, cur = 'RON') => {
+    return new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'ro-RO', {
+      style: 'currency',
+      currency: cur,
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
+
+  const roleHighlights = overview
+    ? (() => {
+        const projects = overview.projects;
+        const production = overview.production;
+        const materials = overview.materials;
+        const finance = overview.finance;
+        const quality = overview.quality;
+        const highlight = (
+          labelKey: string,
+          value: number | string,
+          category: string,
+          ruleKey: string,
+          tone: 'danger' | 'warning' | 'neutral' = 'neutral',
+          detail?: string,
+        ): RoleHighlight => ({
+          label: t(labelKey, locale),
+          value,
+          detail,
+          category,
+          ruleExplanation: t(ruleKey, locale),
+          tone,
+        });
+        const routeHighlight = (labelKey: string, value: number, href: string): RoleHighlight => ({
+          label: t(labelKey, locale),
+          value,
+          href,
+          tone: 'neutral' as const,
+        });
+
+        const workforce = overview.workforce;
+        const attendance = highlight(
+          'control_tower.kpi_attendance',
+          workforce.checkedIn,
+          'WORKFORCE',
+          'control_tower.valid_attendance',
+          'neutral',
+        );
+        const execution = highlight(
+          'control_tower.kpi_execution',
+          `${production.completionPercentage}%`,
+          'PRODUCTION',
+          'control_tower.planned_tasks',
+          'neutral',
+        );
+        const blocked = highlight(
+          'control_tower.blocked_work',
+          production.blockedProduction,
+          'PRODUCTION',
+          'control_tower.blocked_work_rule',
+          production.blockedProduction > 0 ? 'danger' : 'neutral',
+        );
+        const activeProjects = canOpenProjectRecords
+          ? routeHighlight('control_tower.projects_in_scope', projects.activeProjects, '/projects')
+          : highlight(
+              'control_tower.projects_in_scope',
+              projects.activeProjects,
+              'PROJECTS',
+              'control_tower.active_projects',
+            );
+        const overdue = highlight(
+          'control_tower.kpi_overdue',
+          projects.overdueProjects,
+          'PROJECTS',
+          'control_tower.overdue_rule',
+          projects.overdueProjects > 0 ? 'warning' : 'neutral',
+        );
+        const criticalAlerts = highlight(
+          'control_tower.kpi_critical_alerts',
+          redFlagsLoading || redFlagsError
+            ? '—'
+            : redFlags.filter((flag) => flag.severity === 'CRITICAL').length,
+          'RED_FLAGS',
+          'control_tower.red_flags.subtitle',
+          redFlagsLoading || redFlagsError || !redFlags.some((flag) => flag.severity === 'CRITICAL')
+            ? 'neutral'
+            : 'danger',
+        );
+
+        switch (role) {
+          case 'admin':
+          case 'owner':
+            return [activeProjects, attendance, execution, blocked, criticalAlerts];
+          case 'pm':
+          case 'manager':
+          case 'site_manager':
+            return [activeProjects, attendance, execution, blocked, overdue];
+          case 'procurement':
+          case 'site_logistics':
+            return [
+              activeProjects,
+              highlight('control_tower.low_stock', materials.lowStock, 'MATERIALS', 'control_tower.low_stock_rule', 'warning'),
+              highlight('control_tower.missing_materials', materials.missingRequired, 'MATERIALS', 'control_tower.low_stock_rule', 'danger'),
+              highlight('control_tower.pending_deliveries', materials.pendingDeliveries, 'MATERIALS', 'control_tower.deliveries_rule'),
+              blocked,
+            ];
+          case 'finance':
+            return [
+              activeProjects,
+              highlight('control_tower.budget_total', formatCurrency(finance.budget), 'FINANCE', 'control_tower.finance_rule'),
+              highlight('control_tower.actual_cost', formatCurrency(finance.actual), 'FINANCE', 'control_tower.finance_rule'),
+              highlight('control_tower.forecast', formatCurrency(finance.forecast), 'FINANCE', 'control_tower.finance_rule'),
+              overdue,
+            ];
+          case 'qa_qc':
+            return [
+              activeProjects,
+              highlight('control_tower.failed_inspections', quality.failedInspections, 'QUALITY', 'control_tower.failed_inspections_rule', 'danger'),
+              highlight('control_tower.open_ncr', quality.openNCRs, 'QUALITY', 'control_tower.open_ncr_rule', 'warning'),
+              highlight('control_tower.active_corrections', quality.pendingCorrections, 'QUALITY', 'control_tower.open_ncr_rule'),
+              criticalAlerts,
+            ];
+          case 'maintenance_director':
+          case 'technical_director':
+            return [activeProjects, attendance, execution, blocked, overdue];
+          default:
+            return [activeProjects, attendance, execution, blocked, overdue];
+        }
+      })()
+    : [];
+
+  if (loading && !overview && !initialOverviewLoaded) {
+    return (
+      <div className="flex min-h-48 flex-col items-center justify-center space-y-3">
+        <Loader2 className="size-8 animate-spin text-hii-500" aria-hidden="true" />
         <div className="text-center">
           <h3 className="text-base font-semibold text-slate-800">
             {t('control_tower.loading', locale)}
@@ -471,16 +856,47 @@ export function ControlTowerSurface() {
     );
   }
 
-  // Format currency
-  const formatCurrency = (val: number, cur = 'RON') => {
-    return new Intl.NumberFormat(locale === 'en' ? 'en-GB' : 'ro-RO', {
-      style: 'currency',
-      currency: cur,
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
-
   const hasProjects = (overview?.projects.activeProjectsList.length ?? 0) > 0;
+  const projectProgressById = new Map(
+    (overview?.projects.activeProjectsList ?? []).map((project) => [project.id, project]),
+  );
+  const mapSites: ProjectMapSite[] = projects.map((project: Project) => {
+    const summary = projectProgressById.get(project.id);
+    const latitudeValue: unknown = project.latitude;
+    const longitudeValue: unknown = project.longitude;
+    const latitude = latitudeValue === null || latitudeValue === undefined || latitudeValue === ''
+      ? null
+      : Number(latitudeValue);
+    const longitude = longitudeValue === null || longitudeValue === undefined || longitudeValue === ''
+      ? null
+      : Number(longitudeValue);
+    return {
+      id: project.id,
+      name: project.name,
+      code: project.code,
+      address: project.address ?? null,
+      latitude: latitude !== null && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 ? latitude : null,
+      longitude: longitude !== null && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180 ? longitude : null,
+      status: project.status || 'UNKNOWN',
+      targetEndDate: project.target_end_date ?? summary?.targetEndDate ?? null,
+      progressPercent: summary?.progressPercent ?? null,
+    };
+  });
+  const selectedProject = projects.find((project) => project.id === selectedSiteId) ?? null;
+  const selectedProjectProgress = projectProgressById.get(selectedSiteId ?? '') ?? null;
+  const selectedProjectIsTerminal = ['COMPLETED', 'HANDOVER', 'CANCELLED'].includes(selectedProject?.status ?? '');
+  const selectedProjectOverdue = !selectedProjectIsTerminal
+    ? overview?.projects.overdueProjectsList.find((project) => project.projectId === selectedSiteId)
+    : undefined;
+  const selectedProjectDueSoon = !selectedProjectIsTerminal
+    ? overview?.projects.upcomingDeadlinesList.find((project) => project.projectId === selectedSiteId)
+    : undefined;
+  const actionableUpcomingDeadlines = overview
+    ? overview.projects.upcomingDeadlinesList.filter((deadline) => {
+        const project = overview.projects.activeProjectsList.find((item) => item.id === deadline.projectId);
+        return project?.stage !== 'COMPLETED' && project?.stage !== 'HANDOVER' && project?.stage !== 'CANCELLED';
+      })
+    : [];
 
   const activityTotalPages = Math.max(
     1,
@@ -500,88 +916,115 @@ export function ControlTowerSurface() {
   })).filter((bucket) => bucket.items.length > 0);
 
   return (
-    <div className="space-y-6 pb-12">
-      <PageTutorial sectionId="dashboard" />
-
-      <section aria-labelledby="role-focus-title" className="bg-slate-900 rounded-xl p-5 text-white shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div className="space-y-3 pb-12 [&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-hii-500 [&_*:focus-visible]:ring-offset-2">
+      <header>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-400">{roleProfile.title}</p>
-            <h2 id="role-focus-title" className="mt-1 text-lg font-bold tracking-tight">{roleProfile.focus}</h2>
+            <h1 className="text-lg font-bold tracking-tight text-slate-950 sm:text-xl">
+              {t('control_tower.title', locale)}
+            </h1>
+            <p className="mt-0.5 text-xs text-slate-600">
+              {roleProfile.focus}
+              <span className="ml-2 text-slate-400">
+                {t('control_tower.last_updated', locale)}: {lastUpdated.toLocaleTimeString(locale === 'en' ? 'en-GB' : 'ro-RO')}
+              </span>
+            </p>
           </div>
-          <nav aria-label={t('control_tower.role_actions', locale)} className="flex flex-wrap gap-2">
-            {roleProfile.links.filter(([href]) => href !== '/control-tower' || roleHasControlTower).map(([href, key]) => (
-              <Link key={href} href={href} className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 transition-colors hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
-                {t(key, locale)}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </section>
 
-      {/* Control Tower Header & Global Filter Bar */}
-      <Card
-        padding={false}
-        className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
-      >
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-warning-soft text-slate-950 uppercase tracking-wide">
-              {t('control_tower.badge', locale)}
-            </span>
-            <span className="text-xs text-slate-400 font-medium">
-              {t('control_tower.last_updated', locale)}: {lastUpdated.toLocaleTimeString(locale === 'en' ? 'en-GB' : 'ro-RO')}
-            </span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-950 mt-1 tracking-tight">
-            {t('control_tower.title', locale)}
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {t('control_tower.subtitle', locale)}
-          </p>
-        </div>
-
-        {/* Keeps the 375 px main container free of horizontal overflow: the native
-            select cannot shrink below its option text, so the filters stack below sm */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-          {/* Project selector filter */}
-          <div className="relative">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:justify-end">
             <label htmlFor="control-tower-project" className="sr-only">{t('control_tower.project_filter', locale)}</label>
             <select
               id="control-tower-project"
               value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full sm:w-auto bg-slate-50 border border-slate-300 text-slate-800 text-sm font-medium rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              onChange={(e) => {
+                setMapSelectedSiteId(e.target.value || null);
+                setSelectedProjectId(e.target.value);
+              }}
+              className="w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 pr-8 text-sm font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto sm:max-w-xs"
             >
               <option value="">{t('control_tower.all_active_sites', locale)}</option>
-              {overview?.projects.activeProjectsList.map((p) => (
+              {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.code} — {p.name}
                 </option>
               ))}
             </select>
+            <label htmlFor="control-tower-date" className="sr-only">{t('control_tower.map.selected_date', locale)}</label>
+            <input
+              id="control-tower-date"
+              type="date"
+              value={selectedDate}
+              onChange={(event) => setSelectedDate(event.target.value)}
+              className="h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={refreshDashboard}
+              disabled={refreshing}
+              icon={<RefreshCw className={`size-4 ${refreshing ? 'animate-spin' : ''}`} />}
+            >
+              {t('control_tower.refresh', locale)}
+            </Button>
           </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => loadControlTower(true)}
-            disabled={refreshing}
-            icon={<RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />}
-          >
-            {t('control_tower.refresh', locale)}
-          </Button>
         </div>
-      </Card>
+      </header>
+
+      {overview && hasProjects && (
+        <section aria-label={t('control_tower.role_priority', locale)}>
+          <Card padding={false} className="overflow-hidden">
+            <div className="grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-3 sm:divide-y-0 xl:grid-cols-5">
+              {roleHighlights.map((item) => {
+                const content = (
+                  <span className="flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 sm:min-h-[5rem] sm:px-4">
+                    <span className="truncate text-xs font-medium text-slate-500">
+                      {item.label}
+                    </span>
+                    <span className={`mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl ${
+                      item.tone === 'danger'
+                        ? 'text-danger-foreground'
+                        : item.tone === 'warning'
+                          ? 'text-warning-foreground'
+                          : 'text-slate-950'
+                    }`}>
+                      {item.value}
+                    </span>
+                    {item.detail && <span className="truncate text-[11px] text-slate-500">{item.detail}</span>}
+                  </span>
+                );
+
+                return item.href ? (
+                  <Link key={item.label} href={item.href} className="min-w-0 transition-colors hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hii-500">
+                    {content}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      if (item.category && item.ruleExplanation) {
+                        openDrilldown(item.label, item.category, item.ruleExplanation);
+                      }
+                    }}
+                    className="min-w-0 text-left transition-colors hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hii-500"
+                  >
+                    {content}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        </section>
+      )}
 
       {error && (
-        <div className="p-4 rounded-xl bg-warning-soft border border-warning/20 text-warning-foreground text-xs flex items-start justify-between">
+        <div role="alert" className="p-4 rounded-xl bg-warning-soft border border-warning/20 text-warning-foreground text-xs flex items-start justify-between">
           <div className="flex items-center space-x-2">
             <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
             <span>{error}</span>
           </div>
           <button
-            onClick={() => loadControlTower(true)}
+            onClick={refreshDashboard}
             className="font-bold underline ml-4 hover:text-amber-950"
           >
             {t('control_tower.retry', locale)}
@@ -589,598 +1032,256 @@ export function ControlTowerSurface() {
         </div>
       )}
 
+      {overview && hasProjects && (
+        <div className="grid min-w-0 items-start gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.9fr)]">
+          <ControlTowerProjectMap
+            sites={mapSites}
+            selectedSiteId={selectedSiteId}
+            onSelectSite={selectMapSite}
+            loading={projectsLoading}
+          />
+          <ControlTowerSiteDetail
+            project={selectedProject}
+            selectedDate={selectedDate}
+            progress={selectedProjectProgress}
+            overdueDays={selectedProjectOverdue?.daysOverdue ?? null}
+            dueSoonDate={selectedProjectDueSoon?.targetDate ?? null}
+            overview={overview}
+            overviewLoading={loading}
+            redFlags={redFlags}
+            canReadAttendance={canRoleOpenRoute('/pontaj')}
+            attendanceRecords={attendanceRecords}
+            attendanceTotal={attendanceTotal}
+            attendanceTruncated={attendanceIncomplete}
+            attendanceLoading={attendanceLoading}
+            attendanceError={attendanceError}
+            attendanceLastUpdated={attendanceLastUpdated}
+            dailyPlans={dailyPlans}
+            dailyPlansLoading={dailyPlansLoading}
+            dailyPlansError={dailyPlansError}
+            issues={siteIssues}
+            issuesLoading={siteIssuesLoading}
+            issuesError={siteIssuesError}
+            canOpenRoute={canRoleOpenRoute}
+          />
+        </div>
+      )}
+
+      {overview && hasProjects && (
+        <section aria-labelledby="active-projects-title" className="rounded-lg border border-slate-200 bg-white">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-2.5 sm:px-4">
+            <h2 id="active-projects-title" className="text-sm font-bold text-slate-900">
+              {t('control_tower.active_projects', locale)}
+            </h2>
+            <span className="text-xs tabular-nums text-slate-500">{overview.projects.activeProjectsList.length}</span>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {overview.projects.activeProjectsList.map((project) => {
+              const overdue = overview.projects.overdueProjectsList.find((item) => item.projectId === project.id);
+              const terminal = ['COMPLETED', 'HANDOVER', 'CANCELLED'].includes(project.stage);
+              const dueSoon = terminal
+                ? undefined
+                : overview.projects.upcomingDeadlinesList.find((item) => item.projectId === project.id);
+              const progressMismatch = project.stage === 'COMPLETED' && project.progressPercent < 100;
+              const progress = Math.min(100, Math.max(0, project.progressPercent));
+              return (
+                <li key={project.id} className="px-3 py-2.5 sm:px-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-900">{project.name}</p>
+                      <p className="truncate text-[11px] text-slate-500">
+                        {project.code} · {projectStageLabel(project.stage, locale)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold">
+                      {overdue && (
+                        <span className="rounded bg-red-50 px-1.5 py-0.5 text-red-800">
+                          {t('control_tower.project_overdue_warning', locale)}
+                        </span>
+                      )}
+                      {!overdue && dueSoon && (
+                        <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-800">
+                          {t('control_tower.project_due_soon_warning', locale)}
+                        </span>
+                      )}
+                      <span className="tabular-nums text-slate-600">{project.progressPercent}%</span>
+                    </div>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label={`${project.name} ${t('control_tower.map.progress', locale)}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={project.progressPercent}
+                    title={t('control_tower.project_task_progress_definition', locale)}
+                    className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100"
+                  >
+                    <div className="h-full rounded-full bg-hii-500" style={{ width: `${progress}%` }} />
+                  </div>
+                  {progressMismatch && (
+                    <p className="mt-1 text-[10px] leading-4 text-amber-800">
+                      {t('control_tower.project_progress_mismatch', locale)
+                        .replace('{status}', projectStageLabel(project.stage, locale))
+                        .replace('{progress}', String(project.progressPercent))}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* No projects yet: Control Tower has nothing to aggregate */}
-      {overview && !hasProjects && (
+      {overview && !hasProjects && !projectsLoading && (
         <Card padding={false}>
           <EmptyState
             icon={<Briefcase />}
             title={t('control_tower.empty_projects_title', locale)}
             description={t('control_tower.empty_projects_message', locale)}
             action={
-              user && canCreateProjects(user.role as never)
-                ? { label: t('control_tower.empty_projects_action', locale), onClick: () => router.push('/projects') }
-                : undefined
+              user && canCreateProjects(user.role as never) && canOpenProjectRecords ? (
+                <Link
+                  href="/projects"
+                  className="inline-flex items-center justify-center rounded-lg bg-hii-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-hii-600 focus-visible:ring-hii-500"
+                >
+                  {t('control_tower.empty_projects_action', locale)}
+                </Link>
+              ) : undefined
             }
           />
         </Card>
       )}
 
-      {/* 1. CRITICAL ALERTS & RED FLAGS (Rule-based exceptions) */}
+      {/* Prioritized alerts stay concise; project context now lives in the map panel. */}
       {overview && hasProjects && (
-        <section aria-labelledby="red-flags-title" className="space-y-3">
-          <ControlTowerSectionHeader
-            id="red-flags-title"
-            title={t('control_tower.critical_alert', locale)}
-            collapsed={redFlagsCollapsed}
-            onToggle={toggleRedFlags}
-          />
-          {!redFlagsCollapsed &&
-            (redFlagsError ? (
+        <div className="grid items-start gap-4">
+          <section aria-labelledby="red-flags-title" className="min-w-0 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="red-flags-title" className="text-sm font-bold text-slate-900">
+                {t('control_tower.red_flags.section', locale)}
+              </h2>
+              <span className="text-xs text-slate-500">
+                {redFlagsLoading ? '…' : redFlags.length}
+              </span>
+            </div>
+            {redFlagsError ? (
               <ErrorState
                 title={t('control_tower.red_flags_error_title', locale)}
                 error={redFlagsError}
                 onRetry={() => loadControlTower(true)}
               />
             ) : redFlagsLoading && redFlags.length === 0 ? (
-              <Skeleton className="h-48 rounded-xl" />
+              <Skeleton className="h-36 rounded-lg" />
             ) : (
-              <ControlTowerRedFlagsCard redFlags={redFlags} onInspect={openRedFlagInspect} />
-            ))}
-        </section>
+              <ControlTowerRedFlagsCard
+                redFlags={redFlags}
+                onInspect={openRedFlagInspect}
+                projectNameForFlag={(flag) => {
+                  if (selectedProjectId) {
+                    return overview.projects.activeProjectsList.find((project) => project.id === selectedProjectId)?.name ?? null;
+                  }
+                  return flag.category === 'PROJECTS' || flag.category === 'FINANCE'
+                    ? overview.projects.activeProjectsList.find((project) => project.id === flag.entityId)?.name ?? null
+                    : null;
+                }}
+                ageOrDueForFlag={(flag) => {
+                  const overdue = overview.projects.overdueProjectsList.find((project) => project.projectId === flag.entityId);
+                  return overdue
+                    ? `${t('control_tower.drawer.overdue', locale).replace('{days}', String(overdue.daysOverdue))} · ${formatDate(overdue.targetEndDate, locale)}`
+                    : flag.timestamp
+                      ? activityRelativeTime(flag.timestamp, locale)
+                      : null;
+                }}
+                compact
+              />
+            )}
+          </section>
+
+        </div>
       )}
 
-      {/* 2. THE 7 OPERATIONAL DOMAIN CARDS */}
       {overview && hasProjects && (
-        <section aria-labelledby="domains-title" className="space-y-3">
+        <details className="group rounded-lg border border-slate-200 bg-white">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hii-500">
+            <span>{t('control_tower.project_deadlines', locale)}</span>
+            <span className="text-xs font-normal text-slate-500">
+              {t('control_tower.project_deadlines_description', locale)}
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-slate-500 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="grid gap-3 border-t border-slate-100 p-3 lg:grid-cols-2">
+            {overview.projects.overdueProjectsList.length > 0 && (
+              <ul className="divide-y divide-slate-100 rounded-md border border-slate-100">
+                {overview.projects.overdueProjectsList.map((item) => (
+                  <li key={item.id}>
+                    {renderProjectDestination({
+                      projectId: item.projectId,
+                      itemId: item.id,
+                      title: item.projectName,
+                      ruleExplanation: t('control_tower.overdue_rule', locale),
+                      children: (
+                        <span className="flex items-center justify-between gap-3 text-xs">
+                          <span className="min-w-0 truncate font-semibold text-slate-800">{item.projectCode} · {item.projectName}</span>
+                          <span className="shrink-0 text-danger-foreground">{t('control_tower.drawer.overdue', locale).replace('{days}', String(item.daysOverdue))}</span>
+                        </span>
+                      ),
+                    })}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {actionableUpcomingDeadlines.length > 0 && (
+              <ul className="divide-y divide-slate-100 rounded-md border border-slate-100">
+                {actionableUpcomingDeadlines.map((item) => (
+                  <li key={item.id}>
+                    {renderProjectDestination({
+                      projectId: item.projectId,
+                      itemId: item.id,
+                      title: item.projectName,
+                      ruleExplanation: t('control_tower.upcoming_deadlines_rule', locale),
+                      children: (
+                        <span className="flex items-center justify-between gap-3 text-xs">
+                          <span className="min-w-0 truncate font-semibold text-slate-800">{item.projectCode} · {item.projectName}</span>
+                          <span className="shrink-0 text-warning-foreground">{formatDate(item.targetDate, locale)}</span>
+                        </span>
+                      ),
+                    })}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {overview.projects.overdueProjectsList.length === 0 && actionableUpcomingDeadlines.length === 0 && (
+              <p className="px-2 py-1 text-xs text-slate-500">{t('control_tower.project_deadlines_description', locale)}</p>
+            )}
+          </div>
+        </details>
+      )}
+
+      {/* Secondary operational detail stays in role-authorized feature modules. */}
+      {overview && hasProjects && (
+        <section aria-labelledby="domains-title" className="space-y-2">
           <ControlTowerSectionHeader
             id="domains-title"
-            title={locale === 'en' ? 'Operational domains' : 'Domenii operaționale'}
+            title={t('control_tower.module_access', locale)}
             collapsed={domainsCollapsed}
             onToggle={toggleDomains}
           />
           {!domainsCollapsed && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {/* DOMAIN 1: PROIECTE (Projects) */}
-          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-info-soft text-info rounded-lg">
-                    <Briefcase className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.active_projects', locale)}</h3>
-                </div>
-                <span className="text-xl font-black text-slate-900">
-                  {overview.projects.activeProjects}
-                </span>
-              </div>
-
-              {/* Stage breakdown */}
-              <div className="mt-4 space-y-2">
-                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  {t('control_tower.projects_by_stage', locale)}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {Object.entries(overview.projects.projectsByStage).map(
-                    ([stage, count]) => (
-                      <span
-                        key={stage}
-                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200"
-                      >
-                        {stage}: {count}
-                      </span>
-                    ),
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 space-y-2 text-xs">
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.overdue_projects', locale),
-                    'PROJECTS',
-                    t('control_tower.overdue_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.overdue_projects_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-rose-200 text-rose-900 rounded">
-                  {overview.projects.overdueProjects}
-                </span>
-              </button>
-
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.upcoming_deadlines', locale),
-                    'PROJECTS',
-                    t('control_tower.upcoming_deadlines_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.upcoming_deadlines_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-amber-950 rounded">
-                  {overview.projects.upcomingDeadlines}
-                </span>
-              </button>
-            </div>
-          </Card>
-
-          {/* DOMAIN 2: PERSONAL & PONTAJ (Workforce) */}
-          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-success-soft text-success rounded-lg">
-                    <Users className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.workforce', locale)}</h3>
-                </div>
-                <div className="text-right">
-                  <span className="text-xl font-black text-slate-900">
-                    {overview.workforce.checkedIn}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">
-                    /{overview.workforce.scheduledToday}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.scheduled_today', locale)}</span>
-                  <strong className="text-slate-900 text-sm font-mono">
-                    {overview.workforce.scheduledToday}
-                  </strong>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.valid_attendance', locale)}</span>
-                  <strong className="text-success text-sm font-mono">
-                    {overview.workforce.checkedIn}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 space-y-2 text-xs">
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.missing_attendance', locale),
-                    'WORKFORCE',
-                    t('control_tower.missing_attendance_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.missing_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-rose-200 text-rose-900 rounded">
-                  {overview.workforce.missing}
-                </span>
-              </button>
-
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.overtime_today', locale),
-                    'WORKFORCE',
-                    t('control_tower.overtime_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-info-soft/50 hover:bg-info-soft/60 text-blue-900 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.overtime_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-info-soft text-blue-950 rounded">
-                  {(overview.workforce.overtimeMinutes / 60).toFixed(1)} {t('control_tower.hours', locale)}
-                </span>
-              </button>
-            </div>
-          </Card>
-
-          {/* DOMAIN 3: PRODUCȚIE & EXECUȚIE (Production) */}
-          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-warning-soft text-warning rounded-lg">
-                    <Layers className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.production', locale)}</h3>
-                </div>
-                <span className="text-xl font-black text-warning font-mono">
-                  {overview.production.completionPercentage}%
-                </span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="mt-3">
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="bg-warning-soft h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${overview.production.completionPercentage}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[11px] text-slate-500 mt-1 font-mono">
-                  <span>{t('control_tower.actual', locale)}: {overview.production.actualToday} {t('control_tower.tasks', locale)}</span>
-                  <span>{t('control_tower.plan', locale)}: {overview.production.plannedToday}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 space-y-2 text-xs">
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.blocked_work', locale),
-                    'PRODUCTION_BLOCKED',
-                    t('control_tower.blocked_work_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.blocked_work_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-rose-600 text-white rounded">
-                  {overview.production.blockedProduction} {t('control_tower.tasks', locale)}
-                </span>
-              </button>
-
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.planned_tasks', locale),
-                    'PRODUCTION',
-                    t('control_tower.planned_tasks_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.planned_production_label', locale)}</span>
-                <span className="font-bold font-mono text-slate-900">
-                  {overview.production.plannedToday}
-                </span>
-              </button>
-            </div>
-          </Card>
-
-          {/* DOMAIN 4: MATERIALE & STOCURI (Materials) */}
-          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                    <Boxes className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.materials', locale)}</h3>
-                </div>
-                <span className="text-xl font-black text-slate-900">
-                  {overview.materials.pendingDeliveries} {t('control_tower.avize_unit', locale)}
-                </span>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.missing_materials', locale)}</span>
-                  <strong className="text-slate-900 text-sm font-mono">
-                    {overview.materials.missingRequired}
-                  </strong>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.overconsumption', locale)}</span>
-                  <strong className="text-slate-900 text-sm font-mono">
-                    {overview.materials.overconsumption}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 space-y-2 text-xs">
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.low_stock', locale),
-                    'MATERIALS',
-                    t('control_tower.low_stock_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.low_stock_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-amber-950 rounded">
-                  {overview.materials.lowStock} {t('control_tower.items', locale)}
-                </span>
-              </button>
-
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.deliveries', locale),
-                    'MATERIALS',
-                    t('control_tower.deliveries_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.pending_deliveries', locale)}</span>
-                <span className="font-bold font-mono text-slate-900">
-                  {overview.materials.pendingDeliveries}
-                </span>
-              </button>
-            </div>
-          </Card>
-
-          {/* DOMAIN 5: FINANȚE & BUGETE (Finance) */}
-          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-success-soft text-success rounded-lg">
-                    <Euro className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.finance', locale)}</h3>
-                </div>
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded flex items-center space-x-1 ${
-                    overview.finance.variance >= 0
-                      ? 'bg-success-soft text-success-foreground'
-                      : 'bg-rose-100 text-rose-800'
-                  }`}
+            <nav aria-label={t('control_tower.module_access', locale)} className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+              {dashboardModuleLinks.map(({ href, labelKey }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-hii-700 transition-colors hover:border-hii-300 hover:bg-hii-50"
                 >
-                  {overview.finance.variance >= 0 ? (
-                    <TrendingUp className="w-3 h-3" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3" />
-                  )}
-                  <span>{overview.finance.variancePercent}%</span>
-                </span>
-              </div>
-
-              <div className="mt-3 space-y-1.5 text-xs">
-                <div className="flex justify-between text-slate-500">
-                  <span>{t('control_tower.budget_total', locale)}</span>
-                  <strong className="text-slate-900 font-mono">
-                    {formatCurrency(overview.finance.budget)}
-                  </strong>
-                </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>{t('control_tower.actual_cost', locale)}</span>
-                  <strong className="text-slate-900 font-mono">
-                    {formatCurrency(overview.finance.actual)}
-                  </strong>
-                </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>{t('control_tower.committed_cost', locale)}</span>
-                  <strong className="text-slate-900 font-mono">
-                    {formatCurrency(overview.finance.committed)}
-                  </strong>
-                </div>
-                <div className="flex justify-between text-slate-500">
-                  <span>{t('control_tower.forecast', locale)}</span>
-                  <strong className="text-slate-900 font-mono">
-                    {formatCurrency(overview.finance.forecast)}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 text-xs">
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.finance_by_project', locale),
-                    'FINANCE',
-                    t('control_tower.finance_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.budget_details', locale)}</span>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              </button>
-            </div>
-          </Card>
-
-          {/* DOMAIN 6: CALITATE & CONFORMITATE (Quality) */}
-          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.quality', locale)}</h3>
-                </div>
-                <span className="text-xl font-black text-slate-900">
-                  {overview.quality.openNCRs} NCR
-                </span>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.failed_inspections', locale)}</span>
-                  <strong className="text-rose-600 text-sm font-mono">
-                    {overview.quality.failedInspections}
-                  </strong>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.active_corrections', locale)}</span>
-                  <strong className="text-warning text-sm font-mono">
-                    {overview.quality.pendingCorrections}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 space-y-2 text-xs">
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.open_ncr', locale),
-                    'QUALITY',
-                    t('control_tower.open_ncr_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/60 text-rose-800 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.open_ncr_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-rose-200 text-rose-900 rounded">
-                  {overview.quality.openNCRs}
-                </span>
-              </button>
-
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.failed_inspections', locale),
-                    'QUALITY',
-                    t('control_tower.failed_inspections_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.failed_inspections', locale)}:</span>
-                <span className="font-bold font-mono text-slate-900">
-                  {overview.quality.failedInspections}
-                </span>
-              </button>
-            </div>
-          </Card>
-
-          {/* DOMAIN 7: DOCUMENTAȚIE TEHNICĂ (Documentation) */}
-          <Card padding={false} className="p-5 flex flex-col justify-between hover:border-slate-300 transition-all">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-slate-700">
-                  <div className="p-2 bg-teal-50 text-teal-600 rounded-lg">
-                    <FileCheck className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900">{t('control_tower.documentation', locale)}</h3>
-                </div>
-                <span className="text-xl font-black text-slate-900">
-                  {overview.documentation.supersededDocuments} {t('control_tower.replaced_count', locale)}
-                </span>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.missing_documents', locale)}</span>
-                  <strong className="text-slate-900 text-sm font-mono">
-                    {overview.documentation.missingDocuments}
-                  </strong>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-slate-400 block text-[11px]">{t('control_tower.awaiting_approval', locale)}</span>
-                  <strong className="text-warning text-sm font-mono">
-                    {overview.documentation.awaitingApproval}
-                  </strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-3 border-t border-slate-100 space-y-2 text-xs">
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.replaced_documents', locale),
-                    'DOCUMENTATION',
-                    t('control_tower.replaced_documents_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-warning-soft/50 hover:bg-warning-soft/60 text-warning-foreground transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.replaced_documents_label', locale)}</span>
-                <span className="font-bold font-mono px-2 py-0.5 bg-warning-soft text-amber-950 rounded">
-                  {overview.documentation.supersededDocuments}
-                </span>
-              </button>
-
-              <button
-                onClick={() =>
-                  openDrilldown(
-                    t('control_tower.awaiting_documents', locale),
-                    'DOCUMENTATION',
-                    t('control_tower.awaiting_documents_rule', locale),
-                  )
-                }
-                className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 transition-colors text-left"
-              >
-                <span className="font-medium">{t('control_tower.awaiting_label', locale)}</span>
-                <span className="font-bold font-mono text-slate-900">
-                  {overview.documentation.awaitingApproval}
-                </span>
-              </button>
-            </div>
-          </Card>
-        </div>
+                  {t(labelKey, locale)}
+                </Link>
+              ))}
+            </nav>
           )}
         </section>
       )}
-
-      {/* QUICK WORKFLOW ACCESS */}
-      <div className="bg-slate-900 rounded-xl p-6 text-white shadow-sm border border-slate-800">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-base font-bold text-white tracking-tight">
-              {t('control_tower.quick_modules', locale)}
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {t('control_tower.quick_modules_detail', locale)}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {!quickActionsCollapsed && (
-              <>
-                <Link
-                  href="/pontaj"
-                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-                >
-                  {t('control_tower.hours', locale)}
-                </Link>
-                <Link
-                  href="/rapoarte"
-                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-                >
-                  {t('control_tower.daily_reports', locale)}
-                </Link>
-                <Link
-                  href="/avize"
-                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-                >
-                  {t('control_tower.delivery_intake', locale)}
-                </Link>
-                <Link
-                  href="/stocuri"
-                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-                >
-                  {t('control_tower.stock', locale)}
-                </Link>
-                <Link
-                  href="/cheltuieli"
-                  className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-colors"
-                >
-                  {t('control_tower.expenses_ocr', locale)}
-                </Link>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={toggleQuickActions}
-              aria-expanded={!quickActionsCollapsed}
-              aria-label={t(quickActionsCollapsed ? 'planning.expand' : 'planning.collapse', locale)}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-700 bg-slate-800 p-2 text-slate-300 transition-colors hover:bg-slate-700"
-            >
-              <ChevronDown
-                className={`size-4 transition-transform ${quickActionsCollapsed ? '-rotate-90' : ''}`}
-                aria-hidden="true"
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* 5. ACTIVITY SINCE YESTERDAY */}
       <section aria-labelledby="activity-since-yesterday-title" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -1196,13 +1297,15 @@ export function ControlTowerSurface() {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Link
-              href="/activity"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
-            >
-              {t('control_tower.view_all', locale)}
-              <ExternalLink className="size-3.5" aria-hidden="true" />
-            </Link>
+            {canRoleOpenRoute('/activity') && (
+              <Link
+                href="/activity"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+              >
+                {t('control_tower.view_all', locale)}
+                <ExternalLink className="size-3.5" aria-hidden="true" />
+              </Link>
+            )}
             <Button
               type="button"
               variant="secondary"
@@ -1224,7 +1327,7 @@ export function ControlTowerSurface() {
           <ErrorState
             title={t('control_tower.activity_error_title', locale)}
             error={activityError}
-            onRetry={() => loadControlTower(true)}
+            onRetry={loadActivity}
           />
         ) : activityLoading && activityEvents.length === 0 ? (
           <Card padding={false} className="p-4 space-y-3">
@@ -1253,12 +1356,8 @@ export function ControlTowerSurface() {
                     const Icon = meta.icon;
                     const actorName =
                       event.actor?.name || t('activity.system', locale);
-                    return (
-                      <Link
-                        key={event.id}
-                        href={meta.href}
-                        className="flex items-start gap-3 p-4 transition-colors hover:bg-slate-50"
-                      >
+                    const content = (
+                      <>
                         <span
                           className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${meta.tone}`}
                         >
@@ -1276,11 +1375,26 @@ export function ControlTowerSurface() {
                             {activityRelativeTime(event.createdAt, locale)}
                           </p>
                         </div>
-                        <ExternalLink
-                          className="size-4 text-slate-300 shrink-0 mt-1"
-                          aria-hidden="true"
-                        />
+                        {canRoleOpenRoute(meta.href) && (
+                          <ExternalLink
+                            className="size-4 text-slate-300 shrink-0 mt-1"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </>
+                    );
+                    return canRoleOpenRoute(meta.href) ? (
+                      <Link
+                        key={event.id}
+                        href={meta.href}
+                        className="flex items-start gap-3 p-4 transition-colors hover:bg-slate-50"
+                      >
+                        {content}
                       </Link>
+                    ) : (
+                      <div key={event.id} className="flex items-start gap-3 p-4">
+                        {content}
+                      </div>
                     );
                   })}
                 </Card>
@@ -1298,6 +1412,16 @@ export function ControlTowerSurface() {
           />
         )}
       </section>
+
+      <details className="group rounded-lg border border-slate-200 bg-white">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-hii-500">
+          <span>{t('howItWorks', locale)}</span>
+          <ChevronDown className="size-4 text-slate-500 transition-transform group-open:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="border-t border-slate-100 p-3">
+          <PageTutorial sectionId="dashboard" />
+        </div>
+      </details>
 
       {/* SLIDE-OVER DRILLDOWN DRAWER */}
       <ControlTowerDrilldownDrawer

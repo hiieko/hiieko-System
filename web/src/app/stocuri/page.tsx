@@ -3,7 +3,7 @@
 import { PageTutorial } from '../../components/PageTutorial';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient, ApiError } from '../../lib/api-client';
-import { t, useLocale } from '@solar/shared';
+import { t, useLocale, type Locale } from '@solar/shared';
 import { useProject } from '../../contexts/ProjectContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { RoleGuard } from '../../lib/auth-guard';
@@ -12,23 +12,87 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { Button, EmptyState, Card, Badge, PageHeader, ErrorState, Skeleton, Modal, Pagination } from '../../components/ui';
 import {
   Boxes, AlertTriangle, ArrowUpRight, ArrowDownRight, History, Plus,
-  Search, RefreshCw, ArrowLeftRight
+  Search, RefreshCw, ArrowLeftRight, MapPin
 } from 'lucide-react';
+import { formatStockNumber, hasStockThreshold, isAtOrBelowMinStock, toStockNumber } from '../../features/stock/stock-utils';
 
 interface Material {
   id: string; code: string; name: string; unit: string;
-  barcode?: string; category?: string; min_stock_threshold?: number;
+  barcode?: string; category?: string; min_stock_threshold?: number | string | null;
 }
 interface StockBalance {
   id: string; material_id: string; project_id?: string; warehouse_id?: string;
-  current_quantity: number; material?: Material; project?: { name: string; code: string };
+  current_quantity: number | string; material?: Material;
+  project?: { name: string; code: string } | null;
+  warehouse?: { name: string; code: string } | null;
 }
 interface StockMovement {
   id: string; material_id: string; project_id?: string; warehouse_id?: string;
-  movement_type: string; quantity: number; created_by_id?: string; notes?: string;
-  created_at: string; material?: { name: string; unit: string }; project?: { name: string; code: string };
+  movement_type: string; quantity: number | string; created_by_id?: string; notes?: string;
+  created_at: string; material?: { name: string; unit: string };
+  project?: { name: string; code: string } | null;
+  warehouse?: { name: string; code: string } | null;
 }
 interface Project { id: string; name: string; code?: string; }
+
+interface HasStockLocation {
+  project?: { name: string; code?: string } | null;
+  warehouse?: { name: string; code?: string } | null;
+}
+
+function stockLocationLabel(record: HasStockLocation): string {
+  const locations = [record.project, record.warehouse]
+    .filter((location): location is NonNullable<typeof location> => Boolean(location?.name))
+    .map((location) => `${location.code ? `${location.code} · ` : ''}${location.name}`);
+
+  return locations.join(' / ') || '—';
+}
+
+function movementLabel(type: string, locale: Locale): string {
+  const normalized = type.toUpperCase();
+  const translationKey: Record<string, string> = {
+    RECEIPT: 'stocuri.movement_RECEIPT',
+    CONSUMPTION: 'stocuri.movement_CONSUMPTION',
+    TRANSFER: 'stocuri.movement_TRANSFER',
+    TRANSFER_OUT: 'stocuri.movement_TRANSFER_OUT',
+    TRANSFER_IN: 'stocuri.movement_TRANSFER_IN',
+    ALLOCATION: 'stocuri.movement_ALLOCATION',
+    RETURN: 'stocuri.movement_RETURN',
+    ADJUSTMENT: 'stocuri.movement_ADJUSTMENT',
+  };
+
+  return translationKey[normalized] ? t(translationKey[normalized], locale) : type;
+}
+
+function movementQuantityPrefix(type: string, quantity: unknown): string {
+  switch (type.toUpperCase()) {
+    case 'RECEIPT':
+    case 'TRANSFER_IN':
+    case 'RETURN':
+      return '+';
+    case 'CONSUMPTION':
+    case 'TRANSFER_OUT':
+      return '−';
+    case 'ADJUSTMENT': {
+      const amount = toStockNumber(quantity);
+      return amount === null ? '' : amount >= 0 ? '+' : '−';
+    }
+    default:
+      return '';
+  }
+}
+
+function movementBadgeVariant(type: string): 'success' | 'info' | 'neutral' {
+  switch (type.toUpperCase()) {
+    case 'RECEIPT':
+    case 'RETURN':
+      return 'success';
+    case 'CONSUMPTION':
+      return 'info';
+    default:
+      return 'neutral';
+  }
+}
 
 type MovementAction = 'receive' | 'consume' | 'transfer';
 
@@ -40,7 +104,7 @@ const MUTATION_ROLES = {
 
 function StocuriPageInner() {
   const { locale } = useLocale();
-  const { selectedProjectId } = useProject();
+  const { selectedProjectId, selectedProject } = useProject();
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase() || '';
 
@@ -101,7 +165,16 @@ function StocuriPageInner() {
       .map(balance => ({ balance, material: balance.material || materials.find(m => m.id === balance.material_id) }))
       .filter(({ balance, material }) => {
         if (!query) return true;
-        return [material?.code, material?.name, material?.category, material?.barcode, balance.project?.name]
+        return [
+          material?.code,
+          material?.name,
+          material?.category,
+          material?.barcode,
+          balance.project?.code,
+          balance.project?.name,
+          balance.warehouse?.code,
+          balance.warehouse?.name,
+        ]
           .filter(Boolean).join(' ').toLocaleLowerCase(locale).includes(query);
       });
   }, [balances, materials, search, locale]);
@@ -112,7 +185,15 @@ function StocuriPageInner() {
       const typeMatch = movementFilter === 'ALL' || mv.movement_type === movementFilter;
       if (!typeMatch) return false;
       if (!query) return true;
-      return [mv.material?.name, mv.project?.name, mv.movement_type, mv.notes]
+      return [
+        mv.material?.name,
+        mv.project?.code,
+        mv.project?.name,
+        mv.warehouse?.code,
+        mv.warehouse?.name,
+        mv.movement_type,
+        mv.notes,
+      ]
         .filter(Boolean).join(' ').toLocaleLowerCase(locale).includes(query);
     });
   }, [movements, search, movementFilter, locale]);
@@ -128,13 +209,18 @@ function StocuriPageInner() {
   const safeMovementPage = Math.min(movementPage, movementTotalPages);
   const pagedMovementRows = movementRows.slice((safeMovementPage - 1) * pageSize, safeMovementPage * pageSize);
 
-  const criticalCount = balances.filter(b => {
-    const m = b.material || materials.find(x => x.id === b.material_id);
-    return typeof m?.min_stock_threshold === 'number' && Number(b.current_quantity) <= Number(m.min_stock_threshold);
+  const criticalCount = balances.filter((balance) => {
+    const material = balance.material || materials.find((item) => item.id === balance.material_id);
+    return isAtOrBelowMinStock(balance.current_quantity, material?.min_stock_threshold);
   }).length;
 
   const openAction = (next: MovementAction) => {
     setAction(next); setFormError(null); setMaterialId(''); setQuantity(''); setNotes(''); setTargetProjectId('');
+  };
+
+  const clearMovementFilters = () => {
+    setMovementFilter('ALL');
+    setSearch('');
   };
 
   const submitAction = async () => {
@@ -174,42 +260,60 @@ function StocuriPageInner() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <PageTutorial sectionId="stock" />
       <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200">
-      <PageHeader
-        className="py-3 !mb-0"
-        eyebrow={t('stocuri.eyebrow', locale)}
-        title={t('stocuri.page_title', locale)}
-        subtitle={t('stocuri.subtitle', locale)}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId && <Button type="button" variant="primary" onClick={() => openAction('receive')} icon={<Plus className="w-4 h-4" />}>{t('stocuri.btn_receive', locale)}</Button>}
-            {MUTATION_ROLES.consume.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('consume')} icon={<ArrowDownRight className="w-4 h-4" />}>{t('stocuri.btn_consume', locale)}</Button>}
-            {MUTATION_ROLES.transfer.includes(userRole as never) && selectedProjectId && <Button type="button" variant="secondary" onClick={() => openAction('transfer')} icon={<ArrowLeftRight className="w-4 h-4" />}>{t('stocuri.btn_transfer', locale)}</Button>}
-            <Button type="button" variant="secondary" onClick={() => void loadData()} disabled={loading} icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}>
-              {t('general.refresh', locale)}
-            </Button>
-          </div>
-        }
-      />
-      <div className="pb-3">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <PageHeader
+          className="py-3 !mb-0"
+          eyebrow={t('stocuri.eyebrow', locale)}
+          title={t('stocuri.page_title', locale)}
+          subtitle={t('stocuri.subtitle', locale)}
+          actions={
+            <div className="flex flex-wrap gap-2">
+              {MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId && (
+                <Button type="button" variant="primary" onClick={() => openAction('receive')} icon={<Plus className="size-4" />}>
+                  {t('stocuri.btn_receive', locale)}
+                </Button>
+              )}
+              {MUTATION_ROLES.consume.includes(userRole as never) && selectedProjectId && (
+                <Button type="button" variant="secondary" onClick={() => openAction('consume')} icon={<ArrowDownRight className="size-4" />}>
+                  {t('stocuri.btn_consume', locale)}
+                </Button>
+              )}
+              {MUTATION_ROLES.transfer.includes(userRole as never) && selectedProjectId && (
+                <Button type="button" variant="secondary" onClick={() => openAction('transfer')} icon={<ArrowLeftRight className="size-4" />}>
+                  {t('stocuri.btn_transfer', locale)}
+                </Button>
+              )}
+              <Button type="button" variant="secondary" onClick={() => void loadData()} disabled={loading} icon={<RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />}>
+                {t('general.refresh', locale)}
+              </Button>
+            </div>
+          }
+        />
+        {selectedProject && (
+          <p className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-600">
+            <MapPin className="size-3.5 text-hii-600" aria-hidden="true" />
+            <span>{selectedProject.code} · {selectedProject.name}</span>
+          </p>
+        )}
+        <div className="relative w-full max-w-xl pb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" aria-hidden="true" />
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
             placeholder={t('stocuri.search_placeholder', locale)}
             aria-label={t('stocuri.search_placeholder', locale)}
             className="hii-input pl-10"
           />
         </div>
       </div>
-      </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Summary label={t('stocuri.summary_materials_in_stock', locale)} value={balances.length} />
-        <Summary label={t('issues.summary_critical', locale)} value={criticalCount} attention={criticalCount > 0} />
-        <Summary label={t('stocuri.summary_movement_entries', locale)} value={movements.length} />
-        <Summary label={t('stocuri.summary_visible_materials', locale)} value={materials.length} />
-      </div>
+      <Card padding={false} className="overflow-hidden">
+        <dl className="grid grid-cols-2 divide-x divide-y divide-slate-200 sm:grid-cols-4 sm:divide-y-0">
+          <Summary label={t('stocuri.summary_balance_rows', locale)} value={balances.length} />
+          <Summary label={t('stocuri.summary_low_rows', locale)} value={criticalCount} attention={criticalCount > 0} />
+          <Summary label={t('stocuri.summary_recent_movements', locale)} value={movements.length} />
+          <Summary label={t('stocuri.summary_visible_materials', locale)} value={materials.length} />
+        </dl>
+      </Card>
 
       {error ? (
         <ErrorState
@@ -226,94 +330,179 @@ function StocuriPageInner() {
       ) : (
         <>
           <Card padding={false} className="overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2 text-sm font-bold text-slate-800">
-              <Boxes className="w-4 h-4 text-warning" />{t('stocuri.current_stock', locale)}
-            </div>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead><tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-semibold uppercase text-slate-500">
-                  <th className="py-3 px-4">Cod</th><th className="py-3 px-4">Material</th><th className="py-3 px-4">Categorie</th><th className="py-3 px-4">Cod bare</th><th className="py-3 px-4 text-right">Minim</th><th className="py-3 px-4 text-right">Disponibil</th><th className="py-3 px-4 text-center">Stare</th>
-                </tr></thead>
-                <tbody className="divide-y divide-slate-100">
-                  {balanceRows.length === 0 ? <tr><td colSpan={7}>
-                    {search ? (
-                      <EmptyState
-                        variant="compact"
-                        icon={<Search className="w-4 h-4" />}
-                        title="No matching results"
-                        description="No stock rows match the search."
-                        action={{ label: 'Clear search', onClick: () => setSearch('') }}
-                      />
-                    ) : (
-                      <EmptyState
-                        variant="compact"
-                        icon={<Boxes className="w-4 h-4" />}
-                        title="No stock recorded"
-                        description="Materials appear here once stock is received."
-                        action={
-                          MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId
-                            ? { label: 'Receive stock', onClick: () => openAction('receive') }
-                            : undefined
-                        }
-                      />
-                    )}
-                  </td></tr> :
-                    pagedBalanceRows.map(({ balance, material }) => {
-                      const qty = Number(balance.current_quantity || 0);
-                      const threshold = material?.min_stock_threshold;
-                      const critical = typeof threshold === 'number' && qty <= threshold;
-                      return <tr key={balance.id} className="hover:bg-slate-50">
-                        <td className="py-3.5 px-4 font-mono font-bold">{material?.code || '—'}</td><td className="py-3.5 px-4 font-medium">{material?.name || '—'}</td><td className="py-3.5 px-4 text-xs text-slate-500">{material?.category || '—'}</td><td className="py-3.5 px-4 font-mono text-xs text-slate-500">{material?.barcode || '—'}</td><td className="py-3.5 px-4 text-right text-xs text-slate-500">{threshold == null ? '—' : `${threshold} ${material?.unit || ''}`}</td><td className="py-3.5 px-4 text-right font-extrabold">{qty} <span className="text-xs font-normal text-slate-500">{material?.unit || ''}</span></td><td className="py-3.5 px-4 text-center">{critical ? <Badge variant="danger" size="sm"><AlertTriangle className="w-3 h-3" />{t('stocuri.low_badge', locale)}</Badge> : <span className="text-xs text-slate-500">{threshold == null ? t('stocuri.no_threshold', locale) : t('stocuri.ok', locale)}</span>}</td>
-                      </tr>;
-                    })}
-                </tbody>
-              </table>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-hii-50 text-hii-700">
+                  <Boxes className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-semibold text-slate-900">{t('stocuri.current_stock', locale)}</h2>
+                  <p className="text-xs text-slate-500">{t('stocuri.balance_rows_detail', locale)}</p>
+                </div>
+              </div>
+              {criticalCount > 0 && (
+                <Badge variant="danger" size="sm">
+                  <AlertTriangle className="size-3" aria-hidden="true" />
+                  {criticalCount} {t('stocuri.summary_low_rows', locale)}
+                </Badge>
+              )}
             </div>
 
-            <div className="md:hidden divide-y divide-slate-100">
+            <div className="hidden overflow-x-auto md:block">
               {balanceRows.length === 0 ? (
-                search ? (
-                  <EmptyState
-                    variant="compact"
-                    icon={<Search className="w-4 h-4" />}
-                    title="No matching results"
-                    description="No stock rows match the search."
-                    action={{ label: 'Clear search', onClick: () => setSearch('') }}
-                  />
-                ) : (
-                  <EmptyState
-                    variant="compact"
-                    icon={<Boxes className="w-4 h-4" />}
-                    title="No stock recorded"
-                    description="Materials appear here once stock is received."
-                    action={
-                      MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId
-                        ? { label: 'Receive stock', onClick: () => openAction('receive') }
-                        : undefined
-                    }
-                  />
-                )
+                <div className="px-4 py-2">
+                  {search ? (
+                    <EmptyState
+                      variant="compact"
+                      icon={<Search className="size-4" />}
+                      title={t('stocuri.empty_search_title', locale)}
+                      description={t('stocuri.empty_search_balances', locale)}
+                      action={{ label: t('stocuri.clear_search', locale), onClick: () => setSearch('') }}
+                    />
+                  ) : (
+                    <EmptyState
+                      variant="compact"
+                      icon={<Boxes className="size-4" />}
+                      title={t('stocuri.empty_balances_title', locale)}
+                      description={t('stocuri.empty_balances_description', locale)}
+                      action={
+                        MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId
+                          ? { label: t('stocuri.btn_receive', locale), onClick: () => openAction('receive') }
+                          : undefined
+                      }
+                    />
+                  )}
+                </div>
+              ) : (
+                <table className="min-w-[760px] w-full text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+                    <tr>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.stock_table_material', locale)}</th>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.stock_table_location', locale)}</th>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.stock_table_details', locale)}</th>
+                      <th scope="col" className="px-4 py-3 text-right">{t('stocuri.stock_table_minimum', locale)}</th>
+                      <th scope="col" className="px-4 py-3 text-right">{t('stocuri.stock_table_quantity', locale)}</th>
+                      <th scope="col" className="px-4 py-3 text-center">{t('stocuri.stock_table_status', locale)}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pagedBalanceRows.map(({ balance, material }) => {
+                      const quantity = toStockNumber(balance.current_quantity);
+                      const rawThreshold = material?.min_stock_threshold;
+                      const threshold = toStockNumber(rawThreshold);
+                      const hasThreshold = hasStockThreshold(rawThreshold);
+                      const low = isAtOrBelowMinStock(balance.current_quantity, material?.min_stock_threshold);
+
+                      return (
+                        <tr key={balance.id} className={`transition-colors hover:bg-slate-50 ${low ? 'bg-danger-soft/20' : ''}`}>
+                          <td className="px-4 py-3.5">
+                            <span className="block font-mono text-xs font-semibold text-slate-500">{material?.code || '—'}</span>
+                            <span className="mt-0.5 block font-semibold text-slate-900">{material?.name || '—'}</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-sm text-slate-700">{stockLocationLabel(balance)}</td>
+                          <td className="px-4 py-3.5 text-xs text-slate-500">
+                            <span className="block">{material?.category || '—'}</span>
+                            {material?.barcode && <span className="mt-0.5 block font-mono">{material.barcode}</span>}
+                          </td>
+                          <td className="px-4 py-3.5 text-right tabular-nums text-slate-600">
+                            {threshold === null ? '—' : `${formatStockNumber(threshold, locale)} ${material?.unit || ''}`}
+                          </td>
+                          <td className="px-4 py-3.5 text-right tabular-nums">
+                            <span className={`font-bold ${low ? 'text-danger-foreground' : 'text-slate-900'}`}>
+                              {formatStockNumber(quantity, locale)}
+                            </span>
+                            <span className="ml-1 text-xs text-slate-500">{material?.unit || ''}</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            {low ? (
+                              <Badge variant="danger" size="sm"><AlertTriangle className="size-3" aria-hidden="true" />{t('stocuri.low_badge', locale)}</Badge>
+                            ) : (
+                              <span className="text-xs text-slate-500">
+                                {!hasThreshold ? t('stocuri.no_threshold', locale) : threshold === null ? '—' : t('stocuri.ok', locale)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="divide-y divide-slate-100 md:hidden">
+              {balanceRows.length === 0 ? (
+                <div className="px-4 py-2">
+                  {search ? (
+                    <EmptyState
+                      variant="compact"
+                      icon={<Search className="size-4" />}
+                      title={t('stocuri.empty_search_title', locale)}
+                      description={t('stocuri.empty_search_balances', locale)}
+                      action={{ label: t('stocuri.clear_search', locale), onClick: () => setSearch('') }}
+                    />
+                  ) : (
+                    <EmptyState
+                      variant="compact"
+                      icon={<Boxes className="size-4" />}
+                      title={t('stocuri.empty_balances_title', locale)}
+                      description={t('stocuri.empty_balances_description', locale)}
+                      action={
+                        MUTATION_ROLES.receive.includes(userRole as never) && selectedProjectId
+                          ? { label: t('stocuri.btn_receive', locale), onClick: () => openAction('receive') }
+                          : undefined
+                      }
+                    />
+                  )}
+                </div>
               ) : (
                 pagedBalanceRows.map(({ balance, material }) => {
-                  const qty = Number(balance.current_quantity || 0);
-                  const threshold = material?.min_stock_threshold;
-                  const critical = typeof threshold === 'number' && qty <= threshold;
+                  const quantity = toStockNumber(balance.current_quantity);
+                  const rawThreshold = material?.min_stock_threshold;
+                  const threshold = toStockNumber(rawThreshold);
+                  const hasThreshold = hasStockThreshold(rawThreshold);
+                  const low = isAtOrBelowMinStock(balance.current_quantity, material?.min_stock_threshold);
+
                   return (
-                    <div key={balance.id} className="p-4">
+                    <article key={balance.id} className={`p-4 ${low ? 'bg-danger-soft/20' : ''}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <div className="font-mono text-xs text-slate-500">{material?.code || '—'}</div>
-                          <div className="font-medium text-slate-900 truncate">{material?.name || '—'}</div>
+                          <p className="font-mono text-xs font-semibold text-slate-500">{material?.code || '—'}</p>
+                          <h3 className="mt-0.5 break-words text-sm font-semibold text-slate-900">{material?.name || '—'}</h3>
+                          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
+                            <MapPin className="size-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                            <span>{stockLocationLabel(balance)}</span>
+                          </p>
                         </div>
-                        {critical ? <Badge variant="danger" size="sm"><AlertTriangle className="w-3 h-3" />{t('stocuri.low_badge', locale)}</Badge> : <span className="text-xs text-slate-500">{threshold == null ? t('stocuri.no_threshold', locale) : t('stocuri.ok', locale)}</span>}
+                        <div className="shrink-0 text-right">
+                          <p className={`text-lg font-bold tabular-nums ${low ? 'text-danger-foreground' : 'text-slate-900'}`}>
+                            {formatStockNumber(quantity, locale)}
+                          </p>
+                          <p className="text-xs text-slate-500">{material?.unit || ''}</p>
+                          {low ? (
+                            <Badge variant="danger" size="sm" className="mt-1"><AlertTriangle className="size-3" aria-hidden="true" />{t('stocuri.low_badge', locale)}</Badge>
+                          ) : (
+                            <span className="mt-1 block text-xs text-slate-500">
+                              {!hasThreshold ? t('stocuri.no_threshold', locale) : threshold === null ? '—' : t('stocuri.ok', locale)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                        <div><dt className="text-slate-400">Categorie</dt><dd className="text-slate-700">{material?.category || '—'}</dd></div>
-                        <div><dt className="text-slate-400">Cod bare</dt><dd className="font-mono text-slate-700">{material?.barcode || '—'}</dd></div>
-                        <div><dt className="text-slate-400">Minim</dt><dd className="text-slate-700">{threshold == null ? '—' : `${threshold} ${material?.unit || ''}`}</dd></div>
-                        <div><dt className="text-slate-400">Disponibil</dt><dd className="font-extrabold text-slate-900">{qty} <span className="font-normal text-slate-500">{material?.unit || ''}</span></dd></div>
+                      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-200/70 pt-3 text-xs">
+                        <div>
+                          <dt className="text-slate-500">{t('stocuri.stock_table_minimum', locale)}</dt>
+                          <dd className="mt-0.5 tabular-nums text-slate-800">
+                            {threshold === null ? '—' : `${formatStockNumber(threshold, locale)} ${material?.unit || ''}`}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-slate-500">{t('stocuri.stock_table_details', locale)}</dt>
+                          <dd className="mt-0.5 break-words text-slate-800">
+                            {[material?.category, material?.barcode].filter(Boolean).join(' · ') || '—'}
+                          </dd>
+                        </div>
                       </dl>
-                    </div>
+                    </article>
                   );
                 })
               )}
@@ -328,85 +517,164 @@ function StocuriPageInner() {
           </Card>
 
           <Card padding={false} className="overflow-hidden">
-            <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-800"><History className="w-4 h-4 text-warning" />{t('stocuri.audit_title', locale)}</div>
-              <select value={movementFilter} onChange={e => setMovementFilter(e.target.value)} className="hii-select !w-auto text-xs" aria-label={t('stocuri.all_movement_types', locale)}>
+            <div className="flex flex-col gap-3 border-b border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+                  <History className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-slate-900">{t('stocuri.audit_title', locale)}</h2>
+                  <p className="text-xs text-slate-500">{t('stocuri.audit_detail', locale)}</p>
+                </div>
+              </div>
+              <label className="sr-only" htmlFor="stock-movement-filter">{t('stocuri.all_movement_types', locale)}</label>
+              <select
+                id="stock-movement-filter"
+                value={movementFilter}
+                onChange={(event) => setMovementFilter(event.target.value)}
+                className="hii-select w-full text-sm sm:w-auto sm:min-w-48"
+              >
                 <option value="ALL">{t('stocuri.all_movement_types', locale)}</option>
-                {Array.from(new Set(movements.map(m => m.movement_type))).map(type => <option key={type} value={type}>{type}</option>)}
+                {Array.from(new Set(movements.map((movement) => movement.movement_type))).map((type) => (
+                  <option key={type} value={type}>{movementLabel(type, locale)}</option>
+                ))}
               </select>
             </div>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead><tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-semibold"><th className="py-3 px-4">Data & Ora</th><th className="py-3 px-4">Operațiune</th><th className="py-3 px-4">Material</th><th className="py-3 px-4 text-right">Cantitate</th><th className="py-3 px-4">Proiect</th><th className="py-3 px-4">Referință</th></tr></thead>
-                <tbody className="divide-y divide-slate-100">
-                  {movementRows.length === 0 ? <tr><td colSpan={6}>
-                    {movementFilter !== 'ALL' ? (
-                      <EmptyState
-                        variant="compact"
-                        icon={<Search className="w-4 h-4" />}
-                        title="No matching results"
-                        description="No movements match the current filter."
-                        action={{ label: 'Clear filter', onClick: () => setMovementFilter('ALL') }}
-                      />
-                    ) : (
-                      <EmptyState
-                        variant="compact"
-                        icon={<History className="w-4 h-4" />}
-                        title="No stock recorded"
-                        description="Materials appear here once stock is received."
-                      />
-                    )}
-                  </td></tr> :
-                    pagedMovementRows.map(mv => {
-                      const type = mv.movement_type.toUpperCase();
-                      const positive = type === 'RECEIPT' || type === 'TRANSFER_IN' || type === 'RETURN' || (type === 'ADJUSTMENT' && Number(mv.quantity) >= 0);
-                      const label = type === 'RECEIPT' ? t('stocuri.movement_RECEIPT', locale) : type === 'CONSUMPTION' ? t('stocuri.movement_CONSUMPTION', locale) : type === 'TRANSFER_OUT' ? t('stocuri.movement_TRANSFER_OUT', locale) : type === 'TRANSFER_IN' ? t('stocuri.movement_TRANSFER_IN', locale) : type;
-                      const badgeVariant = type === 'CONSUMPTION' ? 'info' : (type === 'TRANSFER_OUT' || type === 'TRANSFER_IN') ? 'neutral' : 'success';
-                      return <tr key={mv.id} className="hover:bg-slate-50"><td className="py-3 px-4 font-mono text-slate-600">{new Date(mv.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}</td><td className="py-3 px-4"><Badge variant={badgeVariant} size="sm">{positive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}{label}</Badge></td><td className="py-3 px-4 font-medium">{mv.material?.name || materials.find(m => m.id === mv.material_id)?.name || '—'}</td><td className="py-3 px-4 text-right font-bold">{positive ? '+' : '-'}{Number(mv.quantity)} {mv.material?.unit || materials.find(m => m.id === mv.material_id)?.unit || ''}</td><td className="py-3 px-4">{mv.project?.name || '—'}</td><td className="py-3 px-4 text-slate-500">{mv.notes || '—'}</td></tr>;
+
+            <div className="hidden overflow-x-auto md:block">
+              {movementRows.length === 0 ? (
+                <div className="px-4 py-2">
+                  {movementFilter !== 'ALL' || search ? (
+                    <EmptyState
+                      variant="compact"
+                      icon={<Search className="size-4" />}
+                      title={t('stocuri.empty_search_title', locale)}
+                      description={t('stocuri.empty_search_movements', locale)}
+                      action={{
+                        label: movementFilter !== 'ALL' && search.trim()
+                          ? t('stocuri.clear_filters', locale)
+                          : movementFilter !== 'ALL'
+                            ? t('stocuri.clear_filter', locale)
+                            : t('stocuri.clear_search', locale),
+                        onClick: clearMovementFilters,
+                      }}
+                    />
+                  ) : (
+                    <EmptyState
+                      variant="compact"
+                      icon={<History className="size-4" />}
+                      title={t('stocuri.empty_movements_title', locale)}
+                      description={t('stocuri.empty_movements_description', locale)}
+                    />
+                  )}
+                </div>
+              ) : (
+                <table className="min-w-[760px] w-full text-left text-sm">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+                    <tr>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.movement_date', locale)}</th>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.movement_type', locale)}</th>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.movement_material', locale)}</th>
+                      <th scope="col" className="px-4 py-3 text-right">{t('stocuri.movement_quantity', locale)}</th>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.movement_location', locale)}</th>
+                      <th scope="col" className="px-4 py-3">{t('stocuri.movement_notes', locale)}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pagedMovementRows.map((movement) => {
+                      const prefix = movementQuantityPrefix(movement.movement_type, movement.quantity);
+                      const quantity = toStockNumber(movement.quantity);
+                      const amount = prefix && quantity !== null ? Math.abs(quantity) : quantity;
+                      const DirectionIcon = prefix === '+' ? ArrowUpRight : prefix === '−' ? ArrowDownRight : ArrowLeftRight;
+                      const materialName = movement.material?.name || materials.find((material) => material.id === movement.material_id)?.name || '—';
+                      const unit = movement.material?.unit || materials.find((material) => material.id === movement.material_id)?.unit || '';
+
+                      return (
+                        <tr key={movement.id} className="hover:bg-slate-50">
+                          <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-slate-600">
+                            {new Date(movement.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={movementBadgeVariant(movement.movement_type)} size="sm">
+                              <DirectionIcon className="size-3.5" aria-hidden="true" />
+                              {movementLabel(movement.movement_type, locale)}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-slate-900">{materialName}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-slate-900">
+                            {prefix}{formatStockNumber(amount, locale)} <span className="text-xs font-normal text-slate-500">{unit}</span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-700">{stockLocationLabel(movement)}</td>
+                          <td className="max-w-64 px-4 py-3 text-xs text-slate-500">{movement.notes || '—'}</td>
+                        </tr>
+                      );
                     })}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              )}
             </div>
 
-            <div className="md:hidden divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 md:hidden">
               {movementRows.length === 0 ? (
-                movementFilter !== 'ALL' ? (
-                  <EmptyState
-                    variant="compact"
-                    icon={<Search className="w-4 h-4" />}
-                    title="No matching results"
-                    description="No movements match the current filter."
-                    action={{ label: 'Clear filter', onClick: () => setMovementFilter('ALL') }}
-                  />
-                ) : (
-                  <EmptyState
-                    variant="compact"
-                    icon={<History className="w-4 h-4" />}
-                    title="No stock recorded"
-                    description="Materials appear here once stock is received."
-                  />
-                )
+                <div className="px-4 py-2">
+                  {movementFilter !== 'ALL' || search ? (
+                    <EmptyState
+                      variant="compact"
+                      icon={<Search className="size-4" />}
+                      title={t('stocuri.empty_search_title', locale)}
+                      description={t('stocuri.empty_search_movements', locale)}
+                      action={{
+                        label: movementFilter !== 'ALL' && search.trim()
+                          ? t('stocuri.clear_filters', locale)
+                          : movementFilter !== 'ALL'
+                            ? t('stocuri.clear_filter', locale)
+                            : t('stocuri.clear_search', locale),
+                        onClick: clearMovementFilters,
+                      }}
+                    />
+                  ) : (
+                    <EmptyState
+                      variant="compact"
+                      icon={<History className="size-4" />}
+                      title={t('stocuri.empty_movements_title', locale)}
+                      description={t('stocuri.empty_movements_description', locale)}
+                    />
+                  )}
+                </div>
               ) : (
-                pagedMovementRows.map(mv => {
-                  const type = mv.movement_type.toUpperCase();
-                  const positive = type === 'RECEIPT' || type === 'TRANSFER_IN' || type === 'RETURN' || (type === 'ADJUSTMENT' && Number(mv.quantity) >= 0);
-                  const label = type === 'RECEIPT' ? t('stocuri.movement_RECEIPT', locale) : type === 'CONSUMPTION' ? t('stocuri.movement_CONSUMPTION', locale) : type === 'TRANSFER_OUT' ? t('stocuri.movement_TRANSFER_OUT', locale) : type === 'TRANSFER_IN' ? t('stocuri.movement_TRANSFER_IN', locale) : type;
-                  const badgeVariant = type === 'CONSUMPTION' ? 'info' : (type === 'TRANSFER_OUT' || type === 'TRANSFER_IN') ? 'neutral' : 'success';
-                  const materialName = mv.material?.name || materials.find(m => m.id === mv.material_id)?.name || '—';
-                  const unit = mv.material?.unit || materials.find(m => m.id === mv.material_id)?.unit || '';
+                pagedMovementRows.map((movement) => {
+                  const prefix = movementQuantityPrefix(movement.movement_type, movement.quantity);
+                  const quantity = toStockNumber(movement.quantity);
+                  const amount = prefix && quantity !== null ? Math.abs(quantity) : quantity;
+                  const DirectionIcon = prefix === '+' ? ArrowUpRight : prefix === '−' ? ArrowDownRight : ArrowLeftRight;
+                  const materialName = movement.material?.name || materials.find((material) => material.id === movement.material_id)?.name || '—';
+                  const unit = movement.material?.unit || materials.find((material) => material.id === movement.material_id)?.unit || '';
+
                   return (
-                    <div key={mv.id} className="p-4 space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs text-slate-500">{new Date(mv.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}</span>
-                        <Badge variant={badgeVariant} size="sm">{positive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}{label}</Badge>
+                    <article key={movement.id} className="space-y-2.5 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-mono text-xs text-slate-500">
+                            {new Date(movement.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ro-RO')}
+                          </p>
+                          <p className="mt-1 font-medium text-slate-900">{materialName}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="font-bold tabular-nums text-slate-900">
+                            {prefix}{formatStockNumber(amount, locale)} <span className="text-xs font-normal text-slate-500">{unit}</span>
+                          </p>
+                          <Badge variant={movementBadgeVariant(movement.movement_type)} size="sm" className="mt-1">
+                            <DirectionIcon className="size-3.5" aria-hidden="true" />
+                            {movementLabel(movement.movement_type, locale)}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-slate-900">{materialName}</span>
-                        <span className="font-bold text-slate-900">{positive ? '+' : '-'}{Number(mv.quantity)} <span className="text-xs font-normal text-slate-500">{unit}</span></span>
-                      </div>
-                      <div className="text-xs text-slate-500">{mv.project?.name || '—'}</div>
-                      {mv.notes && <div className="text-xs text-slate-500">{mv.notes}</div>}
-                    </div>
+                      <p className="flex items-center gap-1.5 text-xs text-slate-600">
+                        <MapPin className="size-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                        <span>{stockLocationLabel(movement)}</span>
+                      </p>
+                      {movement.notes && <p className="break-words border-t border-slate-100 pt-2 text-xs text-slate-500">{movement.notes}</p>}
+                    </article>
                   );
                 })
               )}
@@ -429,7 +697,7 @@ function StocuriPageInner() {
         footer={
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setAction(null)} disabled={saving}>
-              Cancel
+              {t('stocuri.cancel', locale)}
             </Button>
             <Button type="button" variant="primary" onClick={() => void submitAction()} loading={saving} disabled={saving}>
               {saving ? t('stocuri.saving', locale) : actionLabel}
@@ -465,7 +733,7 @@ function StocuriPageInner() {
             <label htmlFor="stock-notes" className="hii-label">{t('stocuri.field_notes', locale)}</label>
             <textarea id="stock-notes" value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-hii-500 focus:outline-none resize-none" />
           </div>
-          {formError && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{formError}</div>}
+          {formError && <div role="alert" className="rounded-lg border border-danger/20 bg-danger-soft p-3 text-sm text-danger-foreground">{formError}</div>}
         </div>
       </Modal>
     </div>
@@ -473,7 +741,12 @@ function StocuriPageInner() {
 }
 
 function Summary({ label, value, attention = false }: { label: string; value: number; attention?: boolean }) {
-  return <Card className={`p-4 ${attention ? '!border-rose-200' : ''}`}><p className="text-xs font-semibold text-slate-500">{label}</p><p className={`mt-1 text-2xl font-bold ${attention ? '!text-rose-700' : 'text-slate-900'}`}>{value}</p></Card>;
+  return (
+    <div className={`min-w-0 px-4 py-3 sm:px-5 sm:py-4 ${attention ? 'bg-danger-soft/30' : ''}`}>
+      <dt className="text-xs font-medium leading-snug text-slate-600">{label}</dt>
+      <dd className={`mt-1 text-2xl font-bold tabular-nums ${attention ? 'text-danger-foreground' : 'text-slate-900'}`}>{value}</dd>
+    </div>
+  );
 }
 
 export default function StocuriPage() {

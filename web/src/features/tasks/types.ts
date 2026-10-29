@@ -31,7 +31,7 @@ export interface TaskUserRef {
   email: string;
   role?: string;
   fullName?: string;
-  profile?: { full_name?: string; phone?: string };
+  profile?: { full_name?: string; phone?: string; avatar_url?: string | null };
 }
 
 export interface TaskAssignment {
@@ -118,7 +118,6 @@ export interface CreateTaskDto {
   workPackageId?: string;
   zoneId?: string;
   title: string;
-  code: string;
   description?: string;
   plannedStart?: string;
   plannedEnd?: string;
@@ -184,11 +183,18 @@ export const TASK_STATUS_I18N: Record<TaskStatus, string> = {
 };
 
 /** Badge variants available on `components/ui/Badge`. */
-export type TaskStatusBadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+export type TaskStatusBadgeVariant =
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'neutral'
+  | 'verified';
 
 /**
  * Badge variant per status — mirrors DESIGN_SYSTEM.md §4 "Status → Semantic Mapping"
- * for the full 7-value TaskStatusEnum.
+ * for the full 7-value TaskStatusEnum. VERIFIED is distinct from COMPLETED.
  */
 export const TASK_STATUS_BADGE: Record<TaskStatus, TaskStatusBadgeVariant> = {
   PLANNED: 'neutral',
@@ -196,8 +202,52 @@ export const TASK_STATUS_BADGE: Record<TaskStatus, TaskStatusBadgeVariant> = {
   IN_PROGRESS: 'warning',
   BLOCKED: 'danger',
   COMPLETED: 'success',
-  VERIFIED: 'success',
+  VERIFIED: 'verified',
   CANCELLED: 'default',
+};
+
+/**
+ * Shared status tokens used by board lanes, list rows, badges and calendar events.
+ * Keep these as complete Tailwind class strings so they survive production purging.
+ */
+export const TASK_STATUS_DOT: Record<TaskStatus, string> = {
+  PLANNED: 'bg-slate-500',
+  READY: 'bg-blue-600',
+  IN_PROGRESS: 'bg-amber-500',
+  BLOCKED: 'bg-red-500',
+  COMPLETED: 'bg-emerald-600',
+  VERIFIED: 'bg-teal-600',
+  CANCELLED: 'bg-slate-400',
+};
+
+export const TASK_STATUS_EVENT: Record<TaskStatus, string> = {
+  PLANNED: 'border-slate-200 bg-slate-50 hover:bg-slate-100',
+  READY: 'border-blue-200 bg-blue-50 hover:bg-blue-100',
+  IN_PROGRESS: 'border-amber-200 bg-amber-50 hover:bg-amber-100',
+  BLOCKED: 'border-red-200 bg-red-50 hover:bg-red-100',
+  COMPLETED: 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100',
+  VERIFIED: 'border-teal-200 bg-teal-50 hover:bg-teal-100',
+  CANCELLED: 'border-slate-200 bg-slate-50/70 hover:bg-slate-100',
+};
+
+export const TASK_STATUS_ACCENT: Record<TaskStatus, string> = {
+  PLANNED: 'border-l-slate-400',
+  READY: 'border-l-blue-500',
+  IN_PROGRESS: 'border-l-amber-500',
+  BLOCKED: 'border-l-red-500',
+  COMPLETED: 'border-l-emerald-600',
+  VERIFIED: 'border-l-teal-600',
+  CANCELLED: 'border-l-slate-400',
+};
+
+export const TASK_STATUS_TEXT: Record<TaskStatus, string> = {
+  PLANNED: 'text-slate-700',
+  READY: 'text-blue-800',
+  IN_PROGRESS: 'text-amber-800',
+  BLOCKED: 'text-red-700',
+  COMPLETED: 'text-emerald-800',
+  VERIFIED: 'text-teal-800',
+  CANCELLED: 'text-slate-500',
 };
 
 /** Allowed next statuses per current status (frontend workflow model) */

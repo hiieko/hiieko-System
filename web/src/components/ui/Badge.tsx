@@ -3,7 +3,14 @@
 import React from 'react';
 import { clsx } from 'clsx';
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+type BadgeVariant =
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'neutral'
+  | 'verified';
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -11,6 +18,7 @@ interface BadgeProps {
   size?: 'sm' | 'md';
   className?: string;
   dot?: boolean;
+  title?: string;
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
@@ -20,6 +28,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   danger: 'bg-danger-soft text-danger-foreground',
   info: 'bg-info-soft text-info-foreground',
   neutral: 'bg-slate-50 text-slate-500 border border-slate-200',
+  verified: 'bg-teal-50 text-teal-800 border border-teal-200',
 };
 
 const sizeStyles = {
@@ -33,9 +42,11 @@ export function Badge({
   size = 'md',
   className,
   dot = false,
+  title,
 }: BadgeProps) {
   return (
     <span
+      title={title}
       className={clsx(
         'inline-flex items-center gap-1 font-medium rounded-full',
         variantStyles[variant],

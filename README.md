@@ -16,7 +16,7 @@ Mobile (Expo) ─┘
 - **NestJS** — REST API with JWT auth, role guards, Swagger docs
 - **Next.js** — web dashboard (Romanian locale)
 - **Expo** — mobile app with offline SQLite sync queue
-- **PaddleOCR** — self-hosted receipt OCR service (called server-side only)
+- **PaddleOCR** — repository capability; OCR is currently frozen/deferred pending an explicit decision on proposed V1 inclusion
 
 ## Quick start
 
@@ -37,33 +37,19 @@ ocr-service/      Standalone PaddleOCR service (Docker)
 
 ## Development status
 
-This is a **pre-1.0 development checkpoint**. Key milestones:
-
-| Milestone | Status |
-|---|---|
-| PostgreSQL 18 migration | ✅ Complete |
-| Supabase runtime removal | ✅ Complete |
-| R2.2 Attendance | ✅ E2E verified |
-| R2.3 Stock + Avize | ✅ E2E verified |
-| R2.4 Daily Reports | ✅ E2E verified |
-| R2.5 Notifications/Audit | ✅ E2E verified |
-| R2.1 Sites→Projects (P1–P6) | ✅ **P6 CLOSURE (all 6 phases complete)** |
-
-**Current work:** R2.1 P6 CLOSURE — Documentation reconciliation complete. R2.2 onward next.
-
-For detailed status, see [Project workflow/CURRENT_STATUS.md](Project%20workflow/CURRENT_STATUS.md).
+The repository is pre-1.0. Production deployment and end-to-end release acceptance are not established by this README. The October 20, 2026 audit records 48 backend test suites / 567 tests and a 35-route web build on its then-current baseline; those checks have not been rerun on the currently modified worktree. See [current status](Project%20workflow/CURRENT_STATUS.md) and [verification evidence](Project%20workflow/VERIFICATION.md).
 
 ## Key documentation
 
 | Document | Purpose |
 |---|---|
 | [Project workflow/CURRENT_STATUS.md](Project%20workflow/CURRENT_STATUS.md) | Canonical current-status summary |
-| [Project workflow/PROGRESS.md](Project%20workflow/PROGRESS.md) | Detailed progress ledger |
+| [Project workflow/PROGRESS.md](Project%20workflow/PROGRESS.md) | Consolidated progress index |
 | [Project workflow/VERIFICATION.md](Project%20workflow/VERIFICATION.md) | Verification evidence |
-| [Project workflow/ISSUES.md](Project%20workflow/ISSUES.md) | Open and resolved issues |
-| [Project workflow/IMPLEMENTATION_ROADMAP.md](Project%20workflow/IMPLEMENTATION_ROADMAP.md) | Phase roadmap (R0–R7) |
-| [docs/HIIEKO_IMPLEMENTATION_DECISIONS.md](docs/HIIEKO_IMPLEMENTATION_DECISIONS.md) | Key architectural decisions |
-| [docs/HIIEKO_MASTER_ROADMAP.md](docs/HIIEKO_MASTER_ROADMAP.md) | Execution roadmap |
+| [Project workflow/ISSUES.md](Project%20workflow/ISSUES.md) | Current issues, audit findings, and unresolved blockers |
+| [Project workflow/DECISIONS.md](Project%20workflow/DECISIONS.md) | Canonical decisions and preserved legacy decision crosswalk |
+| [docs/HIIEKO_IMPLEMENTATION_PLAN.md](docs/HIIEKO_IMPLEMENTATION_PLAN.md) | Single proposed V1 execution plan (scope approval pending) |
+| [docs/V1_SCOPE.md](docs/V1_SCOPE.md) | Proposed V1 scope and acceptance criteria (not approval or completion evidence) |
 | [HOW_TO_RUN.md](HOW_TO_RUN.md) | Setup and run instructions |
 
 ## Validation
@@ -72,5 +58,5 @@ For detailed status, see [Project workflow/CURRENT_STATUS.md](Project%20workflow
 npm run typecheck   # TypeScript checks on all 4 workspaces
 npm run test        # Backend Jest test suite
 npm run build       # Build shared, web, and backend
-npm run db:verify   # Database integrity checks (41 checks)
+  npm run db:verify   # Read-only database integrity checks (check count depends on current code)
 ```

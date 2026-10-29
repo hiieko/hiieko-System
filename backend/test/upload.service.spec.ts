@@ -12,12 +12,20 @@ const worker = {
   id: 'worker-1',
   email: 'worker@hiieko.local',
   role: UserRoleEnum.WORKER,
+  organizationId: 'org-1',
 };
 
 const admin = {
   id: 'admin-1',
   email: 'admin@hiieko.local',
   role: UserRoleEnum.ADMIN,
+};
+
+const manager = {
+  id: 'manager-1',
+  email: 'manager@hiieko.local',
+  role: UserRoleEnum.MANAGER,
+  organizationId: 'org-1',
 };
 
 /**
@@ -63,7 +71,11 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
 
   beforeEach(async () => {
     storage = { save: jest.fn(), read: jest.fn() };
-    documents = { create: jest.fn() };
+    documents = {
+      create: jest.fn(),
+      assertCanUploadToProject: jest.fn().mockResolvedValue(undefined),
+      assertCanAccessDocument: jest.fn().mockResolvedValue(undefined),
+    };
     audit = { record: jest.fn().mockResolvedValue(true) };
     prisma = {
       expense: { findUnique: jest.fn() },
@@ -101,6 +113,13 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
       service.uploadFile(file({ mimetype: 'text/html' }), 'expense', 'e-1', worker),
     ).rejects.toThrow(BadRequestException);
     expect(RECEIPT_MIME_ALLOWLIST).toContain('application/pdf');
+    expect(storage.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid explicit document category before persisting a blob', async () => {
+    await expect(service.uploadFile(file(), undefined, undefined, worker, {
+      documentType: 'FOLDER_MISC',
+    })).rejects.toThrow(BadRequestException);
     expect(storage.save).not.toHaveBeenCalled();
   });
 
@@ -181,6 +200,8 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
       worker,
       { documentType: 'plan_tehnic', title: 'Site plan', projectId: 'project-1' },
     );
+
+    expect(documents.assertCanUploadToProject).toHaveBeenCalledWith('project-1', worker);
 
     expect(documents.create).toHaveBeenCalledWith(
       {
@@ -349,8 +370,51 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
       versions: [{ uploaded_by: 'other-user', storage_path: 'k.jpg' }],
       project: { id: 'project-1', organization_id: 'org-1' },
     });
-    prisma.projectMember.findUnique.mockResolvedValue(null);
+    documents.assertCanAccessDocument.mockRejectedValue(new ForbiddenException());
     await expect(service.readFile('doc-1', worker)).rejects.toThrow(ForbiddenException);
+    expect(storage.read).not.toHaveBeenCalled();
+  });
+
+  it.each([manager, admin, { ...admin, id: 'owner-1', role: UserRoleEnum.OWNER }])(
+    'does not read a cross-organization blob for role $role',
+    async (user) => {
+      const documentAuthorization = new DocumentsService(prisma, audit, storage, config);
+      documents.assertCanAccessDocument.mockImplementation(
+        documentAuthorization.assertCanAccessDocument.bind(documentAuthorization),
+      );
+      prisma.document.findUnique.mockResolvedValue({
+        id: 'doc-other-org',
+        title: 'other-org.pdf',
+        project_id: 'project-other-org',
+        versions: [{ uploaded_by: 'another-user', storage_path: 'private/key.pdf' }],
+        project: { id: 'project-other-org', organization_id: 'org-2' },
+      });
+
+      await expect(service.readFile('doc-other-org', user as any)).rejects.toThrow(ForbiddenException);
+      expect(storage.read).not.toHaveBeenCalled();
+    },
+  );
+
+  it('does not read another project blob for a project-scoped user without membership', async () => {
+    const documentAuthorization = new DocumentsService(prisma, audit, storage, config);
+    documents.assertCanAccessDocument.mockImplementation(
+      documentAuthorization.assertCanAccessDocument.bind(documentAuthorization),
+    );
+    prisma.document.findUnique.mockResolvedValue({
+      id: 'doc-other-project',
+      title: 'other-project.pdf',
+      project_id: 'project-2',
+      versions: [{ uploaded_by: 'another-user', storage_path: 'private/key.pdf' }],
+      project: { id: 'project-2', organization_id: 'org-1' },
+    });
+    prisma.projectMember.findUnique.mockResolvedValue(null);
+
+    await expect(service.readFile('doc-other-project', worker)).rejects.toThrow(ForbiddenException);
+    expect(prisma.projectMember.findUnique).toHaveBeenCalledWith({
+      where: { project_id_user_id: { project_id: 'project-2', user_id: worker.id } },
+      select: { user_id: true },
+    });
+    expect(storage.read).not.toHaveBeenCalled();
   });
 
   it('allows a project member to retrieve a project document', async () => {
@@ -374,6 +438,10 @@ describe('UploadService (ISSUE-013 / ISSUE-014)', () => {
       size: 4,
       fileName: 'site-plan.pdf',
     });
+    expect(documents.assertCanAccessDocument).toHaveBeenCalledWith(
+      expect.objectContaining({ project_id: 'project-1' }),
+      worker,
+    );
   });
 
   it('returns the stored blob to the original uploader', async () => {

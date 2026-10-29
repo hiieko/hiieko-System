@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui';
 import { updatePlanTaskProgress } from '../api';
 import { canEditPlanTaskProgress } from '../types';
 import type { DailyPlanStatus, DailyPlanTask } from '../types';
+import { TASK_STATUS_BADGE } from '@/features/tasks/types';
+import type { TaskStatus } from '@/features/tasks/types';
 import { PlanTaskRowSkeleton } from './PlanningSkeleton';
 
 export { PlanTaskRowSkeleton };
@@ -41,23 +43,6 @@ function parseQuantity(raw: string): number | null {
   if (!Number.isFinite(value) || value < 0) return null;
   return value;
 }
-
-/**
- * Badge variant per underlying Task.status — display only. The daily-plan
- * flow never mutates Task.status; this chip simply surfaces it truthfully.
- */
-const TASK_STATUS_BADGE: Record<
-  string,
-  'default' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  PLANNED: 'neutral',
-  READY: 'info',
-  IN_PROGRESS: 'warning',
-  BLOCKED: 'danger',
-  COMPLETED: 'success',
-  VERIFIED: 'success',
-  CANCELLED: 'neutral',
-};
 
 /** Only these statuses have task.status.* translation keys (TaskStatusEnum). */
 const TASK_STATUSES_WITH_LABELS = [
@@ -205,7 +190,10 @@ export function PlanTaskRow({ planTask, planStatus, scopeEditable: scopeEditable
               className="flex-shrink-0"
               aria-label={`${t('planning.task_status_label', locale)}: ${taskStatusLabel}`}
             >
-              <Badge variant={TASK_STATUS_BADGE[taskStatus] ?? 'default'} size="sm">
+              <Badge
+                variant={TASK_STATUS_BADGE[taskStatus as TaskStatus] ?? 'default'}
+                size="sm"
+              >
                 {taskStatusLabel}
               </Badge>
             </span>

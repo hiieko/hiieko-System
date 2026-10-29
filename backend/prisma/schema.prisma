@@ -54,6 +54,7 @@ model User {
   password_reset_tokens PasswordResetToken[]
   attendance_corrections AttendanceCorrection[] @relation("AttendanceCorrections")
   verified_tasks      Task[]                   @relation("TaskVerifiedBy")
+  microsoft_identity_link MicrosoftIdentityLink?
   organization        Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
 
   @@index([organization_id])
@@ -119,6 +120,43 @@ model PasswordResetToken {
 
   @@index([user_id])
   @@map("password_reset_tokens")
+}
+
+/// Verified delegated Microsoft identity linked to one existing HIIEKO user.
+/// The stable Microsoft identity key is the tenant/object-id pair, never email.
+model MicrosoftIdentityLink {
+  id                    String                     @id @default(uuid())
+  user_id               String                     @unique
+  tenant_id             String
+  object_id             String
+  status                MicrosoftIdentityStatusEnum @default(CONNECTED)
+  linked_at             DateTime                   @default(now())
+  last_authenticated_at DateTime?
+  disconnected_at       DateTime?
+  created_at            DateTime                   @default(now())
+  updated_at            DateTime                   @updatedAt
+  user                  User                       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  token_cache           MicrosoftTokenCache?
+
+  @@unique([tenant_id, object_id])
+  @@map("microsoft_identity_links")
+}
+
+/// MSAL's serialized token cache, persisted only as authenticated ciphertext.
+/// The data-encryption key is wrapped by an external key-management service;
+/// plaintext access/refresh tokens and cache JSON must never be stored here.
+model MicrosoftTokenCache {
+  identity_link_id String                @id
+  ciphertext       Bytes
+  wrapped_data_key Bytes
+  nonce            Bytes
+  auth_tag         Bytes
+  key_version      String
+  created_at       DateTime              @default(now())
+  updated_at       DateTime              @updatedAt
+  identity_link    MicrosoftIdentityLink @relation(fields: [identity_link_id], references: [id], onDelete: Cascade)
+
+  @@map("microsoft_token_caches")
 }
 
 model RateLimitBucket {
@@ -967,6 +1005,7 @@ model DocumentVersion {
   document     Document @relation(fields: [document_id], references: [id], onDelete: Cascade)
 
   @@unique([document_id, version])
+  @@index([checksum, document_id], map: "document_versions_checksum_document_idx")
   @@map("document_versions")
 }
 
@@ -1227,6 +1266,12 @@ enum UserStatusEnum {
   PENDING
   ACTIVE
   SUSPENDED
+}
+
+enum MicrosoftIdentityStatusEnum {
+  CONNECTED
+  REAUTH_REQUIRED
+  DISCONNECTED
 }
 
 enum AttendanceStatusEnum {

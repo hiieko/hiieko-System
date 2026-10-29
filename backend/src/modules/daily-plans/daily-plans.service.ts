@@ -162,16 +162,57 @@ export class DailyPlansService {
     if (plan.status === DailyPlanStatusEnum.CANCELLED) {
       throw new BadRequestException('A CANCELLED plan cannot be completed');
     }
+    if (plan.status === DailyPlanStatusEnum.COMPLETED) {
+      return plan;
+    }
 
-    await this.prisma.dailyPlanTask.updateMany({
-      where: { daily_plan_id: id, completed: false },
-      data: { completed: true },
-    });
+    const tasks = plan.tasks ?? [];
+    if (tasks.length === 0) {
+      throw new BadRequestException('A daily plan with no tasks cannot be completed');
+    }
 
-    const updated = await this.prisma.dailyPlan.update({
-      where: { id },
-      data: { status: DailyPlanStatusEnum.COMPLETED },
-      include: { tasks: { include: { task: true } } },
+    const incompleteTasks = tasks.filter((t) => !t.completed);
+    if (incompleteTasks.length > 0) {
+      throw new BadRequestException(
+        `Cannot complete plan: ${incompleteTasks.length} task${incompleteTasks.length === 1 ? '' : 's'} remain incomplete`,
+      );
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const currentPlan = await tx.dailyPlan.findUnique({
+        where: { id },
+        include: { tasks: true },
+      });
+      if (!currentPlan) {
+        throw new NotFoundException(`Daily plan ${id} not found`);
+      }
+      if (currentPlan.status === DailyPlanStatusEnum.DRAFT) {
+        throw new BadRequestException('A DRAFT plan cannot be completed; publish it first');
+      }
+      if (currentPlan.status === DailyPlanStatusEnum.CANCELLED) {
+        throw new BadRequestException('A CANCELLED plan cannot be completed');
+      }
+      if (currentPlan.status === DailyPlanStatusEnum.COMPLETED) {
+        return currentPlan;
+      }
+
+      const currentTasks = currentPlan.tasks ?? [];
+      if (currentTasks.length === 0) {
+        throw new BadRequestException('A daily plan with no tasks cannot be completed');
+      }
+
+      const stillIncomplete = currentTasks.filter((t) => !t.completed);
+      if (stillIncomplete.length > 0) {
+        throw new BadRequestException(
+          `Cannot complete plan: ${stillIncomplete.length} task${stillIncomplete.length === 1 ? '' : 's'} remain incomplete`,
+        );
+      }
+
+      return tx.dailyPlan.update({
+        where: { id },
+        data: { status: DailyPlanStatusEnum.COMPLETED },
+        include: { tasks: { include: { task: true } } },
+      });
     });
 
     await this.auditService.record({

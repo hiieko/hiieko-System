@@ -3,6 +3,8 @@
 **Last Updated:** 2026-09-22  
 **Version:** 1.0
 
+> **Historical source / reconciled:** The complete original Decision 1–16 records, including their original rationales, implementation notes, decision-log date and status, are intentionally preserved below. The canonical decision crosswalk is now `Project workflow/DECISIONS.md` → “Legacy implementation decision reconciliation”; its statuses are historical source statuses, not inferred stakeholder approvals. The old WAVE “Next Steps” are not the current plan. See `docs/HIIEKO_IMPLEMENTATION_PLAN.md` for the single proposed execution sequence.
+
 ---
 
 ## Architecture Decisions

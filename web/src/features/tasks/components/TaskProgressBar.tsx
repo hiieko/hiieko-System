@@ -59,12 +59,11 @@ export function TaskProgressBar({
     );
   }
 
-  // Determine bar color
-  let barColor = 'bg-hii-500'; // Default brand color
+  let barColor = 'bg-hii-600';
   if (progressPercent === 100) {
-    barColor = 'bg-success-soft'; // Success
+    barColor = 'bg-emerald-500';
   } else if (progressPercent > 0) {
-    barColor = 'bg-warning-soft'; // Warning/in progress
+    barColor = 'bg-amber-500';
   }
 
   return (

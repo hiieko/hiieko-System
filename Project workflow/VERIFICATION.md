@@ -1,35 +1,33 @@
-# Verification — Current Snapshot
+# Verification — Evidence and Acceptance Gates
 
-Last Updated: 2026-10-05
+Last reconciled: 2026-10-23.
 
-> This file is the **current verification snapshot**. Detailed historical gate logs remain in Git history and older reconciliation records.
+> This document separates prior repository evidence from verification of the current modified worktree and from production/device acceptance. No tests, builds, browser checks, device checks, HTTP probes, migrations, or deployments were run for this documentation update.
 
 ## Repository / CI
 
 | Gate | Current evidence |
 |---|---|
-| CI | GitHub Actions run #111 passed for this documentation reconciliation; PR #26 CI run #108 also passed |
-| Mobile sync hardening | PR #27 merged to `master` |
-| Netlify preview | Passed on current Mobile PR; canonical deployment path |
-| Vercel | External GitHub check only; not deployment authority |
+| Backend tests | 48 suites / 567 tests passed in `docs/audit/HIIEKO_MASTER_AUDIT.md`, against `master` @ `3457db9` on 2026-10-20; **not rerun on current worktree** |
+| Web build | 35 routes built in the same 2026-10-20 audit; **not rerun on current worktree** |
+| Working tree | HEAD `6c26b01` (2026-10-21) at inspection, with substantial modified/untracked work; this is not the audit baseline |
+| CI / preview | Older PR/run evidence exists in historical snapshots; no current CI result was checked for this worktree |
+| Production | Not inspected; provider/deployment and runtime state remain unverified |
 
 ## Current code status
 
-- Backend authorization and project scoping: implemented and guarded.
-- Daily report approval workflow: implemented and merged.
-- Frontend role-home/v0 refinement: implemented and merged.
-- Frontend permission UX consistency: implemented and merged (PR #26).
-- Mobile offline sync correctness: implemented and merged.
-- OCR: frozen/deferred by product decision.
-- Granular permission runtime activation: deferred by governance decision.
+- Source/tests and the cited audit describe authentication/session handling, authorization, operational modules and offline-sync work as implemented. These are not claims of production acceptance.
+- OCR is frozen in prior workflow records, while proposed `docs/V1_SCOPE.md` includes it. This is an unresolved scope decision, not an approved reopening.
+- `PermissionsGuard` runtime activation remains deferred pending a complete approved permission matrix.
 
 ## Acceptance still required
 
-- Mobile emulator/physical-device smoke test.
-- Offline → reconnect → sync runtime test.
-- Real GPS/device behavior.
-- Camera/barcode hardware behavior where applicable.
-- Canonical Netlify production deployment/domain verification.
+- Verify Render/backend hosting, production database migration state, email, and persistent storage (audit P-01–P-04).
+- Deployed end-to-end acceptance on the intended environment (audit P-05).
+- Inventory existing files; verify upload/download authorization, persistence across restart, recovery and any proposed storage transition.
+- Mobile emulator/physical-device smoke test, including restart persistence and offline → reconnect → sync, duplicate safety, real GPS/device permissions, and camera/barcode hardware where applicable.
+- Responsive/browser acceptance on agreed pilot sizes; the Oct 20 audit did not perform a browser run.
+- Resolve confirmed/suspected code findings and record disposition; see `ISSUES.md`.
 
 ## Verification rule
 

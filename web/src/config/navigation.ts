@@ -52,6 +52,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: 'Management',
     items: [
       { href: '/projects', i18nKey: 'nav.projects', label: 'Proiecte', icon: MapPin },
+      { href: '/documente', i18nKey: 'nav.documente', label: 'Documente', icon: FileText },
       { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users },
       { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User },
       { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin },
@@ -78,10 +79,10 @@ export const NAV_GROUPS: NavGroup[] = [
 /**
  * Mobile-only destinations (D6 — Mobile Nav Discoverability).
  *
- * These back the role-aware bottom nav and the "More" sheet. They deliberately
- * live outside `NAV_GROUPS` so routes that are reachable from the mobile nav
- * (but are not desktop-sidebar entries today, e.g. `/furnizori`, `/depozite`,
- * `/documente`) do not leak into the desktop `Sidebar`.
+ * These back the role-aware bottom nav and the "More" sheet. Routes that are
+ * also desktop-sidebar entries (e.g. `/documente`) are listed here as well so
+ * the mobile "More" sheet keeps working, but they are rendered from
+ * `NAV_GROUPS` on desktop.
  */
 export const MOBILE_DESTINATIONS: Record<string, NavItem> = {
   '/': { href: '/', i18nKey: 'nav.dashboard', label: 'Dashboard', icon: LayoutDashboard },

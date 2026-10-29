@@ -1,4 +1,6 @@
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet/dist/leaflet.css';
 import type { Metadata } from 'next';
 import { LocaleProviderClient } from '../components/LocaleProviderClient';
 import { AuthProvider } from '../contexts/AuthContext';

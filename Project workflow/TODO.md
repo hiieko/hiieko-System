@@ -1,29 +1,26 @@
-# TODO — Current Work Queue
+# TODO — Consolidated Action Index
 
-Last Updated: 2026-10-05
+Last reconciled: 2026-10-23. This is an index into the canonical issue and plan documents, not an independent project plan. No task below is marked complete by this documentation update.
 
-> This file is now a **current-work queue**. Historical Supabase-era TODOs are intentionally not actionable here; the migration is complete and those records remain in repository history/documentation only.
+## Evidence / operator acceptance outstanding
 
-## Active
+- [ ] Verify the documented Render backend, production database/migration state, email, and persistent file storage using an authorized release environment; record evidence without applying migrations as part of this task.
+- [ ] Inventory existing files and verify authorized upload/download plus persistence/recovery before any storage cutover.
+- [ ] Run and record deployed end-to-end acceptance after the environment is established.
+- [ ] Run Mobile emulator/device acceptance: restart persistence, offline capture, reconnect/sync and duplicate safety, GPS permissions/location, and applicable camera/barcode behavior.
 
-- [ ] **Production deployment verification** — verify the canonical Netlify production deployment/domain and document the result.
-- [ ] **Mobile acceptance** — run the Android/iOS emulator or physical-device smoke test, including offline → reconnect → sync, GPS, and hardware-dependent flows.
+## Decisions required before affected implementation
 
-## Deferred / Explicitly Frozen
+- [ ] Reconcile OCR's existing frozen status with its inclusion in proposed `docs/V1_SCOPE.md`; no OCR work until decided.
+- [ ] Approve expense approver roles, statuses, rejection/resubmission rules, and self-approval policy.
+- [ ] Decide offline conflict/retry policy and supported stock/delivery states.
+- [ ] Resolve authorization divergences and the permission-matrix prerequisites for `PermissionsGuard` activation.
+- [ ] Confirm internal pilot environment, size/timing, existing production storage, and whether production monitoring/rollback is in scope.
 
-- [ ] **OCR** — intentionally frozen; do not reopen unless explicitly requested.
-- [ ] **Granular PermissionsGuard activation** — governance/catalog work is complete; runtime activation remains intentionally deferred pending a complete business permission matrix.
-- [ ] **Production monitoring / rollback automation** — requires deployment-provider credentials/configuration.
+## Canonical tracking
 
-## Completed Recently
-
-- [x] **Mobile offline sync hardening** — PR #27 merged; pending-sync indicator now reads the SQLite queue and unsupported issue sync cannot be falsely acknowledged.
-- [x] **Daily report approval workflow** — PR #25 merged.
-- [x] **Frontend role-oriented v0 home** — PR #23/PR #24 merged; obsolete PR #21 closed.
-- [x] **Netlify runtime configuration** — PR #22 merged; obsolete PR #20 closed.
-- [x] **Frontend permission UX reconciliation** — PR #26 merged after green CI.
-- [x] **Documentation reconciliation** — current status, handoff, progress, verification, and TODO reconciled.
-
-## Historical Records
-
-Supabase-era deployment, OCR-service, Edge Function, and legacy issue lists are preserved in historical documents/commits. They are not current implementation tasks.
+- Implementation issues and audit findings: `ISSUES.md`.
+- Verification gates/evidence: `VERIFICATION.md`.
+- Decisions and their status: `DECISIONS.md`.
+- One proposed V1 execution sequence: `docs/HIIEKO_IMPLEMENTATION_PLAN.md`.
+- Previous queue/status snapshots remain in Git history; no source file is deleted by this consolidation.

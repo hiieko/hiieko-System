@@ -48,6 +48,7 @@ export function TaskStatusWorkflow({
     // Map badge variants to button variants
     switch (badgeVariant) {
       case 'success':
+      case 'verified':
         return 'primary';
       case 'danger':
         return 'danger';

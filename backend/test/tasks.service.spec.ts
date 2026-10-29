@@ -137,6 +137,104 @@ describe('TasksService (User Assignment Project Membership)', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Automatic task codes
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('TasksService (Automatic task codes)', () => {
+  let service: TasksService;
+  let prisma: any;
+  let audit: any;
+
+  beforeEach(async () => {
+    prisma = {
+      project: { findUnique: jest.fn() },
+      task: {
+        findMany: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+    audit = { record: jest.fn().mockResolvedValue(true) };
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        TasksService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: AuditService, useValue: audit },
+      ],
+    }).compile();
+
+    service = module.get<TasksService>(TasksService);
+  });
+
+  it('continues the project sequence across legacy T-prefixed codes', async () => {
+    prisma.project.findUnique.mockResolvedValue({ code: 'AR-001' });
+    prisma.task.findMany.mockResolvedValue([
+      { code: 'AR-T01' },
+      { code: 'AR-T09' },
+      { code: 'AR-T15' },
+      { code: 'TM-T24' },
+    ]);
+    prisma.task.create.mockResolvedValue({ id: 'task-new', code: 'AR-016' });
+
+    const result = await service.create(
+      { projectId: 'proj-ar', title: 'Install inverter' },
+      'manager-1',
+    );
+
+    expect(prisma.task.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        project_id: 'proj-ar',
+        code: 'AR-016',
+      }),
+    });
+    expect(result.code).toBe('AR-016');
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        after: expect.objectContaining({ code: 'AR-016' }),
+      }),
+    );
+  });
+
+  it('retries with a fresh sequence after a concurrent unique conflict', async () => {
+    prisma.project.findUnique.mockResolvedValue({ code: 'AR-001' });
+    prisma.task.findMany
+      .mockResolvedValueOnce([{ code: 'AR-T01' }])
+      .mockResolvedValueOnce([{ code: 'AR-T01' }, { code: 'AR-002' }]);
+    prisma.task.create
+      .mockRejectedValueOnce(Object.assign(new Error('unique'), { code: 'P2002' }))
+      .mockResolvedValueOnce({ id: 'task-new', code: 'AR-003' });
+
+    const result = await service.create(
+      { projectId: 'proj-ar', title: 'Torque modules' },
+      'manager-1',
+    );
+
+    expect(prisma.task.create).toHaveBeenCalledTimes(2);
+    expect(prisma.task.create.mock.calls[1][0].data.code).toBe('AR-003');
+    expect(result.code).toBe('AR-003');
+  });
+
+  it('starts at 001 for a project without tasks', async () => {
+    prisma.project.findUnique.mockResolvedValue({ code: 'TM-002' });
+    prisma.task.findMany.mockResolvedValue([]);
+    prisma.task.create.mockResolvedValue({ id: 'task-new', code: 'TM-001' });
+
+    await service.create({ projectId: 'proj-tm', title: 'Survey site' });
+
+    expect(prisma.task.create.mock.calls[0][0].data.code).toBe('TM-001');
+  });
+
+  it('rejects creation when the project does not exist', async () => {
+    prisma.project.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.create({ projectId: 'missing-project', title: 'Install inverter' }),
+    ).rejects.toThrow(NotFoundException);
+    expect(prisma.task.create).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Slice 6 — Task Lifecycle + Verification (K-6 / K-7)
 // ─────────────────────────────────────────────────────────────────────────────
 

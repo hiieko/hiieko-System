@@ -1,8 +1,63 @@
-# HIIEKO Implementation Plan
+# HIIEKO V1 — Proposed Execution Plan
+
+**Consolidated:** 2026-10-23\
+**Status:** PROPOSED — documentation consolidation only; scope and affected decisions are not thereby approved. `docs/V1_SCOPE.md` itself says “Proposed baseline for approval.”
+**Evidence basis:** repository documentation and `docs/audit/HIIEKO_MASTER_AUDIT.md` (baseline `3457db9`, 2026-10-20); no implementation or acceptance checks were run for this revision.
+
+> This is the single proposed V1 execution sequence. It does not certify features as complete or authorize code, schema, migration, deployment, data, or storage changes. Resolve decisions and verify the release environment before implementing affected work. Preserve existing application behavior and data; follow `AGENTS.md` safety rules.
+
+## Planning principles
+
+1. Use the proposed V1 scope and acceptance criteria in `docs/V1_SCOPE.md`; do not treat the scope as approved until its owner approves it.
+2. Implement one bounded task at a time against the production architecture (Next.js, NestJS, Prisma/PostgreSQL, shared, Mobile). v0 and older roadmaps are references, not instructions to merge wholesale.
+3. Preserve authentication/session/refresh behavior, organization and project authorization, persisted data, and existing files. No mock persistence or fake IDs.
+4. Before any schema/storage/deployment operation, define a reversible, reviewed plan and obtain explicit authorization. Never apply migrations as part of documentation consolidation.
+5. Record a task's code version, environment, tests, browser/device/runtime checks, outcomes, and limitations in `VERIFICATION.md`. A screen, unit-test pass, or prior audit is not end-to-end acceptance.
+
+## Proposed execution sequence
+
+| Stage | Scope and dependency | Exit evidence (all applicable criteria must be demonstrated) |
+|---|---|---|
+| 0. Baseline, scope, and decisions | Confirm the V1 scope owner decision; inspect the actual release candidate and modified worktree; settle the decisions listed below. No application changes in this stage unless separately authorized. | Scope/decisions have dated approval; current code version and environment identified; open work mapped to issues; production/pilot environment and data-safety constraints documented. |
+| 1. Core platform and authorization | Auth, sessions, users, organization/project boundaries, projects/teams, task assignment, management overview. Build on current NestJS authorization; do not substitute the legacy site/role proposal. | Sign-in/out and supported session renewal work; backend prevents cross-organization/project and role/action access; project membership is enforced; loading/empty/error states are understandable; management overview uses real data. Tests include allowed and denied access. |
+| 2. Field operations and Mobile offline | Assigned-task view, attendance, daily operational/report workflows, SQLite persistence and sync; depends on Stage 1 contracts. | Agreed task data is accessible offline; attendance/reports survive app restart; reconnect sync gives visible success/failure and is duplicate-safe; GPS permission/unavailable behavior and conflicts are explicit; emulator/device test recorded. Offline scope remains field essentials, not the whole app. |
+| 3. Documents and persistent storage | Existing project files, upload/list/view/download, project access, storage configuration and any explicitly approved transition. | Inventory existing storage/references first; authorized upload/retrieval/download works; protected files cannot be fetched by URL/API manipulation; files survive restart/redeploy in the target environment; metadata and references reconcile; recovery/rollback evidence exists. **Release blocker:** existing files accounted for and target storage verified. |
+| 4. Inventory, materials, and deliveries | Stock balances and movements, receiving/issuing, delivery records/statuses; depends on project and permission contracts. No full procurement/PO expansion without separate approval. | Correct quantities and history are shown; valid receipt/issue updates are consistent; invalid quantities/unsupported operations reject; responsible user/item/quantity/time are traceable; retries do not double count; delivery states and exceptions are approved and tested. |
+| 5. Project expenses | Create/submit, supporting documents, review/approve/reject, history and totals; depends on Stage 1 authorization and Stage 3 file access. | Authorized project expense creation/submission; reviewer permissions and recorded decision/history; totals match defined statuses; invalid/incomplete values reject; duplicate submissions are safe. Do not implement an assumed approver matrix or self-approval exception before the open business decisions are approved. |
+| 6. Sales and lead pipeline | Import/search company leads, identifiers including CUI where available, owner/status/contact/follow-up; optional if scope owner confirms proposed V1. | Agreed import format works; invalid rows and duplicate candidates are reported; search/filter, assignment, status and contact history work; source traceability is retained where available; agreed pilot dataset does not break the UI. Full CRM, quotation/contract, forecasting, and external enrichment are not blockers by default. |
+| 7. OCR/document automation — gated | **Currently frozen/deferred** in workflow records but listed in proposed `V1_SCOPE.md`. Do not start until this conflict and the finite supported document/field set are explicitly decided. | If approved for V1: supported documents extract agreed values; user reviews/corrects and explicitly approves/rejects; unapproved values are not treated as verified; failures preserve originals and report understandable outcomes; tests cover good/poor quality, missing fields, corrections and project association. No automatic approval. |
+| 8. Integrated internal-pilot acceptance | Cross-cutting release gate after applicable stages; requires an authorized non-production/pilot environment and approvals. | Core auth/isolation, Mobile field loop, existing/new documents, inventory/deliveries, expenses, approved sales/OCR scope, migration state, backup/recovery, deployment/configuration and end-to-end journeys have recorded evidence; no unresolved release blocker; limitations and deferrals are explicit. A failed gate stays a blocker, accepted limitation, or approved deferral—not “complete.” |
+
+### Decisions required before affected implementation
+
+- Whether OCR remains frozen or is reopened/included in V1; supported document types/fields.
+- Expense approver roles/thresholds, exact statuses, rejection/resubmission, and self-approval policy.
+- Offline conflict/retry resolution and duplicate/idempotency guarantees.
+- Stock locations/movement types and delivery lifecycle/exception states.
+- Authorization role/scope divergences and the complete permission matrix required before `PermissionsGuard` activation.
+- Actual production/pilot environment, provider configuration, existing storage/files, pilot size/timing, monitoring and rollback expectations.
+- Whether legacy Decision 3/4/5/6/9/10/11/12/13 requirements remain wanted; see `Project workflow/DECISIONS.md` crosswalk.
+
+### Source-of-truth and traceability
+
+- Current state: `Project workflow/CURRENT_STATUS.md`.
+- Findings and release/owner blockers: `Project workflow/ISSUES.md`.
+- Verification evidence and unverified gates: `Project workflow/VERIFICATION.md`.
+- Decision IDs, historical rationales/statuses and unresolved questions: `Project workflow/DECISIONS.md`.
+- Proposed scope and detailed acceptance criteria: `docs/V1_SCOPE.md` (not yet approved).
+- Legacy unique requirement/acceptance inventory: appendix below; retained for traceability, not a second execution queue.
+
+---
+
+## Historical source plan and requirement inventory (preserved; not current execution instructions)
+
+The original 2026-09-22 plan is retained below, including all GAP-01…GAP-63 requirements, database/API/UI proposals, role model, verification checklist, issue references, and wave ordering. Its “Ready for WAVE 1” status and current-state claims are historical and superseded by the proposed sequence above. Unique requirements are preserved for scope review; do not implement them automatically.
+
+### Original plan metadata
 
 **Last Updated:** 2026-09-22  
 **Version:** 1.0  
-**Status:** AUDIT COMPLETE — Ready for WAVE 1 Implementation
+**Original status:** AUDIT COMPLETE — Ready for WAVE 1 Implementation (historical)
 
 ---
 

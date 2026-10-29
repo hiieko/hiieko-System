@@ -283,6 +283,33 @@ describe('ProjectAccessGuard (Access Control)', () => {
     });
   });
 
+  it('GAP4: optional mode with a matching projectId — attaches the scope as well', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue({ param: 'projectId', mode: 'optional' });
+    prisma.projectMember.findUnique.mockResolvedValue({
+      id: 'pm-1', project_id: 'proj-123', user_id: 'worker-1', role: UserRoleEnum.WORKER,
+    });
+    const req: any = {
+      user: {
+        id: 'worker-1',
+        role: UserRoleEnum.WORKER,
+        projectRoles: { 'proj-123': UserRoleEnum.WORKER, 'proj-456': UserRoleEnum.WORKER },
+      },
+      params: { projectId: 'proj-123' },
+    };
+    const ctx = {
+      switchToHttp: () => ({ getRequest: () => req }),
+      getHandler: () => ({}),
+      getClass: () => ({}),
+    } as unknown as ExecutionContext;
+
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    // The scope must describe the requester, not fall back to the global default,
+    // so a handler can tell a member from a global-scope role.
+    expect(req.projectScope).toBeDefined();
+    expect(req.projectScope.isGlobal).toBe(false);
+    expect(req.projectScope.projectIds).toEqual(['proj-123', 'proj-456']);
+  });
+
   it('GAP4: optional mode with foreign projectId — throws 403', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue({ param: 'projectId', mode: 'optional' });
     prisma.projectMember.findUnique.mockResolvedValue(null);

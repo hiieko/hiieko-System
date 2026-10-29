@@ -1,9 +1,30 @@
 ﻿
-| **OCR** | **\xf0\x9f\xa7\x8a FROZEN / DEFERRED** | OCR is not a current workstream. Deferred to final milestone per CLINE_MASTER_ROADMAP.md section 17. |
+> **OCR:** frozen/deferred in existing workflow records; inclusion in proposed V1 scope is unresolved. No reopening approval is inferred.
 # HIIEKO — Current Status
 
-**Last Updated:** 2026-10-05 (documentation reconciliation after Mobile sync hardening; PR #27 merged; PRs #20/#21 closed as obsolete; PR #26 merged)
-**Version:** pre-1.0 (Phase 1 authorization hardening accepted; broader production-readiness gaps remain)
+**Documentation reconciliation:** 2026-10-23\
+**Repository baseline:** HEAD `6c26b01` (2026-10-21); working tree already contains modified and untracked work.
+**Evidence boundary:** `docs/audit/HIIEKO_MASTER_AUDIT.md` reports checks against `master` at `3457db9` on 2026-10-20. Its results are cited as prior evidence, not as checks of the current working tree. No code/test/deployment verification was run for this documentation update.
+
+## Current evidence-based status
+
+- **Architecture (repository-defined):** Next.js web + Expo Mobile → NestJS API → Prisma/PostgreSQL. Netlify is the web target; Render is the documented backend target. Actual production deployment and configuration are **unverified**.
+- **Baseline code evidence (2026-10-20 audit, not rerun):** backend tests 48 suites / 567 tests passed; web build produced 35 routes. This does not establish that the current modified worktree builds or that production is ready.
+- **Working tree:** pre-existing application, migration, dependency, configuration, and documentation changes are present. This reconciliation did not modify application code or those changes.
+- **Known implemented capabilities:** real authentication/session flows, project-scoped authorization, operational modules, document/OCR paths and solar configurator are described by source/tests and the cited audit. Their production operation is not established by that evidence.
+- **Release readiness:** not established. Production hosting/database/email/storage (audit P-01–P-04) and deployed end-to-end acceptance (P-05) are unverified. Existing file inventory and persistence across storage transition are release blockers under the proposed V1 scope.
+- **Mobile:** repository-side offline queue/sync work is documented, but physical-device/emulator acceptance—including restart persistence, GPS, reconnection/sync and hardware-dependent flows—remains outstanding. Do not call the Mobile acceptance gate passed.
+- **Open technical findings:** audit P-10–P-18 and P-20–P-23 are carried in `ISSUES.md` with their evidence level; P-30–P-32 describe confirmed missing/partial functions in the Oct 20 audit. See `ISSUES.md` and `VERIFICATION.md`.
+- **Unresolved product/governance decisions:** OCR inclusion versus freeze; expense approver roles/status/rejection rules; offline conflict policy; storage and pilot environment; authorization divergences; role model and scope details. See `DECISIONS.md`, `ISSUES.md`, and the proposed plan.
+- **V1 plan status:** `docs/HIIEKO_IMPLEMENTATION_PLAN.md` is the single proposed execution plan. `docs/V1_SCOPE.md` remains a proposed scope baseline, not an approved feature/release claim.
+
+Canonical documents: `CURRENT_STATUS.md` (this snapshot), `ISSUES.md` (findings and decisions required), `VERIFICATION.md` (evidence), `DECISIONS.md` (decision records), and `docs/HIIEKO_IMPLEMENTATION_PLAN.md` (proposed execution order).
+
+---
+
+> **Historical snapshot preserved below:** the following status narrative was last reconciled on 2026-10-05. It is retained as useful history, not as the current status; consult the evidence-based summary above and the linked canonical documents when statements differ.
+
+**Historical version:** pre-1.0 (as recorded 2026-10-05)
 
 ---
 

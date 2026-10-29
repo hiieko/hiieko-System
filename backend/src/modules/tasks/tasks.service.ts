@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
@@ -11,7 +17,7 @@ import {
 } from 'class-validator';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
-import { TaskStatusEnum, UserRoleEnum } from '@prisma/client';
+import { Task, TaskStatusEnum, UserRoleEnum } from '@prisma/client';
 
 // Slice 6 (K-7): server-authoritative task lifecycle. Mirrors the web FSM in
 // web/src/features/tasks/types.ts (TASK_WORKFLOW_NEXT) plus the K-7 reopen
@@ -57,9 +63,6 @@ export class CreateTaskDto {
 
   @IsString()
   title!: string;
-
-  @IsString()
-  code!: string;
 
   @IsOptional()
   @IsString()
@@ -156,6 +159,43 @@ export class TasksService {
     private readonly auditService: AuditService,
   ) {}
 
+  private taskCodePrefix(projectCode: string): string {
+    const prefix = projectCode
+      .trim()
+      .toUpperCase()
+      .split(/[^A-Z0-9]+/)
+      .find(Boolean);
+
+    return prefix || 'TASK';
+  }
+
+  private nextTaskCode(prefix: string, existingCodes: string[]): string {
+    const codePrefix = `${prefix}-`;
+    let highest = 0;
+
+    for (const code of existingCodes) {
+      const normalized = code.trim().toUpperCase();
+      if (!normalized.startsWith(codePrefix)) continue;
+
+      let suffix = normalized.slice(codePrefix.length);
+      if (suffix.startsWith('T')) suffix = suffix.slice(1);
+      if (!/^\d+$/.test(suffix)) continue;
+
+      highest = Math.max(highest, Number(suffix));
+    }
+
+    return `${prefix}-${String(highest + 1).padStart(3, '0')}`;
+  }
+
+  private isTaskCodeConflict(error: unknown): boolean {
+    return Boolean(
+      error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code?: string }).code === 'P2002',
+    );
+  }
+
   async findAll(projectId?: string, projectScopeWhere?: Record<string, any>) {
     const where: any = { is_archived: false, ...projectScopeWhere };
     if (projectId) {
@@ -207,27 +247,56 @@ export class TasksService {
   }
 
   async create(dto: CreateTaskDto, actorId?: string) {
-    const task = await this.prisma.task.create({
-      data: {
-        project_id: dto.projectId,
-        work_package_id: dto.workPackageId,
-        zone_id: dto.zoneId,
-        title: dto.title,
-        code: dto.code,
-        description: dto.description,
-        planned_start: dto.plannedStart ? new Date(dto.plannedStart) : undefined,
-        planned_end: dto.plannedEnd ? new Date(dto.plannedEnd) : undefined,
-        planned_quantity: dto.plannedQuantity,
-        unit_of_measure: dto.unitOfMeasure,
-      },
+    const project = await this.prisma.project.findUnique({
+      where: { id: dto.projectId },
+      select: { code: true },
     });
+    if (!project) throw new NotFoundException(`Project ${dto.projectId} not found`);
+
+    const prefix = this.taskCodePrefix(project.code);
+    let task: Task | undefined;
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const existing = await this.prisma.task.findMany({
+        where: { project_id: dto.projectId },
+        select: { code: true },
+      });
+      const code = this.nextTaskCode(
+        prefix,
+        existing.map((item) => item.code),
+      );
+
+      try {
+        task = await this.prisma.task.create({
+          data: {
+            project_id: dto.projectId,
+            work_package_id: dto.workPackageId,
+            zone_id: dto.zoneId,
+            title: dto.title,
+            code,
+            description: dto.description,
+            planned_start: dto.plannedStart ? new Date(dto.plannedStart) : undefined,
+            planned_end: dto.plannedEnd ? new Date(dto.plannedEnd) : undefined,
+            planned_quantity: dto.plannedQuantity,
+            unit_of_measure: dto.unitOfMeasure,
+          },
+        });
+        break;
+      } catch (error) {
+        if (!this.isTaskCodeConflict(error)) throw error;
+      }
+    }
+
+    if (!task) {
+      throw new ConflictException('Could not generate a unique task code. Please retry.');
+    }
 
     await this.auditService.record({
       actorId,
       action: 'TASK_CREATED',
       entity: 'Task',
       entityId: task.id,
-      after: dto as any,
+      after: { ...dto, code: task.code },
     });
 
     return task;

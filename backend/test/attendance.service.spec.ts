@@ -31,6 +31,7 @@ describe('AttendanceService (Geofencing & Hours Calculation)', () => {
         create: jest.fn(),
         update: jest.fn(),
         findMany: jest.fn(),
+        count: jest.fn(),
       },
       attendanceCorrection: {
         create: jest.fn().mockResolvedValue(true),
@@ -368,6 +369,60 @@ describe('AttendanceService (Geofencing & Hours Calculation)', () => {
       const where = prisma.attendanceRecord.findMany.mock.calls[0][0].where;
       expect((where.date as Date).toISOString()).toBe('2026-01-15T00:00:00.000Z');
       expect(where.project_id).toBe('proj-1');
+    });
+  });
+
+  describe('Attendance pagination', () => {
+    it('returns page data and total with the same scoped filters', async () => {
+      prisma.attendanceRecord.findMany.mockResolvedValue([{ id: 'att-2' }]);
+      prisma.attendanceRecord.count.mockResolvedValue(21);
+
+      const result = await service.findAllPaginated(
+        {
+          projectId: 'proj-1',
+          userId: 'user-1',
+          startDate: '2026-01-01',
+          endDate: '2026-01-31',
+          projectScopeWhere: { organization_id: 'org-1' },
+        },
+        2,
+        10,
+      );
+
+      expect(result).toEqual({
+        data: [{ id: 'att-2' }],
+        total: 21,
+        page: 2,
+        pageSize: 10,
+      });
+
+      const findArgs = prisma.attendanceRecord.findMany.mock.calls[0][0];
+      expect(findArgs.skip).toBe(10);
+      expect(findArgs.take).toBe(10);
+      expect(findArgs.where.organization_id).toBe('org-1');
+      expect(findArgs.where.project_id).toBe('proj-1');
+      expect(findArgs.where.user_id).toBe('user-1');
+      expect((findArgs.where.date.gte as Date).toISOString()).toBe(
+        '2026-01-01T00:00:00.000Z',
+      );
+      expect((findArgs.where.date.lte as Date).toISOString()).toBe(
+        '2026-01-31T23:59:59.999Z',
+      );
+
+      expect(prisma.attendanceRecord.count).toHaveBeenCalledWith({
+        where: findArgs.where,
+      });
+    });
+
+    it('keeps the legacy findAll contract capped at 200 rows', async () => {
+      prisma.attendanceRecord.findMany.mockResolvedValue([]);
+
+      await service.findAll({ projectId: 'proj-1' });
+
+      const findArgs = prisma.attendanceRecord.findMany.mock.calls[0][0];
+      expect(findArgs.take).toBe(200);
+      expect(findArgs).not.toHaveProperty('skip');
+      expect(prisma.attendanceRecord.count).not.toHaveBeenCalled();
     });
   });
 

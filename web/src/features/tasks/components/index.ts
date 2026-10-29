@@ -12,3 +12,6 @@ export { TaskAssignModal } from './TaskAssignModal';
 export { TaskFilters } from './TaskFilters';
 export { TaskCreateModal } from './TaskCreateModal';
 export { TaskCard } from './TaskCard';
+export { TaskCalendar } from './TaskCalendar';
+export { TaskAssigneeAvatars } from './TaskAssigneeAvatars';
+export { getTaskAssigneeInitials, getTaskAssigneeName } from './TaskAssigneeAvatars';

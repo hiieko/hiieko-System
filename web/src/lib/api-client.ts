@@ -144,7 +144,7 @@ export interface PaginatedResponse<T> {
 /**
  * A file linked to a construction target (task / daily_report / issue /
  * inspection / project). `url` is the authenticated blob route
- * (GET /api/upload/:documentId) — fetch it with `downloadDocument()`.
+ * (GET /api/upload/:documentId) - fetch it with `downloadDocument()`.
  */
 export interface PhotoAttachment {
   id: string;
@@ -155,6 +155,99 @@ export interface PhotoAttachment {
   url: string;
   caption: string | null;
   created_at: string;
+}
+
+/**
+ * A document row as returned by `GET /api/documents`.
+ *
+ * The file type, the size and the uploader are derived by the backend from the
+ * current version - the client never guesses them.
+ */
+export interface DocumentListItem {
+  id: string;
+  title: string;
+  code: string | null;
+  document_type: string;
+  project_id: string | null;
+  project_name: string | null;
+  project_code: string | null;
+  current_version: number;
+  created_at: string;
+  updated_at: string;
+  /** MIME type derived from the stored object key (null when unknown). */
+  mime_type: string | null;
+  /** Size of the current version in bytes. */
+  file_size: number | null;
+  /** Id of the user who uploaded the current version. */
+  uploaded_by: string | null;
+  /** Display name of the uploader of the current version. */
+  uploaded_by_name: string | null;
+}
+
+/** One entry of the document version history. */
+export interface DocumentVersionItem {
+  id: string;
+  document_id: string;
+  version: number;
+  file_size: number;
+  checksum: string | null;
+  uploaded_by: string | null;
+  uploaded_by_name: string | null;
+  mime_type: string | null;
+  created_at: string;
+}
+
+/** Full detail of one document (`GET /api/documents/:id`). */
+export interface DocumentDetail extends DocumentListItem {
+  versions: DocumentVersionItem[];
+}
+
+export interface DocumentListSummary {
+  documentCount: number;
+  storageBytes: number;
+  knownSizeCount: number;
+  categoryCounts: Record<string, number>;
+  categoryStorageBytes: Record<string, number>;
+  fileTypeCounts: Record<'pdf' | 'images' | 'xml' | 'other', number>;
+  fileTypeStorageBytes: Record<'pdf' | 'images' | 'xml' | 'other', number>;
+  fileTypeKnownSizeCounts: Record<'pdf' | 'images' | 'xml' | 'other', number>;
+}
+
+export interface DocumentListResponse extends PaginatedResponse<DocumentListItem> {
+  summary: DocumentListSummary;
+}
+
+export interface ExactDuplicateMatch {
+  documentId: string;
+  title: string;
+  code: string | null;
+  documentType: string;
+  projectId: string | null;
+  projectName: string | null;
+  projectCode: string | null;
+  currentVersion: number;
+  matchingVersion: number;
+}
+
+export interface DuplicateDocumentWarning {
+  duplicate: true;
+  matchScope: 'project' | 'document';
+  matches: ExactDuplicateMatch[];
+}
+
+/** Result of a document upload (created record or exact duplicate warning). */
+export type DocumentUploadResult = DocumentUploadCreatedResult | DuplicateDocumentWarning;
+
+export interface DocumentUploadCreatedResult {
+  documentId: string;
+  /** Authenticated blob route of the document. */
+  url: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  checksum: string;
+  /** Present on the "new version" response. */
+  version?: number;
 }
 
 export interface AuthTokens {
@@ -853,9 +946,182 @@ export class NestApiClient {
   // DOCUMENTS
   // ============================================================================
 
-  async getDocuments(projectId?: string): Promise<ApiResponse<any[]>> {
-    const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : '';
-    return this.request<ApiResponse<any[]>>(`/api/documents${query}`);
+  /**
+   * List the documents the current user is allowed to see.
+   *
+   * The backend applies the authorization scope (project membership for
+   * members, own organization for global roles) and the pagination, so the
+   * client never filters the result set on its own.
+   */
+  async listDocuments(params?: {
+    q?: string;
+    projectId?: string;
+    documentType?: string;
+    mimeType?: string;
+    from?: string;
+    to?: string;
+    sortBy?: 'updated' | 'created' | 'title';
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    pageSize?: number;
+  }): Promise<ApiResponse<DocumentListResponse>> {
+    const query = new URLSearchParams();
+    if (params?.q) query.set('q', params.q);
+    if (params?.projectId) query.set('projectId', params.projectId);
+    if (params?.documentType) query.set('documentType', params.documentType);
+    if (params?.mimeType) query.set('mimeType', params.mimeType);
+    if (params?.from) query.set('from', params.from);
+    if (params?.to) query.set('to', params.to);
+    if (params?.sortBy) query.set('sortBy', params.sortBy);
+    if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.pageSize) query.set('pageSize', String(params.pageSize));
+
+    const queryString = query.toString();
+    return this.request<ApiResponse<DocumentListResponse>>(
+      `/api/documents${queryString ? `?${queryString}` : ''}`,
+    );
+  }
+
+  /**
+   * Backwards-compatible convenience wrapper: the first page of the
+   * authorized documents of one project (or of every authorized project).
+   */
+  async getDocuments(projectId?: string): Promise<ApiResponse<DocumentListItem[]>> {
+    const response = await this.listDocuments({ projectId, pageSize: 100 });
+    const payload = response.data;
+    return {
+      ...response,
+      data: Array.isArray(payload?.data) ? payload.data : [],
+    };
+  }
+
+  /** Full detail of one document: metadata + the full version history. */
+  async getDocument(id: string): Promise<ApiResponse<DocumentDetail>> {
+    return this.request<ApiResponse<DocumentDetail>>(`/api/documents/${encodeURIComponent(id)}`);
+  }
+
+  /** Update metadata only; never overwrites the binary or version history. */
+  async updateDocumentMetadata(
+    id: string,
+    data: { documentType?: string; title?: string; code?: string | null; projectId?: string },
+  ): Promise<ApiResponse<DocumentDetail>> {
+    return this.request<ApiResponse<DocumentDetail>>(`/api/documents/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
+   * Upload a document.
+   *
+   * The binary is sent to `POST /api/documents?projectId=…` as multipart/form-data.
+   * The query parameter is available to authorization guards before Multer
+   * parses the multipart body. The storage key is server-derived.
+   */
+  async uploadDocument(
+    file: File,
+    options: {
+      projectId: string;
+      documentType?: string;
+      title?: string;
+      code?: string;
+      allowDuplicate?: boolean;
+      onProgress?: (percent: number) => void;
+    },
+  ): Promise<ApiResponse<DocumentUploadResult>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options.documentType) formData.append('documentType', options.documentType);
+    if (options.title) formData.append('title', options.title);
+    if (options.code) formData.append('code', options.code);
+    if (options.allowDuplicate) formData.append('allowDuplicate', 'true');
+    return this.uploadWithProgress<ApiResponse<DocumentUploadResult>>(
+      `/api/documents?projectId=${encodeURIComponent(options.projectId)}`,
+      formData,
+      options.onProgress,
+    );
+  }
+
+  /**
+   * Upload a new version of an existing document. The previous version stays
+   * in the history; only the current version moves forward.
+   */
+  async uploadDocumentVersion(
+    documentId: string,
+    file: File,
+    options?: { onProgress?: (percent: number) => void; allowDuplicate?: boolean },
+  ): Promise<ApiResponse<DocumentUploadResult>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.allowDuplicate) formData.append('allowDuplicate', 'true');
+
+    return this.uploadWithProgress<ApiResponse<DocumentUploadResult>>(
+      `/api/documents/${encodeURIComponent(documentId)}/versions`,
+      formData,
+      options?.onProgress,
+    );
+  }
+
+  /**
+   * Multipart POST with real upload progress.
+   *
+   * `fetch` cannot report upload progress, so the request is issued through
+   * `XMLHttpRequest`. The 401 → refresh → retry cycle is deliberately NOT
+   * replayed here: the file would have to be re-read from disk. A 401 is
+   * surfaced as an error and the session is refreshed by the next request.
+   */
+  private uploadWithProgress<T>(
+    endpoint: string,
+    formData: FormData,
+    onProgress?: (percent: number) => void,
+  ): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${this.baseUrl}${endpoint}`, true);
+      if (this.token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${this.token}`);
+      }
+
+      if (onProgress && xhr.upload) {
+        xhr.upload.onprogress = (event: ProgressEvent) => {
+          if (!event.lengthComputable || event.total === 0) return;
+          onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+        };
+      }
+
+      xhr.onload = () => {
+        let data: any = {};
+        try {
+          data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+        } catch {
+          // Non-JSON response - handled by the generic error below.
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onProgress?.(100);
+          resolve(data as T);
+          return;
+        }
+        const isStandardEnvelope =
+          data &&
+          typeof data === 'object' &&
+          data.success === false &&
+          typeof data.code === 'string' &&
+          typeof data.statusCode === 'number';
+        reject(
+          new ApiError(
+            data.message || data.error || `HTTP ${xhr.status}: Upload failed`,
+            xhr.status,
+            isStandardEnvelope ? data : undefined,
+          ),
+        );
+      };
+
+      xhr.onerror = () => reject(new ApiError('Network error', 0, undefined));
+      xhr.onabort = () => reject(new ApiError('Upload cancelled', 0, undefined));
+
+      xhr.send(formData);
+    });
   }
 
   // OCR & DOCUMENT PROCESSING
@@ -891,30 +1157,6 @@ export class NestApiClient {
       if (error instanceof ApiError) throw error;
       throw new ApiError(error instanceof Error ? error.message : 'Network error', 0);
     }
-  }
-
-  async uploadDocument(
-    file: File,
-    options: { projectId: string; documentType?: string; title?: string },
-  ): Promise<ApiResponse<any>> {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (options.documentType) formData.append('documentType', options.documentType);
-    if (options.title) formData.append('title', options.title);
-
-    const headers: Record<string, string> = {};
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
-
-    const response = await fetch(`${this.baseUrl}/api/upload?projectId=${encodeURIComponent(options.projectId)}`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new ApiError(data.message || data.error || 'Document upload failed', response.status, data);
-    }
-    return data;
   }
 
   // ============================================================================
@@ -1325,7 +1567,6 @@ export class NestApiClient {
   async createTask(data: {
     projectId: string;
     title: string;
-    code: string;
     description?: string;
     workPackageId?: string;
     zoneId?: string;
@@ -1788,7 +2029,6 @@ export interface IApiClient {
   createTask(data: {
     projectId: string;
     title: string;
-    code: string;
     description?: string;
     workPackageId?: string;
     zoneId?: string;
@@ -1852,11 +2092,40 @@ export interface IApiClient {
   ): Promise<ApiResponse<any>>;
 
   // Documents
-  getDocuments(projectId?: string): Promise<ApiResponse<any[]>>;
+  listDocuments(params?: {
+    q?: string;
+    projectId?: string;
+    documentType?: string;
+    mimeType?: string;
+    from?: string;
+    to?: string;
+    sortBy?: 'updated' | 'created' | 'title';
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    pageSize?: number;
+  }): Promise<ApiResponse<DocumentListResponse>>;
+  getDocuments(projectId?: string): Promise<ApiResponse<DocumentListItem[]>>;
+  getDocument(id: string): Promise<ApiResponse<DocumentDetail>>;
+  updateDocumentMetadata(
+    id: string,
+    data: { documentType?: string; title?: string; code?: string | null; projectId?: string },
+  ): Promise<ApiResponse<DocumentDetail>>;
   uploadDocument(
     file: File,
-    options: { projectId: string; documentType?: string; title?: string },
-  ): Promise<ApiResponse<any>>;
+    options: {
+      projectId: string;
+      documentType?: string;
+      title?: string;
+      code?: string;
+      allowDuplicate?: boolean;
+      onProgress?: (percent: number) => void;
+    },
+  ): Promise<ApiResponse<DocumentUploadResult>>;
+  uploadDocumentVersion(
+    documentId: string,
+    file: File,
+    options?: { onProgress?: (percent: number) => void; allowDuplicate?: boolean },
+  ): Promise<ApiResponse<DocumentUploadResult>>;
   downloadDocument(documentId: string): Promise<Blob>;
 
   // Photos / Attachments

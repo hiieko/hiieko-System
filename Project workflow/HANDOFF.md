@@ -1,6 +1,6 @@
 # AI Handoff — Current
 
-> **Authoritative current continuation point.** Historical session notes remain in Git history and older documents, but the snapshot below reflects the current repository state as of 2026-10-05.
+> **Continuation point (documentation reconciliation 2026-10-23).** The inspected repository HEAD is `6c26b01` (2026-10-21), and the worktree already contains modified and untracked files. Do not overwrite, stage, or assume ownership of those changes. This documentation pass did not run application tests or inspect production.
 
 ## Current architecture
 
@@ -9,33 +9,28 @@
 - Backend: NestJS + Prisma.
 - Database: PostgreSQL 18.
 - Clients communicate through the NestJS API.
-- Netlify is the canonical web deployment path. Vercel is not the deployment authority.
+- Netlify is the documented/canonical web deployment target; production deployment/domain verification is outstanding. Render is the documented backend target, not verified live.
 
 ## Current status
 
-- Core remediation slices 1–7: complete.
-- CI enforcement: active.
-- Daily report approval workflow: complete (PR #25).
-- Mobile offline-sync correctness hardening: complete (PR #27, merged).
-- Frontend permission UX reconciliation: complete (PR #26 merged).
-- OCR: intentionally frozen/deferred.
-- Granular PermissionsGuard runtime activation: intentionally deferred.
-- Production deployment verification: still required.
-- Physical Mobile device/emulator acceptance: still required.
+- The Oct 20 master audit (baseline `3457db9`, not this worktree) reports backend 48 suites / 567 tests and a 35-route web build; not rerun here.
+- Core authentication, project authorization and operational modules are documented as implemented; production-runtime acceptance is not established.
+- Mobile repository-side offline work is recorded as implemented; physical device/emulator acceptance remains required.
+- OCR is frozen by prior workflow documentation, but its inclusion in the proposed V1 scope is unresolved. Do not reopen it without an explicit decision.
+- `PermissionsGuard` activation remains deferred pending an approved permission matrix.
+- Production hosting/database/email/storage and end-to-end acceptance remain unverified.
 
-## Recent merged work
+## Canonical continuation references
 
-- PR #22 — Netlify runtime configuration.
-- PR #23 — role-based v0 field home.
-- PR #24 — production UX refinement.
-- PR #25 — daily report approval workflow.
-- PR #27 — Mobile offline sync hardening.
+- Current status and evidence boundary: `CURRENT_STATUS.md`.
+- Unresolved issues / owner decisions: `ISSUES.md`.
+- Verification snapshots and acceptance gates: `VERIFICATION.md`.
+- Decisions and unresolved decision records: `DECISIONS.md`.
+- Single proposed V1 execution order: `docs/HIIEKO_IMPLEMENTATION_PLAN.md` (scope itself remains proposed).
 
-## Obsolete PR cleanup
+## Historical checkpoint retained (2026-10-05)
 
-- PR #20 — closed; superseded by the merged Netlify configuration work.
-- PR #21 — closed; superseded by the merged frontend v0 work.
-- PR #26 — merged; frontend permission UX reconciliation is complete.
+The prior handoff recorded PR #22 (Netlify runtime configuration), #23/#24 (role-oriented home and UX refinement), #25 (daily-report approval), #26 (frontend permission UX reconciliation), and #27 (Mobile offline-sync hardening) as merged, with obsolete PRs #20/#21 closed. These are historical repository records, not current CI or production acceptance evidence.
 
 ## Mobile acceptance still outstanding
 
@@ -51,8 +46,9 @@ Repository-side Mobile work is substantially complete. Remaining acceptance is r
 
 Do not claim device acceptance until it is actually run.
 
-## Next priority
+## Safe next priorities
 
-1. Verify canonical Netlify production deployment/domain.
-2. Perform the final Mobile emulator/device acceptance pass.
-4. Keep OCR and granular permission activation frozen unless explicitly reopened.
+1. Resolve scope/owner decisions before implementation (especially OCR versus freeze, expense approval rules, authorization divergences, and storage/pilot environment).
+2. Obtain authorized access to verify the documented production targets and existing file storage; do not apply migrations or perform a cutover as part of documentation work.
+3. Schedule Mobile device/emulator acceptance and record environment, version, steps, and outcome.
+4. Follow the proposed execution plan only after the scope baseline and affected decisions are approved.

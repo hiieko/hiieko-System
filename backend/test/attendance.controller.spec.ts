@@ -21,6 +21,12 @@ describe('AttendanceController (query-parameter validation)', () => {
   beforeEach(() => {
     service = {
       findAll: jest.fn().mockResolvedValue([]),
+      findAllPaginated: jest.fn().mockResolvedValue({
+        data: [],
+        total: 0,
+        page: 1,
+        pageSize: 25,
+      }),
       findByUserAndDate: jest.fn().mockResolvedValue([]),
     };
     controller = new AttendanceController(service as AttendanceService);
@@ -75,6 +81,110 @@ describe('AttendanceController (query-parameter validation)', () => {
       controller.findAll(globalScope, undefined, undefined, undefined, '2026-13-45'),
     ).rejects.toThrow(BadRequestException);
     expect(service.findAll).not.toHaveBeenCalled();
+  });
+
+  it('keeps the legacy array response when pagination is not requested', async () => {
+    const result = await controller.findAll(
+      globalScope,
+      'proj-1',
+      undefined,
+      '2026-01-01',
+      '2026-01-31',
+      undefined,
+      '2',
+      '10',
+    );
+
+    expect(result).toEqual([]);
+    expect(service.findAll).toHaveBeenCalledWith({
+      projectId: 'proj-1',
+      userId: undefined,
+      startDate: '2026-01-01',
+      endDate: '2026-01-31',
+      projectScopeWhere: { project_id: 'proj-1' },
+    });
+    expect(service.findAllPaginated).not.toHaveBeenCalled();
+  });
+
+  it('returns paginated metadata only when paginated=true is requested', async () => {
+    const paginated = {
+      data: [{ id: 'att-1' }],
+      total: 21,
+      page: 2,
+      pageSize: 10,
+    };
+    service.findAllPaginated.mockResolvedValue(paginated);
+
+    const result = await controller.findAll(
+      globalScope,
+      'proj-1',
+      undefined,
+      '2026-01-01',
+      '2026-01-31',
+      'true',
+      '2',
+      '10',
+    );
+
+    expect(result).toEqual(paginated);
+    expect(service.findAllPaginated).toHaveBeenCalledWith(
+      {
+        projectId: 'proj-1',
+        userId: undefined,
+        startDate: '2026-01-01',
+        endDate: '2026-01-31',
+        projectScopeWhere: { project_id: 'proj-1' },
+      },
+      2,
+      10,
+    );
+    expect(service.findAll).not.toHaveBeenCalled();
+  });
+
+  it('applies pagination defaults', async () => {
+    await controller.findAll(
+      globalScope,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      'true',
+    );
+
+    expect(service.findAllPaginated).toHaveBeenCalledWith(
+      expect.any(Object),
+      1,
+      25,
+    );
+  });
+
+  it('rejects invalid pagination values', async () => {
+    await expect(
+      controller.findAll(
+        globalScope,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'true',
+        '0',
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    await expect(
+      controller.findAll(
+        globalScope,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'true',
+        '1',
+        '201',
+      ),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(service.findAllPaginated).not.toHaveBeenCalled();
   });
 
   it('rejects a malformed date on my-logs', async () => {

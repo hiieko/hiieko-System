@@ -2,8 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { clsx } from 'clsx';
-import { t } from '@solar/shared';
-import { Plus, FolderTree, MapPin, Calendar, Hash } from 'lucide-react';
+import { t, useLocale } from '@solar/shared';
+import {
+  Plus,
+  FolderTree,
+  MapPin,
+  Calendar,
+  FileText,
+  Layers3,
+  Package,
+  Users,
+  Hash,
+} from 'lucide-react';
 
 import { Modal, Button, Skeleton } from '@/components/ui';
 import { Task, CreateTaskDto } from '../types';
@@ -21,7 +31,6 @@ interface TaskCreateModalProps {
 // Form state interface
 interface TaskCreateForm {
   title: string;
-  code: string;
   description: string;
   workPackageId: string;
   zoneId: string;
@@ -33,7 +42,6 @@ interface TaskCreateForm {
 
 const initialForm: TaskCreateForm = {
   title: '',
-  code: '',
   description: '',
   workPackageId: '',
   zoneId: '',
@@ -43,12 +51,44 @@ const initialForm: TaskCreateForm = {
   unitOfMeasure: '',
 };
 
+function FormSection({
+  title,
+  description,
+  icon,
+  children,
+}: {
+  title: string;
+  description?: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-chrome-line bg-white">
+      <div className="flex items-start gap-2 border-b border-chrome-line/70 px-4 py-3">
+        <span className="mt-0.5 text-hii-600" aria-hidden="true">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-content">{title}</h3>
+          {description && (
+            <p className="mt-0.5 text-xs leading-5 text-content-muted">{description}</p>
+          )}
+        </div>
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  );
+}
+
 export function TaskCreateModal({
   open,
   onClose,
   projectId,
   onCreated,
 }: TaskCreateModalProps) {
+  const { locale } = useLocale();
+  const tr = useCallback((key: string) => t(key, locale), [locale]);
+
   // Form state
   const [form, setForm] = useState<TaskCreateForm>(initialForm);
 
@@ -101,21 +141,23 @@ export function TaskCreateModal({
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t('task.err_generic')
+        err instanceof Error ? err.message : tr('task.err_generic')
       );
     } finally {
       setLoadingOptions(false);
     }
-  }, []);
+  }, [tr]);
 
   // Update form field
   const updateField = (field: keyof TaskCreateForm, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    // Clear field error when user types
-    if (fieldErrors[field]) {
+    const fieldsToClear = field === 'plannedStart' || field === 'plannedEnd'
+      ? ['plannedStart', 'plannedEnd']
+      : [field];
+    if (fieldsToClear.some((candidate) => fieldErrors[candidate])) {
       setFieldErrors((prev) => {
         const next = { ...prev };
-        delete next[field];
+        fieldsToClear.forEach((candidate) => delete next[candidate]);
         return next;
       });
     }
@@ -126,18 +168,19 @@ export function TaskCreateModal({
     const errors: Record<string, string> = {};
 
     if (!form.title.trim()) {
-      errors.title = t('task.err_required');
-    }
-    if (!form.code.trim()) {
-      errors.code = t('task.err_required');
+      errors.title = tr('task.err_required');
     }
 
     // Validate planned quantity is a valid number if provided
     if (form.plannedQuantity) {
       const qty = parseFloat(form.plannedQuantity);
       if (isNaN(qty) || qty < 0) {
-        errors.plannedQuantity = 'Cantitate invalidă';
+        errors.plannedQuantity = tr('planning.err_quantity_invalid');
       }
+    }
+
+    if (form.plannedStart && form.plannedEnd && form.plannedEnd < form.plannedStart) {
+      errors.plannedEnd = tr('task.err_date_order');
     }
 
     setFieldErrors(errors);
@@ -149,7 +192,7 @@ export function TaskCreateModal({
     e.preventDefault();
 
     if (!projectId) {
-      setError(t('task.select_project_first'));
+      setError(tr('task.select_project_first'));
       return;
     }
 
@@ -164,7 +207,6 @@ export function TaskCreateModal({
       const dto: CreateTaskDto = {
         projectId,
         title: form.title.trim(),
-        code: form.code.trim(),
         ...(form.description && { description: form.description }),
         ...(form.workPackageId && { workPackageId: form.workPackageId }),
         ...(form.zoneId && { zoneId: form.zoneId }),
@@ -180,11 +222,11 @@ export function TaskCreateModal({
         onCreated(res.data);
         onClose();
       } else {
-        setError(res.error || t('task.err_generic'));
+        setError(res.error || tr('task.err_generic'));
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t('task.err_generic')
+        err instanceof Error ? err.message : tr('task.err_generic')
       );
     } finally {
       setCreating(false);
@@ -205,18 +247,18 @@ if (!projectId) {
       <Modal
         open={open}
         onClose={onClose}
-        title={t('task.create_title')}
+        title={tr('task.create_title')}
         size="md"
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={onClose}>
-              {t('task.cancel')}
+              {tr('task.cancel')}
             </Button>
           </div>
         }
       >
         <div className="py-8 text-center text-slate-500">
-          {t('task.select_project_first')}
+          {tr('task.select_project_first')}
         </div>
       </Modal>
     );
@@ -226,7 +268,7 @@ if (!projectId) {
     <Modal
       open={open}
       onClose={onClose}
-      title={t('task.create_title')}
+      title={tr('task.create_title')}
       size="lg"
       footer={
         <div className="flex justify-end gap-2">
@@ -236,30 +278,37 @@ if (!projectId) {
             onClick={onClose}
             disabled={creating}
           >
-            {t('task.cancel')}
+            {tr('task.cancel')}
           </Button>
           <Button
             type="submit"
             form="task-create-form"
             loading={creating}
+            disabled={loadingOptions}
             icon={<Plus className="w-4 h-4" />}
           >
-            {t('task.create')}
+            {tr('task.create')}
           </Button>
         </div>
       }
     >
-      <form id="task-create-form" onSubmit={handleSubmit} className="space-y-4">
+      <form
+        id="task-create-form"
+        onSubmit={handleSubmit}
+        noValidate
+        aria-busy={loadingOptions || creating}
+        className="space-y-4"
+      >
         {/* Error message */}
         {error && (
-          <div className="p-3 bg-danger-soft border border-danger/20 rounded-lg text-sm text-danger-foreground">
+          <div role="alert" className="p-3 bg-danger-soft border border-danger/20 rounded-lg text-sm text-danger-foreground">
             {error}
           </div>
         )}
 
         {/* Loading options */}
         {loadingOptions && (
-          <div className="space-y-3">
+          <div role="status" aria-label={tr('general.loading')} className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-10 rounded-lg" />
             ))}
@@ -268,154 +317,221 @@ if (!projectId) {
 
         {/* Form fields */}
         {!loadingOptions && (
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            {/* Title */}
-            <div>
-              <label className="hii-label">
-                {t('task.field_title')} <span className="text-danger">*</span>
-              </label>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(e) => updateField('title', e.target.value)}
-                className={clsx(
-                  'hii-input',
-                  fieldErrors.title && '!border-danger/30 !bg-danger-soft'
-                )}
-                placeholder={t('task.field_title')}
-              />
-              {fieldErrors.title && (
-                <p className="mt-1 text-xs text-danger">{fieldErrors.title}</p>
-              )}
-            </div>
-
-            {/* Code */}
-            <div>
-              <label className="hii-label">
-                {t('task.field_code')} <span className="text-danger">*</span>
-              </label>
-              <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={form.code}
-                  onChange={(e) => updateField('code', e.target.value)}
-                  className={clsx(
-                    'hii-input flex-1 font-mono',
-                    fieldErrors.code && '!border-danger/30 !bg-danger-soft'
+          <div className="space-y-3">
+            <FormSection
+              title={tr('task.section_basic')}
+              icon={<FileText className="h-4 w-4" />}
+            >
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="task-title" className="hii-label">
+                    {tr('task.field_title')}{' '}
+                    <span aria-hidden="true" className="text-danger">
+                      *
+                    </span>
+                  </label>
+                  <input
+                    id="task-title"
+                    type="text"
+                    value={form.title}
+                    onChange={(e) => updateField('title', e.target.value)}
+                    className={clsx(
+                      'hii-input',
+                      fieldErrors.title && '!border-danger/30 !bg-danger-soft',
+                    )}
+                    placeholder={tr('task.field_title')}
+                    required
+                    aria-invalid={Boolean(fieldErrors.title)}
+                    aria-describedby={fieldErrors.title ? 'task-title-error' : undefined}
+                  />
+                  {fieldErrors.title && (
+                    <p id="task-title-error" role="alert" className="mt-1 text-xs text-danger">
+                      {fieldErrors.title}
+                    </p>
                   )}
-                  placeholder="TASK-001"
-                />
+                </div>
+
+                <div className="flex items-start gap-2 rounded-lg border border-hii-100 bg-hii-50 px-3 py-2 text-xs leading-5 text-content-secondary">
+                  <Hash className="mt-0.5 h-3.5 w-3.5 shrink-0 text-hii-600" aria-hidden="true" />
+                  <span>{tr('task.code_auto')}</span>
+                </div>
+
+                <div>
+                  <label htmlFor="task-description" className="hii-label">
+                    {tr('task.field_description')}
+                  </label>
+                  <textarea
+                    id="task-description"
+                    value={form.description}
+                    onChange={(e) => updateField('description', e.target.value)}
+                    rows={2}
+                    className="hii-input min-h-20 resize-none py-2"
+                    placeholder={tr('task.field_description')}
+                  />
+                </div>
               </div>
-              <p className="mt-1 text-xs text-slate-400">
-                {t('task.field_code_hint')}
+            </FormSection>
+
+            <FormSection
+              title={tr('task.section_location')}
+              icon={<Layers3 className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="task-work-package" className="hii-label">
+                    {tr('task.field_work_package')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <FolderTree className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                    <select
+                      id="task-work-package"
+                      value={form.workPackageId}
+                      onChange={(e) => updateField('workPackageId', e.target.value)}
+                      className="hii-select flex-1"
+                    >
+                      <option value="">{tr('task.none_option')}</option>
+                      {allWorkPackages.map((wp: any) => (
+                        <option key={wp.id} value={wp.id}>
+                          {wp.stageName} — {wp.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="task-zone" className="hii-label">
+                    {tr('task.field_zone')}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                    <select
+                      id="task-zone"
+                      value={form.zoneId}
+                      onChange={(e) => updateField('zoneId', e.target.value)}
+                      className="hii-select flex-1"
+                    >
+                      <option value="">{tr('task.none_option')}</option>
+                      {zones.map((zone) => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection
+              title={tr('task.section_schedule')}
+              icon={<Calendar className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="task-planned-start" className="hii-label">
+                    {tr('task.planned_start')}
+                  </label>
+                  <input
+                    id="task-planned-start"
+                    type="date"
+                    value={form.plannedStart}
+                    max={form.plannedEnd || undefined}
+                    onChange={(e) => updateField('plannedStart', e.target.value)}
+                    className="hii-input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="task-planned-end" className="hii-label">
+                    {tr('task.planned_end')}
+                  </label>
+                  <input
+                    id="task-planned-end"
+                    type="date"
+                    value={form.plannedEnd}
+                    min={form.plannedStart || undefined}
+                    onChange={(e) => updateField('plannedEnd', e.target.value)}
+                    aria-invalid={Boolean(fieldErrors.plannedEnd)}
+                    aria-describedby={
+                      fieldErrors.plannedEnd ? 'task-planned-end-error' : undefined
+                    }
+                    className={clsx(
+                      'hii-input',
+                      fieldErrors.plannedEnd && '!border-danger/30 !bg-danger-soft',
+                    )}
+                  />
+                  {fieldErrors.plannedEnd && (
+                    <p id="task-planned-end-error" role="alert" className="mt-1 text-xs text-danger">
+                      {fieldErrors.plannedEnd}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection
+              title={tr('task.section_quantity')}
+              icon={<Package className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="task-planned-quantity" className="hii-label">
+                    {tr('task.field_planned_qty')}
+                  </label>
+                  <input
+                    id="task-planned-quantity"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={form.plannedQuantity}
+                    onChange={(e) => updateField('plannedQuantity', e.target.value)}
+                    className={clsx(
+                      'hii-input',
+                      fieldErrors.plannedQuantity && '!border-danger/30 !bg-danger-soft',
+                    )}
+                    placeholder="0"
+                    aria-invalid={Boolean(fieldErrors.plannedQuantity)}
+                    aria-describedby={
+                      fieldErrors.plannedQuantity
+                        ? 'task-planned-quantity-error'
+                        : undefined
+                    }
+                  />
+                  {fieldErrors.plannedQuantity && (
+                    <p
+                      id="task-planned-quantity-error"
+                      role="alert"
+                      className="mt-1 text-xs text-danger"
+                    >
+                      {fieldErrors.plannedQuantity}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="task-unit-of-measure" className="hii-label">
+                    {tr('task.field_uom')}
+                  </label>
+                  <input
+                    id="task-unit-of-measure"
+                    type="text"
+                    value={form.unitOfMeasure}
+                    onChange={(e) => updateField('unitOfMeasure', e.target.value)}
+                    className="hii-input"
+                    placeholder="buc, mp, ore, kg..."
+                  />
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection
+              title={tr('task.section_assignment')}
+              icon={<Users className="h-4 w-4" />}
+            >
+              <p className="text-xs leading-5 text-content-secondary">
+                {tr('task.assignment_after_create')}
               </p>
-              {fieldErrors.code && (
-                <p className="mt-1 text-xs text-danger">{fieldErrors.code}</p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="hii-label">
-                {t('task.field_description')}
-              </label>
-              <textarea
-                value={form.description}
-                onChange={(e) => updateField('description', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-hii-500 focus:border-hii-500 resize-none"
-                placeholder={t('task.field_description')}
-              />
-            </div>
-
-            {/* Work Package and Zone - row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Work Package */}
-              <div>
-                <label className="hii-label">
-                  {t('task.field_work_package')}
-                </label>
-                <div className="flex items-center gap-2">
-                  <FolderTree className="w-4 h-4 text-slate-400 shrink-0" />
-                  <select
-                    value={form.workPackageId}
-                    onChange={(e) => updateField('workPackageId', e.target.value)}
-                    className="hii-select flex-1"
-                  >
-                    <option value="">{t('task.none_option')}</option>
-                    {allWorkPackages.map((wp: any) => (
-                      <option key={wp.id} value={wp.id}>
-                        {wp.stageName} — {wp.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Zone */}
-              <div>
-                <label className="hii-label">
-                  {t('task.field_zone')}
-                </label>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                  <select
-                    value={form.zoneId}
-                    onChange={(e) => updateField('zoneId', e.target.value)}
-                    className="hii-select flex-1"
-                  >
-                    <option value="">{t('task.none_option')}</option>
-                    {zones.map((zone) => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Planned Quantity and UoM - row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Planned Quantity */}
-              <div>
-                <label className="hii-label">
-                  {t('task.field_planned_qty')}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={form.plannedQuantity}
-                  onChange={(e) => updateField('plannedQuantity', e.target.value)}
-                  className={clsx(
-                    'hii-input',
-                    fieldErrors.plannedQuantity && '!border-danger/30 !bg-danger-soft'
-                  )}
-                  placeholder="0"
-                />
-                {fieldErrors.plannedQuantity && (
-                  <p className="mt-1 text-xs text-danger">
-                    {fieldErrors.plannedQuantity}
-                  </p>
-                )}
-              </div>
-
-              {/* Unit of Measure */}
-              <div>
-                <label className="hii-label">
-                  {t('task.field_uom')}
-                </label>
-                <input
-                  type="text"
-                  value={form.unitOfMeasure}
-                  onChange={(e) => updateField('unitOfMeasure', e.target.value)}
-                  className="hii-input"
-                  placeholder="buc, mp, ore, kg..."
-                />
-              </div>
-            </div>
+            </FormSection>
           </div>
         )}
       </form>

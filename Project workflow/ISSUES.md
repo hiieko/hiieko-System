@@ -1,5 +1,43 @@
 # Issues
 
+> **Consolidated evidence index (2026-10-23).** The findings below summarize `docs/audit/HIIEKO_MASTER_AUDIT.md`, whose inspected baseline was `master` @ `3457db9` on 2026-10-20. These are not freshly reprobed against the current modified worktree. Original ISSUE-001… entries and their histories remain below; this P-series is the audit's independent finding IDs and does not renumber or replace them.
+
+## Current consolidated audit findings
+
+| Audit ID | Evidence class | Finding / current disposition | Evidence boundary / acceptance |
+|---|---|---|---|
+| P-01 | UNVERIFIED / critical | Render backend hosting/deployment not confirmed. | Verify authorized service and `/health/live`; no production access in the cited audit. |
+| P-02 | UNVERIFIED / critical | Production database migration state not confirmed. | Verify migration status and backup; no production access. Do not apply migrations in this documentation task. |
+| P-03 | UNVERIFIED / high | Production email configuration/delivery not confirmed. | Verify reset email and public link in intended environment. |
+| P-04 | UNVERIFIED / high | Production storage driver/root and persistence not confirmed. | Verify existing-file inventory and restart persistence; see `docs/R2_STORAGE_MIGRATION.md` if considering transition. |
+| P-05 | UNVERIFIED / high | Deployed end-to-end acceptance not evidenced. | Run only in an authorized pilot/release environment after P-01…P-04. |
+| P-06 | UNVERIFIED / medium | Browser responsive/visual checks at agreed sizes not performed in the Oct 20 audit. | Requires agreed device/viewport and actual browser run. |
+| P-07 | UNVERIFIED | Live HTTP functional checks were not repeated in the Oct 20 audit. | Prior artifact is cited there; not a current runtime result. |
+| P-08 | UNVERIFIED / low | `dev@hiieko.local` returned 401 in a 2026-10-16 re-run. | Credential/database drift was suspected; not rechecked. |
+| P-09 | UNVERIFIED / low | Local development DB password appears in Git history per `docs/security/rotation.md`. | Audit describes it as local-only; credential/legal impact is not reassessed here. |
+| P-10 | CONFIRMED / high | 45 relations omit explicit `onDelete`; potential orphaning/data-loss policy is not explicit. | Static finding in the Oct 20 audit; decision and risk-based policy required before schema work. |
+| P-11 | CONFIRMED / high | Query-parameter validation gaps remain in some API paths. | Audit cites `docs/audit/query-param-validation.md`; complete DTO/invalid-input tests are needed. |
+| P-12 | CONFIRMED / high | Purchase-order listing is organization-scoped, has no project filter model, and no page consumer was evidenced. | Resolve intended scope/consumer before changing API/schema. |
+| P-13 | CONFIRMED / medium | Several enum-like statuses remain unconstrained strings. | Static schema finding; choose targeted integrity rules before migration. |
+| P-14 | CONFIRMED / medium | Some project/date filter or sort paths lack indexes. | Audit classifies as scale/performance concern; measure before adding indexes. |
+| P-15 | CONFIRMED / medium | 417 unused translation keys and residual hardcoded strings were reported. | Counts from the Oct 20 audit/i18n inventory, not rerun here. |
+| P-16 | CONFIRMED / medium | Pagination envelope/casing conventions are inconsistent. | API-contract consistency finding; no current client-impact test was run here. |
+| P-17 | CONFIRMED / low | `Receipt`, `Commitment`, and `Payment` were identified as orphan models/tables. | Static audit finding; removal/formalization requires a separate data decision. |
+| P-18 | CONFIRMED / low | Historical `time_logs` drop and index recreation have irreversible aspects. | Migration-history finding, not authorization to alter migrations/data. |
+| P-20 | SUSPECTED / medium | Remaining accessible-name/label/touch-target gaps. | Static signals only; not a current browser/assistive-technology measurement. |
+| P-21 | SUSPECTED / medium | Residual low-contrast muted text may remain after partial remediation. | Re-measure contrast on agreed surfaces before closure. |
+| P-22 | SUSPECTED / low | Raw buttons and inconsistent Card use remain. | Static visual-system signal; scope by affected workflows. |
+| P-23 | SUSPECTED / low | Table-to-card behavior may be inconsistent on several pages. | Responsive browser verification required. |
+| P-30 | CONFIRMED ABSENT / high | Sales domain (Phase 7) was absent in the audit baseline. | Optional future feature in the audit, not automatically a V1 blocker. |
+| P-31 | CONFIRMED PARTIAL / medium | Worker blocker report/resolve workflow was incomplete. | Acceptance requires reporting and resolution end-to-end. |
+| P-32 | CONFIRMED PARTIAL / medium | Control Tower health/activity signals and client use of drilldown/red-flags were incomplete. | Audit states client builds some drilldown data in-memory; verify current worktree before implementation. |
+
+### Release and owner-decision blockers
+
+The P-01…P-05 environment/acceptance gates are **unverified**, not passed. Resolve the decisions below before changing affected behavior: OCR freeze versus proposed V1 inclusion; expense approver roles/statuses/self-approval; offline conflict/retry behavior; project/organization authorization divergences; production storage and pilot environment. These questions remain open unless a dated, approved decision is recorded in `DECISIONS.md`.
+
+---
+
 
 > **2026-10-02 (Slice 6 — Task Lifecycle + Verification, UNCOMMITTED):** implemented + verified;
 > **no issue changed state.** The server is now the authoritative source of task lifecycle state:
@@ -1102,6 +1140,7 @@ error is the pre-existing `/favicon.ico` 404). The temporary Phase-1 plan
 - **`ocr-service/README.md`** — References Supabase as part of the historical architecture description. This is a standalone OCR service, not an active runtime dependency.
 - **`PermissionsGuard` not activated** — The `PermissionsGuard` exists but is not wired into any controller. Permission tables are unseeded. Deferred from P5.
 - **`GET /api/procurement/avize/:id`** — implemented with entity-level project authorization and `findAvizById`; older limitation notes are historical.
+- **Seeded demo attachments return 404** - The 15 attachment rows and 10 demo documents/14 versions in `backend/prisma/seed-demo.ts` reference `demo/...` paths that do not exist under `backend/storage`, and the demo task photos have no backing `Document` row. `PhotoUpload` derives a document id from the legacy `storage_url`, so `GET /api/upload/site-arad-task-AR-T01.jpg` returns 404. Left untouched on 2026-10-25 to avoid fabricating or replacing demo data; future seeds should create real blobs/Documents or omit unreachable attachment rows.
 - **RoleGuard on 15 pages (16 with `/rapoarte/form`)** — Client-side route guard blocks direct URL access for unauthorized roles. Since UX-R1A C2 every guard reads its role list from `web/src/config/route-roles.ts` (`ROUTE_ROLES`), i.e. the same source the sidebar uses, so the advertised link set and the guard can no longer drift. `/statistici` no longer exists as a page (307 redirect to `/control-tower`), and `/control-tower` redirects unauthorized roles to `/` instead of rendering them a denial panel.
 - **ISSUE-033/034/035 FIXED** — Project-scope query filtering, registration role whitelist, and tasks controller @Roles all resolved during Phase 3.2.
 - **Santiere page**: "Modifica Parametri" button now opens functional edit modal (FIXED 2026-09-26).

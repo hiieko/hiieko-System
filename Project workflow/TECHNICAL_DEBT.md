@@ -1,8 +1,8 @@
 # HIIEKO — TECHNICAL DEBT REGISTER
 
-**Date:** 2026-09-18/19 · **Severity:** CRIT / HIGH / MED / LOW · **Effort:** S (≤0.5d) / M (0.5–2d) / L (2–5d+) · Status: OPEN unless noted. Fixed = linked to its issue in `ISSUES.md`/`TODO.md`.
+**Original register date:** 2026-09-18/19 · **Severity:** CRIT / HIGH / MED / LOW · **Effort:** S (≤0.5d) / M (0.5–2d) / L (2–5d+).
 
-> **⚠️ HISTORICAL / SUPERSEDED:** Many items below (TD-001 through TD-030) were identified during the Supabase-era audit (2026-09-18/19). Several have been resolved during the migration to NestJS + Prisma + PostgreSQL 18. Items marked **SUPERSEDED** are no longer relevant to the current architecture. See `ISSUES.md` and `PROGRESS.md` for the current resolution status of each item.
+> **Historical source register preserved:** TD-001 through TD-030 below retain their original descriptions, severity, effort, and recorded disposition. The current reconciliation table at the end records the evidence/disposition known from the archive, current workflow docs, and the Oct 20 master audit. It does not claim a fresh code audit of the modified worktree. Unverified is not equivalent to fixed.
 
 | ID | Item | Location | Severity | Effort | Notes / fix |
 |---|---|---|---|---|
@@ -38,3 +38,44 @@
 | TD-030 | `profiles` insert policy allows `auth.uid()=id` on signup while `handle_new_user` also inserts → dependency on trigger ordering | migration 02/04d | MED | S | document ordering; add ON CONFLICT DO NOTHING |
 
 *Ownership: each TD is fixed together with its linked issue in `TODO.md`/`ISSUES.md`; no TD is fixed silently — link the commit/PR id.*
+
+---
+
+## Consolidated disposition and evidence (2026-10-23)
+
+Evidence keys: **H** = preserved historical completion/evidence in `archive/PROGRESS_HISTORY.md` or linked issue; **A** = Oct 20 master audit snapshot (baseline `3457db9`, not rerun); **D** = later workflow decision/status record; **U** = current state not established. The original TD row above remains authoritative for what was reported in 2026-09-18/19; this table is the reconciliation, not a rewrite of its history.
+
+| ID | Consolidated disposition | Evidence / caveat |
+|---|---|---|
+| TD-001 | SUPERSEDED | Dashboard replaced by API-backed Control Tower; original register records this (2026-09-22). **H** |
+| TD-002 | SUPERSEDED | Same dashboard replacement; original register records this (2026-09-22). **H** |
+| TD-003 | IMPLEMENTED; runtime acceptance outstanding | ISSUE-002 marked resolved in preserved progress history; Mobile device acceptance still outstanding. **H** |
+| TD-004 | IMPLEMENTED IN PART / device acceptance outstanding | Later roadmap records SQLite queue and auto-sync; Oct 20 audit says queue/idempotency/auto-sync exist but Mobile was not deeply audited. **H/A/U** |
+| TD-005 | IMPLEMENTED at repository level; device acceptance outstanding | ISSUE-005 and history record real API/queue persistence; current Mobile runtime not re-exercised. **H/U** |
+| TD-006 | HISTORICAL DESCRIPTION SUPERSEDED | SQLite/offline queue is documented as present; runtime/restart acceptance remains open. **H/U** |
+| TD-007 | DEFERRED / historical provider references | OCR is frozen; old Google Vision cleanup is recorded in history, but no current OCR sweep was run. Do not reopen OCR on this basis. **H/D/U** |
+| TD-008 | RESOLVED | Git repository and CI are present; Oct 20 audit records a Git baseline and test/build run. **A** |
+| TD-009 | RESOLVED (historical record) | Archive marks ISSUE-008 resolved; current source not rechecked. **H** |
+| TD-010 | RESOLVED (historical record) | Archive marks ISSUE-009 resolved; current source not rechecked. **H** |
+| TD-011 | RESOLVED | Supabase dependency removal is recorded in the original row and current architecture. **D** |
+| TD-012 | PARTIALLY RESOLVED / separate credential concern remains | Historical cleanup recorded; Oct 20 audit separately notes a local development DB password in Git history (P-09). Do not conflate that with old example keys. **H/A** |
+| TD-013 | UNVERIFIED | No disposition/evidence in the inspected current audit; verify `shared/dist` build output before closure. **U** |
+| TD-014 | SUPERSEDED | Header migrated to ProjectContext; original row records R2.1 P3. **H** |
+| TD-015 | SUPERSEDED | Pages wired to real API per original row; verify individual V1 acceptance separately. **H** |
+| TD-016 | SUPERSEDED AS LEGACY SCHEMA DESIGN / REQUIREMENTS PARTLY IMPLEMENTED | Daily-report approval workflow is recorded as implemented, but that does not prove the old Supabase table/trigger architecture should be recreated. **H/D** |
+| TD-017 | UNVERIFIED AGAINST CURRENT ACCEPTANCE | Expenses are present in the domain inventory; no current end-to-end expense-submission evidence was established by this reconciliation. **A/U** |
+| TD-018 | OUT OF SCOPE OR UNRESOLVED | Reimbursement administration is not explicitly included in proposed V1 scope; retain as a scope decision, not an assumed feature. **D** |
+| TD-019 | DEVICE ACCEPTANCE OUTSTANDING | Barcode/hardware acceptance is included in the Mobile device checklist; no device run is evidenced. **D/U** |
+| TD-020 | DEVICE / STORAGE ACCEPTANCE OUTSTANDING | Photo capture and persistent retrieval need device/runtime evidence; production storage is unverified (P-04). **A/U** |
+| TD-021 | DEVICE ACCEPTANCE OUTSTANDING | GPS/geofence behavior requires physical device/emulator acceptance; not established by static evidence. **D/U** |
+| TD-022 | IMPLEMENTED AT REPOSITORY LEVEL; DEVICE ACCEPTANCE OUTSTANDING | Later roadmap documents SQLite auto-sync; the original manual-toggle finding was not freshly tested. **H/A/U** |
+| TD-023 | DEFERRED WITH OCR | OCR is frozen; no current duplicate-normalization audit was performed. **D/U** |
+| TD-024 | LEGACY SUPABASE HAZARD / CURRENT RUNTIME UNVERIFIED | Original concern names a Supabase-era table/type path; no runtime proof or fresh search was performed here. **H/U** |
+| TD-025 | SUPERSEDED BY RUNTIME REMOVAL, SUBJECT TO ARCHIVE ONLY | Supabase is not an active runtime; archived migration policy is not an application runtime action. **D** |
+| TD-026 | IMPLEMENTED AT ACCOUNT-LIFECYCLE LEVEL; ACCEPTANCE NOT REPEATED | Current audit describes account lifecycle/auth implementation; no separate live approval test was rerun. **A/U** |
+| TD-027 | RESOLVED AT BASELINE; CURRENT WORKTREE NOT VERIFIED | Oct 20 audit reports CI/build and 48 backend suites / 567 tests; this is not evidence for current modified files. **A** |
+| TD-028 | PARTIALLY OPEN | Oct 20 audit reports 417 dead i18n keys and residual hardcoded strings; count not rerun. **A** |
+| TD-029 | IMPLEMENTED; device acceptance outstanding | ISSUE-002 history records demo bypass removal; no current device test was run. **H/U** |
+| TD-030 | SUPERSEDED BY SUPABASE RUNTIME REMOVAL; archived DDL only | Supabase migrations are archival, not runtime; no migration changes authorized. **D** |
+
+**Canonical tracking:** current issues/findings in `ISSUES.md`; verification boundaries in `VERIFICATION.md`; implementation tasks only in the proposed `docs/HIIEKO_IMPLEMENTATION_PLAN.md`. This register does not authorize deletion, schema changes, or reopening frozen work.

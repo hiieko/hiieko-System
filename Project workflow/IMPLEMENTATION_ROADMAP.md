@@ -1,5 +1,7 @@
 # HIIEKO — IMPLEMENTATION ROADMAP
 
+> **HISTORICAL ROADMAP — not the current execution queue.** Its R0–R7/Supabase transition plan and status claims are preserved for history. Use `docs/HIIEKO_IMPLEMENTATION_PLAN.md` as the single **proposed** V1 execution plan; its scope is not approved by this pointer. Current status/issues/verification are in `CURRENT_STATUS.md`, `ISSUES.md`, and `VERIFICATION.md`.
+
 **Date:** 2026-09-18/19 · **Companions:** `PROJECT_AUDIT.md`, `ARCHITECTURE_MIGRATION_PLAN.md`, `FEATURE_GAP_ANALYSIS.md`, `DATABASE_MIGRATION_MAP.md`, `API_MIGRATION_MAP.md`, `TECHNICAL_DEBT.md`.
 **Ordering principles:** stabilize → don't lose data → make the API layer exist → move data ownership → enrich features. New EPC features (§5–§50) are built as new NestJS modules over the migrated schema, not as more client-side pages.
 

@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
+import { t, useLocale } from '@solar/shared';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -37,6 +39,7 @@ export function Modal({
   showClose = true,
   className,
 }: ModalProps) {
+  const { locale } = useLocale();
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useFocusTrap(dialogRef, open);
@@ -64,9 +67,9 @@ export function Modal({
     };
   }, [open, handleKeyDown]);
 
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
@@ -99,7 +102,7 @@ export function Modal({
               <button
                 onClick={onClose}
                 className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-hii-500"
-                aria-label="Inchide"
+                aria-label={t('general.close', locale)}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -113,6 +116,7 @@ export function Modal({
           <div className="px-6 py-4 border-t border-slate-100 shrink-0">{footer}</div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

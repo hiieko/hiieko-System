@@ -1,5 +1,7 @@
 # HIIEKO — Remediation Roadmap
 
+> **HISTORICAL ROADMAP / close-out record.** The 2026-10-05 slice plan and approval/status statements are retained as historical records, not as the current execution plan or fresh verification. Use `docs/HIIEKO_IMPLEMENTATION_PLAN.md` for the single proposed V1 sequence and the canonical workflow status/issue/verification documents for current state. No scope or decision approval is implied by this banner.
+
 > **Status: PLANNING ONLY.** This document makes no code, schema, database, migration, or
 > configuration change.
 > **Additive to `IMPLEMENTATION_ROADMAP.md` — it does NOT replace it** and introduces no

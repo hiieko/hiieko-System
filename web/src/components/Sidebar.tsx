@@ -3,10 +3,10 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, LogOut } from 'lucide-react';
+import { X, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { getRoleLabel, t, useLocale } from '@solar/shared';
 import { useAuth } from '../contexts/AuthContext';
-import { NAV_GROUPS, canRoleAccess, type NavItem, type NavGroup } from '../config/navigation';
+import { NAV_GROUPS, canRoleAccess, type NavItem } from '../config/navigation';
 import { ShellBrand } from './shell';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useFocusTrap } from '../hooks/useFocusTrap';
@@ -14,6 +14,8 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
 interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }
 
 /**
@@ -21,18 +23,26 @@ interface SidebarProps {
  *
  * Both render the canonical `NAV_GROUPS` / `ROUTE_ROLES` contract unchanged —
  * this component only changes how the chrome looks (navy `#111827` chrome, the
- * HIIEKO accent as the single active/emphasis colour) and puts the real signed-in
+ * teal accent as the single active/emphasis colour) and puts the real signed-in
  * user at the bottom of the rail instead of the previous hardcoded build string.
  *
  * The drawer also hosts the mobile user block (profile, language, sign-out):
  * below `lg` the header is the compact brand bar and cannot carry them.
  */
-export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({
+  mobileOpen,
+  onMobileClose,
+  collapsed = false,
+  onToggleCollapsed,
+}: SidebarProps) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { locale } = useLocale();
 
+  const railCollapsed = collapsed;
   const userName = user?.fullName || user?.email || t('header.visitator', locale);
+  const userRole = getRoleLabel(user?.role, locale);
+  const toggleLabel = railCollapsed ? t('sidebar.expand', locale) : t('sidebar.collapse', locale);
   const drawerRef = useRef<HTMLElement>(null);
   const drawerOpen = mobileOpen === true;
 
@@ -69,79 +79,138 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const canSee = useCallback((href: string): boolean => canRoleAccess(href, user?.role), [user?.role]);
 
   const renderNavItem = useCallback(
-    (item: NavItem) => {
+    (item: NavItem, compact: boolean) => {
       const Icon = item.icon;
       const active = isActive(item.href);
+      const label = t(item.i18nKey, locale) || item.label;
       return (
         <Link
           key={item.href}
           href={item.href}
           onClick={onMobileClose}
           aria-current={active ? 'page' : undefined}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-            active
-              ? 'bg-accent text-accent-ink font-semibold shadow-sm'
-              : 'text-chrome-text font-medium hover:bg-chrome-hover hover:text-white'
-          }`}
+          aria-label={compact ? label : undefined}
+          title={compact ? label : undefined}
+          className={
+            compact
+              ? `mx-auto flex h-11 w-11 items-center justify-center rounded-lg transition-colors ${
+                  active
+                    ? 'bg-[#087E83] text-white shadow-sm'
+                    : 'text-chrome-text hover:bg-chrome-hover hover:text-white'
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]`
+              : `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-[#087E83] text-white font-semibold shadow-sm'
+                    : 'text-chrome-text hover:bg-chrome-hover hover:text-white'
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]`
+          }
         >
           <Icon
-            className={`w-5 h-5 shrink-0 ${active ? 'text-accent-ink' : 'text-chrome-muted'}`}
+            className={`w-5 h-5 shrink-0 ${active ? 'text-white' : 'text-chrome-muted'}`}
             aria-hidden="true"
           />
-          <span>{t(item.i18nKey, locale) || item.label}</span>
+          {compact ? <span className="sr-only">{label}</span> : <span>{label}</span>}
         </Link>
       );
     },
     [isActive, onMobileClose, locale],
   );
 
-  const renderNavGroup = useCallback(
-    (group: NavGroup) => {
-      const visible = group.items.filter((item) => canSee(item.href));
-      if (visible.length === 0) return null;
-      return (
-        <div key={group.titleKey}>
-          <div className="text-[11px] font-semibold text-chrome-muted uppercase tracking-wider px-3 mb-2">
-            {t(group.titleKey, locale) || group.title}
+  const visibleGroups = NAV_GROUPS.map((group) => ({
+    group,
+    items: group.items.filter((item) => canSee(item.href)),
+  })).filter(({ items }) => items.length > 0);
+
+  const renderNavContent = (compact: boolean) => (
+    <nav
+      aria-label={t('sidebar.navigation', locale)}
+      className={compact ? 'relative flex flex-col gap-1 p-1.5' : 'relative space-y-4 p-3'}
+    >
+      {visibleGroups.map(({ group, items }, index) => (
+        <div
+          key={group.titleKey}
+          className={compact && index > 0 ? 'border-t border-chrome-line pt-1' : undefined}
+        >
+          {!compact && (
+            <div className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-chrome-muted">
+              {t(group.titleKey, locale) || group.title}
+            </div>
+          )}
+          <div className="space-y-1">
+            {items.map((item) => renderNavItem(item, compact))}
           </div>
-          <div className="space-y-1">{visible.map(renderNavItem)}</div>
         </div>
-      );
-    },
-    [canSee, renderNavItem, locale],
+      ))}
+    </nav>
   );
 
   /** Real signed-in identity (avatar initials, name, role) — no static build label. */
-  const userBlock = (
+  const renderUserBlock = (compact: boolean) => (
     <Link
       href="/profil"
       onClick={onMobileClose}
-      aria-label={t('nav.profil', locale)}
-      className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-chrome-hover transition-colors"
+      aria-label={compact ? `${userName} · ${userRole}` : t('nav.profil', locale)}
+      title={compact ? `${userName} · ${userRole}` : undefined}
+      className={
+        compact
+          ? 'mx-auto flex h-11 w-11 items-center justify-center rounded-lg transition-colors hover:bg-chrome-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]'
+          : 'flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-chrome-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]'
+      }
     >
-      <span className="w-8 h-8 rounded-full bg-accent text-accent-ink flex items-center justify-center font-bold text-xs shrink-0">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#087E83] text-xs font-bold text-white">
         {userName.slice(0, 2).toUpperCase()}
       </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-chrome-text truncate">{userName}</span>
-        <span className="block text-[11px] text-chrome-muted truncate">
-          {getRoleLabel(user?.role, locale)}
+      {!compact && (
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-chrome-text">{userName}</span>
+          <span className="block truncate text-[11px] text-chrome-muted">{userRole}</span>
         </span>
-      </span>
+      )}
     </Link>
   );
-
-  const navContent = <nav className="p-4 space-y-6">{NAV_GROUPS.map(renderNavGroup)}</nav>;
 
   return (
     <>
       {/* Desktop rail */}
-      <aside className="hidden lg:flex w-[var(--hii-sidebar-width)] hii-shell-chrome flex-col shrink-0 border-r border-chrome-line z-sidebar">
-        <div className="px-5 py-5 border-b border-chrome-line">
-          <ShellBrand size="rail" />
+      <aside
+        id="app-sidebar"
+        className="hidden lg:flex w-[var(--hii-sidebar-width)] hii-shell-chrome flex-col shrink-0 border-r border-chrome-line z-sidebar transition-[width] duration-200 ease-out motion-reduce:transition-none [&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-[#087E83] [&_*:focus-visible]:ring-offset-2 [&_*:focus-visible]:ring-offset-[#111827]"
+      >
+        <div
+          className={`border-b border-chrome-line py-3 ${
+            railCollapsed ? 'flex justify-center px-3' : 'px-5'
+          }`}
+        >
+          <ShellBrand size="rail" collapsed={railCollapsed} />
         </div>
-        <div className="flex-1 overflow-y-auto hii-scrollbar-thin">{navContent}</div>
-        <div className="p-3 border-t border-chrome-line">{userBlock}</div>
+        <div className="flex-1 overflow-y-auto hii-scrollbar-thin">{renderNavContent(railCollapsed)}</div>
+        <div className={`border-t border-chrome-line ${railCollapsed ? 'space-y-1 p-2' : 'space-y-1 p-3'}`}>
+          {onToggleCollapsed && (
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-label={toggleLabel}
+              aria-expanded={!railCollapsed}
+              aria-controls="app-sidebar"
+              title={toggleLabel}
+              className={
+                railCollapsed
+                  ? 'mx-auto flex h-10 w-10 items-center justify-center rounded-lg text-chrome-muted transition-colors hover:bg-chrome-hover hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]'
+                  : 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-chrome-text transition-colors hover:bg-chrome-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]'
+              }
+            >
+              {railCollapsed ? (
+                <PanelLeftOpen className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <>
+                  <PanelLeftClose className="h-4 w-4 text-chrome-muted" aria-hidden="true" />
+                  <span>{toggleLabel}</span>
+                </>
+              )}
+            </button>
+          )}
+          {renderUserBlock(railCollapsed)}
+        </div>
       </aside>
 
       {/* Mobile drawer */}
@@ -162,7 +231,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             aria-modal={drawerOpen ? true : undefined}
             aria-hidden={!drawerOpen}
             inert={(!drawerOpen ? '' : undefined) as unknown as boolean}
-            className={`fixed inset-y-0 left-0 z-drawer w-72 hii-shell-chrome flex flex-col shadow-2xl transform transition-transform duration-250 ease-in-out lg:hidden ${
+            className={`fixed inset-y-0 left-0 z-drawer w-72 hii-shell-chrome flex flex-col shadow-2xl transform transition-transform duration-250 ease-in-out lg:hidden [&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-[#087E83] [&_*:focus-visible]:ring-offset-2 [&_*:focus-visible]:ring-offset-[#111827] ${
               mobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
             aria-label={t('sidebar.navigation', locale)}
@@ -172,22 +241,22 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               <button
                 type="button"
                 onClick={onMobileClose}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg p-2 text-chrome-muted hover:bg-chrome-hover hover:text-white"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg p-2 text-chrome-muted hover:bg-chrome-hover hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]"
                 aria-label={t('sidebar.close', locale)}
               >
                 <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto hii-scrollbar-thin">{navContent}</div>
+            <div className="flex-1 overflow-y-auto hii-scrollbar-thin">{renderNavContent(false)}</div>
             <div className="p-3 border-t border-chrome-line space-y-2">
-              {userBlock}
-              <div className="px-2">
+              {renderUserBlock(false)}
+              <div className="px-2 [&_button:focus-visible]:outline-none [&_button:focus-visible]:ring-2 [&_button:focus-visible]:ring-[#087E83] [&_button:focus-visible]:ring-offset-2 [&_button:focus-visible]:ring-offset-[#111827]">
                 <LanguageSwitcher />
               </div>
               <button
                 type="button"
                 onClick={() => void signOut()}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-chrome-text hover:bg-chrome-hover transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-chrome-text hover:bg-chrome-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E83] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111827]"
               >
                 <LogOut className="w-4 h-4 text-chrome-muted" aria-hidden="true" />
                 {t('header.logout', locale)}

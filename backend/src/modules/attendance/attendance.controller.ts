@@ -38,6 +38,9 @@ export class AttendanceController {
     @Query('userId') userId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('paginated') paginated?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
     const where = buildScopedProjectWhere(scope, projectId);
     if (startDate) {
@@ -46,7 +49,16 @@ export class AttendanceController {
     if (endDate) {
       this.assertValidDateParam(endDate, 'endDate');
     }
-    return this.attendanceService.findAll({ projectId, userId, startDate, endDate, projectScopeWhere: where });
+
+    const params = { projectId, userId, startDate, endDate, projectScopeWhere: where };
+
+    if (paginated === 'true') {
+      const parsedPage = this.parsePositiveInt(page, 'page', 1);
+      const parsedPageSize = this.parsePositiveInt(pageSize, 'pageSize', 25, 200);
+      return this.attendanceService.findAllPaginated(params, parsedPage, parsedPageSize);
+    }
+
+    return this.attendanceService.findAll(params);
   }
 
   @Post('check-in')
@@ -120,5 +132,28 @@ export class AttendanceController {
     if (Number.isNaN(parsed.getTime())) {
       throw new BadRequestException(`${name} must be a valid date (YYYY-MM-DD)`);
     }
+  }
+
+  private parsePositiveInt(
+    value: string | undefined,
+    name: string,
+    fallback: number,
+    max?: number,
+  ): number {
+    if (value === undefined || value === '') {
+      return fallback;
+    }
+    if (!/^\d+$/.test(value)) {
+      throw new BadRequestException(`${name} must be a positive integer`);
+    }
+    const parsed = Number(value);
+    if (parsed < 1 || (max !== undefined && parsed > max)) {
+      throw new BadRequestException(
+        max === undefined
+          ? `${name} must be a positive integer`
+          : `${name} must be between 1 and ${max}`,
+      );
+    }
+    return parsed;
   }
 }

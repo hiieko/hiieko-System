@@ -1,7 +1,6 @@
 # Architecture & Technical Decisions
 
-Last Updated: 2026-10-01 (DEC-015 added — Slice 3 company timezone / day boundary, K-9 effective;
-DEC-014 added the Slice 2 session/refresh/revocation model, K-4/K-5 effective)
+Last Updated: 2026-10-23 (implementation-decision crosswalk added; original IDs/statuses retained; unresolved decisions left unresolved)
 
 Record decisions that future developers and AI assistants need to understand.
 Unless noted, decisions below are inferred from repository contents (code + docs) on 2026-09-18.
@@ -34,7 +33,7 @@ Single domain model; i18n and tutorials reused across web + mobile.
 
 # DEC-002 — Supabase as the backend (Postgres + RLS + Edge Functions)
 **Date:** (as evidenced) 2026
-**Status:** ACCEPTED
+**Status:** SUPERSEDED (2026-09-23 runtime removal; original decision and rationale retained as history; see DEC-017)
 
 ## Context
 Need auth, Postgres integrity, authorization, storage, and server-side code without running a custom backend.
@@ -60,7 +59,7 @@ Every workspace; deployment (see CONFIGURATION.md).
 
 # DEC-003 — Self-hosted PaddleOCR instead of Google Cloud Vision
 **Date:** (as evidenced) 2026
-**Status:** ACCEPTED (migration complete in code; docs cleanup pending — ISSUE-003/004)
+**Status:** ACCEPTED as provider direction; implementation FROZEN / DEFERRED pending explicit scope decision (OCR inclusion in proposed V1 is unresolved)
 
 ## Context
 Receipt/invoice OCR must handle Romanian documents, run privately, and avoid per-call cloud fees/latency and data-export concerns.
@@ -130,7 +129,7 @@ Two flows (expense/delivery) currently simulate success without real persistence
 
 # DEC-006 — Notification center with per-user settings
 **Date:** (as evidenced) 2026
-**Status:** ACCEPTED
+**Status:** SUPERSEDED as to Supabase table/trigger implementation; notification capability remains in the active API architecture
 
 ## Context
 Many business events (reports, deliveries, stock, applications) need role-based visibility.
@@ -149,7 +148,7 @@ Trigger SQL must stay in sync with business rules.
 
 # DEC-007 — Database-enforced stock integrity
 **Date:** (as evidenced) 2026
-**Status:** ACCEPTED
+**Status:** PARTIALLY SUPERSEDED — the Supabase `site_stock`/trigger design is historical; preserve the no-negative-stock/auditable-movement invariant and verify its active enforcement before claiming acceptance
 
 ## Context
 Stock must never go negative, and stock writes must be auditable.
@@ -168,7 +167,7 @@ Additional SQL surface to test.
 
 # DEC-008 — Security by design (RLS + private bucket + no client secrets)
 **Date:** (as evidenced) 2026
-**Status:** ACCEPTED
+**Status:** SUPERSEDED as the runtime authorization/storage architecture (Supabase RLS/private bucket); backend authorization and private storage are governed by the current NestJS architecture
 
 ## Context
 Multi-role system handling expenses and documents.
@@ -187,7 +186,7 @@ All migrations, web supabase client, Edge Function.
 
 # DEC-009 — Web client-heavy (Next.js + Supabase SDK)
 **Date:** (as evidenced) 2026
-**Status:** ACCEPTED
+**Status:** SUPERSEDED (web data access now goes through the NestJS API; preserve as historical rationale)
 
 ## Context
 Fast delivery; a dedicated API layer was not desired.
@@ -206,7 +205,7 @@ Business queries live in TSX (e.g., dashboard aggregates) — spot for drift (se
 
 # DEC-010 — Validation-first OCR review loop
 **Date:** (as evidenced) 2026
-**Status:** ACCEPTED
+**Status:** ACCEPTED as a product safety rule if OCR is authorized; OCR implementation remains FROZEN / DEFERRED pending scope decision
 
 ## Context
 OCR output must be trustworthy before it becomes an expense.
@@ -640,4 +639,63 @@ Never silently delete old decisions. Mark them SUPERSEDED.
 
 | Old Decision | Replaced By | Date |
 |---|---|---|
-| Google Cloud Vision as OCR provider (in `extract.ts`, `Mobile/.env.example`) | DEC-003 (PaddleOCR) | 2026 (code); docs cleanup pending |
+| Google Cloud Vision provider choice | DEC-003 (PaddleOCR); OCR implementation remains frozen pending scope decision | 2026 (provider direction; no V1 reopening implied) |
+| DEC-002 — Supabase runtime architecture | DEC-017 — NestJS + Prisma + PostgreSQL runtime | 2026-09-23 |
+| DEC-006 — Supabase notification tables/triggers | Current API architecture; business capability retained | Runtime mechanism superseded 2026-09-23 |
+| DEC-007 — Supabase `site_stock`/trigger mechanism | Current stock implementation; invariant retained for verification | Runtime mechanism superseded 2026-09-23 |
+| DEC-008 — Supabase RLS/private bucket architecture | Current backend authorization/private storage architecture | Runtime mechanism superseded 2026-09-23 |
+| DEC-009 — Direct Supabase web client | NestJS API access | Runtime mechanism superseded 2026-09-23 |
+
+---
+
+# DEC-017 — NestJS + Prisma + PostgreSQL is the authoritative runtime; Supabase is archival
+
+**Date:** 2026-09-23 (runtime removal recorded in repository history)\
+**Status:** Repository architecture documented as authoritative; this reconciliation asserts no new stakeholder approval. Production deployment remains unverified.
+
+## Context
+
+The original 2026-09-22 implementation decision selected PostgreSQL/Prisma/NestJS while describing legacy Supabase cleanup as a planned implementation. Later repository records state that Supabase runtime dependencies and paths were removed and its migration DDL archived. Old decisions DEC-002 and DEC-006…DEC-009 describe Supabase runtime mechanisms and must not be read as current architecture.
+
+## Decision
+
+- The authoritative application data path is Next.js and Expo clients → NestJS API → Prisma → PostgreSQL.
+- No active runtime Supabase SDK, Auth, RLS, Edge Function, or Supabase storage path is to be reintroduced without a new explicit decision.
+- Legacy Supabase DDL/source may remain archived for historical data migration; archival files are not runtime instructions.
+- Authorization is enforced through the current backend organization/project/role mechanisms, not by assuming Supabase RLS is active.
+- This decision defines repository architecture only; it does not certify production deployment, database state, storage configuration, or release acceptance.
+
+## Reason and relation to original decision
+
+The original Decision 1 rationale was that PostgreSQL was operational and Supabase introduced unnecessary complexity. The repository's later runtime-removal record establishes this as the implemented architecture. The original Decision 1 ID and full wording remain in `docs/HIIEKO_IMPLEMENTATION_DECISIONS.md` and its crosswalk above; DEC-017 is the canonical current-state reconciliation, not a new stakeholder approval.
+
+## Affected historical decisions
+
+DEC-002 (backend runtime), DEC-006 (Supabase notification triggers), DEC-007 (Supabase stock schema/trigger mechanism), DEC-008 (RLS/private Supabase bucket), and DEC-009 (direct Supabase web client) are superseded only to the extent stated in each record. Preserve any product/business invariant that remains relevant; do not revive the obsolete implementation mechanism.
+
+---
+
+## Legacy implementation decision reconciliation (original IDs preserved)
+
+The records below reconcile all sixteen `Decision 1`–`Decision 16` entries from `docs/HIIEKO_IMPLEMENTATION_DECISIONS.md`. The source document is dated 2026-09-22; its Decision Log explicitly dates Decisions 1–6 to 2026-09-22, while individual dates are not stated for Decisions 7–16. Original statuses are preserved verbatim below. The original file remains in place with its full rationale, alternatives, implementation notes, and wording; this crosswalk makes the record discoverable here without inventing stakeholder approval. “Reconciliation” is not approval of a planned change.
+
+| Original ID / decision | Source document date | Original status | Original rationale (preserved in source) | Reconciliation in canonical record |
+|---|---|---|---|---|
+| Decision 1 — PostgreSQL/Prisma/NestJS vs legacy Supabase | 2026-09-22 | RESOLVED (2026-09-22) | PostgreSQL is operational; avoid unnecessary Supabase complexity. | Platform direction is current; Supabase runtime removal is recorded in DEC-017 and CURRENT_STATUS. |
+| Decision 2 — OCR storage and processing architecture | 2026-09-22 | OPEN — awaiting implementation | PaddleOCR is self-hosted, implemented path; Google Vision references were described as outdated. | DEC-003 records PaddleOCR; current workflow freezes OCR while proposed V1_SCOPE includes it. Inclusion/reopening is unresolved; no OCR implementation is authorized by this crosswalk. |
+| Decision 3 — `team_leader` role mapping | 2026-09-22 | PLANNED — WAVE 1 | Specification favored FOREMAN terminology and a legacy alias. | Current role model contains multiple role labels; no approved rename/migration decision is evidenced. Preserve terminology; unresolved. |
+| Decision 4 — permission scope (project/site/organization) | 2026-09-22 | PLANNED — WAVE 1 | Match organizational structure and enforce project/site boundaries. | Existing project-membership authorization and DEC-016 govern current code. The proposed three-level model/site scope is not adopted wholesale; remaining role/scope matrix is unresolved. |
+| Decision 5 — approval authority by amount | 2026-09-22 | PLANNED — WAVE 6 | Establish auditable approval tiers by financial amount. | Proposed V1 scope leaves expense approver roles and thresholds subject to business approval; unresolved, no thresholds approved here. |
+| Decision 6 — offline conflict resolution | 2026-09-22 | PLANNED — WAVE 8 | Automatic handling for simple conflicts; manual review for complex conflicts with auditability. | Offline queue implementation does not settle the conflict policy. Proposed default in V1_SCOPE is not approved; unresolved. |
+| Decision 7 — no negative stock | 2026-09-22 | IMPLEMENTED — Existing in `calculations.ts` | Prevent inventory errors with server-side rejection of negative balances. | Preserve as a business invariant; validate against current backend tests before any new stock work. Original status retained, no fresh test claim. |
+| Decision 8 — no self-approval for expenses | 2026-09-22 | PLANNED — WAVE 6 | Separation of duties and fraud prevention. | Proposed V1_SCOPE calls this a proposed default, explicitly subject to business approval. Treat as unresolved until approved and verified in backend. |
+| Decision 9 — expense category mapping | 2026-09-22 | PLANNED — WAVE 6 | Provide bilingual labels for Romanian/English users. | Shared i18n exists, but the proposed enum/model/API label design is not established as approved or implemented. Unresolved requirement. |
+| Decision 10 — Team model structure | 2026-09-22 | PLANNED — WAVE 1 | Support project/site teams, unassigned leaders, and lifecycle status. | Current project/team structures supersede the legacy site-oriented proposal; no wholesale Team/WorkTeam or site schema change is approved. Preserve unique lifecycle requirements for a future decision. |
+| Decision 11 — Daily Report work-plan reference | 2026-09-22 | PLANNED — WAVE 2 | Link execution reports to plans for progress/variance reporting. | Current daily-plan/report contracts exist; no evidence that `work_plan_id` is approved or required. Unresolved requirement; no schema change authorized. |
+| Decision 12 — Material Request Approval Workflow | 2026-09-22 | PLANNED — WAVE 3 | Add auditable request/review/partial-approval states and fields. | Full procurement/material-request workflow is outside proposed V1 scope unless separately approved. Preserve as historical future requirement; not current plan scope. |
+| Decision 13 — idempotency keys for all mutations | 2026-09-22 | PARTIALLY IMPLEMENTED — Some endpoints have it, expand to all | Safe retry for offline requests and duplicate prevention. | Some idempotency exists; “all mutations” is not evidenced. Keep as a bounded reliability requirement; audit/retry acceptance remains open. |
+| Decision 14 — response transformation pattern | 2026-09-22 | IMPLEMENTED — Existing pattern in backend | Consistent response and pagination/error handling. | Existing response envelope is not fully uniform; audit P-16 records pagination/casing inconsistency. Original “implemented” status retained with residual standardization open. |
+| Decision 15 — Romanian-first UI copy | 2026-09-22 | IMPLEMENTED — Existing in shared/i18n | Romanian operational default with English support. | Direction is consistent with DEC-004. Residual translation debt is tracked separately (audit P-15); do not infer complete i18n coverage. |
+| Decision 16 — permission-aware UI actions | 2026-09-22 | IMPLEMENTED — Existing pattern in shared/permissions | Reduce clutter and align UI actions with authorization. | Preserve UI capability checks, but backend authorization remains authoritative; role divergence/permission matrix questions remain open. |
+
+Original detailed rationales, alternatives, implementation lists, and status text remain preserved verbatim in `docs/HIIEKO_IMPLEMENTATION_DECISIONS.md`; see its new historical-source banner for this canonical crosswalk. The source's old “Next Steps” and WAVE queue are historical, not current instructions.

@@ -1,6 +1,8 @@
 # HIIEKO Solar Site Management System
 # CLINE MASTER ROADMAP & EXECUTION ORDER
 
+> **HISTORICAL ROADMAP — superseded for current execution.** This detailed roadmap is retained as a historical requirement/execution artifact; its automatic continuation instructions and changing status claims are not current instructions. Consult `docs/HIIEKO_IMPLEMENTATION_PLAN.md` (single proposed V1 plan; scope approval pending), `CURRENT_STATUS.md`, `ISSUES.md`, `VERIFICATION.md`, and `DECISIONS.md` before work. Do not infer approval of old scope or perform work solely because this file lists it.
+
 > **Purpose:** This is the master execution order for Cline. It tells Cline how to work continuously on the HIIEKO project, how to use the existing project-workflow documents, how to verify work before declaring it complete, and how to move automatically to the next non-blocked step.
 >
 > **Location in repository:** `Project workflow/CLINE_MASTER_ROADMAP.md`

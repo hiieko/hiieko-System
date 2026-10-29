@@ -1,5 +1,7 @@
 # HIIEKO Master Roadmap for Cline
 
+> **HISTORICAL ROADMAP — superseded for current execution.** The 2026-09-23 migration roadmap is retained as history and may contain obsolete architecture/status and implementation instructions. Use `docs/HIIEKO_IMPLEMENTATION_PLAN.md` as the single proposed V1 execution plan (approval pending) and the canonical `Project workflow/` status, issue, verification, and decision documents for current information. No old scope is approved by this notice.
+
 **Version:** 1.0  
 **Date:** 2026-09-23  
 **Purpose:** Single execution roadmap for Cline that reconciles the current repository state, the active NestJS/PostgreSQL migration, the dual-write transition, and the target-state HIIEKO application specification.
