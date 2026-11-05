@@ -89,7 +89,7 @@ describe('LocalStorageService', () => {
     );
   });
 
-  it('deletes an object (best effort)', async () => {
+  it('deletes an object', async () => {
     const stored = await service.save({
       buffer: Buffer.from('to-delete'),
       mimeType: 'image/png',
@@ -99,5 +99,20 @@ describe('LocalStorageService', () => {
     expect(fs.existsSync(path.join(root, stored.key))).toBe(true);
     await service.delete(stored.key);
     expect(fs.existsSync(path.join(root, stored.key))).toBe(false);
+  });
+
+  it('treats a missing object as already cleaned up', async () => {
+    await expect(service.delete('receipts/missing.pdf')).resolves.toBeUndefined();
+  });
+
+  it('surfaces non-missing storage deletion failures for upload compensation', async () => {
+    const failure = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+    const unlink = jest.spyOn(fs.promises, 'unlink').mockRejectedValue(failure);
+
+    try {
+      await expect(service.delete('receipts/fresh.pdf')).rejects.toBe(failure);
+    } finally {
+      unlink.mockRestore();
+    }
   });
 });

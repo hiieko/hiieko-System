@@ -127,8 +127,11 @@ export class LocalStorageService implements StorageService {
     const full = this.resolveSafe(key);
     try {
       await fs.promises.unlink(full);
-    } catch {
-      // Best effort: nothing to clean up.
+    } catch (error) {
+      // Missing objects are already clean. Surface other failures so upload
+      // compensation can report that its newly-created object may remain.
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+      throw error;
     }
   }
 }

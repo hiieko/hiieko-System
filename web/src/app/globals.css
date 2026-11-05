@@ -11,7 +11,7 @@
   --hii-brand-soft: #d1fae0;
   --hii-brand-light: #ecfdf3;
   --hii-surface: #ffffff;
-  --hii-surface-muted: #f8fafc;
+  --hii-surface-muted: #f4f7f5;
   --hii-surface-alt: #f1f5f9;
   --hii-border: #e2e8f0;
   --hii-border-light: #f1f5f9;
@@ -49,21 +49,25 @@
   --hii-shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 
   /* Shell tokens */
-  --hii-sidebar-bg: #0f172a;
-  --hii-sidebar-hover: #1e293b;
-  --hii-sidebar-text: #cbd5e1;
-  --hii-sidebar-text-muted: #94a3b8;
-  --hii-sidebar-active-bg: #188C51;
+  --hii-sidebar-bg: #103b2e;
+  --hii-sidebar-surface: #164735;
+  --hii-sidebar-hover: #1c5741;
+  --hii-sidebar-text: #edf7f0;
+  --hii-sidebar-text-muted: #a6c6b3;
+  --hii-sidebar-active: #91e1ae;
+  --hii-sidebar-active-bg: #1b5b43;
   --hii-sidebar-active-text: #ffffff;
-  --hii-sidebar-width: 16rem;
-  --hii-header-height: 3.5rem;
-  --hii-chrome: #111827;
-  --hii-chrome-elevated: #374151;
-  --hii-chrome-hover: #1f2937;
-  --hii-chrome-border: #1f2937;
-  --hii-chrome-text: #f9fafb;
-  --hii-chrome-text-muted: #d1d5db;
-  --hii-shell-content-bg: #f3f4f6;
+  --hii-sidebar-divider: #285541;
+  --hii-sidebar-focus: #9ceab7;
+  --hii-sidebar-width: 14rem;
+  --hii-header-height: 4rem;
+  --hii-chrome: #103b2e;
+  --hii-chrome-elevated: #164735;
+  --hii-chrome-hover: #1c5741;
+  --hii-chrome-border: #285541;
+  --hii-chrome-text: #edf7f0;
+  --hii-chrome-text-muted: #a6c6b3;
+  --hii-shell-content-bg: #f4f7f5;
 }
 
 @layer base {
@@ -351,6 +355,22 @@
   }
 }
 
+@keyframes hii-preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hii-preview-enter {
+  animation: hii-preview-in 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+
 /* Reduced motion: suppress scale/fade animations */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -416,7 +436,7 @@
 }
 
 
-@media (min-width: 640px) {
+  @media (min-width: 640px) {
   :root {
     --hii-header-height: 4rem;
   }

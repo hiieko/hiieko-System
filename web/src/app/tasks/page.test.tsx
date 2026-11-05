@@ -179,7 +179,7 @@ describe('production /tasks page', () => {
       expect(within(column).getByText('1')).toBeInTheDocument();
       expect(within(column).getByText(`Task ${status}`)).toBeInTheDocument();
     }
-    expect(within(board).getByTestId('tasks-board-scroll')).toHaveClass('overflow-x-auto');
+    expect(within(board).getByTestId('tasks-board-scroll')).toHaveClass('overflow-y-auto');
     expect(within(board).getAllByTestId('task-card')).toHaveLength(TASK_STATUSES.length);
     expect(mockedGetTasks).toHaveBeenCalledTimes(1);
   });
@@ -364,7 +364,7 @@ describe('production /tasks page', () => {
     expect(screen.getByRole('button', { name: t('task.new', 'ro') })).toBeDisabled();
   });
 
-  it('keeps toolbar and status tabs together above the board, with one horizontal board scroller', async () => {
+  it('keeps toolbar and status tabs together above the board without horizontal scrolling', async () => {
     renderPage();
     expect(await screen.findByText('Mount east array')).toBeInTheDocument();
 
@@ -385,10 +385,10 @@ describe('production /tasks page', () => {
     expect(within(filterRow).getByTestId('task-status-tabs')).toContainElement(statusTabs);
     expect(toolbar).toContainElement(statusTabs);
     expect(toolbar.compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(boardScroller).toHaveClass('overflow-x-auto');
+    expect(boardScroller).toHaveClass('overflow-y-auto');
+    expect(boardScroller).not.toHaveClass('overflow-x-auto');
     expect(boardScroller).not.toHaveClass('overflow-y-hidden');
     expect(firstColumn).toHaveClass('w-[303px]', 'p-3.5', 'bg-slate-100');
-    expect(firstColumn.querySelector('.overflow-y-auto')).toBeNull();
   });
 
   it('filters the fetched list by search, status and only-mine without changing the API request', async () => {

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Lightbulb, MapPin, Tag, Upload } from 'lucide-react';
 import { t, useLocale } from '@solar/shared';
-import { apiClient, ApiError, type ExactDuplicateMatch } from '../../../lib/api-client';
+import { apiClient, ApiError, type DocumentFolder, type ExactDuplicateMatch } from '../../../lib/api-client';
 import { Button, Modal } from '../../../components/ui';
 import { useToast } from '../../../components/ui/Toast';
 import {
@@ -22,14 +22,25 @@ export interface UploadProject {
   address?: string | null;
 }
 
+export type UploadDestination =
+  | { kind: 'company' }
+  | { kind: 'project'; projectId: string };
+
+const COMPANY_DESTINATION_VALUE = 'scope:company';
+const PROJECT_DESTINATION_PREFIX = 'scope:project:';
+
 interface DocumentUploadCardProps {
   open: boolean;
   projects: UploadProject[];
   projectsLoading: boolean;
   projectsError?: string | null;
-  projectId: string;
+  folders: DocumentFolder[];
+  foldersLoading: boolean;
+  foldersError?: string | null;
+  canManageFolders: boolean;
+  destination: UploadDestination | null;
   onClose: () => void;
-  onProjectChange: (projectId: string) => void;
+  onDestinationChange: (destination: UploadDestination | null) => void;
   onOpenDocument: (documentId: string) => void;
   onUploaded: () => void;
 }
@@ -38,17 +49,20 @@ interface DocumentUploadCardProps {
  * HIIEKO - document upload panel.
  *
  * The file is sent to `POST /api/documents` (NestJS) as multipart/form-data.
- * The destination project is always explicit - it is never assigned
- * implicitly - and the progress bar reflects the real XHR upload progress.
+ * The destination (an authorized project or the authenticated user's company
+ * library) is always explicit, and progress reflects the real XHR upload.
  */
 export function DocumentUploadCard({
   open,
   projects,
-  projectsLoading,
   projectsError,
-  projectId,
+  folders,
+  foldersLoading,
+  foldersError,
+  canManageFolders,
+  destination,
   onClose,
-  onProjectChange,
+  onDestinationChange,
   onOpenDocument,
   onUploaded,
 }: DocumentUploadCardProps) {
@@ -64,6 +78,7 @@ export function DocumentUploadCard({
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [duplicateMatches, setDuplicateMatches] = useState<ExactDuplicateMatch[]>([]);
+  const [folderId, setFolderId] = useState('');
 
   const suggestions = useMemo(() => suggestDocumentClassification({
     fileName: file?.name,
@@ -72,8 +87,9 @@ export function DocumentUploadCard({
     mimeType: file?.type,
     projects,
   }), [file, title, code, projects]);
+  const projectId = destination?.kind === 'project' ? destination.projectId : undefined;
   const filenameSuggestion = useMemo(() => {
-    const project = projects.find((candidate) => candidate.id === projectId);
+    const project = projectId ? projects.find((candidate) => candidate.id === projectId) : undefined;
     return suggestDescriptiveFilename({
       sourceName: file?.name,
       title,
@@ -84,9 +100,36 @@ export function DocumentUploadCard({
     });
   }, [file, title, code, projectId, documentType, projects]);
 
+  const destinationValue = destination?.kind === 'company'
+    ? COMPANY_DESTINATION_VALUE
+    : destination?.kind === 'project'
+      ? `${PROJECT_DESTINATION_PREFIX}${destination.projectId}`
+      : '';
+
+  const changeDestination = (value: string) => {
+    if (value === COMPANY_DESTINATION_VALUE) {
+      onDestinationChange({ kind: 'company' });
+      setFolderId('');
+    } else if (value.startsWith(PROJECT_DESTINATION_PREFIX)) {
+      onDestinationChange({
+        kind: 'project',
+        projectId: value.slice(PROJECT_DESTINATION_PREFIX.length),
+      });
+      setFolderId('');
+    } else {
+      onDestinationChange(null);
+      setFolderId('');
+    }
+  };
+
   useEffect(() => {
     if (open) setError(null);
+    else setFolderId('');
   }, [open]);
+
+  useEffect(() => {
+    if (!canManageFolders) setFolderId('');
+  }, [canManageFolders]);
 
   const closeDialog = () => {
     if (!uploading) onClose();
@@ -97,6 +140,7 @@ export function DocumentUploadCard({
     setTitle('');
     setCode('');
     setDocumentType('');
+    setFolderId('');
     setDuplicateMatches([]);
     setProgress(null);
     if (inputRef.current) inputRef.current.value = '';
@@ -105,8 +149,8 @@ export function DocumentUploadCard({
   const handleSubmit = async (allowDuplicate = false) => {
     setError(null);
 
-    if (!projectId) {
-      setError(t('documents.project_required', locale));
+    if (!destination) {
+      setError(t('documents.destination_required', locale));
       return;
     }
     if (!documentType) {
@@ -130,14 +174,15 @@ export function DocumentUploadCard({
     setProgress(0);
     try {
       const response = await apiClient.uploadDocument(file, {
-        projectId,
+          ...(projectId ? { projectId } : {}),
+          ...(folderId ? { folderId } : {}),
         documentType,
         title: title.trim() || undefined,
         code: code.trim() || undefined,
         allowDuplicate,
         onProgress: (percent) => setProgress(percent),
       });
-      if (response.data?.duplicate) {
+      if (response.data && 'duplicate' in response.data && response.data.duplicate === true) {
         setDuplicateMatches(response.data.matches);
         return;
       }
@@ -173,7 +218,7 @@ export function DocumentUploadCard({
           <Button
             variant="primary"
             onClick={() => void handleSubmit()}
-            disabled={uploading || !file || !projectId || !documentType || duplicateMatches.length > 0}
+            disabled={uploading || !file || !destination || !documentType || duplicateMatches.length > 0}
             loading={uploading}
             icon={<Upload className="w-4 h-4" />}
           >
@@ -188,36 +233,58 @@ export function DocumentUploadCard({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label
-              htmlFor="documente-upload-project"
+              htmlFor="documente-upload-destination"
               className="mb-1 block text-sm font-medium text-slate-700"
             >
-              {t('documents.field_project', locale)}
+              {t('documents.field_destination', locale)}
             </label>
             <select
-              id="documente-upload-project"
+              id="documente-upload-destination"
               className="hii-select"
-              value={projectId}
+              value={destinationValue}
               onChange={(e) => {
                 setDuplicateMatches([]);
-                onProjectChange(e.target.value);
+                changeDestination(e.target.value);
               }}
-              disabled={uploading || projects.length === 0}
+              disabled={uploading}
               required
             >
-              <option value="">{t('documents.select_project', locale)}</option>
+              <option value="">{t('documents.select_destination', locale)}</option>
+              <option value={COMPANY_DESTINATION_VALUE}>{t('documents.company_destination', locale)}</option>
               {projects.map((project) => (
-                <option key={project.id} value={project.id}>
+                <option key={project.id} value={`${PROJECT_DESTINATION_PREFIX}${project.id}`}>
                   {project.code ? `${project.code} — ` : ''}
                   {project.name}
                 </option>
               ))}
             </select>
             <p className="mt-1 text-xs text-slate-500">
-              {projectsError || (projects.length === 0 && !projectsLoading
-                ? t('documents.projects_empty', locale)
-                : t('documents.field_project_hint', locale))}
+              {projectsError || t('documents.field_destination_hint', locale)}
             </p>
           </div>
+
+          {destination && canManageFolders ? (
+            <div className="sm:col-span-2">
+              <label htmlFor="documente-upload-folder" className="mb-1 block text-sm font-medium text-slate-700">{t('documents.folder_location', locale)}</label>
+              <select
+                id="documente-upload-folder"
+                className="hii-select"
+                value={folderId}
+                onChange={(event) => setFolderId(event.target.value)}
+                disabled={uploading || foldersLoading}
+              >
+                <option value="">{t('documents.folder_unfiled_location', locale)}</option>
+                {folders.map((folder) => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                {foldersError || (foldersLoading ? t('documents.folder_loading', locale) : t('documents.folder_current_scope', locale))}
+              </p>
+            </div>
+          ) : destination ? (
+            <p className="sm:col-span-2 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              {t('documents.folder_upload_unfiled_only', locale)}
+            </p>
+          ) : null}
 
           <div>
             <label
@@ -342,7 +409,7 @@ export function DocumentUploadCard({
                             <p className="truncate text-sm font-medium text-slate-900">{candidate.value.code ? `${candidate.value.code} — ` : ''}{candidate.value.name}</p>
                             <p className="text-xs text-slate-500">{t(reasonKey, locale)}{evidence ? `: “${evidence}”` : ''} · {t(candidate.confidence === 'high' ? 'documents.classification_confidence_high' : 'documents.classification_confidence_medium', locale)}</p>
                           </div>
-                          <Button type="button" size="sm" variant="secondary" aria-label={`${t('documents.classification_use_suggestion', locale)}: ${candidate.value.name}`} onClick={() => onProjectChange(candidate.value.id)}>{t('documents.classification_use_suggestion', locale)}</Button>
+                          <Button type="button" size="sm" variant="secondary" aria-label={`${t('documents.classification_use_suggestion', locale)}: ${candidate.value.name}`} onClick={() => onDestinationChange({ kind: 'project', projectId: candidate.value.id })}>{t('documents.classification_use_suggestion', locale)}</Button>
                         </li>
                       );
                     })}

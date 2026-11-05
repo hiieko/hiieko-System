@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -59,6 +60,8 @@ export interface StoredFileResult {
 
 @Injectable()
 export class UploadService {
+  private readonly logger = new Logger(UploadService.name);
+
   constructor(
     private readonly storage: StorageService,
     private readonly documents: DocumentsService,
@@ -83,7 +86,7 @@ export class UploadService {
   private async assertCanAttachToExpense(expenseId: string, user: AuthenticatedUser) {
     const expense = await this.prisma.expense.findUnique({ where: { id: expenseId } });
     if (!expense) throw new NotFoundException('Expense not found');
-    if (expense.submitted_by_id === user.id || ELEVATED_ROLES.includes(user.role)) return;
+    if (expense.submitted_by_id === user.id || ELEVATED_ROLES.includes(user.role)) return expense;
     throw new ForbiddenException('You cannot attach a document to this expense');
   }
 
@@ -108,11 +111,17 @@ export class UploadService {
     assertValidUpload({ buffer: file.buffer, mimeType, size }, this.maxBytes());
 
     if (entityType === 'expense' && entityId) {
-      await this.assertCanAttachToExpense(entityId, user);
+      const expense = await this.assertCanAttachToExpense(entityId, user);
+      const expenseProjectId = expense.project_id ?? null;
+      const requestedProjectId = opts?.projectId?.trim() || null;
+      if (expenseProjectId !== requestedProjectId) {
+        throw new ForbiddenException('The upload project must match the expense project');
+      }
     }
-    if (opts?.projectId) {
-      await this.documents.assertCanUploadToProject(opts.projectId, user);
-    }
+    // Resolve and authorize ownership before writing a blob. Project ownership
+    // comes from the project; company ownership comes from the authenticated
+    // user's organization, never from request data.
+    const ownership = await this.documents.resolveDocumentOwnership(opts?.projectId, user);
 
     const resolvedDocumentType = opts?.documentType
       ? resolveDocumentType(opts.documentType)
@@ -121,6 +130,7 @@ export class UploadService {
       throw new BadRequestException(`Unknown document type: ${opts?.documentType}`);
     }
 
+    const title = this.sanitizeFileName(opts?.title || file.originalname);
     const stored = await this.storage.save({
       buffer: file.buffer,
       mimeType,
@@ -128,20 +138,31 @@ export class UploadService {
       directory: 'receipts',
     });
 
-    const title = this.sanitizeFileName(opts?.title || file.originalname);
     const documentType = resolvedDocumentType;
 
-    const document = await this.documents.create(
-      {
-        ...(opts?.projectId ? { projectId: opts.projectId } : {}),
-        documentType,
-        title,
-        storagePath: stored.key,
-        fileSize: stored.size,
-        checksum: stored.checksum,
-      },
-      user.id,
-    );
+    let document: any;
+    try {
+      document = await this.documents.create(
+        {
+          ...(ownership.projectId ? { projectId: ownership.projectId } : {}),
+          documentType,
+          title,
+          storagePath: stored.key,
+          fileSize: stored.size,
+          checksum: stored.checksum,
+        },
+        user.id,
+        ownership,
+      );
+    } catch (error) {
+      try {
+        await this.cleanupFailedUpload(stored.key);
+      } catch (cleanupError) {
+        this.logger.error(`Document persistence failed: ${(error as Error).message}`);
+        throw cleanupError;
+      }
+      throw error;
+    }
 
     if (entityType && entityId) {
       try {
@@ -161,6 +182,7 @@ export class UploadService {
     }
 
     await this.audit.record({
+      organizationId: ownership.organizationId,
       actorId: user.id,
       action: 'FILE_UPLOADED',
       entity: 'Document',
@@ -204,5 +226,57 @@ export class UploadService {
       size: content.size,
       fileName: document.title,
     };
+  }
+
+  /**
+   * Authenticated retrieval of a specific historical version of a document.
+   * Uses the version's own storage key; authorization follows the same rules
+   * as the current-version download.
+   */
+  async readFileVersion(
+    documentId: string,
+    versionId: string,
+    user: AuthenticatedUser,
+  ): Promise<StoredFileResult> {
+    const document = await this.prisma.document.findUnique({
+      where: { id: documentId },
+      include: {
+        versions: true,
+        project: { select: { id: true, organization_id: true } },
+      },
+    });
+    if (!document) throw new NotFoundException('Document not found');
+
+    const version = document.versions.find((v: any) => v.id === versionId);
+    if (!version) throw new NotFoundException('Document version not found');
+    if (version.document_id !== documentId) throw new NotFoundException('Document version not found');
+
+    await this.documents.assertCanAccessDocument(document, user);
+
+    const content = await this.storage.read(version.storage_path);
+    return {
+      buffer: content.buffer,
+      mimeType: content.mimeType,
+      size: content.size,
+      fileName: document.title,
+    };
+  }
+
+  /** Remove only the fresh object created by this request if metadata failed. */
+  private async cleanupFailedUpload(storageKey: string): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        await this.storage.delete(storageKey);
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    const cleanupMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    this.logger.error(
+      `Failed to clean up uncommitted upload ${storageKey} after 2 attempts: ${cleanupMessage}`,
+    );
+    throw new Error('Document persistence failed and the uncommitted storage object could not be removed');
   }
 }

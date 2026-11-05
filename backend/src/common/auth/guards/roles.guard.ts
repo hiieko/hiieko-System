@@ -24,8 +24,17 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('User is not authenticated');
     }
 
-    // Admin has global access to all roles
-    if (user.role === UserRoleEnum.ADMIN || user.role === UserRoleEnum.OWNER) {
+    if (user.role === UserRoleEnum.OWNER) {
+      return true;
+    }
+
+    // Preserve the existing ADMIN bypass except for explicitly OWNER-only routes.
+    // This lets sensitive role/permission administration use @Roles(OWNER) without
+    // allowing an ordinary administrator to cross that boundary.
+    if (user.role === UserRoleEnum.ADMIN) {
+      if (requiredRoles.length === 1 && requiredRoles[0] === UserRoleEnum.OWNER) {
+        throw new ForbiddenException('Super Administrator authorization is required');
+      }
       return true;
     }
 

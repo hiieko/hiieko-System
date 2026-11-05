@@ -43,7 +43,7 @@ export class UploadController {
   @Post()
   @RateLimit({ scope: 'user', limit: 10, windowMs: 3_600_000 })
   @RequireProjectAccess('projectId', 'optional')
-  @ApiOperation({ summary: 'Upload a receipt/invoice and persist its blob + metadata' })
+  @ApiOperation({ summary: 'Upload a receipt or document to an authorized project or the authenticated organization' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -65,10 +65,14 @@ export class UploadController {
     @Body('entityId') entityId: string,
     @Body('documentType') documentType: string,
     @Body('title') title: string,
+    @Body('projectId') formProjectId: string,
     @Query('projectId') projectId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
+    if (formProjectId && formProjectId !== projectId) {
+      throw new BadRequestException('projectId must be supplied as the authorized query parameter');
+    }
     return this.uploadService.uploadFile(
       {
         buffer: file.buffer,
@@ -92,6 +96,23 @@ export class UploadController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     const result = await this.uploadService.readFile(documentId, user);
+    return new StreamableFile(result.buffer, {
+      type: result.mimeType,
+      disposition: 'inline',
+      length: result.size,
+    });
+  }
+
+  @Get(':documentId/versions/:versionId')
+  @RequireEntityProjectAccess('document', 'documentId')
+  @SkipEnvelope()
+  @ApiOperation({ summary: 'Retrieve a specific historical version of a document (authenticated)' })
+  async downloadVersion(
+    @Param('documentId') documentId: string,
+    @Param('versionId') versionId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const result = await this.uploadService.readFileVersion(documentId, versionId, user);
     return new StreamableFile(result.buffer, {
       type: result.mimeType,
       disposition: 'inline',

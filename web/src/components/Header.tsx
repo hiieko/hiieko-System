@@ -2,7 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { Bell, LogOut, MapPin, Menu, User, ChevronDown, Camera } from 'lucide-react';
+import { Bell, LogOut, MapPin, Menu, User, ChevronDown, Camera, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { Button } from './ui/Button';
 import { Badge, Modal, Tabs } from './ui';
@@ -12,9 +12,8 @@ import { useProject } from '../contexts/ProjectContext';
 import { usePhotoUploadModal } from '../contexts/PhotoUploadModalContext';
 import { apiClient } from '../lib/api-client';
 import { getRoleLabel, t, useLocale } from '@solar/shared';
-import { NAV_GROUPS } from '../config/navigation';
 import { GlobalQuickSearch } from './GlobalQuickSearch';
-import { usePathname } from 'next/navigation';
+import { ShellBrand } from './shell';
 
 /** Roles that may attach photos from the global camera button. */
 const PHOTO_UPLOAD_ROLES = [
@@ -23,9 +22,56 @@ const PHOTO_UPLOAD_ROLES = [
 
 interface HeaderProps {
   onMenuClick?: () => void;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+interface ProjectPickerProps {
+  projects: ReturnType<typeof useProject>['projects'];
+  selectedProjectId: string;
+  setSelectedProjectId: (projectId: string) => void;
+  selectedProject: ReturnType<typeof useProject>['selectedProject'];
+  loading: boolean;
+  locale: ReturnType<typeof useLocale>['locale'];
+  className?: string;
+}
+
+function ProjectPicker({
+  projects,
+  selectedProjectId,
+  setSelectedProjectId,
+  selectedProject,
+  loading,
+  locale,
+  className,
+}: ProjectPickerProps) {
+  return (
+    <div className={`flex min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm ${className ?? ''}`}>
+      <MapPin className="h-4 w-4 shrink-0 text-hii-600" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <span className="hidden text-[10px] font-medium leading-tight text-slate-500 sm:block">
+          {selectedProject ? t('header.current_project', locale) : t('header.all_projects', locale)}
+        </span>
+        <select
+          value={selectedProjectId || 'all'}
+          onChange={(event) => setSelectedProjectId(event.target.value === 'all' ? '' : event.target.value)}
+          className="block w-full min-w-0 max-w-full cursor-pointer truncate bg-transparent p-0 text-xs font-semibold text-slate-800 focus:outline-none"
+          disabled={loading}
+          aria-label={t('header.select_project', locale)}
+        >
+          <option value="all">{t('header.all_sites', locale)}</option>
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}{project.code ? ` (${project.code})` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+export function Header({ onMenuClick, onToggleSidebar, sidebarCollapsed = false }: HeaderProps) {
   const { user, loading, signOut } = useAuth();
   const {
     projects,
@@ -35,12 +81,6 @@ export function Header({ onMenuClick }: HeaderProps) {
     loading: projectsLoading,
   } = useProject();
   const { locale } = useLocale();
-  const pathname = usePathname();
-  const activeNavItem = NAV_GROUPS.flatMap((group) => group.items)
-    .filter((item) => item.href !== '/')
-    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
-    .sort((a, b) => b.href.length - a.href.length)[0];
-  const activeTitle = activeNavItem ? t(activeNavItem.i18nKey, locale) || activeNavItem.label : '';
 
   const { openPhotoUpload } = usePhotoUploadModal();
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
@@ -102,107 +142,92 @@ export function Header({ onMenuClick }: HeaderProps) {
   ];
 
   return (
-    <header className="h-[var(--hii-header-height)] shrink-0 bg-white border-b border-slate-200 px-2.5 sm:px-4 lg:px-6 flex items-center justify-between sticky top-0 z-header shadow-sm">
-      {/* Left section: on phones the project selector gets the remaining width,
-          so it can never slide underneath the language/notification controls. */}
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-3">
+    <header className="relative z-header flex min-h-[var(--hii-header-height)] shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-slate-200 bg-white px-2.5 py-2 shadow-sm sm:px-4 lg:px-6 lg:py-0">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
         <Button
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
-          className="lg:hidden shrink-0"
+          className="h-9 w-9 shrink-0 lg:hidden"
           aria-label={t('header.menu', locale)}
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="h-5 w-5" aria-hidden="true" />
         </Button>
-
-        <nav
-          className="hidden min-w-0 items-center gap-2 text-sm sm:flex"
-          aria-label={t('header.breadcrumb', locale)}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleSidebar}
+          className="hidden h-9 w-9 shrink-0 lg:inline-flex"
+          aria-label={t(sidebarCollapsed ? 'sidebar.expand' : 'sidebar.collapse', locale)}
+          aria-expanded={!sidebarCollapsed}
+          aria-controls="app-sidebar"
+          title={t(sidebarCollapsed ? 'sidebar.expand' : 'sidebar.collapse', locale)}
         >
-          {pathname !== '/' && <span className="text-slate-300" aria-hidden="true">/</span>}
-          <span className="max-w-36 truncate font-semibold text-slate-700">
-            {pathname === '/' ? t('header.home_title', locale) : activeTitle}
-          </span>
-        </nav>
-
-        <div className="min-w-0 max-w-[calc(100vw-14rem)] sm:max-w-none flex-1 sm:flex-none flex items-center gap-1.5 sm:gap-2 bg-slate-50 px-2 sm:px-3 py-1.5 rounded-lg border border-slate-200 text-sm">
-          <MapPin className="w-4 h-4 text-hii-500 shrink-0" aria-hidden="true" />
-          <div className="min-w-0 flex flex-col">
-            <span className="hidden sm:block text-[10px] text-slate-400 font-medium leading-tight">
-              {selectedProject
-                ? t('header.current_project', locale)
-                : t('header.all_projects', locale)}
-            </span>
-            <select
-              value={selectedProjectId || 'all'}
-              onChange={(e) =>
-                setSelectedProjectId(e.target.value === 'all' ? '' : e.target.value)
-              }
-              className="block w-full max-w-full bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer text-xs sm:-mt-0.5 p-0 truncate"
-              disabled={projectsLoading}
-              aria-label={t('header.select_project', locale)}
-            >
-              <option value="all">{t('header.all_sites', locale)}</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.code})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+          {sidebarCollapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" aria-hidden="true" /> : <PanelLeftClose className="h-[18px] w-[18px]" aria-hidden="true" />}
+        </Button>
+        <ShellBrand size="compact" tone="light" />
+        <ProjectPicker
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          setSelectedProjectId={setSelectedProjectId}
+          selectedProject={selectedProject}
+          loading={projectsLoading}
+          locale={locale}
+          className="hidden min-w-0 flex-1 md:flex md:max-w-[240px] lg:ml-3"
+        />
       </div>
 
-      {/* Right section: search is intentionally removed from the phone header;
-          the selector, language, bell and avatar retain usable touch targets. */}
-      <div className="flex shrink-0 items-center gap-0.5 sm:gap-2.5">
-        <div className="hidden sm:block">
-          <GlobalQuickSearch />
-        </div>
+      <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5 lg:gap-2">
+        <GlobalQuickSearch />
         <LanguageSwitcher />
-
         {canUploadPhotos && (
           <button
             type="button"
             onClick={() => void openPhotoPicker()}
             aria-label={t('photo_upload.add', locale)}
-            className="flex h-10 w-10 items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full shrink-0"
+            title={t('photo_upload.add', locale)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hii-500"
           >
-            <Camera className="w-5 h-5" />
+            <Camera className="h-[18px] w-[18px]" aria-hidden="true" />
           </button>
         )}
-
         <Link
           href="/notificari"
           aria-label={t('nav.notificari', locale)}
-          className="flex h-10 w-10 items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full relative shrink-0"
+          title={t('nav.notificari', locale)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hii-500"
         >
-          <Bell className="w-5 h-5" />
+          <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
         </Link>
-
-        <div className="hidden sm:block h-6 w-px bg-slate-200" aria-hidden="true" />
-
+        <div className="mx-1 hidden h-6 w-px bg-slate-200 sm:block" aria-hidden="true" />
         <DropdownMenu
           trigger={
-            <div className="flex h-10 w-10 sm:h-auto sm:w-auto items-center justify-center sm:justify-start gap-2 cursor-pointer hover:bg-slate-50 rounded-lg sm:px-2 sm:py-1.5 transition-colors shrink-0">
-              <div className="w-8 h-8 rounded-full bg-hii-600 text-white flex items-center justify-center font-bold text-xs">
+            <div className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg transition-colors hover:bg-slate-50 sm:h-auto sm:w-auto sm:justify-start sm:px-2 sm:py-1.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-hii-600 text-xs font-bold text-white">
                 {loading ? '..' : currentUser.slice(0, 2).toUpperCase()}
               </div>
-              <div className="hidden sm:block text-left">
-                <div className="text-sm font-semibold text-slate-800 leading-tight">
-                  {currentUser}
-                </div>
-                <div className="text-[11px] text-hii-600 font-medium capitalize">
-                  {loading ? '' : getRoleLabel(user?.role, locale)}
-                </div>
+              <div className="hidden max-w-44 text-left sm:block">
+                <div className="truncate text-sm font-semibold leading-tight text-slate-800">{currentUser}</div>
+                <div className="text-[11px] font-medium capitalize text-hii-700">{loading ? '' : getRoleLabel(user?.role, locale)}</div>
               </div>
-              <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" aria-hidden="true" />
+              <ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" aria-hidden="true" />
             </div>
           }
           items={userMenuItems}
           align="right"
           aria-label={t('header.user_menu', locale)}
+        />
+      </div>
+
+      <div className="w-full md:hidden">
+        <ProjectPicker
+          projects={projects}
+          selectedProjectId={selectedProjectId}
+          setSelectedProjectId={setSelectedProjectId}
+          selectedProject={selectedProject}
+          loading={projectsLoading}
+          locale={locale}
+          className="w-full"
         />
       </div>
 

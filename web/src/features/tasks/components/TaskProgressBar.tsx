@@ -9,6 +9,7 @@ interface TaskProgressBarProps {
   actualQuantity?: number | string | null;
   unitOfMeasure?: string | null;
   className?: string;
+  compact?: boolean;
 }
 
 export function TaskProgressBar({
@@ -16,6 +17,7 @@ export function TaskProgressBar({
   actualQuantity,
   unitOfMeasure,
   className,
+  compact = false,
 }: TaskProgressBarProps) {
   const { locale } = useLocale();
 
@@ -47,13 +49,13 @@ export function TaskProgressBar({
   if (progressPercent == null) {
     if (actual != null) {
       return (
-        <div className={clsx('text-sm text-slate-600', className)}>
+        <div className={clsx(compact ? 'text-[11px] leading-4 text-slate-600' : 'text-sm text-slate-600', className)}>
           {t('task.actual')}: {displayActual} {uom}
         </div>
       );
     }
     return (
-      <div className={clsx('text-sm text-slate-400', className)}>
+      <div className={clsx(compact ? 'text-[11px] leading-4 text-slate-400' : 'text-sm text-slate-400', className)}>
         {t('task.no_planned_qty')}
       </div>
     );
@@ -69,7 +71,7 @@ export function TaskProgressBar({
   return (
     <div className={clsx('w-full', className)}>
       {/* Label */}
-      <div className="flex items-center justify-between text-sm mb-1">
+      <div className={clsx('flex items-center justify-between mb-1', compact ? 'gap-2 text-[10px] leading-3' : 'text-sm')}>
         <span className="text-slate-600">
           {t('task.quantity_progress')}
         </span>
@@ -80,7 +82,7 @@ export function TaskProgressBar({
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+      <div className={clsx('w-full bg-slate-100 rounded-full overflow-hidden', compact ? 'h-1.5' : 'h-3')}>
         <div
           className={clsx(
             'h-full rounded-full transition-all duration-300',

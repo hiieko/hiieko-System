@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes, createHash } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   REFRESH_TOKEN_BYTES,
@@ -210,27 +211,38 @@ export class SessionService {
    * Idempotent: returns `false` when the session was already revoked (or never existed),
    * so the caller can audit only real revocations.
    */
-  async revokeSession(sessionId: string, reason: string): Promise<boolean> {
-    const existing = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-      select: { id: true, revoked_at: true },
-    });
-    if (!existing || existing.revoked_at) return false;
+  async revokeSession(
+    sessionId: string,
+    reason: string,
+    client?: Pick<Prisma.TransactionClient, 'session' | 'refreshToken'>,
+  ): Promise<boolean> {
+    const revoke = async (
+      db: Pick<Prisma.TransactionClient, 'session' | 'refreshToken'>,
+    ): Promise<boolean> => {
+      const existing = await db.session.findUnique({
+        where: { id: sessionId },
+        select: { id: true, revoked_at: true },
+      });
+      if (!existing || existing.revoked_at) return false;
 
-    const now = new Date();
-    await this.prisma.$transaction(async (tx) => {
-      await tx.session.update({
+      const now = new Date();
+      await db.session.update({
         where: { id: sessionId },
         data: { revoked_at: now, revoked_reason: reason },
       });
-      await tx.refreshToken.updateMany({
+      await db.refreshToken.updateMany({
         where: { session_id: sessionId, revoked_at: null },
         data: { revoked_at: now },
       });
-    });
+      return true;
+    };
 
-    this.logger.log(`[SESSION] revoked session=${sessionId} reason=${reason}`);
-    return true;
+    const revoked = client
+      ? await revoke(client)
+      : await this.prisma.$transaction((tx) => revoke(tx));
+
+    if (revoked) this.logger.log(`[SESSION] revoked session=${sessionId} reason=${reason}`);
+    return revoked;
   }
 
   /**
@@ -244,33 +256,43 @@ export class SessionService {
     userId: string,
     reason: string,
     exceptSessionId?: string,
+    client?: Pick<Prisma.TransactionClient, 'session' | 'refreshToken'>,
   ): Promise<number> {
-    const active = await this.prisma.session.findMany({
-      where: {
-        user_id: userId,
-        revoked_at: null,
-        ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
-      },
-      select: { id: true },
-    });
-    if (active.length === 0) return 0;
+    const revoke = async (
+      db: Pick<Prisma.TransactionClient, 'session' | 'refreshToken'>,
+    ): Promise<number> => {
+      const active = await db.session.findMany({
+        where: {
+          user_id: userId,
+          revoked_at: null,
+          ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
+        },
+        select: { id: true },
+      });
+      if (active.length === 0) return 0;
 
-    const sessionIds = active.map((s) => s.id);
-    const now = new Date();
-    await this.prisma.$transaction(async (tx) => {
-      await tx.session.updateMany({
+      const sessionIds = active.map((session) => session.id);
+      const now = new Date();
+      await db.session.updateMany({
         where: { id: { in: sessionIds } },
         data: { revoked_at: now, revoked_reason: reason },
       });
-      await tx.refreshToken.updateMany({
+      await db.refreshToken.updateMany({
         where: { session_id: { in: sessionIds }, revoked_at: null },
         data: { revoked_at: now },
       });
-    });
+      return sessionIds.length;
+    };
+
+    // Authorization changes can pass their transaction client so account state and
+    // session-family revocation commit or roll back together.
+    const revokedCount = client
+      ? await revoke(client)
+      : await this.prisma.$transaction((tx) => revoke(tx));
 
     this.logger.log(
-      `[SESSION] revoked ${sessionIds.length} session(s) for user=${userId} reason=${reason}`,
+      `[SESSION] revoked ${revokedCount} session(s) for user=${userId} reason=${reason}`,
     );
-    return sessionIds.length;
+    return revokedCount;
   }
 }

@@ -46,6 +46,7 @@ import {
   ErrorState,
   Skeleton,
   Drawer,
+  Modal,
   Pagination,
 } from '../../components/ui';
 
@@ -185,6 +186,8 @@ function TasksPageInner() {
   const [calendarAssigneeFilter, setCalendarAssigneeFilter] = useState('all');
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const [selectedCalendarTaskId, setSelectedCalendarTaskId] = useState<string | null>(null);
+  const [calendarExpandedDate, setCalendarExpandedDate] = useState<string | null>(null);
+  const [calendarTaskDetailModal, setCalendarTaskDetailModal] = useState<Task | null>(null);
 
   // ── Load tasks ──────────────────────────────────────────────────────────
 
@@ -531,19 +534,24 @@ function TasksPageInner() {
     setCalendarCurrentDate(today);
     setSelectedCalendarDate(today);
     setSelectedCalendarTaskId(null);
+    setCalendarExpandedDate(null);
+  }, []);
+
+  const handleCalendarToggleExpand = useCallback((date: string) => {
+    setCalendarExpandedDate(prev => prev === date ? null : date);
   }, []);
 
   const calendarTasksForSelectedDate = useMemo(() => {
     if (!selectedCalendarDate) return [];
-    return calendarFilteredTasks.filter((task) => {
+    return filteredTasks.filter((task) => {
       const range = getTaskCalendarRange(task);
       return Boolean(range && range.start <= selectedCalendarDate && selectedCalendarDate <= range.end);
     });
-  }, [calendarFilteredTasks, selectedCalendarDate]);
+  }, [filteredTasks, selectedCalendarDate]);
 
   const calendarUnscheduledTasks = useMemo(
-    () => calendarFilteredTasks.filter((task) => getTaskCalendarRange(task) === null),
-    [calendarFilteredTasks],
+    () => filteredTasks.filter((task) => getTaskCalendarRange(task) === null),
+    [filteredTasks],
   );
 
   const visibleTaskIds = useMemo(() => {
@@ -652,6 +660,38 @@ function TasksPageInner() {
             setAssignModalTask(null);
           }}
         />
+      )}
+
+      {/* Calendar Task Detail Modal */}
+      {calendarTaskDetailModal && (
+        <Modal
+          open={true}
+          onClose={() => setCalendarTaskDetailModal(null)}
+          size="full"
+        >
+          <TaskCard
+            task={calendarTaskDetailModal}
+            projectContext={projectContextForTask(calendarTaskDetailModal)}
+            currentUserId={user?.id}
+            canUpdateStatus={userCanUpdateStatus}
+            canUpdateQuantity={userCanUpdateQuantity}
+            canAssign={userCanAssign}
+            canBlock={userCanUpdateStatus}
+            onStatusChange={handleStatusChange}
+            onQuantityChange={handleQuantityChange}
+            onAssignClick={setAssignModalTask}
+            onBlock={handleBlock}
+            onUnblock={handleUnblock}
+            onExpandedChange={handleTaskExpandedChange}
+            expanded={expandedTaskIds.has(calendarTaskDetailModal.id)}
+            canEditDetails={userCanUpdateStatus}
+            onDetailsChange={handleDetailsChange}
+            updatingDetails={updatingDetailsIds.has(calendarTaskDetailModal.id)}
+            updatingStatus={updatingStatusIds.has(calendarTaskDetailModal.id)}
+            updatingQuantity={updatingQuantityIds.has(calendarTaskDetailModal.id)}
+            blocking={blockingIds.has(calendarTaskDetailModal.id)}
+          />
+        </Modal>
       )}
 
       <div
@@ -889,7 +929,7 @@ function TasksPageInner() {
           <section data-testid="tasks-board-view" aria-label={viewCopy.board} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div
               data-testid="tasks-board-scroll"
-              className="hii-scrollbar-thin min-h-0 max-w-full min-w-0 flex-1 overflow-x-auto overflow-y-auto overscroll-contain pb-2"
+              className="hii-scrollbar-thin min-h-0 max-w-full min-w-0 flex-1 overflow-y-auto overscroll-contain pb-2"
             >
               <div className="flex min-h-full w-max min-w-full items-stretch gap-3 sm:gap-4">
                 {boardStatuses.map((status) => {
@@ -950,9 +990,15 @@ function TasksPageInner() {
               onToday={handleCalendarToday}
               onAssigneeFilterChange={setCalendarAssigneeFilter}
               onSelectDate={handleCalendarDateSelect}
+              expandedDate={calendarExpandedDate}
+              onToggleExpand={handleCalendarToggleExpand}
+              onOpenTaskDetails={(taskId) => {
+                const task = tasks.find(t => t.id === taskId);
+                if (task) setCalendarTaskDetailModal(task);
+              }}
             />
 
-            {selectedCalendarDate && (
+            {selectedCalendarDate && !calendarExpandedDate && (
               <section data-testid="tasks-calendar-selection" aria-labelledby="tasks-calendar-day-heading" className="space-y-2.5">
                 <div className="flex items-baseline justify-between gap-3 border-b border-slate-200 pb-2">
                   <h3 id="tasks-calendar-day-heading" className="text-base font-semibold text-content">

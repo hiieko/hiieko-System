@@ -77,4 +77,16 @@ describe('AuditService (Central Audit Logging)', () => {
       })
     );
   });
+
+  it('fails a required audit write so sensitive callers can roll back their transaction', async () => {
+    prisma.auditLog.create.mockRejectedValue(new Error('audit storage unavailable'));
+
+    await expect(
+      service.recordRequired({
+        action: 'USER_STATUS_CHANGED',
+        entity: 'User',
+        entityId: 'user-1',
+      }),
+    ).rejects.toThrow('Required audit write failed for action USER_STATUS_CHANGED');
+  });
 });

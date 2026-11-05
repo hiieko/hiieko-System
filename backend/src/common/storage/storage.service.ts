@@ -45,6 +45,6 @@ export abstract class StorageService {
   /** Read a previously stored object by its server-side key. */
   abstract read(key: string): Promise<StoredFileContent>;
 
-  /** Delete a previously stored object by its server-side key (best effort). */
+  /** Delete a previously stored object; absence is idempotent, other failures surface. */
   abstract delete(key: string): Promise<void>;
 }

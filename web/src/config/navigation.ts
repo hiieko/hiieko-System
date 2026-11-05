@@ -11,7 +11,7 @@
 import {
   LayoutDashboard, Clock, FileText, Truck, Boxes, MapPin, Euro,
   ClipboardCheck, Bell, Users, ShieldCheck, User, Gauge, Warehouse,
-  SunMedium, AlertTriangle, Activity, type LucideIcon,
+  SunMedium, AlertTriangle, Activity, CalendarDays, type LucideIcon,
 } from 'lucide-react';
 import { ROUTE_ROLES } from './route-roles';
 
@@ -20,55 +20,93 @@ export interface NavItem {
   i18nKey: string;
   label: string; // RO fallback when i18n key not found
   icon: LucideIcon;
+  children?: NavItem[]; // Optional nested navigation items
 }
 
 export interface NavGroup {
   titleKey: string;
   title: string; // RO fallback
+  expandable?: boolean; // Whether this group can be collapsed individually
+  defaultExpanded?: boolean; // Default expansion state (useful for dashboard)
   items: NavItem[];
 }
 
 export const NAV_GROUPS: NavGroup[] = [
   {
-    titleKey: 'nav.operations',
-    title: 'Operațiuni',
+    titleKey: 'nav.group_workspace',
+    title: 'Workspace',
+    expandable: true,
+    defaultExpanded: true,
     items: [
       { href: '/', i18nKey: 'nav.dashboard', label: 'Dashboard', icon: LayoutDashboard },
-      { href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar', icon: SunMedium },
+      { href: '/projects', i18nKey: 'nav.projects', label: 'Proiecte', icon: MapPin },
       { href: '/tasks', i18nKey: 'nav.tasks', label: 'Task-uri', icon: ClipboardCheck },
-      { href: '/planning', i18nKey: 'nav.planning', label: 'Plan Zilnic', icon: FileText },
-      { href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle },
-      { href: '/qa', i18nKey: 'nav.qa_qc', label: 'QA/QC · Inspecții', icon: ShieldCheck },
-      { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock },
-      { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
-      { href: '/avize', i18nKey: 'nav.avize', label: 'Procurement / Avize', icon: Truck },
-      { href: '/stocuri', i18nKey: 'nav.stocuri', label: 'Materiale & Stoc', icon: Boxes },
-      { href: '/cheltuieli', i18nKey: 'nav.cheltuieli', label: 'Cheltuieli', icon: Euro },
-      { href: '/activity', i18nKey: 'nav.activity', label: 'Activitate', icon: Activity },
+      { href: '/control-tower', i18nKey: 'nav.control_tower', label: 'Turn de Control', icon: Gauge },
+      { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin },
     ],
   },
   {
-    titleKey: 'nav.management',
-    title: 'Management',
+    titleKey: 'nav.group_commercial',
+    title: 'Commercial',
+    expandable: true,
+    defaultExpanded: false,
     items: [
-      { href: '/projects', i18nKey: 'nav.projects', label: 'Proiecte', icon: MapPin },
-      { href: '/documente', i18nKey: 'nav.documente', label: 'Documente', icon: FileText },
-      { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users },
-      { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User },
-      { href: '/santiere', i18nKey: 'nav.santiere', label: 'Șantiere (GIS)', icon: MapPin },
+      { href: '/furnizori', i18nKey: 'nav.furnizori', label: 'Furnizori', icon: Truck },
+      { href: '/cheltuieli', i18nKey: 'nav.cheltuieli', label: 'Cheltuieli', icon: Euro },
       { href: '/aprobare', i18nKey: 'nav.aprobare', label: 'Aprobări', icon: ClipboardCheck },
     ],
   },
   {
+    titleKey: 'nav.group_operations',
+    title: 'Operations',
+    expandable: true,
+    defaultExpanded: false,
+    items: [
+      { href: '/planning', i18nKey: 'nav.planning', label: 'Plan Zilnic', icon: CalendarDays },
+      { href: '/rapoarte', i18nKey: 'nav.rapoarte', label: 'Rapoarte Zilnice', icon: FileText },
+      { href: '/pontaj', i18nKey: 'nav.pontaj', label: 'Pontaj & Ore', icon: Clock },
+      { href: '/avize', i18nKey: 'nav.avize', label: 'Livrări & Avize', icon: Truck },
+      { href: '/stocuri', i18nKey: 'nav.stocuri', label: 'Materiale & Stoc', icon: Boxes },
+      { href: '/depozite', i18nKey: 'nav.depozite', label: 'Depozite', icon: Warehouse },
+      { href: '/activity', i18nKey: 'nav.activity', label: 'Activitate', icon: Activity },
+    ],
+  },
+  {
+    titleKey: 'nav.group_project_control',
+    title: 'Project control',
+    expandable: true,
+    defaultExpanded: false,
+    items: [
+      { href: '/documente', i18nKey: 'nav.documente', label: 'Documente', icon: FileText },
+      { href: '/qa', i18nKey: 'nav.qa_qc', label: 'QA / QC', icon: ShieldCheck },
+      { href: '/issues', i18nKey: 'nav.issues', label: 'Probleme & Blocaje', icon: AlertTriangle },
+      { href: '/solar-configurator', i18nKey: 'nav.solar_configurator', label: 'Configurator Solar', icon: SunMedium },
+    ],
+  },
+  {
+    titleKey: 'nav.group_people',
+    title: 'People',
+    expandable: true,
+    defaultExpanded: false,
+    items: [
+      { href: '/workforce', i18nKey: 'nav.workforce', label: 'Forță de Muncă', icon: User },
+      { href: '/teams', i18nKey: 'nav.teams', label: 'Echipe', icon: Users },
+    ],
+  },
+  {
     titleKey: 'nav.admin',
-    title: 'Administrare',
+    title: 'Administration',
+    expandable: true,
+    defaultExpanded: false,
     items: [
       { href: '/utilizatori', i18nKey: 'nav.utilizatori', label: 'Utilizatori', icon: Users },
     ],
   },
   {
-    titleKey: 'nav.personal',
-    title: 'Personal',
+    titleKey: 'nav.group_account',
+    title: 'Account',
+    expandable: true,
+    defaultExpanded: false,
     items: [
       { href: '/notificari', i18nKey: 'nav.notificari', label: 'Notificări', icon: Bell },
       { href: '/profil', i18nKey: 'nav.profil', label: 'Profil', icon: User },

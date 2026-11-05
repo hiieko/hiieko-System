@@ -41,6 +41,20 @@ describe('RolesGuard (RBAC)', () => {
     expect(guard.canActivate(context)).toBe(true);
   });
 
+  it('does not let ADMIN cross an explicit OWNER-only boundary', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRoleEnum.OWNER]);
+
+    const context = createMockContext({ role: UserRoleEnum.ADMIN });
+    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+  });
+
+  it('allows OWNER through an explicit OWNER-only boundary', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRoleEnum.OWNER]);
+
+    const context = createMockContext({ role: UserRoleEnum.OWNER });
+    expect(guard.canActivate(context)).toBe(true);
+  });
+
   it('should allow user if their role matches the required role', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRoleEnum.TEAM_LEADER, UserRoleEnum.MANAGER]);
 

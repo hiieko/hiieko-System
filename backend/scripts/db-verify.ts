@@ -673,7 +673,10 @@ async function main() {
   // 8c. Check inspection status values
   try {
     const badInspectionStatus = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-      'SELECT COUNT(*)::bigint as count FROM inspections WHERE status NOT IN (\'PENDING\', \'IN_PROGRESS\', \'COMPLETED\', \'CANCELLED\')'
+      // The inspections model uses a free string (not an enum). QA/QC seed
+      // records and Control Tower business logic intentionally use PASSED and
+      // FAILED in addition to the workflow lifecycle values.
+      'SELECT COUNT(*)::bigint as count FROM inspections WHERE status NOT IN (\'PENDING\', \'IN_PROGRESS\', \'COMPLETED\', \'CANCELLED\', \'PASSED\', \'FAILED\')'
     );
     const count = Number(badInspectionStatus[0]?.count || 0);
     if (count === 0) pass('Inspection status values', 'All inspection statuses are valid');
@@ -683,7 +686,8 @@ async function main() {
   // 8d. Check purchase_order status values
   try {
     const badPOStatus = await prisma.$queryRawUnsafe<Array<{ count: bigint }>>(
-      'SELECT COUNT(*)::bigint as count FROM purchase_orders WHERE status NOT IN (\'DRAFT\', \'SENT\', \'CONFIRMED\', \'RECEIVED\', \'CANCELLED\')'
+      // APPROVED is an existing seeded purchase-order state.
+      'SELECT COUNT(*)::bigint as count FROM purchase_orders WHERE status NOT IN (\'DRAFT\', \'SENT\', \'CONFIRMED\', \'RECEIVED\', \'CANCELLED\', \'APPROVED\')'
     );
     const count = Number(badPOStatus[0]?.count || 0);
     if (count === 0) pass('Purchase order status values', 'All purchase order statuses are valid');

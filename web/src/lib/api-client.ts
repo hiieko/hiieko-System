@@ -171,6 +171,8 @@ export interface DocumentListItem {
   project_id: string | null;
   project_name: string | null;
   project_code: string | null;
+  folder_id: string | null;
+  folder_name?: string | null;
   current_version: number;
   created_at: string;
   updated_at: string;
@@ -182,6 +184,14 @@ export interface DocumentListItem {
   uploaded_by: string | null;
   /** Display name of the uploader of the current version. */
   uploaded_by_name: string | null;
+  /** Reversible lifecycle state returned by the documents API. */
+  is_archived?: boolean;
+  archived_at?: string | null;
+  archived_by?: string | null;
+  archived_by_name?: string | null;
+  restored_at?: string | null;
+  restored_by?: string | null;
+  restored_by_name?: string | null;
 }
 
 /** One entry of the document version history. */
@@ -200,6 +210,26 @@ export interface DocumentVersionItem {
 /** Full detail of one document (`GET /api/documents/:id`). */
 export interface DocumentDetail extends DocumentListItem {
   versions: DocumentVersionItem[];
+}
+
+export interface DocumentFolder {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  organization_id: string;
+  project_id: string | null;
+  created_by: string | null;
+  template_folder_key: string | null;
+  source_template_version_id: string | null;
+  protection_policy: 'STANDARD' | 'NO_DELETE' | 'IMMUTABLE';
+  allow_custom_children: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DocumentFolderListResponse {
+  folders: DocumentFolder[];
+  canManage: boolean;
 }
 
 export interface DocumentListSummary {
@@ -231,7 +261,7 @@ export interface ExactDuplicateMatch {
 
 export interface DuplicateDocumentWarning {
   duplicate: true;
-  matchScope: 'project' | 'document';
+  matchScope: 'authorized_projects' | 'document';
   matches: ExactDuplicateMatch[];
 }
 
@@ -239,6 +269,7 @@ export interface DuplicateDocumentWarning {
 export type DocumentUploadResult = DocumentUploadCreatedResult | DuplicateDocumentWarning;
 
 export interface DocumentUploadCreatedResult {
+  duplicate?: false;
   documentId: string;
   /** Authenticated blob route of the document. */
   url: string;
@@ -956,10 +987,14 @@ export class NestApiClient {
   async listDocuments(params?: {
     q?: string;
     projectId?: string;
+    scope?: 'company';
+    folderId?: string;
+    unfiled?: boolean;
     documentType?: string;
     mimeType?: string;
     from?: string;
     to?: string;
+    archived?: boolean;
     sortBy?: 'updated' | 'created' | 'title';
     sortOrder?: 'asc' | 'desc';
     page?: number;
@@ -968,10 +1003,14 @@ export class NestApiClient {
     const query = new URLSearchParams();
     if (params?.q) query.set('q', params.q);
     if (params?.projectId) query.set('projectId', params.projectId);
+    if (params?.scope) query.set('scope', params.scope);
+    if (params?.folderId) query.set('folderId', params.folderId);
+    if (params?.unfiled !== undefined) query.set('unfiled', String(params.unfiled));
     if (params?.documentType) query.set('documentType', params.documentType);
     if (params?.mimeType) query.set('mimeType', params.mimeType);
     if (params?.from) query.set('from', params.from);
     if (params?.to) query.set('to', params.to);
+    if (params?.archived !== undefined) query.set('archived', String(params.archived));
     if (params?.sortBy) query.set('sortBy', params.sortBy);
     if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
     if (params?.page) query.set('page', String(params.page));
@@ -1001,6 +1040,54 @@ export class NestApiClient {
     return this.request<ApiResponse<DocumentDetail>>(`/api/documents/${encodeURIComponent(id)}`);
   }
 
+  async listCompanyDocumentFolders(): Promise<ApiResponse<DocumentFolderListResponse>> {
+    return this.request<ApiResponse<DocumentFolderListResponse>>('/api/document-folders');
+  }
+
+  async listProjectDocumentFolders(projectId: string): Promise<ApiResponse<DocumentFolderListResponse>> {
+    return this.request<ApiResponse<DocumentFolderListResponse>>(
+      `/api/document-folders?projectId=${encodeURIComponent(projectId)}`,
+    );
+  }
+
+  async createDocumentFolder(
+    name: string,
+    options?: { projectId?: string; parentId?: string | null },
+  ): Promise<ApiResponse<DocumentFolder>> {
+    const query = options?.projectId ? `?projectId=${encodeURIComponent(options.projectId)}` : '';
+    return this.request<ApiResponse<DocumentFolder>>(`/api/document-folders${query}`, {
+      method: 'POST',
+      body: JSON.stringify({ name, ...(options?.parentId !== undefined ? { parentId: options.parentId } : {}) }),
+    });
+  }
+
+  async renameDocumentFolder(folderId: string, name: string): Promise<ApiResponse<DocumentFolder>> {
+    return this.request<ApiResponse<DocumentFolder>>(`/api/document-folders/${encodeURIComponent(folderId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  async moveDocumentFolder(folderId: string, parentId: string | null): Promise<ApiResponse<DocumentFolder>> {
+    return this.request<ApiResponse<DocumentFolder>>(`/api/document-folders/${encodeURIComponent(folderId)}/move`, {
+      method: 'POST',
+      body: JSON.stringify({ parentId }),
+    });
+  }
+
+  async deleteDocumentFolder(folderId: string): Promise<ApiResponse<{ id: string; deleted: true }>> {
+    return this.request<ApiResponse<{ id: string; deleted: true }>>(`/api/document-folders/${encodeURIComponent(folderId)}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async moveDocumentToFolder(documentId: string, folderId: string | null): Promise<ApiResponse<DocumentDetail>> {
+    return this.request<ApiResponse<DocumentDetail>>(`/api/documents/${encodeURIComponent(documentId)}/folder`, {
+      method: 'PATCH',
+      body: JSON.stringify({ folderId }),
+    });
+  }
+
   /** Update metadata only; never overwrites the binary or version history. */
   async updateDocumentMetadata(
     id: string,
@@ -1012,17 +1099,33 @@ export class NestApiClient {
     });
   }
 
+  /** Reversibly archive a document without deleting its file or versions. */
+  async archiveDocument(id: string): Promise<ApiResponse<DocumentDetail>> {
+    return this.request<ApiResponse<DocumentDetail>>(`/api/documents/${encodeURIComponent(id)}/archive`, {
+      method: 'POST',
+    });
+  }
+
+  /** Restore an archived document to active listings. */
+  async restoreDocument(id: string): Promise<ApiResponse<DocumentDetail>> {
+    return this.request<ApiResponse<DocumentDetail>>(`/api/documents/${encodeURIComponent(id)}/restore`, {
+      method: 'POST',
+    });
+  }
+
   /**
    * Upload a document.
    *
-   * The binary is sent to `POST /api/documents?projectId=…` as multipart/form-data.
-   * The query parameter is available to authorization guards before Multer
-   * parses the multipart body. The storage key is server-derived.
+   * The binary is sent to `POST /api/documents` as multipart/form-data. A
+   * project destination is carried in the query for pre-interceptor
+   * authorization; omitting it creates a company document in the authenticated
+   * user's organization. The organization is never supplied by the client.
    */
   async uploadDocument(
     file: File,
     options: {
-      projectId: string;
+      projectId?: string;
+      folderId?: string;
       documentType?: string;
       title?: string;
       code?: string;
@@ -1035,9 +1138,12 @@ export class NestApiClient {
     if (options.documentType) formData.append('documentType', options.documentType);
     if (options.title) formData.append('title', options.title);
     if (options.code) formData.append('code', options.code);
+    if (options.folderId) formData.append('folderId', options.folderId);
     if (options.allowDuplicate) formData.append('allowDuplicate', 'true');
     return this.uploadWithProgress<ApiResponse<DocumentUploadResult>>(
-      `/api/documents?projectId=${encodeURIComponent(options.projectId)}`,
+      options.projectId
+        ? `/api/documents?projectId=${encodeURIComponent(options.projectId)}`
+        : '/api/documents',
       formData,
       options.onProgress,
     );
@@ -1165,6 +1271,13 @@ export class NestApiClient {
 
   async getUsers(): Promise<ApiResponse<any[]>> {
     return this.request<ApiResponse<any[]>>('/api/users');
+  }
+
+  async provisionUser(input: { email: string; fullName: string; role?: string }): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>('/api/users', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   }
 
   async getUser(id: string): Promise<ApiResponse<any>> {
@@ -1757,6 +1870,70 @@ export class NestApiClient {
     return response.blob();
   }
 
+  async linkMicrosoftIdentity(id: string, objectId: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/users/${id}/microsoft-identity`, {
+      method: 'POST',
+      body: JSON.stringify({ objectId }),
+    });
+  }
+
+  async getUserSessions(id: string): Promise<ApiResponse<any[]>> {
+    return this.request<ApiResponse<any[]>>(`/api/users/${id}/sessions`);
+  }
+
+  async revokeUserSession(id: string, sessionId: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/users/${id}/sessions/${sessionId}/revoke`, {
+      method: 'POST',
+    });
+  }
+
+  async revokeAllUserSessions(id: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/users/${id}/sessions/revoke`, { method: 'POST' });
+  }
+
+  async getUserActivity(id: string): Promise<ApiResponse<any[]>> {
+    return this.request<ApiResponse<any[]>>(`/api/users/${id}/activity`);
+  }
+
+  async getOffboardingPreview(id: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/users/${id}/offboarding-preview`);
+  }
+
+  async offboardUser(id: string, replacementUserId: string): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/users/${id}/offboard`, {
+      method: 'POST',
+      body: JSON.stringify({ replacementUserId }),
+    });
+  }
+
+  async setRolePermissions(code: string, permissionIds: string[]): Promise<ApiResponse<any>> {
+    return this.request<ApiResponse<any>>(`/api/roles/${code}/permissions`, {
+      method: 'PATCH',
+      body: JSON.stringify({ permissionIds }),
+    });
+  }
+
+  /** Download one historical revision through the authenticated upload route. */
+  async downloadDocumentVersion(documentId: string, versionId: string): Promise<Blob> {
+    const headers: Record<string, string> = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    const response = await fetch(
+      `${this.baseUrl}/api/upload/${encodeURIComponent(documentId)}/versions/${encodeURIComponent(versionId)}`,
+      { method: 'GET', headers },
+    );
+    if (!response.ok) {
+      let message = 'Document version download failed';
+      try {
+        const data = await response.json();
+        message = data.message || data.error || message;
+      } catch {
+        // Binary/error response was not JSON.
+      }
+      throw new ApiError(message, response.status);
+    }
+    return response.blob();
+  }
+
   // ============================================================================
   // PHOTOS / ATTACHMENTS
   // ============================================================================
@@ -2095,25 +2272,39 @@ export interface IApiClient {
   listDocuments(params?: {
     q?: string;
     projectId?: string;
+    scope?: 'company';
+    folderId?: string;
+    unfiled?: boolean;
     documentType?: string;
     mimeType?: string;
     from?: string;
     to?: string;
+    archived?: boolean;
     sortBy?: 'updated' | 'created' | 'title';
     sortOrder?: 'asc' | 'desc';
     page?: number;
     pageSize?: number;
   }): Promise<ApiResponse<DocumentListResponse>>;
   getDocuments(projectId?: string): Promise<ApiResponse<DocumentListItem[]>>;
+  listCompanyDocumentFolders(): Promise<ApiResponse<DocumentFolderListResponse>>;
+  listProjectDocumentFolders(projectId: string): Promise<ApiResponse<DocumentFolderListResponse>>;
+  createDocumentFolder(name: string, options?: { projectId?: string; parentId?: string | null }): Promise<ApiResponse<DocumentFolder>>;
+  renameDocumentFolder(folderId: string, name: string): Promise<ApiResponse<DocumentFolder>>;
+  moveDocumentFolder(folderId: string, parentId: string | null): Promise<ApiResponse<DocumentFolder>>;
+  deleteDocumentFolder(folderId: string): Promise<ApiResponse<{ id: string; deleted: true }>>;
+  moveDocumentToFolder(documentId: string, folderId: string | null): Promise<ApiResponse<DocumentDetail>>;
   getDocument(id: string): Promise<ApiResponse<DocumentDetail>>;
   updateDocumentMetadata(
     id: string,
     data: { documentType?: string; title?: string; code?: string | null; projectId?: string },
   ): Promise<ApiResponse<DocumentDetail>>;
+  archiveDocument(id: string): Promise<ApiResponse<DocumentDetail>>;
+  restoreDocument(id: string): Promise<ApiResponse<DocumentDetail>>;
   uploadDocument(
     file: File,
     options: {
-      projectId: string;
+      projectId?: string;
+      folderId?: string;
       documentType?: string;
       title?: string;
       code?: string;
@@ -2127,6 +2318,7 @@ export interface IApiClient {
     options?: { onProgress?: (percent: number) => void; allowDuplicate?: boolean },
   ): Promise<ApiResponse<DocumentUploadResult>>;
   downloadDocument(documentId: string): Promise<Blob>;
+  downloadDocumentVersion(documentId: string, versionId: string): Promise<Blob>;
 
   // Photos / Attachments
   uploadPhoto(

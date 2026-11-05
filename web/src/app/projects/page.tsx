@@ -33,7 +33,15 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { ErrorState } from '../../components/ui/ErrorState';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { useToast } from '../../components/ui/Toast';
-import { useLocale } from '@solar/shared';
+import { t, useLocale } from '@solar/shared';
+import type { RequirementProjectType } from '../../features/projects/types';
+
+const REQUIREMENT_PROJECT_TYPES: RequirementProjectType[] = [
+  'RESIDENTIAL_SOLAR',
+  'COMMERCIAL_SOLAR',
+  'INDUSTRIAL_SOLAR',
+  'OTHER_CUSTOM',
+];
 
 interface WizardStep {
   id: string;
@@ -70,7 +78,7 @@ function ProjectsPageInner() {
   const [form, setForm] = useState({
     name: '', code: '', address: '', latitude: '', longitude: '',
     geofenceRadiusMeters: '300', installedCapacityMwp: '', budgetTotal: '',
-    currency: 'RON', startDate: '', targetEndDate: '', clientId: '',
+    currency: 'RON', startDate: '', targetEndDate: '', clientId: '', projectType: '' as RequirementProjectType | '',
   });
   const [selectedMembers, setSelectedMembers] = useState<{ userId: string; role: UserRole }[]>([]);
   const [memberUserId, setMemberUserId] = useState('');
@@ -120,7 +128,7 @@ function ProjectsPageInner() {
   const openWizard = () => {
     setForm({ name: '', code: '', address: '', latitude: '', longitude: '',
       geofenceRadiusMeters: '300', installedCapacityMwp: '', budgetTotal: '',
-      currency: 'RON', startDate: '', targetEndDate: '', clientId: '' });
+      currency: 'RON', startDate: '', targetEndDate: '', clientId: '', projectType: '' });
     setSelectedMembers([]);
     setMemberUserId('');
     setMemberRole('WORKER');
@@ -171,6 +179,7 @@ function ProjectsPageInner() {
         startDate: form.startDate || undefined,
         targetEndDate: form.targetEndDate || undefined,
         clientId: form.clientId || undefined,
+        projectType: form.projectType || undefined,
       };
 
       const res = await projectsApi.createProject(dto);
@@ -223,6 +232,21 @@ function ProjectsPageInner() {
             <div>
               <label htmlFor="project-code" className={labelCls}>{locale === 'en' ? 'Project Code *' : 'Cod Proiect *'}</label>
               <input id="project-code" className={inputCls} placeholder="SP-BIHOR-001" value={form.code} onChange={e => updateForm('code', e.target.value.toUpperCase())} />
+            </div>
+            <div>
+              <label htmlFor="project-requirement-type" className={labelCls}>{t('projects.requirements.project_type', locale)}</label>
+              <select
+                id="project-requirement-type"
+                className={inputCls}
+                value={form.projectType}
+                onChange={e => updateForm('projectType', e.target.value)}
+              >
+                <option value="">{t('projects.requirements.keep_untyped', locale)}</option>
+                {REQUIREMENT_PROJECT_TYPES.map(type => (
+                  <option key={type} value={type}>{t(`projects.requirements.type.${type}`, locale)}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-400">{t('projects.requirements.create_type_hint', locale)}</p>
             </div>
             <div>
               <label htmlFor="project-client-id" className={labelCls}>{locale === 'en' ? 'Client ID' : 'ID Client'}</label>
@@ -360,6 +384,7 @@ function ProjectsPageInner() {
             <div className="bg-slate-50 rounded-lg p-4 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Name' : 'Nume'}</span><span className="font-medium">{form.name}</span></div>
               <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Code' : 'Cod'}</span><span className="font-medium">{form.code}</span></div>
+              {form.projectType && <div className="flex justify-between"><span className="text-slate-500">{t('projects.requirements.project_type', locale)}</span><span className="font-medium">{t(`projects.requirements.type.${form.projectType}`, locale)}</span></div>}
               {form.address && <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Address' : 'Adresa'}</span><span className="font-medium">{form.address}</span></div>}
               {form.budgetTotal && <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Budget' : 'Buget'}</span><span className="font-medium">{parseFloat(form.budgetTotal).toLocaleString()} {form.currency}</span></div>}
               {form.startDate && <div className="flex justify-between"><span className="text-slate-500">{locale === 'en' ? 'Start' : 'Început'}</span><span className="font-medium">{form.startDate}</span></div>}

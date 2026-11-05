@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Copy, Eye, EyeOff } from 'lucide-react';
 import { Button, Input, Skeleton, ToastProvider, useToast } from '../../components/ui';
-import { apiClient, ApiError } from '../../lib/api-client';
+import { apiClient, API_BASE_URL, ApiError } from '../../lib/api-client';
 import { useAuth, SIGNED_OUT_FLASH_KEY } from '../../contexts/AuthContext';
 import { t, useLocale } from '@solar/shared';
 
@@ -13,6 +13,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIGNUP_FLASH_KEY = 'hiieko_signup_flash';
 const SIGNUP_EMAIL_KEY = 'hiieko_signup_email';
 const PASSWORD_RESET_FLASH_KEY = 'hiieko_password_reset_flash';
+const ENTRA_LOGIN_ENABLED = process.env.NEXT_PUBLIC_ENTRA_ENABLED === 'true';
 
 /**
  * Demo credential quick-fill.
@@ -251,6 +252,8 @@ function LoginForm() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    const microsoftResult = new URLSearchParams(window.location.search).get('microsoft');
+    if (microsoftResult === 'failed') toast.error('Microsoft sign-in failed or this account is not approved.');
     if (window.sessionStorage.getItem(SIGNED_OUT_FLASH_KEY) === '1') {
       window.sessionStorage.removeItem(SIGNED_OUT_FLASH_KEY);
       toast.success('Signed out');
@@ -270,6 +273,14 @@ function LoginForm() {
     }
   }, [toast]);
 
+  const startMicrosoftLogin = () => {
+    if (typeof window === 'undefined') return;
+    const endpoint = API_BASE_URL.startsWith('/')
+      ? `${API_BASE_URL.replace(/\/$/, '')}/api/auth/entra/start`
+      : new URL('/api/auth/entra/start', API_BASE_URL).toString();
+    window.location.assign(endpoint);
+  };
+
   const validate = () => {
     const next: { email?: string; password?: string } = {};
     if (!email.trim()) {
@@ -285,6 +296,13 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      ENTRA_LOGIN_ENABLED &&
+      email.trim().toLowerCase().endsWith('@hiieko.ro')
+    ) {
+      startMicrosoftLogin();
+      return;
+    }
     const next = validate();
     setErrors(next);
     if (Object.keys(next).length > 0) return;
@@ -329,6 +347,17 @@ function LoginForm() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-card sm:p-8">
         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Sign in</h1>
         <p className="mt-1 text-sm text-slate-500">Enter your email and password to access your workspace.</p>
+
+        {ENTRA_LOGIN_ENABLED && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="mt-6 w-full"
+            onClick={startMicrosoftLogin}
+          >
+            Continue with Microsoft
+          </Button>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
           <Input

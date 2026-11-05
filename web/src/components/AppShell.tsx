@@ -14,7 +14,7 @@ import { PhotoUploadModalProvider } from '../contexts/PhotoUploadModalContext';
 
 const SIDEBAR_STORAGE_KEY = 'hiieko-sidebar-collapsed';
 const COLLAPSED_SIDEBAR_WIDTH = '4.25rem';
-const EXPANDED_SIDEBAR_WIDTH = '14rem';
+const EXPANDED_SIDEBAR_WIDTH = '14.5rem';
 
 type ShellStyle = React.CSSProperties & { '--hii-sidebar-width': string };
 
@@ -24,8 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Restore an explicit preference; otherwise start collapsed on laptop-sized
-  // viewports so the rail never eats a third of the board width.
+  // Restore a saved preference; desktop navigation opens expanded by default.
   useEffect(() => {
     let stored: string | null = null;
     try {
@@ -39,17 +38,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const media = window.matchMedia('(max-width: 1535px)');
-    const syncViewportDefault = () => setSidebarCollapsed(media.matches);
-    syncViewportDefault();
-
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', syncViewportDefault);
-      return () => media.removeEventListener('change', syncViewportDefault);
-    }
-
-    media.addListener(syncViewportDefault);
-    return () => media.removeListener(syncViewportDefault);
+    setSidebarCollapsed(false);
   }, []);
 
   const toggleSidebar = () => {
@@ -82,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <ToastProvider>
           <PhotoUploadModalProvider>
           <div
-            className="flex h-screen overflow-hidden bg-slate-50"
+            className="flex h-screen flex-col overflow-hidden bg-surface-muted"
             style={
               {
                 '--hii-sidebar-width': sidebarCollapsed
@@ -97,15 +86,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               {t('a11y.skip_to_content', locale)}
             </a>
-            <Sidebar
-              mobileOpen={mobileSidebarOpen}
-              onMobileClose={() => setMobileSidebarOpen(false)}
-              collapsed={sidebarCollapsed}
-              onToggleCollapsed={toggleSidebar}
+            <Header
+              onMenuClick={() => setMobileSidebarOpen(true)}
+              onToggleSidebar={toggleSidebar}
+              sidebarCollapsed={sidebarCollapsed}
             />
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-              <Header onMenuClick={() => setMobileSidebarOpen(true)} />
-              <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <Sidebar
+                mobileOpen={mobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
+                collapsed={sidebarCollapsed}
+              />
+              <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto focus:outline-none">
                 <div
                   className={
                     isTasksPage

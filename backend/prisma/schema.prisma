@@ -16,6 +16,8 @@ model Organization {
   updated_at DateTime    @updatedAt
   audit_logs AuditLog[]
   clients    Client[]
+  document_folders DocumentFolder[]
+  documents  Document[]
   projects   Project[]
   suppliers  Supplier[]
   users      User[]
@@ -41,6 +43,17 @@ model User {
   approvals           ExpenseApproval[]        @relation("ExpenseApprover")
   expenses            Expense[]                @relation("ExpenseSubmitter")
   notification_prefs  NotificationPreference[]
+  created_document_folders DocumentFolder[] @relation("DocumentFolderCreator")
+  created_project_requirements ProjectRequirement[] @relation("ProjectRequirementCreator")
+  assessed_project_requirements ProjectRequirementAssessment[] @relation("ProjectRequirementAssessor")
+  created_project_requirement_catalogs ProjectRequirementCatalog[] @relation("ProjectRequirementCatalogCreator")
+  created_project_requirement_catalog_versions ProjectRequirementCatalogVersion[] @relation("RequirementCatalogVersionCreator")
+  published_project_requirement_catalog_versions ProjectRequirementCatalogVersion[] @relation("RequirementCatalogVersionPublisher")
+  reviewed_project_requirement_catalog_adoptions ProjectRequirementCatalogAdoption[] @relation("RequirementCatalogAdoptionReviewer")
+  created_project_folder_templates ProjectFolderTemplate[] @relation("ProjectFolderTemplateCreator")
+  created_project_folder_template_versions ProjectFolderTemplateVersion[] @relation("ProjectFolderTemplateVersionCreator")
+  published_project_folder_template_versions ProjectFolderTemplateVersion[] @relation("ProjectFolderTemplateVersionPublisher")
+  applied_project_folder_template_assignments ProjectFolderTemplateAssignment[] @relation("ProjectFolderTemplateAssignmentApplier")
   notifications       Notification[]
   project_members     ProjectMember[]
   assigned_tasks      TaskAssignment[]
@@ -290,6 +303,9 @@ model Project {
   longitude              Decimal             @db.Decimal(10, 7)
   geofence_radius_meters Int                 @default(300)
   installed_capacity_mwp Decimal?            @db.Decimal(8, 3)
+  project_type           ProjectTypeEnum?
+  requirement_catalog_version_id String?
+  requirement_catalog_adoption_id String? @unique
   status                 ProjectStatusEnum   @default(PLANNING)
   start_date             DateTime?
   target_end_date        DateTime?
@@ -307,6 +323,11 @@ model Project {
   daily_plans            DailyPlan[]
   daily_reports          DailyReport[]
   documents              Document[]
+  document_folders       DocumentFolder[]
+  requirements           ProjectRequirement[]
+  requirement_catalog_adoptions ProjectRequirementCatalogAdoption[] @relation("ProjectRequirementCatalogAdoptions")
+  current_requirement_catalog_adoption ProjectRequirementCatalogAdoption? @relation("ProjectCurrentRequirementCatalogAdoption", fields: [requirement_catalog_adoption_id], references: [id], onDelete: Restrict)
+  folder_template_assignments ProjectFolderTemplateAssignment[]
   expenses               Expense[]
   inspections            Inspection[]
   issues                 Issue[]
@@ -316,6 +337,7 @@ model Project {
   stages                 ProjectStage[]
   client                 Client?             @relation(fields: [client_id], references: [id])
   organization           Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  requirement_catalog_version ProjectRequirementCatalogVersion? @relation(fields: [requirement_catalog_version_id], references: [id], onDelete: Restrict)
   stock_balances         StockBalance[]
   stock_movements        StockMovement[]
   tasks                  Task[]
@@ -323,7 +345,136 @@ model Project {
 
   @@index([organization_id])
   @@index([code])
+  @@index([project_type])
+  @@index([requirement_catalog_version_id])
   @@map("projects")
+}
+
+model ProjectRequirement {
+  id            String                       @id @default(uuid())
+  project_id    String
+  definition_id String
+  state         ProjectRequirementStateEnum  @default(NOT_ASSESSED)
+  created_by    String?
+  created_at    DateTime                     @default(now())
+  updated_at    DateTime                     @updatedAt
+
+  project       Project                      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  definition    ProjectRequirementDefinition @relation(fields: [definition_id], references: [id], onDelete: Restrict)
+  creator       User?                        @relation("ProjectRequirementCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  assessments   ProjectRequirementAssessment[]
+
+  @@unique([project_id, definition_id])
+  @@index([project_id, state])
+  @@map("project_requirements")
+}
+
+model ProjectRequirementCatalog {
+  id                    String                            @id @default(uuid())
+  catalog_key           String                            @unique @db.VarChar(100)
+  is_active             Boolean                           @default(true)
+  published_version_id  String?
+  created_by            String?
+  created_at            DateTime                          @default(now())
+  updated_at            DateTime                          @updatedAt
+
+  creator               User?                             @relation("ProjectRequirementCatalogCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  versions              ProjectRequirementCatalogVersion[] @relation("RequirementCatalogVersions")
+  published_version     ProjectRequirementCatalogVersion? @relation("PublishedRequirementCatalogVersion", fields: [id, published_version_id], references: [catalog_id, id], onDelete: Restrict)
+
+  @@unique([id, published_version_id])
+  @@map("project_requirement_catalogs")
+}
+
+model ProjectRequirementCatalogVersion {
+  id            String                       @id @default(uuid())
+  catalog_id    String
+  version       Int
+  display_name  String                       @db.VarChar(160)
+  created_by    String?
+  published_by  String?
+  published_at  DateTime?
+  created_at    DateTime                     @default(now())
+
+  catalog       ProjectRequirementCatalog    @relation("RequirementCatalogVersions", fields: [catalog_id], references: [id], onDelete: Restrict)
+  creator       User?                        @relation("RequirementCatalogVersionCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  publisher     User?                        @relation("RequirementCatalogVersionPublisher", fields: [published_by], references: [id], onDelete: SetNull)
+  published_for ProjectRequirementCatalog?   @relation("PublishedRequirementCatalogVersion")
+  definitions   ProjectRequirementDefinition[]
+  projects      Project[]
+  folder_template_versions ProjectFolderTemplateVersion[]
+  adoptions_from ProjectRequirementCatalogAdoption[] @relation("RequirementCatalogAdoptionFromVersion")
+  adoptions_to ProjectRequirementCatalogAdoption[] @relation("RequirementCatalogAdoptionToVersion")
+
+  @@unique([catalog_id, version])
+  @@unique([catalog_id, id])
+  @@index([catalog_id, published_at])
+  @@map("project_requirement_catalog_versions")
+}
+
+model ProjectRequirementDefinition {
+  id                String                            @id @default(uuid())
+  catalog_version_id String
+  requirement_key   String                            @db.VarChar(120)
+  description       String                            @db.VarChar(500)
+  is_active         Boolean                           @default(true)
+
+  catalog_version   ProjectRequirementCatalogVersion @relation(fields: [catalog_version_id], references: [id], onDelete: Cascade)
+  applicable_types  ProjectRequirementApplicability[]
+  project_requirements ProjectRequirement[]
+  conditional_folders ProjectFolderTemplateFolder[]
+
+  @@unique([catalog_version_id, requirement_key])
+  @@index([catalog_version_id, is_active])
+  @@map("project_requirement_definitions")
+}
+
+model ProjectRequirementApplicability {
+  definition_id String
+  project_type  ProjectTypeEnum
+
+  definition    ProjectRequirementDefinition @relation(fields: [definition_id], references: [id], onDelete: Cascade)
+
+  @@id([definition_id, project_type])
+  @@index([project_type])
+  @@map("project_requirement_applicability")
+}
+
+model ProjectRequirementAssessment {
+  id                    String                       @id @default(uuid())
+  project_requirement_id String
+  previous_state        ProjectRequirementStateEnum?
+  new_state             ProjectRequirementStateEnum
+  assessed_by           String?
+  note                  String?                      @db.VarChar(1000)
+  created_at            DateTime                     @default(now())
+
+  requirement           ProjectRequirement           @relation(fields: [project_requirement_id], references: [id], onDelete: Cascade)
+  assessor              User?                        @relation("ProjectRequirementAssessor", fields: [assessed_by], references: [id], onDelete: SetNull)
+
+  @@index([project_requirement_id, created_at])
+  @@map("project_requirement_assessments")
+}
+
+model ProjectRequirementCatalogAdoption {
+  id                         String                       @id @default(uuid())
+  project_id                 String
+  from_catalog_version_id    String?
+  to_catalog_version_id      String
+  previous_project_type      ProjectTypeEnum?
+  new_project_type           ProjectTypeEnum
+  reviewed_by                String
+  reason                     String                       @db.VarChar(1000)
+  created_at                 DateTime                     @default(now())
+
+  project                    Project                      @relation("ProjectRequirementCatalogAdoptions", fields: [project_id], references: [id], onDelete: Cascade)
+  current_for                Project?                     @relation("ProjectCurrentRequirementCatalogAdoption")
+  from_catalog_version       ProjectRequirementCatalogVersion? @relation("RequirementCatalogAdoptionFromVersion", fields: [from_catalog_version_id], references: [id], onDelete: Restrict)
+  to_catalog_version         ProjectRequirementCatalogVersion @relation("RequirementCatalogAdoptionToVersion", fields: [to_catalog_version_id], references: [id], onDelete: Restrict)
+  reviewer                   User                         @relation("RequirementCatalogAdoptionReviewer", fields: [reviewed_by], references: [id], onDelete: Restrict)
+
+  @@index([project_id, created_at])
+  @@map("project_requirement_catalog_adoptions")
 }
 
 model ProjectStage {
@@ -979,18 +1130,184 @@ model Reimbursement {
 model Document {
   id              String            @id @default(uuid())
   project_id      String?
+  organization_id String?
+  folder_id       String?
   document_type   DocumentTypeEnum
   title           String
   code            String?
   storage_path    String
   current_version Int               @default(1)
+  is_archived     Boolean           @default(false)
+  archived_at     DateTime?
+  archived_by     String?
+  restored_at     DateTime?
+  restored_by     String?
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
   versions        DocumentVersion[]
   project         Project?          @relation(fields: [project_id], references: [id])
+  organization    Organization?     @relation(fields: [organization_id], references: [id], onDelete: Restrict)
+  folder          DocumentFolder?   @relation(fields: [folder_id], references: [id], onDelete: SetNull)
   ocr_jobs        OCRJob[]
 
+  @@index([folder_id, is_archived, updated_at])
+  @@index([organization_id, folder_id, is_archived, updated_at])
+  @@index([is_archived, updated_at])
   @@map("documents")
+}
+
+model DocumentFolder {
+  id              String           @id @default(uuid())
+  name            String           @db.VarChar(120)
+  parent_id       String?
+  organization_id String
+  project_id      String?
+  created_by      String?
+  template_folder_key String?  @db.VarChar(120)
+  source_template_version_id String?
+  protection_policy ProjectFolderProtectionPolicyEnum @default(STANDARD)
+  allow_custom_children Boolean @default(true)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+
+  organization    Organization     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  project         Project?         @relation(fields: [project_id], references: [id], onDelete: Restrict)
+  creator         User?            @relation("DocumentFolderCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  parent          DocumentFolder?  @relation("DocumentFolderTree", fields: [parent_id], references: [id], onDelete: Restrict)
+  children        DocumentFolder[] @relation("DocumentFolderTree")
+  documents       Document[]
+  source_template_version ProjectFolderTemplateVersion? @relation(fields: [source_template_version_id], references: [id], onDelete: Restrict)
+
+  @@index([organization_id, project_id, parent_id, name])
+  @@index([organization_id, parent_id])
+  @@index([source_template_version_id])
+  @@map("document_folders")
+}
+
+model ProjectFolderTemplate {
+  id                    String                         @id @default(uuid())
+  template_key          String                         @unique @db.VarChar(100)
+  kind                  ProjectFolderTemplateKindEnum
+  is_active             Boolean                        @default(true)
+  published_version_id  String?
+  created_by            String?
+  created_at            DateTime                       @default(now())
+  updated_at            DateTime                       @updatedAt
+
+  creator               User?                          @relation("ProjectFolderTemplateCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  versions              ProjectFolderTemplateVersion[] @relation("ProjectFolderTemplateVersions")
+  published_version     ProjectFolderTemplateVersion?  @relation("ProjectFolderTemplatePublishedVersion", fields: [id, published_version_id], references: [template_id, id], onDelete: Restrict)
+
+  @@unique([id, published_version_id])
+  @@index([kind, is_active])
+  @@map("project_folder_templates")
+}
+
+model ProjectFolderTemplateVersion {
+  id            String                       @id @default(uuid())
+  template_id   String
+  version       Int
+  display_name  String                       @db.VarChar(160)
+  requirement_catalog_version_id String
+  created_by    String?
+  published_by  String?
+  published_at  DateTime?
+  created_at    DateTime                     @default(now())
+
+  template      ProjectFolderTemplate        @relation("ProjectFolderTemplateVersions", fields: [template_id], references: [id], onDelete: Restrict)
+  requirement_catalog_version ProjectRequirementCatalogVersion @relation(fields: [requirement_catalog_version_id], references: [id], onDelete: Restrict)
+  creator       User?                        @relation("ProjectFolderTemplateVersionCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  publisher     User?                        @relation("ProjectFolderTemplateVersionPublisher", fields: [published_by], references: [id], onDelete: SetNull)
+  folder_definitions ProjectFolderTemplateFolder[]
+  applicable_types ProjectFolderTemplateVersionApplicability[]
+  conflicts_as_source ProjectFolderTemplateVersionConflict[] @relation("TemplateConflictSourceVersion")
+  conflicts_as_target ProjectFolderTemplateVersionConflict[] @relation("TemplateConflictTargetVersion")
+  assignments   ProjectFolderTemplateAssignment[]
+  published_for ProjectFolderTemplate?       @relation("ProjectFolderTemplatePublishedVersion")
+  project_folders DocumentFolder[]
+
+  @@unique([template_id, version])
+  @@unique([template_id, id])
+  @@index([template_id, published_at])
+  @@index([requirement_catalog_version_id])
+  @@map("project_folder_template_versions")
+}
+
+model ProjectFolderTemplateVersionApplicability {
+  template_version_id String
+  project_type        ProjectTypeEnum
+
+  template_version ProjectFolderTemplateVersion @relation(fields: [template_version_id], references: [id], onDelete: Cascade)
+
+  @@id([template_version_id, project_type])
+  @@map("project_folder_template_version_applicability")
+}
+
+model ProjectFolderTemplateFolder {
+  id                String                               @id @default(uuid())
+  template_version_id String
+  folder_key        String                               @db.VarChar(120)
+  display_name      String                               @db.VarChar(120)
+  parent_folder_key String?                              @db.VarChar(120)
+  sort_order        Int                                  @default(0)
+  requirement       ProjectFolderRequirementEnum         @default(OPTIONAL)
+  condition_definition_id String?
+  is_active         Boolean                              @default(true)
+  protection_policy ProjectFolderProtectionPolicyEnum   @default(STANDARD)
+  allow_custom_children Boolean                          @default(false)
+  create_by_default Boolean                              @default(false)
+
+  template_version  ProjectFolderTemplateVersion         @relation(fields: [template_version_id], references: [id], onDelete: Cascade)
+  applicable_types  ProjectFolderTemplateFolderApplicability[]
+  condition         ProjectRequirementDefinition?        @relation(fields: [condition_definition_id], references: [id], onDelete: Restrict)
+
+  @@unique([template_version_id, folder_key])
+  @@index([template_version_id, parent_folder_key, sort_order])
+  @@index([condition_definition_id])
+  @@map("project_folder_template_folders")
+}
+
+model ProjectFolderTemplateFolderApplicability {
+  folder_definition_id String
+  project_type         ProjectTypeEnum
+
+  folder_definition    ProjectFolderTemplateFolder @relation(fields: [folder_definition_id], references: [id], onDelete: Cascade)
+
+  @@id([folder_definition_id, project_type])
+  @@index([project_type])
+  @@map("project_folder_template_folder_applicability")
+}
+
+model ProjectFolderTemplateAssignment {
+  id               String                       @id @default(uuid())
+  project_id       String
+  template_id      String
+  template_version Int
+  component_kind   ProjectFolderTemplateKindEnum
+  applied_at       DateTime                     @default(now())
+  superseded_at    DateTime?
+  applied_by       String?
+
+  project          Project                      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  template_version_record ProjectFolderTemplateVersion @relation(fields: [template_id, template_version], references: [template_id, version], onDelete: Restrict)
+  applier          User?                        @relation("ProjectFolderTemplateAssignmentApplier", fields: [applied_by], references: [id], onDelete: SetNull)
+
+  @@index([project_id, superseded_at])
+  @@index([project_id, template_id, superseded_at])
+  @@index([project_id, component_kind])
+  @@map("project_folder_template_assignments")
+}
+
+model ProjectFolderTemplateVersionConflict {
+  template_version_id             String
+  incompatible_template_version_id String
+
+  source_version       ProjectFolderTemplateVersion @relation("TemplateConflictSourceVersion", fields: [template_version_id], references: [id], onDelete: Cascade)
+  incompatible_version ProjectFolderTemplateVersion @relation("TemplateConflictTargetVersion", fields: [incompatible_template_version_id], references: [id], onDelete: Cascade)
+
+  @@id([template_version_id, incompatible_template_version_id])
+  @@index([incompatible_template_version_id])
+  @@map("project_folder_template_version_conflicts")
 }
 
 model DocumentVersion {
@@ -1293,6 +1610,36 @@ enum ProjectStatusEnum {
   COMPLETED
   ON_HOLD
   CANCELLED
+}
+
+enum ProjectTypeEnum {
+  RESIDENTIAL_SOLAR
+  COMMERCIAL_SOLAR
+  INDUSTRIAL_SOLAR
+  OTHER_CUSTOM
+}
+
+enum ProjectRequirementStateEnum {
+  NOT_ASSESSED
+  APPLICABLE
+  NOT_APPLICABLE
+}
+
+enum ProjectFolderTemplateKindEnum {
+  COMMON_CORE
+  PROJECT_TYPE_EXTENSION
+}
+
+enum ProjectFolderRequirementEnum {
+  REQUIRED
+  CONDITIONAL
+  OPTIONAL
+}
+
+enum ProjectFolderProtectionPolicyEnum {
+  STANDARD
+  NO_DELETE
+  IMMUTABLE
 }
 
 enum TaskStatusEnum {

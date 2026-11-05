@@ -71,6 +71,17 @@ export class AuditService {
   }
 
   /**
+   * Writes an audit event that is a prerequisite for a sensitive administrative mutation.
+   * Unlike `record`, a failed write aborts the surrounding transaction rather than silently
+   * committing an unaudited privilege or account change.
+   */
+  async recordRequired(params: AuditRecordParams, client?: AuditWriteClient): Promise<any> {
+    const row = await this.record(params, client);
+    if (!row) throw new Error(`Required audit write failed for action ${params.action}`);
+    return row;
+  }
+
+  /**
    * Query audit trail with filtering and pagination
    */
   async query(filter: AuditQueryFilter) {

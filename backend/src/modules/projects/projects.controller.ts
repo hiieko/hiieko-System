@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { ProjectsService, CreateProjectDto, UpdateProjectDto } from './projects.service';
+import { ProjectsService, UpdateProjectDto } from './projects.service';
+import { CreateProjectDto } from './projects.dto';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { ProjectAccessGuard } from '../../common/auth/guards/project-access.guard';
@@ -38,7 +39,7 @@ export class ProjectsController {
   @Roles(UserRoleEnum.ADMIN, UserRoleEnum.OWNER, UserRoleEnum.PM)
   @ApiOperation({ summary: 'Create a new solar construction project' })
   async create(@Body() dto: CreateProjectDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.projectsService.create(dto, user.id, user.role);
+    return this.projectsService.create(dto, user);
   }
 
   @Patch(':id')

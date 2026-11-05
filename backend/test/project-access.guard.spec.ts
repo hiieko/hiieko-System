@@ -16,6 +16,8 @@ describe('ProjectAccessGuard (Access Control)', () => {
     prisma = {
       projectMember: { findUnique: jest.fn() },
       task: mockTaskDelegate,
+      document: { findUnique: jest.fn() },
+      documentFolder: { findUnique: jest.fn() },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -166,6 +168,100 @@ describe('ProjectAccessGuard (Access Control)', () => {
       { id: 'admin-1', role: UserRoleEnum.ADMIN },
       { id: 'nonexistent' },
     );
+    await expect(guard.canActivate(ctx)).rejects.toThrow(NotFoundException);
+  });
+
+  it('allows an existing project-less document through to service-level ownership authorization', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ model: 'document', param: 'id' });
+    prisma.document.findUnique.mockResolvedValue({ project_id: null });
+
+    const ctx = createMockContext(
+      { id: 'worker-1', role: UserRoleEnum.WORKER, organizationId: 'org-1' },
+      { id: 'company-doc-1' },
+    );
+
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(prisma.document.findUnique).toHaveBeenCalledWith({
+      where: { id: 'company-doc-1' },
+      select: { project_id: true },
+    });
+    expect(prisma.projectMember.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('continues enforcing project membership for project-linked documents', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ model: 'document', param: 'id' });
+    prisma.document.findUnique.mockResolvedValue({ project_id: 'private-project' });
+    prisma.projectMember.findUnique.mockResolvedValue(null);
+
+    const ctx = createMockContext(
+      { id: 'worker-1', role: UserRoleEnum.WORKER, organizationId: 'org-1', projectRoles: {} },
+      { id: 'project-doc-1' },
+    );
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    expect(prisma.projectMember.findUnique).toHaveBeenCalledWith({
+      where: { project_id_user_id: { project_id: 'private-project', user_id: 'worker-1' } },
+    });
+  });
+
+  it('allows a company folder through to service-level organization authorization', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ model: 'documentFolder', param: 'folderId' });
+    prisma.documentFolder.findUnique.mockResolvedValue({ project_id: null });
+
+    const ctx = createMockContext(
+      { id: 'worker-1', role: UserRoleEnum.WORKER, organizationId: 'org-1' },
+      { folderId: 'company-folder-1' },
+    );
+
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(prisma.documentFolder.findUnique).toHaveBeenCalledWith({
+      where: { id: 'company-folder-1' },
+      select: { project_id: true },
+    });
+    expect(prisma.projectMember.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('enforces project membership for project folders instead of trusting their entity ID alone', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ model: 'documentFolder', param: 'folderId' });
+    prisma.documentFolder.findUnique.mockResolvedValue({ project_id: 'private-project' });
+    prisma.projectMember.findUnique.mockResolvedValue(null);
+
+    const ctx = createMockContext(
+      { id: 'worker-1', role: UserRoleEnum.WORKER, organizationId: 'org-1', projectRoles: {} },
+      { folderId: 'project-folder-1' },
+    );
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    expect(prisma.documentFolder.findUnique).toHaveBeenCalledWith({
+      where: { id: 'project-folder-1' },
+      select: { project_id: true },
+    });
+  });
+
+  it('still returns 404 for a missing project-less document', async () => {
+    jest.spyOn(reflector, 'getAllAndOverride')
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce(null)
+      .mockReturnValueOnce({ model: 'document', param: 'id' });
+    prisma.document.findUnique.mockResolvedValue(null);
+
+    const ctx = createMockContext(
+      { id: 'admin-1', role: UserRoleEnum.ADMIN, organizationId: 'org-1' },
+      { id: 'missing-doc' },
+    );
+
     await expect(guard.canActivate(ctx)).rejects.toThrow(NotFoundException);
   });
 

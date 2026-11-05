@@ -45,6 +45,14 @@ describe('Documents upload HTTP authorization', () => {
             : null,
         ),
       },
+      rolePermission: { findFirst: jest.fn().mockResolvedValue({ role_id: 'worker-role' }) },
+      documentFolder: {
+        findUnique: jest.fn(async ({ where }: any) => where.id === 'project-folder'
+          ? { id: 'project-folder', organization_id: 'org-1', project_id: 'project-1' }
+          : where.id === 'company-folder'
+            ? { id: 'company-folder', organization_id: 'org-1', project_id: null }
+            : null),
+      },
       document: {
         findMany: jest.fn().mockResolvedValue([]),
         create: jest.fn(async ({ data }: any) => ({ id: 'document-1', ...data })),
@@ -96,7 +104,7 @@ describe('Documents upload HTTP authorization', () => {
       .attach('file', PDF_BYTES, { filename: 'plan.pdf', contentType: 'application/pdf' });
 
   it('authorizes a multipart upload using the query projectId before the interceptor persists the file', async () => {
-    await upload('/api/documents?projectId=project-1').expect(201);
+    await upload('/api/documents?projectId=project-1').field('organizationId', 'org-attacker').expect(201);
 
     expect(prisma.project.findUnique).toHaveBeenCalledWith({
       where: { id: 'project-1' },
@@ -106,6 +114,10 @@ describe('Documents upload HTTP authorization', () => {
       where: { project_id_user_id: { project_id: 'project-1', user_id: currentUser.id } },
       select: { user_id: true },
     });
+    expect(prisma.document.create.mock.calls[0][0].data).toMatchObject({
+      project_id: 'project-1',
+      organization_id: 'org-1',
+    });
     expect(storage.save).toHaveBeenCalledTimes(1);
   });
 
@@ -114,7 +126,40 @@ describe('Documents upload HTTP authorization', () => {
       .post('/api/documents')
       .field('projectId', 'project-1')
       .attach('file', PDF_BYTES, { filename: 'plan.pdf', contentType: 'application/pdf' })
-      .expect(403);
+      .expect(400);
+
+    expect(storage.save).not.toHaveBeenCalled();
+    expect(prisma.document.create).not.toHaveBeenCalled();
+  });
+
+  it('creates an explicitly selected company document under the authenticated organization', async () => {
+    await upload('/api/documents').field('organizationId', 'org-attacker').expect(201);
+
+    const createData = prisma.document.create.mock.calls[0][0].data;
+    expect(createData.project_id).toBeNull();
+    expect(createData.organization_id).toBe('org-1');
+    expect(storage.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('files a web upload only after validating the folder against its authorized project scope', async () => {
+    await upload('/api/documents?projectId=project-1').field('folderId', 'project-folder').expect(201);
+    expect(prisma.documentFolder.findUnique).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'project-folder' } }));
+    expect(prisma.document.create.mock.calls[0][0].data).toMatchObject({
+      project_id: 'project-1', organization_id: 'org-1', folder_id: 'project-folder',
+    });
+    expect(storage.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a company folder on a project upload before saving bytes', async () => {
+    await upload('/api/documents?projectId=project-1').field('folderId', 'company-folder').expect(409);
+    expect(storage.save).not.toHaveBeenCalled();
+    expect(prisma.document.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects company creation when the authenticated user has no organization before storage', async () => {
+    currentUser = { ...currentUser, organizationId: undefined };
+
+    await upload('/api/documents').expect(403);
 
     expect(storage.save).not.toHaveBeenCalled();
     expect(prisma.document.create).not.toHaveBeenCalled();

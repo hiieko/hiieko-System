@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useLocale, type Locale } from '@solar/shared';
+import { t, useLocale, type Locale } from '@solar/shared';
 import { Languages } from 'lucide-react';
 
 interface LocaleOption {
@@ -30,9 +30,9 @@ export function LanguageSwitcher() {
   return (
     <div
       role="group"
-      aria-label="Language"
+      aria-label={t('language', locale)}
       data-testid="language-switcher"
-      className="flex shrink-0 items-center space-x-0.5 sm:space-x-1 bg-slate-100 rounded-lg border border-slate-200 p-0.5"
+      className="flex shrink-0 items-center space-x-0.5 rounded-lg border border-slate-200 bg-white p-0.5"
     >
       <Languages className="hidden sm:block w-4 h-4 text-slate-400 ml-1.5" aria-hidden="true" />
       {OPTIONS.map((opt) => {
@@ -46,9 +46,9 @@ export function LanguageSwitcher() {
             aria-label={opt.label}
             data-locale={opt.value}
             className={
-              'min-w-[32px] sm:min-w-[40px] px-1.5 sm:px-2 py-1 rounded-md text-xs font-semibold transition-colors ' +
+            'min-w-[28px] sm:min-w-[40px] px-1 sm:px-2 py-1 rounded-md text-xs font-semibold transition-colors ' +
               (active
-                ? 'bg-white text-hii-700 shadow-sm border border-hii-200'
+                ? 'bg-hii-600 text-white shadow-sm border border-hii-600'
                 : 'text-slate-500 hover:text-slate-700 border border-transparent')
             }
           >

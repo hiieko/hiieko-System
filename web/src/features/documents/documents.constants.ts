@@ -60,6 +60,15 @@ export function formatBytes(bytes: number | null | undefined, fallback = '—'):
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+/** Preserve the existing filename extension while distinguishing a revision download. */
+export function formatVersionFilename(title: string, version: number): string {
+  const extensionStart = title.lastIndexOf('.');
+  if (extensionStart > 0 && extensionStart < title.length - 1) {
+    return `${title.slice(0, extensionStart)}.v${version}${title.slice(extensionStart)}`;
+  }
+  return `${title}.v${version}`;
+}
+
 /** Localized date/time. `locale` is the app locale ('ro' | 'en'). */
 export function formatDateTime(
   value: string | Date | null | undefined,

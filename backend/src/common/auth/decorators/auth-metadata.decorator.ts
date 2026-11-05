@@ -43,6 +43,7 @@ export type ScopedEntityModel =
   | 'dailyReport'
   | 'team'
   | 'document'
+  | 'documentFolder'
   | 'expense'
   | 'changeOrder'
   | 'inspection'

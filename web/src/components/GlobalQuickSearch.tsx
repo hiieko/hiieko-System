@@ -52,11 +52,11 @@ export function GlobalQuickSearch() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t('global_search.search_pages', locale)}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-800 focus-visible:outline-offset-2"
+        className="inline-flex h-8 w-8 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white p-0 text-sm text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 focus-visible:outline-offset-2 sm:h-9 sm:w-auto sm:px-2.5 sm:py-0"
       >
         <Search className="h-4 w-4" aria-hidden="true" />
         <span className="hidden xl:inline">{t('global_search.quick_search', locale)}</span>
-        <span className="hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400 sm:inline-flex">
+        <span className="hidden rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-400 xl:inline-flex">
           <Command className="mr-0.5 h-3 w-3" aria-hidden="true" /> K
         </span>
       </button>

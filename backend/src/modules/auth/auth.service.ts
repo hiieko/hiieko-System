@@ -11,7 +11,7 @@ import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { JwtPayload } from '../../common/auth/auth.types';
-import { UserRoleEnum, UserStatusEnum } from '@prisma/client';
+import { MicrosoftIdentityStatusEnum, UserRoleEnum, UserStatusEnum } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { SessionService } from './session.service';
 import { EmailService } from './email.service';
@@ -343,6 +343,25 @@ export class AuthService {
    */
   async login(dto: LoginDto, ctx: LoginContext = {}): Promise<LoginResult> {
     const email = dto.email.toLowerCase();
+
+    // Company web accounts use Entra when the provider is enabled. The legacy caller
+    // shape remains available for the existing mobile client during the transition.
+    if (
+      process.env.ENTRA_ENABLED === 'true' &&
+      dto.client === 'web' &&
+      email.endsWith('@hiieko.ro')
+    ) {
+      await this.auditService.record({
+        action: 'LOGIN_FAILED',
+        entity: 'User',
+        entityId: email,
+        metadata: { email, reason: 'MICROSOFT_REQUIRED_FOR_COMPANY_WEB_ACCOUNT' },
+        ipAddress: ctx.ip ?? undefined,
+        userAgent: ctx.userAgent ?? undefined,
+      });
+      throw new UnauthorizedException('Use Microsoft sign-in for this company account');
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: {
@@ -416,6 +435,81 @@ export class AuthService {
       expiresIn: WEB_ACCESS_TOKEN_TTL_SECONDS,
       refreshToken: issuedRefreshToken!.raw,
       refreshTokenExpiresAt: issuedRefreshToken!.expiresAt,
+    };
+  }
+
+  /** Complete an Entra-authenticated web login for an explicitly linked HIIEKO account. */
+  async loginWithMicrosoftIdentity(
+    identity: { tenantId: string; objectId: string; email: string },
+    ctx: LoginContext = {},
+  ): Promise<LoginResult> {
+    const email = identity.email.trim().toLowerCase();
+    const link = await this.prisma.microsoftIdentityLink.findUnique({
+      where: {
+        tenant_id_object_id: {
+          tenant_id: identity.tenantId,
+          object_id: identity.objectId,
+        },
+      },
+      include: { user: { include: { profile: true } } },
+    });
+
+    const user = link?.user;
+    if (
+      !link ||
+      link.status !== MicrosoftIdentityStatusEnum.CONNECTED ||
+      !user ||
+      user.status !== UserStatusEnum.ACTIVE ||
+      !user.is_active ||
+      user.email.trim().toLowerCase() !== email ||
+      !email.endsWith('@hiieko.ro')
+    ) {
+      await this.auditService.record({
+        organizationId: user?.organization_id || undefined,
+        actorId: user?.id,
+        action: 'MICROSOFT_LOGIN_DENIED',
+        entity: 'User',
+        entityId: user?.id ?? 'unlinked-identity',
+        metadata: { reason: 'NO_APPROVED_ACTIVE_ACCOUNT' },
+        ipAddress: ctx.ip ?? undefined,
+        userAgent: ctx.userAgent ?? undefined,
+      });
+      throw new UnauthorizedException('Microsoft sign-in is unavailable for this account');
+    }
+
+    await this.prisma.microsoftIdentityLink.update({
+      where: { id: link.id },
+      data: { last_authenticated_at: new Date() },
+    });
+
+    const session = await this.sessionService.createSession({
+      userId: user.id,
+      createdIp: ctx.ip,
+      userAgent: ctx.userAgent,
+    });
+    const refreshToken = await this.sessionService.issueRefreshToken(session);
+    await this.auditService.record({
+      organizationId: user.organization_id || undefined,
+      actorId: user.id,
+      action: 'USER_LOGIN',
+      entity: 'User',
+      entityId: user.id,
+      metadata: {
+        loginTime: new Date().toISOString(),
+        sessionId: session.id,
+        client: 'web',
+        provider: 'microsoft_entra',
+      },
+      ipAddress: ctx.ip ?? undefined,
+      userAgent: ctx.userAgent ?? undefined,
+    });
+
+    return {
+      user: this.publicUser(user),
+      accessToken: this.generateToken(user, session.id, WEB_ACCESS_TOKEN_TTL_SECONDS),
+      expiresIn: WEB_ACCESS_TOKEN_TTL_SECONDS,
+      refreshToken: refreshToken.raw,
+      refreshTokenExpiresAt: refreshToken.expiresAt,
     };
   }
 

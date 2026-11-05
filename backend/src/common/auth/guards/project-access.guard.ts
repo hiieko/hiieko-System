@@ -28,6 +28,7 @@ const ENTITY_RESOLVER: Record<
   dailyReport: { delegate: 'dailyReport', projectField: 'project_id' },
   team: { delegate: 'team', projectField: 'project_id' },
   document: { delegate: 'document', projectField: 'project_id' },
+  documentFolder: { delegate: 'documentFolder', projectField: 'project_id' },
   expense: { delegate: 'expense', projectField: 'project_id' },
   changeOrder: { delegate: 'changeOrder', projectField: 'project_id' },
   inspection: { delegate: 'inspection', projectField: 'project_id' },
@@ -127,7 +128,16 @@ export class ProjectAccessGuard implements CanActivate {
         if (!entityId) continue; // skip absent params
         anyChecked = true;
         const projectId = await this.resolveEntityProjectId(entityMeta.model, entityId);
+        if (projectId === undefined) {
+          throw new NotFoundException(
+            `${entityMeta.model} with id "${entityId}" not found`,
+          );
+        }
         if (projectId === null) {
+          // Project-less documents and company folders have their own
+          // organization authorization in their services. They are not missing
+          // entities; those services remain responsible for tenant checks.
+          if (entityMeta.model === 'document' || entityMeta.model === 'documentFolder') continue;
           throw new NotFoundException(
             `${entityMeta.model} with id "${entityId}" not found`,
           );
@@ -196,12 +206,13 @@ export class ProjectAccessGuard implements CanActivate {
 
   /**
    * Resolve an entity's project_id via Prisma by its ScopedEntityModel.
-   * Returns null if the entity does not exist (caller decides 403 vs 404).
+   * Returns undefined if the entity does not exist and null if it exists but
+   * has no project association.
    */
   private async resolveEntityProjectId(
     model: ScopedEntityModel,
     entityId: string,
-  ): Promise<string | null> {
+  ): Promise<string | null | undefined> {
     const resolver = ENTITY_RESOLVER[model];
     if (!resolver) {
       throw new ForbiddenException(`Unknown entity model: ${model}`);
@@ -226,7 +237,7 @@ export class ProjectAccessGuard implements CanActivate {
     });
 
     if (!record) {
-      return null;
+      return undefined;
     }
 
     if (resolver.nestedInclude) {

@@ -1,0 +1,769 @@
+﻿node.exe : FAIL src/components/ControlTowerProjectMap.test.tsx (14.018 s)
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\NaderGuesmi\AppData\Ro ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL src/compon....tsx (14.018 s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  ΓùÅ ControlTowerProjectMap ΓÇ║ renders a keyboard-accessible marker for each project with stored coordinates
+
+    expect(element).not.toBeInTheDocument()
+
+    expected document not to contain element, found <button aria-pressed="false" class="flex min-h-10 w-full 
+items-center justify-between gap-2 rounded-md px-2 text-left text-xs focus-visible:outline-none focus-visible:ring-2 
+focus-visible:ring-hii-500 hover:bg-slate-50" type="button"><span class="min-w-0 truncate font-medium">NL-03 ┬╖ No 
+location site</span><span class="shrink-0 text-slate-500">control_tower.map_no_coordinates_short</span></button> 
+instead
+
+    [0m [90m 101 |[39m     expect(northMarker)[33m.[39mtoHaveAttribute([32m'tabindex'[39m[33m,[39m 
+[32m'0'[39m)[33m;[39m
+     [90m 102 |[39m     expect(southMarker)[33m.[39mtoHaveAttribute([32m'tabindex'[39m[33m,[39m 
+[32m'0'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 103 |[39m     expect(screen[33m.[39mqueryByRole([32m'button'[39m[33m,[39m { 
+name[33m:[39m [35m/No location site/[39m }))[33m.[39mnot[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                                                                            [31m[1m^[22m[39m
+     [90m 104 |[39m
+     [90m 105 |[39m     fireEvent[33m.[39mclick(northMarker)[33m;[39m
+     [90m 106 |[39m     [36mawait[39m waitFor(() [33m=>[39m 
+expect(northMarker)[33m.[39mtoHaveAttribute([32m'aria-pressed'[39m[33m,[39m [32m'true'[39m))[33m;[39m[0m
+
+      at Object.toBeInTheDocument (src/components/ControlTowerProjectMap.test.tsx:103:76)
+
+FAIL src/components/ControlTowerSurface.test.tsx (5.824 s)
+  ΓùÅ ControlTowerSurface ΓÇ║ shows project lifecycle status and date warnings without implying completion from 
+progress
+
+    Unable to find role="progressbar" and name `/North site/`
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3 pb-12 [&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 
+[&_*:focus-visible]:ring-hii-500 [&_*:focus-visible]:ring-offset-2"[39m
+        [36m>[39m
+          [36m<header>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-lg font-bold tracking-tight text-slate-950 sm:text-xl"[39m
+                [36m>[39m
+                  [0mcontrol_tower.title[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mt-0.5 text-xs text-slate-600"[39m
+                [36m>[39m
+                  [0mcontrol_tower.focus_pm[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"ml-2 text-slate-400"[39m
+                  [36m>[39m
+                    [0mcontrol_tower.last_updated[0m
+                    [0m: [0m
+                    [0m11:45:49[0m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:justify-end"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [0mcontrol_tower.project_filter[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 pr-8 
+text-sm font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto 
+sm:max-w-xs"[39m
+                  [33mid[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m>[39m
+                    [0mcontrol_tower.all_active_sites[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-1"[39m
+                  [36m>[39m
+                    [0mNS-01[0m
+                    [0m ΓÇö [0m
+                    [0mNorth site[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-2"[39m
+                  [36m>[39m
+                    [0mSS-02[0m
+                    [0m ΓÇö [0m
+                    [0mSouth site[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-date"[39m
+                [36m>[39m
+                  [0mcontrol_tower.map.selected_date[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm 
+font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto"[39m
+                  [33mid[39m=[32m"control-tower-date"[39m
+                  [33mtype[39m=[32m"date"[39m
+                  [33mvalue[39m=[32m"2026-10-28"[39m
+                [36m/>[39m
+                [36m<button>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-refresh-cw size-4 "[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 3v5h-5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M8 16H3v5"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mcontrol_tower.refresh[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</header>[39m
+          [36m<section[39m
+            [33maria-label[39m=[32m"control_tower.role_priority"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-3 sm:divide-y-0 
+xl:grid-cols-5"[39m
+              [36m>[39m
+                [36m<a[39m
+                  [33mclass[39m=[32m"min-w-0 transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mhref[39m=[32m"/projects"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.projects_in_scope[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m>[39m
+                      [0m2[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</a>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"min-w-0 text-left transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.kpi_attendance[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m...
+
+    [0m [90m 268 |[39m     render([33m<[39m[33mControlTowerSurface[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m 269 |[39m
+    [31m[1m>[22m[39m[90m 270 |[39m     [36mconst[39m project [33m=[39m [36mawait[39m 
+screen[33m.[39mfindByRole([32m'progressbar'[39m[33m,[39m { name[33m:[39m [35m/North site/[39m })[33m;[39m
+     [90m     |[39m                                  [31m[1m^[22m[39m
+     [90m 271 |[39m     expect(project)[33m.[39mtoHaveAttribute([32m'aria-valuenow'[39m[33m,[39m 
+[32m'42'[39m)[33m;[39m
+     [90m 272 |[39m     
+expect(project[33m.[39mclosest([32m'li'[39m))[33m.[39mtoHaveTextContent([32m'Construction'[39m)[33m;[39m
+     [90m 273 |[39m     expect(project[33m.[39mclosest([32m'li'[39m))[33m.[39mtoHaveTextContent([32m'control_t
+ower.project_overdue_warning'[39m)[33m;[39m[0m
+
+      at waitForWrapper (../node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at ../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+      at Object.findByRole (src/components/ControlTowerSurface.test.tsx:270:34)
+
+  ΓùÅ ControlTowerSurface ΓÇ║ flags a COMPLETED lifecycle status paired with low task progress transparently
+
+    Unable to find role="progressbar" and name `/Parc Solar Timisoara/`
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3 pb-12 [&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 
+[&_*:focus-visible]:ring-hii-500 [&_*:focus-visible]:ring-offset-2"[39m
+        [36m>[39m
+          [36m<header>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-lg font-bold tracking-tight text-slate-950 sm:text-xl"[39m
+                [36m>[39m
+                  [0mcontrol_tower.title[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mt-0.5 text-xs text-slate-600"[39m
+                [36m>[39m
+                  [0mcontrol_tower.focus_pm[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"ml-2 text-slate-400"[39m
+                  [36m>[39m
+                    [0mcontrol_tower.last_updated[0m
+                    [0m: [0m
+                    [0m11:45:50[0m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:justify-end"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [0mcontrol_tower.project_filter[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 pr-8 
+text-sm font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto 
+sm:max-w-xs"[39m
+                  [33mid[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m>[39m
+                    [0mcontrol_tower.all_active_sites[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-1"[39m
+                  [36m>[39m
+                    [0mNS-01[0m
+                    [0m ΓÇö [0m
+                    [0mNorth site[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-2"[39m
+                  [36m>[39m
+                    [0mSS-02[0m
+                    [0m ΓÇö [0m
+                    [0mSouth site[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-date"[39m
+                [36m>[39m
+                  [0mcontrol_tower.map.selected_date[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm 
+font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto"[39m
+                  [33mid[39m=[32m"control-tower-date"[39m
+                  [33mtype[39m=[32m"date"[39m
+                  [33mvalue[39m=[32m"2026-10-28"[39m
+                [36m/>[39m
+                [36m<button>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-refresh-cw size-4 "[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 3v5h-5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M8 16H3v5"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mcontrol_tower.refresh[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</header>[39m
+          [36m<section[39m
+            [33maria-label[39m=[32m"control_tower.role_priority"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-3 sm:divide-y-0 
+xl:grid-cols-5"[39m
+              [36m>[39m
+                [36m<a[39m
+                  [33mclass[39m=[32m"min-w-0 transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mhref[39m=[32m"/projects"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.projects_in_scope[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m>[39m
+                      [0m2[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</a>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"min-w-0 text-left transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.kpi_attendance[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m...
+
+    [0m [90m 297 |[39m     render([33m<[39m[33mControlTowerSurface[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m 298 |[39m
+    [31m[1m>[22m[39m[90m 299 |[39m     [36mconst[39m projectProgress [33m=[39m [36mawait[39m 
+screen[33m.[39mfindByRole([32m'progressbar'[39m[33m,[39m { name[33m:[39m [35m/Parc Solar Timisoara/[39m 
+})[33m;[39m
+     [90m     |[39m                                          [31m[1m^[22m[39m
+     [90m 300 |[39m     [36mconst[39m projectRow [33m=[39m 
+projectProgress[33m.[39mclosest([32m'li'[39m)[33m;[39m
+     [90m 301 |[39m     expect(projectProgress)[33m.[39mtoHaveAttribute([32m'aria-valuenow'[39m[33m,[39m 
+[32m'26'[39m)[33m;[39m
+     [90m 302 |[39m     expect(projectRow)[33m.[39mtoHaveTextContent([32m'Completed'[39m)[33m;[39m[0m
+
+      at waitForWrapper (../node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at ../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+      at Object.findByRole (src/components/ControlTowerSurface.test.tsx:299:42)
+
+  ΓùÅ ControlTowerSurface ΓÇ║ shows project-specific data after changing the existing site selector
+
+    Unable to find an element with the text: South scoped site. This could be because the text is broken up by 
+multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3 pb-12 [&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 
+[&_*:focus-visible]:ring-hii-500 [&_*:focus-visible]:ring-offset-2"[39m
+        [36m>[39m
+          [36m<header>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-lg font-bold tracking-tight text-slate-950 sm:text-xl"[39m
+                [36m>[39m
+                  [0mcontrol_tower.title[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mt-0.5 text-xs text-slate-600"[39m
+                [36m>[39m
+                  [0mcontrol_tower.focus_pm[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"ml-2 text-slate-400"[39m
+                  [36m>[39m
+                    [0mcontrol_tower.last_updated[0m
+                    [0m: [0m
+                    [0m11:45:52[0m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:justify-end"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [0mcontrol_tower.project_filter[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 pr-8 
+text-sm font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto 
+sm:max-w-xs"[39m
+                  [33mid[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m>[39m
+                    [0mcontrol_tower.all_active_sites[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-1"[39m
+                  [36m>[39m
+                    [0mNS-01[0m
+                    [0m ΓÇö [0m
+                    [0mNorth site[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-2"[39m
+                  [36m>[39m
+                    [0mSS-02[0m
+                    [0m ΓÇö [0m
+                    [0mSouth site[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-date"[39m
+                [36m>[39m
+                  [0mcontrol_tower.map.selected_date[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm 
+font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto"[39m
+                  [33mid[39m=[32m"control-tower-date"[39m
+                  [33mtype[39m=[32m"date"[39m
+                  [33mvalue[39m=[32m"2026-10-28"[39m
+                [36m/>[39m
+                [36m<button>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-refresh-cw size-4 "[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 3v5h-5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M8 16H3v5"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mcontrol_tower.refresh[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</header>[39m
+          [36m<section[39m
+            [33maria-label[39m=[32m"control_tower.role_priority"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-3 sm:divide-y-0 
+xl:grid-cols-5"[39m
+              [36m>[39m
+                [36m<a[39m
+                  [33mclass[39m=[32m"min-w-0 transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mhref[39m=[32m"/projects"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.projects_in_scope[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m>[39m
+                      [0m2[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</a>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"min-w-0 text-left transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.kpi_attendance[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m...
+
+    [0m [90m 358 |[39m     mockGetOverview[33m.[39mmockResolvedValueOnce({ data[33m:[39m overview([32m'South 
+scoped site'[39m) })[33m;[39m
+     [90m 359 |[39m     view[33m.[39mrerender([33m<[39m[33mControlTowerSurface[39m 
+[33m/[39m[33m>[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 360 |[39m     expect([36mawait[39m screen[33m.[39mfindByText([32m'South scoped 
+site'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 361 |[39m     [36mawait[39m waitFor(() [33m=>[39m 
+expect(mockGetOverview)[33m.[39mtoHaveBeenLastCalledWith([32m'project-2'[39m))[33m;[39m
+     [90m 362 |[39m   })[33m;[39m
+     [90m 363 |[39m[0m
+
+      at waitForWrapper (../node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at ../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+      at Object.findByText (src/components/ControlTowerSurface.test.tsx:360:25)
+
+  ΓùÅ ControlTowerSurface ΓÇ║ renders a real empty state when the scoped API returns no projects
+
+    Unable to find an element with the text: control_tower.empty_projects_title. This could be because the text is 
+broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher 
+more flexible.
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-3 pb-12 [&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 
+[&_*:focus-visible]:ring-hii-500 [&_*:focus-visible]:ring-offset-2"[39m
+        [36m>[39m
+          [36m<header>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<h1[39m
+                  [33mclass[39m=[32m"text-lg font-bold tracking-tight text-slate-950 sm:text-xl"[39m
+                [36m>[39m
+                  [0mcontrol_tower.title[0m
+                [36m</h1>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"mt-0.5 text-xs text-slate-600"[39m
+                [36m>[39m
+                  [0mcontrol_tower.focus_pm[0m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"ml-2 text-slate-400"[39m
+                  [36m>[39m
+                    [0mcontrol_tower.last_updated[0m
+                    [0m: [0m
+                    [0m11:45:53[0m
+                  [36m</span>[39m
+                [36m</p>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:justify-end"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [0mcontrol_tower.project_filter[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 pr-8 
+text-sm font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto 
+sm:max-w-xs"[39m
+                  [33mid[39m=[32m"control-tower-project"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m""[39m
+                  [36m>[39m
+                    [0mcontrol_tower.all_active_sites[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-1"[39m
+                  [36m>[39m
+                    [0mNS-01[0m
+                    [0m ΓÇö [0m
+                    [0mNorth site[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"project-2"[39m
+                  [36m>[39m
+                    [0mSS-02[0m
+                    [0m ΓÇö [0m
+                    [0mSouth site[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"sr-only"[39m
+                  [33mfor[39m=[32m"control-tower-date"[39m
+                [36m>[39m
+                  [0mcontrol_tower.map.selected_date[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"h-9 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm 
+font-medium text-slate-800 focus:border-hii-500 focus:outline-none focus:ring-2 focus:ring-hii-500 sm:w-auto"[39m
+                  [33mid[39m=[32m"control-tower-date"[39m
+                  [33mtype[39m=[32m"date"[39m
+                  [33mvalue[39m=[32m"2026-10-28"[39m
+                [36m/>[39m
+                [36m<button>[39m
+                  [36m<svg[39m
+                    [33mclass[39m=[32m"lucide lucide-refresh-cw size-4 "[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 3v5h-5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M8 16H3v5"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mcontrol_tower.refresh[0m
+                [36m</button>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</header>[39m
+          [36m<section[39m
+            [33maria-label[39m=[32m"control_tower.role_priority"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"overflow-hidden"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-3 sm:divide-y-0 
+xl:grid-cols-5"[39m
+              [36m>[39m
+                [36m<a[39m
+                  [33mclass[39m=[32m"min-w-0 transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mhref[39m=[32m"/projects"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.projects_in_scope[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m>[39m
+                      [0m0[0m
+                    [36m</span>[39m
+                  [36m</span>[39m
+                [36m</a>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"min-w-0 text-left transition-colors hover:bg-slate-50 focus-visible:ring-2 
+focus-visible:ring-inset focus-visible:ring-hii-500"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"flex min-h-[4.5rem] min-w-0 flex-col justify-center px-3 py-2.5 
+sm:min-h-[5rem] sm:px-4"[39m
+                  [36m>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"truncate text-xs font-medium text-slate-500"[39m
+                    [36m>[39m
+                      [0mcontrol_tower.kpi_attendance[0m
+                    [36m</span>[39m
+                    [36m<span[39m
+                      [33mclass[39m=[32m"mt-0.5 truncate text-lg font-bold tabular-nums sm:text-xl 
+text-slate-950"[39m
+                    [36m...
+
+    [0m [90m 382 |[39m     render([33m<[39m[33mControlTowerSurface[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m 383 |[39m
+    [31m[1m>[22m[39m[90m 384 |[39m     expect([36mawait[39m 
+screen[33m.[39mfindByText([32m'control_tower.empty_projects_title'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 385 |[39m     
+expect(screen[33m.[39mqueryByText([32m'9'[39m))[33m.[39mnot[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m 386 |[39m   })[33m;[39m
+     [90m 387 |[39m[0m
+
+      at waitForWrapper (../node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at ../node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+      at Object.findByText (src/components/ControlTowerSurface.test.tsx:384:25)
+
+PASS src/components/ControlTowerSiteDetail.test.ts
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       5 failed, 17 passed, 22 total
+Snapshots:   0 total
+Time:        42.631 s
+Ran all test suites matching /ControlTower(ProjectMap|SiteDetail|Surface)/i.

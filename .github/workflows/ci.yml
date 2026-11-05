@@ -70,6 +70,9 @@ jobs:
       - name: Frontend guardrails check (guards:check)
         run: npm run guards:check
 
+      - name: Lint web
+        run: npm run lint --workspace=web
+
       - name: Run backend tests
         run: npm run test
 

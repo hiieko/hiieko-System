@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Logger,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,7 +10,7 @@ import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
-import { DocumentTypeEnum, UserRoleEnum } from '@prisma/client';
+import { DocumentTypeEnum, Prisma, UserRoleEnum } from '@prisma/client';
 import { StorageService } from '../../common/storage/storage.service';
 import {
   assertValidUpload,
@@ -24,12 +25,19 @@ import { isGlobalProjectScopeRole } from '../../common/auth/project-scope';
 
 export interface CreateDocumentDto {
   projectId?: string;
+  folderId?: string;
   documentType: DocumentTypeEnum;
   title: string;
   code?: string;
   storagePath: string;
   fileSize: number;
   checksum?: string;
+}
+
+/** Ownership resolved from authenticated identity or an authorized project lookup. */
+export interface DocumentOwnershipContext {
+  projectId: string | null;
+  organizationId: string;
 }
 
 export interface AddDocumentVersionDto {
@@ -78,6 +86,12 @@ export interface ListDocumentsQuery {
   q?: string;
   /** Restrict to one project (already authorized by the route guard). */
   projectId?: string;
+  /** Select only company-owned documents instead of all visible scopes. */
+  scope?: 'company';
+  /** Restrict to a folder in the selected company/project scope. */
+  folderId?: string;
+  /** Restrict to documents with no folder association. */
+  unfiled?: boolean;
   /** Restrict to one document category. */
   documentType?: string;
   /** Restrict to files of a derived MIME family (PDF, image, or XML). */
@@ -92,6 +106,8 @@ export interface ListDocumentsQuery {
   pageSize?: number;
   sortBy?: 'updated' | 'created' | 'title';
   sortOrder?: 'asc' | 'desc';
+  /** Restrict to archived documents (`true`) or active documents (`false`). */
+  archived?: boolean;
 }
 
 export interface UpdateDocumentMetadataDto {
@@ -124,6 +140,8 @@ export interface DocumentListItem {
   project_id: string | null;
   project_name: string | null;
   project_code: string | null;
+  folder_id: string | null;
+  folder_name: string | null;
   current_version: number;
   created_at: Date;
   updated_at: Date;
@@ -134,6 +152,14 @@ export interface DocumentListItem {
   /** Uploader of the current version. */
   uploaded_by: string | null;
   uploaded_by_name: string | null;
+  /** Reversible lifecycle state; archived documents never appear in active listings. */
+  is_archived: boolean;
+  archived_at: Date | null;
+  archived_by: string | null;
+  archived_by_name: string | null;
+  restored_at: Date | null;
+  restored_by: string | null;
+  restored_by_name: string | null;
 }
 
 export interface DocumentListResult {
@@ -177,6 +203,8 @@ const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 @Injectable()
 export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
@@ -209,7 +237,50 @@ export class DocumentsService {
     user: AuthenticatedUser,
     query: ListDocumentsQuery = {},
   ): Promise<DocumentListResult> {
-    const where: Record<string, any> = { ...this.buildVisibilityFilter(scope, user, query.projectId) };
+    if (query.scope === 'company' && query.projectId) {
+      throw new BadRequestException('Company scope cannot be combined with projectId');
+    }
+    if (query.scope !== undefined && query.scope !== 'company') {
+      throw new BadRequestException('Unknown document scope');
+    }
+    if (query.scope === 'company' && !user.organizationId?.trim()) {
+      throw new ForbiddenException('An authenticated organization is required for company documents');
+    }
+    if (query.folderId !== undefined && !query.folderId.trim()) {
+      throw new BadRequestException('folderId must be a non-empty folder ID');
+    }
+    if (query.folderId && query.unfiled) {
+      throw new BadRequestException('folderId and unfiled cannot be combined');
+    }
+    if ((query.folderId || query.unfiled) && !query.projectId && query.scope !== 'company') {
+      throw new BadRequestException('Folder and Unfiled filters require an explicit company or project scope');
+    }
+    if ((query.folderId || query.unfiled) && query.projectId) {
+      // Re-resolve membership from the database instead of trusting the
+      // ProjectAccessGuard's optional JWT project-role fast path.
+      await this.getAuthorizedProjectForUpload(query.projectId, user);
+    }
+
+    const where: Record<string, any> = {
+      ...this.buildVisibilityFilter(scope, user, query.projectId, query.scope === 'company'),
+    };
+
+    if (query.folderId) {
+      const ownership = await this.resolveDocumentOwnership(query.projectId, user);
+      const folder = await this.prisma.documentFolder.findUnique({
+        where: { id: query.folderId },
+        select: { id: true, organization_id: true, project_id: true },
+      });
+      if (!folder) throw new NotFoundException('Folder not found');
+      if (folder.organization_id !== ownership.organizationId || folder.project_id !== ownership.projectId) {
+        throw new ConflictException('Folder does not belong to the selected document scope');
+      }
+      where.folder_id = folder.id;
+    } else if (query.unfiled) {
+      where.folder_id = null;
+    }
+    // Active-only by default; archived documents require `archived: true`.
+    where.is_archived = query.archived === true;
 
     const search = (query.q ?? '').trim();
     if (search) {
@@ -287,6 +358,7 @@ export class DocumentsService {
         include: {
           versions: { orderBy: { version: 'desc' }, take: 1 },
           project: { select: { id: true, name: true, code: true } },
+          folder: { select: { id: true, name: true } },
         },
         orderBy: { [orderField]: sortOrder },
         skip: (page - 1) * pageSize,
@@ -380,18 +452,24 @@ export class DocumentsService {
       where: { id: documentId },
       select: {
         id: true,
+        organization_id: true,
         title: true,
         code: true,
         document_type: true,
         project_id: true,
+        folder_id: true,
         storage_path: true,
         current_version: true,
+        is_archived: true,
         project: { select: { organization_id: true } },
         versions: { select: { uploaded_by: true, storage_path: true } },
       },
     });
     if (!existing) throw new NotFoundException(`Document ${documentId} not found`);
     await this.assertCanAccessDocument(existing, user);
+    if (existing.is_archived) {
+      throw new ConflictException('Archived documents must be restored before their metadata can change');
+    }
 
     const data: Record<string, unknown> = {};
     if (dto.documentType !== undefined) {
@@ -430,31 +508,44 @@ export class DocumentsService {
             'This document is linked to a workflow attachment and cannot be reassigned safely',
           );
         }
-        await this.assertCanUploadToProject(dto.projectId, user);
-        data.project_id = dto.projectId;
+        const destinationOwnership = await this.resolveDocumentOwnership(dto.projectId, user);
+        if (existing.folder_id) {
+          await this.assertFolderInOwnership(existing.folder_id, destinationOwnership).catch(() => {
+            throw new ConflictException(
+              'This document is filed in a folder outside the destination project; move it to a compatible folder first',
+            );
+          });
+        }
+        data.project_id = destinationOwnership.projectId;
+        // An explicit, authorized project reassignment establishes that
+        // destination project's organization. Merely editing legacy metadata
+        // never backfills or infers ownership.
+        data.organization_id = destinationOwnership.organizationId;
       }
     }
     if (Object.keys(data).length === 0) return this.findOne(documentId, user);
 
     await this.prisma.document.update({ where: { id: documentId }, data });
     await this.auditService.record({
-      organizationId: existing.project?.organization_id ?? user.organizationId,
+      organizationId: existing.organization_id ?? existing.project?.organization_id ?? user.organizationId,
       actorId: user.id,
       action: 'DOCUMENT_METADATA_UPDATED',
       entity: 'Document',
       entityId: documentId,
-      before: {
-        title: existing.title,
-        code: existing.code,
-        documentType: existing.document_type,
-        projectId: existing.project_id,
-      },
-      after: {
+        before: {
+          title: existing.title,
+          code: existing.code,
+          documentType: existing.document_type,
+          projectId: existing.project_id,
+          organizationId: existing.organization_id,
+        },
+        after: {
         title: data.title ?? existing.title,
         code: Object.prototype.hasOwnProperty.call(data, 'code') ? data.code : existing.code,
-        documentType: data.document_type ?? existing.document_type,
-        projectId: data.project_id ?? existing.project_id,
-      },
+          documentType: data.document_type ?? existing.document_type,
+          projectId: data.project_id ?? existing.project_id,
+          organizationId: data.organization_id ?? existing.organization_id,
+        },
     });
 
     return this.findOne(documentId, user);
@@ -469,11 +560,18 @@ export class DocumentsService {
       where: { id },
       select: {
         id: true,
+        organization_id: true,
         title: true,
         code: true,
         document_type: true,
         project_id: true,
+        folder_id: true,
         current_version: true,
+        is_archived: true,
+        archived_at: true,
+        archived_by: true,
+        restored_at: true,
+        restored_by: true,
         created_at: true,
         updated_at: true,
         storage_path: true,
@@ -491,6 +589,7 @@ export class DocumentsService {
           },
         },
         project: { select: { name: true, code: true, organization_id: true } },
+        folder: { select: { id: true, name: true } },
       },
     });
     if (!doc) throw new NotFoundException(`Document ${id} not found`);
@@ -506,6 +605,8 @@ export class DocumentsService {
       code: doc.code ?? null,
       document_type: doc.document_type,
       project_id: doc.project_id ?? null,
+      folder_id: doc.folder_id ?? null,
+      folder_name: doc.folder?.name ?? null,
       project_name: doc.project?.name ?? null,
       project_code: doc.project?.code ?? null,
       current_version: doc.current_version,
@@ -517,6 +618,13 @@ export class DocumentsService {
       uploaded_by_name: current?.uploaded_by
         ? uploaderNames.get(current.uploaded_by) ?? null
         : null,
+      is_archived: doc.is_archived ?? false,
+      archived_at: doc.archived_at ?? null,
+      archived_by: doc.archived_by ?? null,
+      archived_by_name: doc.archived_by ? uploaderNames.get(doc.archived_by) ?? null : null,
+      restored_at: doc.restored_at ?? null,
+      restored_by: doc.restored_by ?? null,
+      restored_by_name: doc.restored_by ? uploaderNames.get(doc.restored_by) ?? null : null,
       versions: versions.map((version) => ({
         id: version.id,
         document_id: version.document_id,
@@ -534,6 +642,67 @@ export class DocumentsService {
   }
 
   /**
+   * Reversibly archive a document.
+   *
+   * Only the lifecycle columns move: the stored binary, every version row, the
+   * project association and any attachment references are left untouched.
+   */
+  async archive(documentId: string, user: AuthenticatedUser): Promise<DocumentDetail> {
+    const existing = await this.loadDocumentAccessContext(documentId);
+    await this.assertCanAccessDocument(existing, user);
+
+    const now = new Date();
+    const result = await this.prisma.document.updateMany({
+      where: { id: documentId, is_archived: false },
+      data: { is_archived: true, archived_at: now, archived_by: user.id },
+    });
+    if (result.count === 0) {
+      // Already archived (or removed between read and write): idempotent, no
+      // duplicate audit event. `findOne` still throws 404 if it no longer exists.
+      return this.findOne(documentId, user);
+    }
+
+    await this.auditService.record({
+      organizationId: existing.organization_id ?? existing.project?.organization_id ?? user.organizationId,
+      actorId: user.id,
+      action: 'DOCUMENT_ARCHIVED',
+      entity: 'Document',
+      entityId: documentId,
+      before: { isArchived: false },
+      after: { isArchived: true, archivedBy: user.id, archivedAt: now.toISOString() },
+    });
+
+    return this.findOne(documentId, user);
+  }
+
+  /** Reversibly return an archived document to the active listings. */
+  async restore(documentId: string, user: AuthenticatedUser): Promise<DocumentDetail> {
+    const existing = await this.loadDocumentAccessContext(documentId);
+    await this.assertCanAccessDocument(existing, user);
+
+    const now = new Date();
+    const result = await this.prisma.document.updateMany({
+      where: { id: documentId, is_archived: true },
+      data: { is_archived: false, restored_at: now, restored_by: user.id },
+    });
+    if (result.count === 0) {
+      return this.findOne(documentId, user);
+    }
+
+    await this.auditService.record({
+      organizationId: existing.organization_id ?? existing.project?.organization_id ?? user.organizationId,
+      actorId: user.id,
+      action: 'DOCUMENT_RESTORED',
+      entity: 'Document',
+      entityId: documentId,
+      before: { isArchived: true },
+      after: { isArchived: false, restoredBy: user.id, restoredAt: now.toISOString() },
+    });
+
+    return this.findOne(documentId, user);
+  }
+
+  /**
    * Persist a document from an uploaded binary.
    *
    * The storage key is produced by the storage service — it is never taken
@@ -547,12 +716,20 @@ export class DocumentsService {
       title?: string;
       code?: string;
       allowDuplicate?: boolean;
+      folderId?: string;
     },
     file: DocumentUploadFile,
     user: AuthenticatedUser,
   ): Promise<DocumentUploadOutcome> {
-    if (!dto.projectId) throw new BadRequestException('A project is required for document uploads');
-    await this.assertCanUploadToProject(dto.projectId, user);
+    const ownership = await this.resolveDocumentOwnership(dto.projectId, user);
+    const folderId = dto.folderId?.trim();
+    if (dto.folderId !== undefined && !folderId) {
+      throw new BadRequestException('A valid folderId is required when a folder is selected');
+    }
+    if (folderId) {
+      await this.assertCanManageDocumentFolders(user, this.prisma);
+      await this.assertFolderInOwnership(folderId, ownership);
+    }
 
     const documentType = dto.documentType
       ? resolveDocumentType(dto.documentType)
@@ -569,23 +746,36 @@ export class DocumentsService {
       if (matches.length > 0) return { duplicate: true, matchScope: 'authorized_projects', matches };
     }
 
-    const stored = await this.storeFile(file);
     const title = dto.title?.trim()
       ? dto.title.trim().slice(0, 180)
       : sanitizeUploadFileName(file.originalname);
+    const stored = await this.storeFile(file);
 
-    const document = await this.create(
-      {
-        ...(dto.projectId ? { projectId: dto.projectId } : {}),
-        documentType,
-        title,
-        code: dto.code?.trim() || undefined,
-        storagePath: stored.key,
-        fileSize: stored.size,
-        checksum: stored.checksum,
-      },
-      user.id,
-    );
+    let document: any;
+    try {
+      document = await this.create(
+        {
+          ...(ownership.projectId ? { projectId: ownership.projectId } : {}),
+          documentType,
+          title,
+          code: dto.code?.trim() || undefined,
+          storagePath: stored.key,
+          fileSize: stored.size,
+          checksum: stored.checksum,
+          ...(folderId ? { folderId } : {}),
+        },
+        user.id,
+        ownership,
+      );
+    } catch (error) {
+      try {
+        await this.cleanupFailedUpload(stored.key);
+      } catch (cleanupError) {
+        this.logger.error(`Document persistence failed: ${(error as Error).message}`);
+        throw cleanupError;
+      }
+      throw error;
+    }
 
     return { duplicate: false, document, stored };
   }
@@ -600,6 +790,7 @@ export class DocumentsService {
       where: { AND: [visibility, { versions: { some: { checksum } } }] },
       select: {
         id: true,
+        organization_id: true,
         title: true,
         code: true,
         document_type: true,
@@ -656,6 +847,9 @@ export class DocumentsService {
   } | DuplicateUploadResult> {
     const existing = await this.loadDocumentAccessContext(documentId);
     await this.assertCanAccessDocument(existing, user);
+    if (existing.is_archived) {
+      throw new ConflictException('Archived documents must be restored before a new version can be added');
+    }
     if (!file?.buffer || file.buffer.length === 0) throw new BadRequestException('No file uploaded');
     const mimeType = String(file.mimetype || '');
     const size = file.size && file.size > 0 ? file.size : file.buffer.length;
@@ -681,11 +875,23 @@ export class DocumentsService {
     }
     const stored = await this.storeFile(file);
 
-    const updated = await this.addVersion(
-      documentId,
-      { storagePath: stored.key, fileSize: stored.size, checksum: stored.checksum },
-      user.id,
-    );
+    let updated: any;
+    try {
+      updated = await this.addVersion(
+        documentId,
+        { storagePath: stored.key, fileSize: stored.size, checksum: stored.checksum },
+        user.id,
+        existing.organization_id ?? existing.project?.organization_id ?? user.organizationId,
+      );
+    } catch (error) {
+      try {
+        await this.cleanupFailedUpload(stored.key);
+      } catch (cleanupError) {
+        this.logger.error(`Version persistence failed: ${(error as Error).message}`);
+        throw cleanupError;
+      }
+      throw error;
+    }
 
     return { duplicate: false, document: updated, stored, previousVersion: existing.current_version };
   }
@@ -696,6 +902,156 @@ export class DocumentsService {
    * from PostgreSQL; request fields and cached role maps are not authoritative.
    */
   async assertCanUploadToProject(projectId: string, user: AuthenticatedUser): Promise<void> {
+    await this.getAuthorizedProjectForUpload(projectId, user);
+  }
+
+  /**
+   * Resolve a new document's owner before saving its binary. Project ownership
+   * comes from the database after tenant and membership checks; company
+   * ownership comes only from the authenticated user's organization context.
+   */
+  async resolveDocumentOwnership(
+    projectId: string | undefined,
+    user: AuthenticatedUser,
+  ): Promise<DocumentOwnershipContext> {
+    const normalizedProjectId = projectId?.trim();
+    if (projectId !== undefined && !normalizedProjectId) {
+      throw new BadRequestException('A valid projectId is required when a project is selected');
+    }
+
+    if (normalizedProjectId) {
+      const project = await this.getAuthorizedProjectForUpload(normalizedProjectId, user);
+      return { projectId: project.id, organizationId: project.organization_id };
+    }
+
+    const organizationId = user.organizationId?.trim();
+    if (!organizationId) {
+      throw new ForbiddenException('An authorized organization is required for company documents');
+    }
+    return { projectId: null, organizationId };
+  }
+
+  /** File an existing document without changing company/project ownership. */
+  async moveToFolder(documentId: string, folderId: string | null, user: AuthenticatedUser): Promise<DocumentDetail> {
+    const existing = await this.loadDocumentAccessContext(documentId);
+    await this.assertCanAccessDocument(existing, user);
+    const currentOrganizationId = existing.organization_id;
+    if (folderId !== null && !currentOrganizationId) {
+      throw new ConflictException('Legacy documents without established organization ownership cannot be filed');
+    }
+    if (!currentOrganizationId) {
+      if (existing.folder_id === null && folderId === null) return this.findOne(documentId, user);
+      throw new ForbiddenException('Document ownership is not available');
+    }
+    const ownership: DocumentOwnershipContext = {
+      projectId: existing.project_id,
+      organizationId: currentOrganizationId,
+    };
+    if (existing.folder_id === folderId) return this.findOne(documentId, user);
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // Acquire the same scope lock as folder mutations before taking row
+        // locks, so filing cannot race folder deletion or a tree reparent.
+        await tx.$queryRaw`
+          SELECT pg_advisory_xact_lock(
+            hashtext(${currentOrganizationId}),
+            hashtext(${ownership.projectId ?? '<company>'})
+          )
+        `;
+        const lockRows = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM "documents" WHERE "id" = ${documentId} FOR UPDATE
+        `;
+        if (lockRows.length === 0) throw new NotFoundException(`Document ${documentId} not found`);
+        const current = await this.loadDocumentAccessContext(documentId, tx);
+        await this.assertCanAccessDocument(current, user, tx);
+        if (
+          current.project_id !== existing.project_id ||
+          current.organization_id !== existing.organization_id ||
+          current.folder_id !== existing.folder_id
+        ) {
+          throw new ConflictException('The document scope or folder changed; reload and retry');
+        }
+        if (current.is_archived) {
+          throw new ConflictException('Restore archived documents before changing their folder');
+        }
+        await this.assertCanManageDocumentFolders(user, tx);
+
+        if (folderId !== null) {
+          const folderLocks = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT "id" FROM "document_folders" WHERE "id" = ${folderId} FOR KEY SHARE
+          `;
+          if (folderLocks.length === 0) throw new NotFoundException('Folder not found');
+          await this.assertFolderInOwnership(folderId, ownership, tx);
+        }
+
+        const update = await tx.document.updateMany({
+          where: {
+            id: documentId,
+            organization_id: current.organization_id,
+            project_id: current.project_id,
+            folder_id: current.folder_id,
+          },
+          data: { folder_id: folderId },
+        });
+        if (update.count !== 1) throw new ConflictException('The document folder changed; reload and retry');
+
+        await tx.auditLog.create({
+          data: {
+            organization_id: currentOrganizationId,
+            actor_id: user.id,
+            action: 'DOCUMENT_FOLDER_CHANGED',
+            entity: 'Document',
+            entity_id: documentId,
+            before_state: { folderId: current.folder_id } as Prisma.InputJsonValue,
+            after_state: { folderId } as Prisma.InputJsonValue,
+          },
+        });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      const code = (error as { code?: string } | null)?.code;
+      if (code === 'P2034' || code === '40001') {
+        throw new ConflictException('A concurrent document or folder change was detected; reload and retry');
+      }
+      if (code === 'P2002' || code === 'P2004') {
+        throw new ConflictException('The document cannot be filed in the requested folder');
+      }
+      throw error;
+    }
+    return this.findOne(documentId, user);
+  }
+
+  private async assertFolderInOwnership(
+    folderId: string,
+    ownership: DocumentOwnershipContext,
+    db: PrismaService | Prisma.TransactionClient = this.prisma,
+  ): Promise<void> {
+    const folder = await db.documentFolder.findUnique({
+      where: { id: folderId },
+      select: { id: true, organization_id: true, project_id: true },
+    });
+    if (!folder) throw new NotFoundException('Folder not found');
+    if (folder.organization_id !== ownership.organizationId || folder.project_id !== ownership.projectId) {
+      throw new ConflictException('Folder must match the document company and project scope');
+    }
+  }
+
+  private async assertCanManageDocumentFolders(
+    user: AuthenticatedUser,
+    db: PrismaService | Prisma.TransactionClient,
+  ): Promise<void> {
+    if (user.role === UserRoleEnum.ADMIN || user.role === UserRoleEnum.OWNER) return;
+    const permission = await db.rolePermission.findFirst({
+      where: {
+        role: { code: user.role },
+        permission: { module: 'documents', action: 'folder_manage' },
+      },
+      select: { role_id: true },
+    });
+    if (!permission) throw new ForbiddenException('Missing documents:folder_manage permission');
+  }
+
+  private async getAuthorizedProjectForUpload(projectId: string, user: AuthenticatedUser) {
     if (!projectId?.trim()) throw new BadRequestException('A valid projectId is required');
 
     const project = await this.prisma.project.findUnique({
@@ -709,7 +1065,7 @@ export class DocumentsService {
 
     if (user.role === UserRoleEnum.ADMIN || user.role === UserRoleEnum.OWNER ||
         user.role === UserRoleEnum.MANAGER) {
-      return;
+      return project;
     }
 
     const member = await this.prisma.projectMember.findUnique({
@@ -717,6 +1073,7 @@ export class DocumentsService {
       select: { user_id: true },
     });
     if (!member) throw new ForbiddenException('You cannot upload documents to this project');
+    return project;
   }
 
   /** Apply the same tenant/project policy to detail, version, and blob access. */
@@ -724,20 +1081,30 @@ export class DocumentsService {
     document: {
       id: string;
       project_id: string | null;
+      organization_id?: string | null;
       project?: { organization_id?: string | null } | null;
       versions?: Array<{ uploaded_by: string | null }>;
     },
     user: AuthenticatedUser,
+    db: PrismaService | Prisma.TransactionClient = this.prisma,
   ): Promise<void> {
     const isElevated = ELEVATED_ROLES.includes(user.role);
     const isUploader = document.versions?.some((version) => version.uploaded_by === user.id) ?? false;
 
     if (!document.project_id) {
+      if (document.organization_id) {
+        if (!user.organizationId || document.organization_id !== user.organizationId) {
+          throw new ForbiddenException('You do not have access to this document');
+        }
+        return;
+      }
       if (isElevated || (user.role === UserRoleEnum.MANAGER && isUploader)) return;
       throw new ForbiddenException('You do not have access to this document');
     }
 
-    if (!user.organizationId || document.project?.organization_id !== user.organizationId) {
+    const projectOrganizationId = document.project?.organization_id;
+    if (!user.organizationId || projectOrganizationId !== user.organizationId ||
+        (document.organization_id != null && document.organization_id !== projectOrganizationId)) {
       throw new ForbiddenException('You do not have access to this document');
     }
 
@@ -745,23 +1112,31 @@ export class DocumentsService {
     // existing global-project role within their own organization.
     if (isElevated || user.role === UserRoleEnum.MANAGER) return;
 
-    const member = await this.prisma.projectMember.findUnique({
+    const member = await db.projectMember.findUnique({
       where: { project_id_user_id: { project_id: document.project_id, user_id: user.id } },
       select: { user_id: true },
     });
     if (!member) throw new ForbiddenException('You do not have access to this document');
   }
 
-  private async loadDocumentAccessContext(documentId: string) {
-    const document = await this.prisma.document.findUnique({
+  private async loadDocumentAccessContext(documentId: string, db: PrismaService | Prisma.TransactionClient = this.prisma) {
+    const document = await db.document.findUnique({
       where: { id: documentId },
       select: {
         id: true,
+        organization_id: true,
         title: true,
         code: true,
         document_type: true,
         project_id: true,
+        folder_id: true,
+        folder: { select: { id: true, name: true } },
         current_version: true,
+        is_archived: true,
+        archived_at: true,
+        archived_by: true,
+        restored_at: true,
+        restored_by: true,
         project: { select: { organization_id: true, name: true, code: true } },
         versions: {
           orderBy: { version: 'desc' },
@@ -780,10 +1155,25 @@ export class DocumentsService {
    * (see `createFromUpload` / `UploadService.uploadFile`). It is never taken
    * directly from an HTTP request body.
    */
-  async create(dto: CreateDocumentDto, actorId?: string) {
+  async create(
+    dto: CreateDocumentDto,
+    actorId: string | undefined,
+    ownership: DocumentOwnershipContext,
+  ) {
+    if (!ownership.organizationId?.trim()) {
+      throw new ForbiddenException('An authorized organization is required to create a document');
+    }
+    const requestedProjectId = dto.projectId?.trim() || null;
+    if (requestedProjectId !== ownership.projectId) {
+      throw new ForbiddenException('Document project scope does not match its authorized ownership');
+    }
+    if (dto.folderId) await this.assertFolderInOwnership(dto.folderId, ownership);
+
     const doc = await this.prisma.document.create({
       data: {
-        project_id: dto.projectId,
+        project_id: ownership.projectId,
+        organization_id: ownership.organizationId,
+        folder_id: dto.folderId ?? null,
         document_type: dto.documentType,
         title: dto.title,
         code: dto.code,
@@ -803,6 +1193,7 @@ export class DocumentsService {
     });
 
     await this.auditService.record({
+      organizationId: ownership.organizationId,
       actorId,
       action: 'DOCUMENT_UPLOADED',
       entity: 'Document',
@@ -818,7 +1209,12 @@ export class DocumentsService {
    *
    * Internal service API: `storagePath` MUST come from `StorageService.save()`.
    */
-  async addVersion(documentId: string, dto: AddDocumentVersionDto, actorId?: string) {
+  async addVersion(
+    documentId: string,
+    dto: AddDocumentVersionDto,
+    actorId?: string,
+    organizationId?: string,
+  ) {
     const doc = await this.prisma.document.findUnique({
       where: { id: documentId },
       select: { id: true, current_version: true },
@@ -849,6 +1245,7 @@ export class DocumentsService {
     });
 
     await this.auditService.record({
+      organizationId,
       actorId,
       action: 'DOCUMENT_VERSION_ADDED',
       entity: 'Document',
@@ -877,6 +1274,24 @@ export class DocumentsService {
     });
   }
 
+  /** Compensate for a failed metadata transaction using only its fresh storage key. */
+  private async cleanupFailedUpload(storageKey: string): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        await this.storage.delete(storageKey);
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    const cleanupMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    this.logger.error(
+      `Failed to clean up uncommitted document upload ${storageKey} after 2 attempts: ${cleanupMessage}`,
+    );
+    throw new Error('Document persistence failed and the uncommitted storage object could not be removed');
+  }
+
   /**
    * Build the Prisma filter that restricts the result set to the documents the
    * requester is allowed to see.
@@ -889,39 +1304,69 @@ export class DocumentsService {
     scope: ProjectScope,
     user: AuthenticatedUser,
     projectId?: string,
+    companyOnly = false,
   ): Record<string, any> {
     const isElevated = ELEVATED_ROLES.includes(user.role);
     const orgId = user.organizationId;
+
+    if (companyOnly) {
+      if (!orgId) return { project_id: { in: [] } };
+      return { project_id: null, organization_id: orgId };
+    }
 
     if (projectId) {
       // The route guard verifies project access; this additional tenant filter
       // applies equally to global and project-scoped roles.
       if (!orgId) return { project_id: { in: [] } };
-      return { AND: [{ project_id: projectId }, { project: { organization_id: orgId } }] };
-    }
-
-    if (!scope.isGlobal) {
-      // Membership scope is intersected with the user's organization so even
-      // stale or cross-tenant membership data cannot widen document visibility.
-      if (!orgId) return { project_id: { in: [] } };
       return {
         AND: [
-          { project_id: { in: scope.projectIds } },
+          { project_id: projectId },
           { project: { organization_id: orgId } },
+          { OR: [{ organization_id: null }, { organization_id: orgId }] },
         ],
       };
     }
 
-    // Global scope: the projects of the requester's own organization plus the
-    // project-less documents the requester is allowed to read.
+    if (!scope.isGlobal) {
+      // Project documents stay membership- and organization-scoped. New
+      // company documents are visible only inside the authenticated user's
+      // organization; legacy unowned rows remain excluded from this branch.
+      if (!orgId) return { project_id: { in: [] } };
+      return {
+        OR: [
+          {
+            AND: [
+              { project_id: { in: scope.projectIds } },
+              { project: { organization_id: orgId } },
+              { OR: [{ organization_id: null }, { organization_id: orgId }] },
+            ],
+          },
+          { project_id: null, organization_id: orgId },
+        ],
+      };
+    }
+
+    // Global project roles still remain tenant-scoped. Organization-owned
+    // company documents are same-org only; null-owner legacy documents retain
+    // their historical elevated/uploader visibility rules.
     const branches: Record<string, any>[] = [];
     if (orgId) {
-      branches.push({ project: { organization_id: orgId } });
+      branches.push({
+        AND: [
+          { project: { organization_id: orgId } },
+          { OR: [{ organization_id: null }, { organization_id: orgId }] },
+        ],
+      });
+      branches.push({ project_id: null, organization_id: orgId });
     }
     if (isElevated) {
-      branches.push({ project_id: null });
+      branches.push({ project_id: null, organization_id: null });
     } else {
-      branches.push({ project_id: null, versions: { some: { uploaded_by: user.id } } });
+      branches.push({
+        project_id: null,
+        organization_id: null,
+        versions: { some: { uploaded_by: user.id } },
+      });
     }
 
     return branches.length > 1 ? { OR: branches } : branches[0];
@@ -981,6 +1426,8 @@ export class DocumentsService {
       for (const version of versions) {
         if (version?.uploaded_by) ids.add(version.uploaded_by);
       }
+      if (row?.archived_by) ids.add(row.archived_by);
+      if (row?.restored_by) ids.add(row.restored_by);
     }
     if (ids.size === 0) return new Map();
 
@@ -1005,6 +1452,8 @@ export class DocumentsService {
       code: row.code ?? null,
       document_type: row.document_type,
       project_id: row.project_id ?? null,
+      folder_id: row.folder_id ?? null,
+      folder_name: row.folder?.name ?? null,
       project_name: row.project?.name ?? null,
       project_code: row.project?.code ?? null,
       current_version: row.current_version,
@@ -1016,6 +1465,13 @@ export class DocumentsService {
       uploaded_by_name: current?.uploaded_by
         ? uploaderNames.get(current.uploaded_by) ?? null
         : null,
+      is_archived: row.is_archived ?? false,
+      archived_at: row.archived_at ?? null,
+      archived_by: row.archived_by ?? null,
+      archived_by_name: row.archived_by ? uploaderNames.get(row.archived_by) ?? null : null,
+      restored_at: row.restored_at ?? null,
+      restored_by: row.restored_by ?? null,
+      restored_by_name: row.restored_by ? uploaderNames.get(row.restored_by) ?? null : null,
     };
   }
 }

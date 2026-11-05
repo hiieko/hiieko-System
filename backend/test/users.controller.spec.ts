@@ -18,4 +18,30 @@ describe('UsersController roster authorization', () => {
       UserRoleEnum.TEAM_LEADER,
     ]);
   });
+
+  it('limits Microsoft identity linking to administrators', () => {
+    const roles = Reflect.getMetadata(
+      ROLES_KEY,
+      UsersController.prototype.linkMicrosoftIdentity,
+    );
+
+    expect(roles).toEqual([UserRoleEnum.ADMIN, UserRoleEnum.OWNER]);
+  });
+
+  it.each([
+    'createPending',
+    'updateRole',
+    'updateStatus',
+    'getSessions',
+    'revokeAllSessions',
+    'revokeSession',
+    'getActivity',
+    'previewOffboarding',
+    'offboard',
+  ] as const)('%s is protected by the backend administrator role guard', (method) => {
+    expect(Reflect.getMetadata(ROLES_KEY, UsersController.prototype[method])).toEqual([
+      UserRoleEnum.ADMIN,
+      UserRoleEnum.OWNER,
+    ]);
+  });
 });

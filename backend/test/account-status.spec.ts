@@ -25,7 +25,7 @@ import { ROLES_KEY } from '../src/common/auth/decorators/auth-metadata.decorator
 describe('AuthService — account lifecycle (login)', () => {
   let service: AuthService;
   let prisma: any;
-  let audit: { record: jest.Mock };
+  let audit: { record: jest.Mock; recordRequired: jest.Mock };
 
   const jwtService = { sign: jest.fn().mockReturnValue('signed-token') };
   const PASSWORD = 'correct-password';
@@ -59,7 +59,7 @@ describe('AuthService — account lifecycle (login)', () => {
       },
       refreshToken: { create: jest.fn() },
     };
-    audit = { record: jest.fn() };
+    audit = { record: jest.fn(), recordRequired: jest.fn().mockResolvedValue({ id: 'audit-1' }) } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -179,7 +179,7 @@ describe('AuthService — account lifecycle (login)', () => {
 describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
   let service: UsersService;
   let prisma: any;
-  let audit: { record: jest.Mock };
+  let audit: { record: jest.Mock; recordRequired: jest.Mock };
 
   const beforePENDING = {
     id: 'u1',
@@ -191,13 +191,14 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
 
   beforeEach(async () => {
     prisma = {
+      $transaction: jest.fn(async (callback: (tx: any) => Promise<any>) => callback(prisma)),
       user: { findUnique: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
       // Slice 2 (L13): suspension revokes active sessions — these tests exercise a user
       // with no sessions, so the revocation is a no-op.
       session: { findMany: jest.fn().mockResolvedValue([]), updateMany: jest.fn() },
       refreshToken: { updateMany: jest.fn() },
     };
-    audit = { record: jest.fn() };
+    audit = { record: jest.fn(), recordRequired: jest.fn().mockResolvedValue({ id: 'audit-1' }) } as any;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -232,7 +233,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
       }),
     );
     expect(result.status).toBe(UserStatusEnum.ACTIVE);
-    expect(audit.record).toHaveBeenCalledWith(
+    expect(audit.recordRequired).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'USER_ACTIVATED',
         entity: 'User',
@@ -240,6 +241,7 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
         before: { status: UserStatusEnum.PENDING, isActive: false },
         after: { status: UserStatusEnum.ACTIVE, isActive: true },
       }),
+      prisma,
     );
   });
 
@@ -257,8 +259,9 @@ describe('UsersService.updateStatus (account lifecycle, L-1)', () => {
 
     await service.updateStatus('u1', { status: UserStatusEnum.ACTIVE }, { id: 'admin-1', organizationId: 'org-1', role: UserRoleEnum.ADMIN } as any);
 
-    expect(audit.record).toHaveBeenCalledWith(
+    expect(audit.recordRequired).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'USER_STATUS_CHANGED' }),
+      prisma,
     );
   });
 

@@ -81,6 +81,7 @@ export interface ProjectZone {
 export interface Project {
   id: string;
   organization_id?: string;
+  project_type?: RequirementProjectType | null;
   name: string;
   code: string;
   address?: string;
@@ -110,6 +111,12 @@ export interface Project {
 
 // ── DTOs ─────────────────────────────────────────────────────────────
 
+export type RequirementProjectType =
+  | 'RESIDENTIAL_SOLAR'
+  | 'COMMERCIAL_SOLAR'
+  | 'INDUSTRIAL_SOLAR'
+  | 'OTHER_CUSTOM';
+
 /** Matches CreateProjectDto in backend projects.service.ts */
 export interface CreateProjectDto {
   organizationId: string;
@@ -125,6 +132,8 @@ export interface CreateProjectDto {
   targetEndDate?: string;
   budgetTotal?: number;
   currency?: string;
+  /** Omitted to retain legacy untyped project creation. */
+  projectType?: RequirementProjectType;
 }
 
 /** Matches UpdateProjectDto in backend projects.service.ts */

@@ -6,6 +6,8 @@ import { AuthService } from './auth.service';
 import { SessionService } from './session.service';
 import { EmailService } from './email.service';
 import { AuthController } from './auth.controller';
+import { EntraAuthController } from './entra-auth.controller';
+import { MicrosoftAuthService } from './microsoft-auth.service';
 import { JwtAuthGuard } from '../../common/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/auth/guards/roles.guard';
 import { PermissionsGuard } from '../../common/auth/guards/permissions.guard';
@@ -34,9 +36,10 @@ import { RateLimitGuard } from '../../common/auth/guards/rate-limit.guard';
       },
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, EntraAuthController],
   providers: [
     AuthService,
+    MicrosoftAuthService,
     SessionService,
     EmailService,
     RateLimitGuard,
@@ -50,6 +53,7 @@ import { RateLimitGuard } from '../../common/auth/guards/rate-limit.guard';
   ],
   exports: [
     AuthService,
+    MicrosoftAuthService,
     SessionService,
     JwtModule,
     JwtAuthGuard,

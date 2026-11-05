@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { UserRoleEnum } from '@prisma/client';
 import { DocumentsController } from '../src/modules/documents/documents.controller';
 import {
+  PERMISSIONS_KEY,
   REQUIRE_ENTITY_PROJECT_ACCESS_KEY,
   REQUIRE_PROJECT_ACCESS_KEY,
 } from '../src/common/auth/decorators/auth-metadata.decorator';
@@ -25,6 +26,9 @@ describe('DocumentsController', () => {
       findAll: jest.fn().mockResolvedValue({ data: [], total: 0, page: 1, pageSize: 20 }),
       findOne: jest.fn().mockResolvedValue({ id: 'doc-1' }),
       updateMetadata: jest.fn().mockResolvedValue({ id: 'doc-1' }),
+      archive: jest.fn().mockResolvedValue({ id: 'doc-1', is_archived: true }),
+      restore: jest.fn().mockResolvedValue({ id: 'doc-1', is_archived: false }),
+      moveToFolder: jest.fn().mockResolvedValue({ id: 'doc-1', folder_id: 'folder-1' }),
       createFromUpload: jest.fn().mockResolvedValue({
         document: { id: 'doc-1', title: 'Plan', current_version: 1 },
         stored: { key: 'documents/x.pdf', mimeType: 'application/pdf', size: 42, checksum: 'sum' },
@@ -55,12 +59,12 @@ describe('DocumentsController', () => {
       expect(metadata).toEqual({ model: 'document', param: 'id' });
     });
 
-    it('requires projectId from a guard-readable request parameter for document uploads', () => {
+    it('supports a project query for project uploads and omits it for company uploads', () => {
       const metadata = Reflect.getMetadata(
         REQUIRE_PROJECT_ACCESS_KEY,
         DocumentsController.prototype.create,
       );
-      expect(metadata).toEqual({ param: 'projectId', mode: 'required' });
+      expect(metadata).toEqual({ param: 'projectId', mode: 'optional' });
     });
 
     it('protects the version route with an entity project access check', () => {
@@ -69,6 +73,27 @@ describe('DocumentsController', () => {
         DocumentsController.prototype.addVersion,
       );
       expect(metadata).toEqual({ model: 'document', param: 'id' });
+    });
+
+    it('protects archive and restore with the same entity project access check', () => {
+      for (const handler of [
+        DocumentsController.prototype.archive,
+        DocumentsController.prototype.restore,
+      ]) {
+        expect(Reflect.getMetadata(REQUIRE_ENTITY_PROJECT_ACCESS_KEY, handler)).toEqual({
+          model: 'document',
+          param: 'id',
+        });
+      }
+    });
+
+    it('requires entity authorization and documents:folder_manage for document filing', () => {
+      expect(Reflect.getMetadata(REQUIRE_ENTITY_PROJECT_ACCESS_KEY, DocumentsController.prototype.moveToFolder)).toEqual({
+        model: 'document', param: 'id',
+      });
+      expect(Reflect.getMetadata(PERMISSIONS_KEY, DocumentsController.prototype.moveToFolder)).toEqual([
+        { module: 'documents', action: 'folder_manage' },
+      ]);
     });
   });
 
@@ -106,6 +131,74 @@ describe('DocumentsController', () => {
         },
       );
     });
+
+    it('forwards an explicit archived filter without changing active listings by default', async () => {
+      await controller.findAll(
+        { isGlobal: false, projectIds: ['project-1'] },
+        user,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        'true',
+      );
+
+      expect(service.findAll).toHaveBeenCalledWith(
+        expect.anything(),
+        user,
+        expect.objectContaining({ archived: true }),
+      );
+    });
+
+    it('forwards folder, Unfiled and explicit company filters', async () => {
+      await controller.findAll(
+        { isGlobal: false, projectIds: ['project-1'] }, user,
+        undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+        undefined, undefined, undefined, 'false', 'folder-1', 'true', 'company',
+      );
+      expect(service.findAll).toHaveBeenCalledWith(expect.anything(), user, expect.objectContaining({
+        folderId: 'folder-1', unfiled: true, scope: 'company',
+      }));
+    });
+
+    it('rejects malformed Unfiled and company scope filters', async () => {
+      await expect(controller.findAll(
+        { isGlobal: false, projectIds: [] }, user,
+        undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+        undefined, undefined, undefined, undefined, undefined, 'yes',
+      )).rejects.toThrow(BadRequestException);
+      await expect(controller.findAll(
+        { isGlobal: false, projectIds: [] }, user,
+        undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+        undefined, undefined, undefined, undefined, undefined, undefined, 'project',
+      )).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects an invalid archived filter instead of silently coercing it', async () => {
+      await expect(
+        controller.findAll(
+          { isGlobal: false, projectIds: ['project-1'] },
+          user,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'maybe',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('PATCH /api/documents/:id', () => {
@@ -119,6 +212,16 @@ describe('DocumentsController', () => {
       const dto = { documentType: 'FACTURA', projectId: 'project-1' };
       await controller.updateMetadata('doc-1', dto, user);
       expect(service.updateMetadata).toHaveBeenCalledWith('doc-1', dto, user);
+    });
+  });
+
+  describe('PATCH /api/documents/:id/folder', () => {
+    it('requires an explicit folderId or null and forwards the requested folder', async () => {
+      await expect(controller.moveToFolder('doc-1', {} as any, user as any)).rejects.toThrow(BadRequestException);
+      await controller.moveToFolder('doc-1', { folderId: null }, user as any);
+      expect(service.moveToFolder).toHaveBeenCalledWith('doc-1', null, user);
+      await controller.moveToFolder('doc-1', { folderId: 'folder-1' }, user as any);
+      expect(service.moveToFolder).toHaveBeenLastCalledWith('doc-1', 'folder-1', user);
     });
   });
 
@@ -149,6 +252,35 @@ describe('DocumentsController', () => {
         url: '/api/upload/doc-1',
         mimeType: 'application/pdf',
       });
+    });
+
+    it('forwards an explicit company destination without an organization field', async () => {
+      await controller.create(
+        { buffer: PDF_BYTES, mimetype: 'application/pdf', originalname: 'company.pdf', size: PDF_BYTES.length } as any,
+        undefined,
+        'CONTRACT',
+        'Company contract',
+        undefined,
+        user,
+      );
+
+      expect(service.createFromUpload).toHaveBeenCalledWith(
+        { projectId: undefined, documentType: 'CONTRACT', title: 'Company contract', code: undefined },
+        expect.objectContaining({ mimetype: 'application/pdf' }),
+        user,
+      );
+    });
+
+    it('forwards an optional folder association without accepting organization ownership', async () => {
+      await controller.create(
+        { buffer: PDF_BYTES, mimetype: 'application/pdf', originalname: 'plan.pdf', size: PDF_BYTES.length } as any,
+        'project-1', 'CONTRACT', undefined, undefined, user, undefined, undefined, 'folder-1',
+      );
+      expect(service.createFromUpload).toHaveBeenCalledWith(
+        expect.objectContaining({ projectId: 'project-1', folderId: 'folder-1' }),
+        expect.any(Object),
+        user,
+      );
     });
 
     it('returns an exact-duplicate warning without serializing a new document result', async () => {
@@ -211,6 +343,22 @@ describe('DocumentsController', () => {
         false,
       );
       expect(result).toMatchObject({ documentId: 'doc-1', version: 2 });
+    });
+  });
+
+  describe('POST /api/documents/:id/archive and /restore', () => {
+    it('forwards archive to the service and returns the document', async () => {
+      const result = await controller.archive('doc-1', user);
+
+      expect(service.archive).toHaveBeenCalledWith('doc-1', user);
+      expect(result).toMatchObject({ id: 'doc-1', is_archived: true });
+    });
+
+    it('forwards restore to the service and returns the document', async () => {
+      const result = await controller.restore('doc-1', user);
+
+      expect(service.restore).toHaveBeenCalledWith('doc-1', user);
+      expect(result).toMatchObject({ id: 'doc-1', is_archived: false });
     });
   });
 });

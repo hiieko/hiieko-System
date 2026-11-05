@@ -233,12 +233,12 @@ describe('Slice 2 — Session issuance (AuthService.login)', () => {
   let db: FakeDb;
   let service: AuthService;
   let jwt: JwtService;
-  let audit: { record: jest.Mock };
+  let audit: { record: jest.Mock; recordRequired: jest.Mock };
 
   beforeEach(async () => {
     db = new FakeDb();
     jwt = realJwtService();
-    audit = { record: jest.fn() };
+    audit = { record: jest.fn(), recordRequired: jest.fn().mockResolvedValue({ id: 'audit-1' }) } as any;
     service = (await buildAuthService(db, jwt, audit)).get(AuthService);
   });
 
@@ -603,7 +603,7 @@ describe('Slice 2 — Logout (L7)', () => {
 describe('Slice 2 — Suspension revokes every active session (L13)', () => {
   let db: FakeDb;
   let service: UsersService;
-  let audit: { record: jest.Mock };
+  let audit: { record: jest.Mock; recordRequired: jest.Mock };
 
   function seedSession(db: FakeDb, id: string, overrides: Partial<FakeSession> = {}) {
     const now = new Date();
@@ -623,7 +623,7 @@ describe('Slice 2 — Suspension revokes every active session (L13)', () => {
 
   beforeEach(async () => {
     db = new FakeDb();
-    audit = { record: jest.fn() };
+    audit = { record: jest.fn(), recordRequired: jest.fn().mockResolvedValue({ id: 'audit-1' }) } as any;
     seedUser(db);
     db.prisma.user.update = jest.fn().mockResolvedValue({
       id: 'u1',
@@ -664,15 +664,17 @@ describe('Slice 2 — Suspension revokes every active session (L13)', () => {
     expect(db.sessions.every((s) => s.revoked_at !== null)).toBe(true);
     expect(db.sessions.every((s) => s.revoked_reason === 'SUSPENDED')).toBe(true);
     expect(db.refreshTokens.every((r) => r.revoked_at !== null)).toBe(true);
-    expect(audit.record).toHaveBeenCalledWith(
+    expect(audit.recordRequired).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'SESSION_REVOKED',
         entityId: 'u1',
         metadata: expect.objectContaining({ revokedSessions: 2 }),
       }),
+      db.prisma,
     );
-    expect(audit.record).toHaveBeenCalledWith(
+    expect(audit.recordRequired).toHaveBeenCalledWith(
       expect.objectContaining({ action: 'USER_STATUS_CHANGED' }),
+      db.prisma,
     );
   });
 
@@ -690,8 +692,55 @@ describe('Slice 2 — Suspension revokes every active session (L13)', () => {
 
     expect(db.sessions[0].revoked_at).not.toBeNull();
     expect(db.sessions[0].revoked_reason).toBe('SUSPENDED');
-    expect(audit.record).not.toHaveBeenCalledWith(
+    expect(audit.recordRequired).not.toHaveBeenCalledWith(
       expect.objectContaining({ action: 'SESSION_REVOKED' }),
+    );
+  });
+
+  it('transitioning an active user to PENDING revokes sessions and refresh tokens', async () => {
+    db.prisma.user.update = jest.fn().mockResolvedValue({
+      id: 'u1',
+      email: USER_EMAIL,
+      role: UserRoleEnum.WORKER,
+      is_active: false,
+      status: UserStatusEnum.PENDING,
+    });
+    seedSession(db, 'session-A');
+    db.refreshTokens.push({
+      id: 'rt-pending',
+      session_id: 'session-A',
+      token_hash: 'b'.repeat(64),
+      issued_at: new Date(),
+      expires_at: new Date(Date.now() + SESSION_TTL_MS),
+      used_at: null,
+      revoked_at: null,
+      replaced_by_id: null,
+    });
+
+    await service.updateStatus(
+      'u1',
+      { status: UserStatusEnum.PENDING },
+      {
+        id: 'admin-1',
+        email: 'admin@hiieko.local',
+        organizationId: 'org-1',
+        role: UserRoleEnum.ADMIN,
+      } as any,
+    );
+
+    expect(db.sessions[0].revoked_at).not.toBeNull();
+    expect(db.sessions[0].revoked_reason).toBe('ACCOUNT_NOT_ACTIVE');
+    expect(db.refreshTokens[0].revoked_at).not.toBeNull();
+    expect(audit.recordRequired).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'SESSION_REVOKED',
+        entityId: 'u1',
+        metadata: expect.objectContaining({
+          reason: 'ACCOUNT_NOT_ACTIVE',
+          revokedSessions: 1,
+        }),
+      }),
+      db.prisma,
     );
   });
 });

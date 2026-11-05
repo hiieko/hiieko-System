@@ -22,6 +22,7 @@ import { Modal, Pagination } from '../../../components/ui';
 import { usePhotoUploadModal } from '../../../contexts/PhotoUploadModalContext';
 import { ProjectSettingsPanel } from './ProjectSettingsPanel';
 import { ProjectStagesPanel } from './ProjectStagesPanel';
+import { ProjectRequirementsPanel } from '../../../features/projects/components/ProjectRequirementsPanel';
 import { getIssues, updateIssueStatus } from '../../../features/issues/api';
 import { IssueCard } from '../../../features/issues/components/IssueCard';
 import { IssueDetailModal } from '../../../features/issues/components/IssueDetailModal';
@@ -337,6 +338,11 @@ function ProjectDetailPageInner() {
               </div>
             </div>
           )}
+          <ProjectRequirementsPanel
+            projectId={id}
+            projectType={project.project_type ?? null}
+            onProjectUpdated={() => { void loadProject(); }}
+          />
           <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-card lg:col-span-2 sm:p-6">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Spații de lucru ale proiectului</h3><p className="mt-1 text-sm text-slate-500">Navighează către fluxurile operaționale cu proiectul curent selectat.</p></div><span className="text-xs text-slate-400">{projectCode}</span></div>
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">

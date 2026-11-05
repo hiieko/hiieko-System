@@ -13,6 +13,7 @@ import {
   MAX_UPLOAD_BYTES,
   formatBytes,
   formatDateTime,
+  formatVersionFilename,
 } from '../documents.constants';
 
 interface DocumentDetailsModalProps {
@@ -20,6 +21,9 @@ interface DocumentDetailsModalProps {
   open: boolean;
   onClose: () => void;
   onChanged: () => void;
+  folderName?: string | null;
+  canManageFolders: boolean;
+  onRequestMoveToFolder: (document: DocumentDetail) => void;
 }
 
 /**
@@ -34,6 +38,9 @@ export function DocumentDetailsModal({
   open,
   onClose,
   onChanged,
+  folderName,
+  canManageFolders,
+  onRequestMoveToFolder,
 }: DocumentDetailsModalProps) {
   const { locale } = useLocale();
   const toast = useToast();
@@ -45,6 +52,7 @@ export function DocumentDetailsModal({
   const [versionFile, setVersionFile] = useState<File | null>(null);
   const [duplicateVersion, setDuplicateVersion] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [downloadingVersion, setDownloadingVersion] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
 
   const load = useCallback(async () => {
@@ -97,6 +105,31 @@ export function DocumentDetailsModal({
     }
   };
 
+  const downloadVersion = async (version: DocumentDetail['versions'][number]) => {
+    if (!detail) return;
+    setDownloadingVersion(version.id);
+    try {
+      const blob = await apiClient.downloadDocumentVersion(detail.id, version.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = formatVersionFilename(detail.title, version.version);
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      toast.error(
+        t('documents.download_error', locale),
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : t('documents.download_error', locale),
+      );
+    } finally {
+      setDownloadingVersion(null);
+    }
+  };
+
   const uploadVersion = async (allowDuplicate = false) => {
     if (!detail || !versionFile) return;
     if (!ACCEPTED_MIME_TYPES.includes(versionFile.type)) {
@@ -115,7 +148,7 @@ export function DocumentDetailsModal({
         allowDuplicate,
         onProgress: (percent) => setProgress(percent),
       });
-      if (response.data?.duplicate) {
+      if (response.data && 'duplicate' in response.data && response.data.duplicate === true) {
         setDuplicateVersion(response.data.matches[0]?.matchingVersion ?? null);
         return;
       }
@@ -150,43 +183,47 @@ export function DocumentDetailsModal({
       title={t('documents.detail_title', locale)}
       footer={
         detail ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-slate-500">{t('documents.new_version_hint', locale)}</p>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={versionInputRef}
-                  type="file"
-                  accept={ACCEPT_ATTRIBUTE}
-                  onChange={(e) => {
-                    setVersionFile(e.target.files?.[0] ?? null);
-                    setDuplicateVersion(null);
-                  }}
-                  disabled={uploading}
-                  aria-label={t('documents.action_new_version', locale)}
-                  className="text-xs"
-                />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  icon={<FileUp className="w-4 h-4" />}
-                  onClick={() => void uploadVersion()}
-                  disabled={uploading || !versionFile || duplicateVersion !== null}
-                  loading={uploading}
-                >
-                  {t('documents.action_new_version', locale)}
-                </Button>
+          detail.is_archived ? (
+            <p className="text-xs text-slate-500">{t('documents.archived_period', locale)}</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-slate-500">{t('documents.new_version_hint', locale)}</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={versionInputRef}
+                    type="file"
+                    accept={ACCEPT_ATTRIBUTE}
+                    onChange={(e) => {
+                      setVersionFile(e.target.files?.[0] ?? null);
+                      setDuplicateVersion(null);
+                    }}
+                    disabled={uploading}
+                    aria-label={t('documents.action_new_version', locale)}
+                    className="text-xs"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<FileUp className="w-4 h-4" />}
+                    onClick={() => void uploadVersion()}
+                    disabled={uploading || !versionFile || duplicateVersion !== null}
+                    loading={uploading}
+                  >
+                    {t('documents.action_new_version', locale)}
+                  </Button>
+                </div>
               </div>
+              {duplicateVersion !== null && (
+                <div className="flex flex-col gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-amber-950">{t('documents.duplicate_version_title', locale)} · v{duplicateVersion}. {t('documents.duplicate_version_hint', locale)}</p>
+                  <Button type="button" variant="secondary" size="sm" disabled={uploading} loading={uploading} onClick={() => void uploadVersion(true)} className="shrink-0">
+                    {t('documents.duplicate_add_version', locale)}
+                  </Button>
+                </div>
+              )}
             </div>
-            {duplicateVersion !== null && (
-              <div className="flex flex-col gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-amber-950">{t('documents.duplicate_version_title', locale)} · v{duplicateVersion}. {t('documents.duplicate_version_hint', locale)}</p>
-                <Button type="button" variant="secondary" size="sm" disabled={uploading} loading={uploading} onClick={() => void uploadVersion(true)} className="shrink-0">
-                  {t('documents.duplicate_add_version', locale)}
-                </Button>
-              </div>
-            )}
-          </div>
+          )
         ) : null
       }
     >
@@ -221,6 +258,10 @@ export function DocumentDetailsModal({
                     ? `${detail.project_code ? `${detail.project_code} — ` : ''}${detail.project_name}`
                     : t('documents.no_project', locale)}
                 </dd>
+              </div>
+              <div className="flex justify-between gap-3 sm:block">
+                <dt className="text-xs text-slate-500">{t('documents.folder_location', locale)}</dt>
+                <dd className="text-slate-800 break-words">{detail.folder_id ? folderName || detail.folder_name || '—' : t('documents.folder_unfiled_location', locale)}</dd>
               </div>
               <div className="flex justify-between gap-3 sm:block">
                 <dt className="text-xs text-slate-500">{t('documents.detail_code', locale)}</dt>
@@ -260,27 +301,46 @@ export function DocumentDetailsModal({
               {(detail.versions ?? []).map((version) => (
                 <li
                   key={version.id ?? version.version}
-                  className="flex flex-col gap-1 px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between"
+                  className="flex items-center gap-2 px-3 py-2 text-xs"
                 >
-                  <span className="font-medium text-slate-700">
-                    v{version.version}
-                    {version.version === detail.current_version && (
-                      <span className="ml-2 text-success-foreground font-medium">
-                        · {t('documents.version_current', locale)}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-slate-500">
-                    {formatBytes(version.file_size)} ·{' '}
-                    {formatDateTime(version.created_at, locale)}
-                    {version.uploaded_by_name ? ` · ${version.uploaded_by_name}` : ''}
-                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span className="font-medium text-slate-700">
+                      v{version.version}
+                      {version.version === detail.current_version && (
+                        <span className="ml-2 text-success-foreground font-medium">
+                          · {t('documents.version_current', locale)}
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block truncate text-slate-500">
+                      {formatBytes(version.file_size)} · {formatDateTime(version.created_at, locale)}
+                      {version.uploaded_by_name ? ` · ${version.uploaded_by_name}` : ''}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void downloadVersion(version)}
+                    disabled={downloadingVersion === version.id}
+                    aria-label={t('documents.download_version', locale).replace('{version}', String(version.version))}
+                    title={t('documents.download_version', locale).replace('{version}', String(version.version))}
+                    className="grid size-8 shrink-0 place-items-center rounded-md text-slate-500 hover:bg-hii-50 hover:text-hii-700 focus:outline-none focus:ring-2 focus:ring-hii-500 disabled:opacity-50"
+                  >
+                    {downloadingVersion === version.id ? <span className="size-3 animate-spin rounded-full border-2 border-slate-300 border-t-hii-600" aria-hidden="true" /> : <Download className="size-4" aria-hidden="true" />}
+                  </button>
                 </li>
               ))}
             </ul>
           </div>
 
           <div className="flex justify-end">
+            {!detail.is_archived && canManageFolders && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onRequestMoveToFolder(detail)}
+                className="mr-auto"
+              >{t('documents.folder_move_document', locale)}</Button>
+            )}
             <Button
               variant="secondary"
               size="sm"

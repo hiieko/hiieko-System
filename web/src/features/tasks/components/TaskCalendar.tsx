@@ -53,6 +53,10 @@ interface TaskCalendarProps {
   onToday: () => void;
   onAssigneeFilterChange: (assigneeId: string) => void;
   onSelectDate: (date: string, taskId?: string) => void;
+  /** Inline expansion: which date is expanded to show all tasks */
+  expandedDate?: string | null;
+  onToggleExpand?: (date: string) => void;
+  onOpenTaskDetails?: (taskId: string) => void;
 }
 
 const COPY = {
@@ -235,6 +239,9 @@ export function TaskCalendar({
   onToday,
   onAssigneeFilterChange,
   onSelectDate,
+  expandedDate,
+  onToggleExpand,
+  onOpenTaskDetails,
 }: TaskCalendarProps) {
   const copy = COPY[locale];
   const today = todayCompanyIso();
@@ -461,11 +468,45 @@ export function TaskCalendar({
                       <button
                         type="button"
                         disabled={controlsDisabled}
-                        onClick={() => onSelectDate(date)}
+                        onClick={() => onToggleExpand?.(date)}
                         className="px-1 text-[11px] font-medium text-hii-700 hover:underline"
                       >
                         +{dateTasks.length - visibleTasks.length} {copy.moreTasks}
                       </button>
+                    )}
+                    
+                    {/* Inline expanded tasks */}
+                    {expandedDate === date && dateTasks.length > visibleTasks.length && (
+                      <div className="mt-1 space-y-1">
+                        {dateTasks.slice(visibleTasks.length).map(({ task, range }) => {
+                          const project = projects?.find(p => p.id === task.project_id);
+                          const statusLabel = t(TASK_STATUS_I18N[task.status], locale);
+                          const assignees = task.assignments || [];
+                          const assigneesLabel = assignees.length > 0
+                            ? `, ${assignees.map(a => getTaskAssigneeName(a)).join(', ')}`
+                            : '';
+                          const rangeText = range ? `${formatTaskCalendarDate(range.start, locale)} – ${formatTaskCalendarDate(range.end, locale)}` : '';
+                          return (
+                            <button
+                              key={`expanded-${task.id}`}
+                              type="button"
+                              onClick={() => onOpenTaskDetails?.(task.id)}
+                              className="w-full text-left text-[11px] py-1.5 px-1.5 rounded hover:bg-slate-100 focus:outline-none focus:ring-1 focus:ring-hii-500"
+                              aria-label={`${task.title}, ${task.code}, ${statusLabel}${assigneesLabel}, ${rangeText}`}
+                            >
+                              <span className="flex items-start gap-1">
+                                <span
+                                  className={`mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full ${TASK_STATUS_DOT[task.status]}`}
+                                  aria-hidden="true"
+                                />
+                                <span className="min-w-0 truncate font-semibold text-content">
+                                  {task.title}
+                                </span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </div>
